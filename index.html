@@ -197,7 +197,7 @@
 
         <div class="flex items-center justify-between text-sm font-bold text-gray-600 px-1">
           <span>الإجمالي</span>
-          <span id="cart-grand-total" class="text-lg brand-text">0.00 ر.س</span>
+          <span id="cart-grand-total" class="text-lg brand-text">0.00 ج.م</span>
         </div>
 
         <button id="send-order-btn"
@@ -392,7 +392,7 @@
           </div>
           <div class="flex items-center justify-between mt-2">
             <span class="brand-text font-extrabold text-sm">
-              ${Number(p.price).toFixed(2)} ر.س
+              ${Number(p.price).toFixed(2)} ج.م
             </span>
             <button
               onclick="addToCart('${p.id}')"
@@ -481,7 +481,7 @@
     const totalBadge = document.getElementById('cart-total-badge')
 
     countBadge.textContent = `${totalItems} ${totalItems === 1 ? 'منتج' : 'منتجات'}`
-    totalBadge.textContent = `${totalPrice.toFixed(2)} ر.س`
+    totalBadge.textContent = `${totalPrice.toFixed(2)} ج.م`
 
     if (totalItems > 0) {
       cartBar.classList.remove('hidden')
@@ -519,7 +519,7 @@
           <div class="text-4xl mb-2">🛒</div>
           <p class="text-sm">السلة فارغة</p>
         </div>`
-      grandTotal.textContent = '0.00 ر.س'
+      grandTotal.textContent = '0.00 ج.م'
       return
     }
 
@@ -528,7 +528,7 @@
         <div class="flex-1">
           <p class="font-bold text-gray-800 text-sm">${c.product.name}</p>
           <p class="brand-text text-xs font-bold mt-0.5">
-            ${(c.product.price * c.qty).toFixed(2)} ر.س
+            ${(c.product.price * c.qty).toFixed(2)} ج.م
           </p>
         </div>
         <div class="flex items-center gap-2">
@@ -543,7 +543,7 @@
       </div>
     `).join('')
 
-    grandTotal.textContent = `${cartTotal().toFixed(2)} ر.س`
+    grandTotal.textContent = `${cartTotal().toFixed(2)} ج.م`
   }
 
   // ─────────────────────────────────────────
@@ -597,9 +597,9 @@
     const lines = [
       `🧾 *طلب جديد ${orderNumber}*`,
       `─────────────────`,
-      ...items.map(i => `${i.name} × ${i.qty} — ${i.subtotal.toFixed(2)} ر.س`),
+      ...items.map(i => `${i.name} × ${i.qty} — ${i.subtotal.toFixed(2)} ج.م`),
       `─────────────────`,
-      `💰 *الإجمالي: ${total.toFixed(2)} ر.س*`,
+      `💰 *الإجمالي: ${total.toFixed(2)} ج.م*`,
       tableNumber ? `📍 الطاولة: ${tableNumber}` : '',
       `⏰ ${now}`
     ].filter(Boolean).join('\n')
