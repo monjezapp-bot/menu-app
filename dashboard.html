@@ -236,13 +236,12 @@
         </div>
         <div>
           <label class="text-xs font-bold text-gray-500 mb-1 block">اللوجو</label>
-          <!-- رفع صورة أو رابط -->
           <div class="flex gap-2 mb-2">
             <button onclick="document.getElementById('logo-file-input').click()"
                     class="flex-1 border-2 border-dashed border-gray-200 rounded-xl py-3
                            text-sm text-gray-400 font-bold hover:border-orange-300
                            hover:text-orange-400 transition-colors">
-              📁 رفع صورة
+              📁 رفع اللوجو
             </button>
             <input id="logo-file-input" type="file" accept="image/*" class="hidden"
                    onchange="uploadLogoFile(this)" />
@@ -254,6 +253,27 @@
             <img id="logo-preview" src="" class="w-16 h-16 rounded-xl object-cover border border-gray-200" />
           </div>
           <p id="logo-upload-msg" class="text-xs text-gray-400 mt-1 hidden"></p>
+        </div>
+        <div>
+          <label class="text-xs font-bold text-gray-500 mb-1 block">صورة الغلاف (Cover)</label>
+          <div class="flex gap-2 mb-2">
+            <button onclick="document.getElementById('cover-file-input').click()"
+                    class="flex-1 border-2 border-dashed border-gray-200 rounded-xl py-3
+                           text-sm text-gray-400 font-bold hover:border-orange-300
+                           hover:text-orange-400 transition-colors">
+              🖼️ رفع صورة الغلاف
+            </button>
+            <input id="cover-file-input" type="file" accept="image/*" class="hidden"
+                   onchange="uploadCoverFile(this)" />
+          </div>
+          <input id="set-cover" type="text" placeholder="أو رابط الصورة https://..."
+                 class="w-full border border-gray-200 rounded-xl px-4 py-3 text-sm
+                        focus:outline-none focus:ring-2 focus:ring-orange-400" />
+          <div id="cover-preview-wrap" class="mt-2 hidden">
+            <img id="cover-preview" src=""
+                 class="w-full h-28 rounded-xl object-cover border border-gray-200" />
+          </div>
+          <p id="cover-upload-msg" class="text-xs text-gray-400 mt-1 hidden"></p>
         </div>
         <!-- أزرار الحفظ والتراجع -->
         <div class="flex gap-3">
@@ -397,10 +417,22 @@
                     focus:outline-none focus:ring-2 focus:ring-orange-400" />
     </div>
     <div>
-      <label class="text-xs font-bold text-gray-500 mb-1 block">أيقونة التصنيف (إيموجي أو رابط صورة)</label>
-      <input id="cm-icon" type="text" placeholder="مثال: 🍔 أو https://..."
+      <label class="text-xs font-bold text-gray-500 mb-1 block">أيقونة التصنيف</label>
+      <button onclick="document.getElementById('cat-icon-file').click()"
+              class="w-full border-2 border-dashed border-gray-200 rounded-xl py-3
+                     text-sm text-gray-400 font-bold hover:border-orange-300
+                     hover:text-orange-400 transition-colors mb-2">
+        📁 رفع صورة أيقونة
+      </button>
+      <input id="cat-icon-file" type="file" accept="image/*" class="hidden"
+             onchange="uploadCatIcon(this)" />
+      <input id="cm-icon" type="text" placeholder="أو إيموجي 🍔 أو رابط https://..."
              class="w-full border border-gray-200 rounded-xl px-4 py-3 text-sm
                     focus:outline-none focus:ring-2 focus:ring-orange-400" />
+      <div id="cm-icon-preview-wrap" class="mt-2 hidden">
+        <img id="cm-icon-preview" src="" class="w-12 h-12 rounded-xl object-cover border border-gray-200" />
+      </div>
+      <p id="cat-upload-msg" class="text-xs text-gray-400 mt-1 hidden"></p>
     </div>
     <p id="cm-error" class="text-red-500 text-xs hidden"></p>
     <div class="flex gap-3 pt-2">
@@ -555,9 +587,22 @@ async function loadDashboard() {
   document.getElementById('set-name').value      = restaurant.name
   document.getElementById('set-whatsapp').value  = restaurant.whatsapp
   document.getElementById('set-logo').value      = restaurant.logo_url || ''
+  document.getElementById('set-cover').value     = restaurant.cover_url || ''
   const primary = restaurant.theme?.primary || '#FF6B00'
   document.getElementById('set-color').value     = primary
   document.getElementById('set-color-hex').value = primary
+
+  // إظهار preview الغلاف لو موجود
+  if (restaurant.cover_url) {
+    document.getElementById('cover-preview').src = restaurant.cover_url
+    document.getElementById('cover-preview-wrap').classList.remove('hidden')
+  }
+
+  // إظهار preview اللوجو لو موجود
+  if (restaurant.logo_url) {
+    document.getElementById('logo-preview').src = restaurant.logo_url
+    document.getElementById('logo-preview-wrap').classList.remove('hidden')
+  }
 
   // تهيئة Pickr بعد تحميل الصفحة
   setTimeout(() => initPickr(primary), 100)
@@ -659,9 +704,15 @@ function openCatModal(id = null) {
     document.getElementById('cm-name').value = cat.name
     document.getElementById('cm-icon').value = cat.icon_url || ''
     document.getElementById('cat-modal-title').textContent = 'تعديل تصنيف'
+    if (cat.icon_url && cat.icon_url.startsWith('http')) {
+      document.getElementById('cm-icon-preview').src = cat.icon_url
+      document.getElementById('cm-icon-preview-wrap').classList.remove('hidden')
+    }
   } else {
     document.getElementById('cm-name').value = ''
     document.getElementById('cm-icon').value = ''
+    document.getElementById('cm-icon-preview-wrap').classList.add('hidden')
+    document.getElementById('cat-upload-msg').classList.add('hidden')
     document.getElementById('cat-modal-title').textContent = 'إضافة تصنيف'
   }
   document.getElementById('modal-category').classList.remove('hidden')
@@ -996,6 +1047,7 @@ async function saveSettings() {
   const name      = document.getElementById('set-name').value.trim()
   const whatsapp  = document.getElementById('set-whatsapp').value.trim()
   const logo_url  = document.getElementById('set-logo').value.trim() || null
+  const cover_url = document.getElementById('set-cover').value.trim() || null
   const primary   = document.getElementById('set-color').value
   const msgEl     = document.getElementById('settings-msg')
 
@@ -1006,7 +1058,6 @@ async function saveSettings() {
     return
   }
 
-  // حفظ snapshot قبل التعديل
   settingsSnapshot = {
     name:     document.getElementById('set-name').dataset.original || name,
     whatsapp: document.getElementById('set-whatsapp').dataset.original || whatsapp,
@@ -1015,7 +1066,7 @@ async function saveSettings() {
   }
 
   const { error } = await db.from('restaurants').update({
-    name, whatsapp, logo_url,
+    name, whatsapp, logo_url, cover_url,
     theme: { primary, secondary: '#1A1A1A' }
   }).eq('id', state.restaurant.id)
 
@@ -1100,7 +1151,41 @@ async function uploadLogoFile(input) {
   }
 }
 
-async function uploadProductImage(input) {
+async function uploadCatIcon(input) {
+  const file = input.files[0]
+  if (!file) return
+  const msgEl = document.getElementById('cat-upload-msg')
+  msgEl.textContent = 'جاري الرفع...'
+  msgEl.classList.remove('hidden')
+  try {
+    const path = `categories/${state.restaurant.id}-${Date.now()}.${file.name.split('.').pop()}`
+    const url  = await uploadToSupabase(file, 'restaurant-images', path)
+    document.getElementById('cm-icon').value = url
+    const preview = document.getElementById('cm-icon-preview')
+    const wrap    = document.getElementById('cm-icon-preview-wrap')
+    preview.src   = url
+    wrap.classList.remove('hidden')
+    msgEl.textContent = 'تم الرفع ✅'
+  } catch { msgEl.textContent = 'فشل الرفع' }
+}
+
+async function uploadCoverFile(input) {
+  const file = input.files[0]
+  if (!file) return
+  const msgEl = document.getElementById('cover-upload-msg')
+  msgEl.textContent = 'جاري الرفع...'
+  msgEl.classList.remove('hidden')
+  try {
+    const path = `covers/${state.restaurant.id}-${Date.now()}.${file.name.split('.').pop()}`
+    const url  = await uploadToSupabase(file, 'restaurant-images', path)
+    document.getElementById('set-cover').value = url
+    const preview = document.getElementById('cover-preview')
+    const wrap    = document.getElementById('cover-preview-wrap')
+    preview.src   = url
+    wrap.classList.remove('hidden')
+    msgEl.textContent = 'تم الرفع ✅'
+  } catch { msgEl.textContent = 'فشل الرفع' }
+}
   const file = input.files[0]
   if (!file) return
   const msgEl = document.getElementById('product-upload-msg')
