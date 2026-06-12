@@ -606,56 +606,69 @@ async function loadDashboard() {
 
   // تهيئة Pickr بعد تحميل الصفحة
   setTimeout(() => initPickr(primary), 100)
+}
 
-  // ── Pickr Color Picker ───────────────────
-  const DEFAULT_COLOR = '#FF6B00'
-  let pickrInstance = null
+// ── Pickr Color Picker (Global) ───────────
+const DEFAULT_COLOR = '#FF6B00'
+let pickrInstance = null
 
-  function initPickr(initialColor) {
-    if (pickrInstance) { pickrInstance.destroyAndRemove(); pickrInstance = null }
-
-    pickrInstance = Pickr.create({
-      el: '#pickr-container',
-      theme: 'nano',
-      default: initialColor || DEFAULT_COLOR,
-      components: {
-        preview: true, opacity: false, hue: true,
-        interaction: { hex: true, input: true, save: true }
-      },
-      i18n: { 'btn:save': 'اختيار' }
-    })
-
-    pickrInstance.on('save', color => {
-      const hex = color.toHEXA().toString().slice(0,7)
-      document.getElementById('set-color').value     = hex
-      document.getElementById('set-color-hex').value = hex
-      pickrInstance.hide()
-    })
-
-    pickrInstance.on('change', color => {
-      const hex = color.toHEXA().toString().slice(0,7)
-      document.getElementById('set-color').value     = hex
-      document.getElementById('set-color-hex').value = hex
-    })
+function initPickr(initialColor) {
+  if (pickrInstance) {
+    try { pickrInstance.destroyAndRemove() } catch(e) {}
+    pickrInstance = null
   }
 
+  // تأكد إن العنصر موجود
+  const el = document.getElementById('pickr-container')
+  if (!el) return
+
+  pickrInstance = Pickr.create({
+    el: '#pickr-container',
+    theme: 'nano',
+    default: initialColor || DEFAULT_COLOR,
+    components: {
+      preview: true, opacity: false, hue: true,
+      interaction: { hex: true, input: true, save: true }
+    },
+    i18n: { 'btn:save': 'اختيار' }
+  })
+
+  pickrInstance.on('save', color => {
+    const hex = color.toHEXA().toString().slice(0,7)
+    document.getElementById('set-color').value     = hex
+    document.getElementById('set-color-hex').value = hex
+    pickrInstance.hide()
+  })
+
+  pickrInstance.on('change', color => {
+    const hex = color.toHEXA().toString().slice(0,7)
+    document.getElementById('set-color').value     = hex
+    document.getElementById('set-color-hex').value = hex
+  })
+
   // مزامنة HEX input → Pickr
-  document.getElementById('set-color-hex').addEventListener('input', e => {
+  const hexInput = document.getElementById('set-color-hex')
+  hexInput.oninput = e => {
     const val = e.target.value
     if (/^#[0-9A-Fa-f]{6}$/.test(val)) {
       document.getElementById('set-color').value = val
       if (pickrInstance) pickrInstance.setColor(val)
     }
-  })
+  }
+}
 
-  // إظهار preview اللوجو لو في رابط
-  document.getElementById('set-logo').addEventListener('input', e => {
-    const url  = e.target.value.trim()
-    const wrap = document.getElementById('logo-preview-wrap')
-    const img  = document.getElementById('logo-preview')
-    if (url) { img.src = url; wrap.classList.remove('hidden') }
-    else      { wrap.classList.add('hidden') }
-  })
+// إظهار preview اللوجو لو في رابط (يتنفذ مرة واحدة بعد تحميل الصفحة)
+document.addEventListener('DOMContentLoaded', () => {
+  const logoInput = document.getElementById('set-logo')
+  if (logoInput) {
+    logoInput.addEventListener('input', e => {
+      const url  = e.target.value.trim()
+      const wrap = document.getElementById('logo-preview-wrap')
+      const img  = document.getElementById('logo-preview')
+      if (url) { img.src = url; wrap.classList.remove('hidden') }
+      else      { wrap.classList.add('hidden') }
+    })
+  }
 }
 
 // ─── CATEGORIES ───────────────────────────
