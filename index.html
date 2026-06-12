@@ -7,28 +7,21 @@
   <script src="https://cdn.tailwindcss.com"></script>
   <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
   <link rel="preconnect" href="https://fonts.googleapis.com" />
-  <link href="https://fonts.googleapis.com/css2?family=Tajawal:wght@400;500;700;800&display=swap" rel="stylesheet" />
+  <link href="https://fonts.googleapis.com/css2?family=Tajawal:wght@400;500;700;800;900&display=swap" rel="stylesheet" />
 
   <style>
     * { font-family: 'Tajawal', sans-serif; }
 
-    /* ── Dynamic theme vars injected by JS ── */
     :root {
       --brand-primary:   #FF6B00;
       --brand-secondary: #1A1A1A;
+      --brand-light:     #FFF3EB;
     }
 
-    .brand-bg   { background-color: var(--brand-primary); }
-    .brand-text { color: var(--brand-primary); }
-    .brand-border { border-color: var(--brand-primary); }
-
-    /* ── Cart button pulse ── */
-    @keyframes cart-pop {
-      0%   { transform: scale(1); }
-      40%  { transform: scale(1.15); }
-      100% { transform: scale(1); }
-    }
-    .cart-pop { animation: cart-pop 0.25s ease-out; }
+    .brand-bg      { background-color: var(--brand-primary); }
+    .brand-text    { color: var(--brand-primary); }
+    .brand-border  { border-color: var(--brand-primary); }
+    .brand-light-bg{ background-color: var(--brand-light); }
 
     /* ── Skeleton shimmer ── */
     @keyframes shimmer {
@@ -39,172 +32,310 @@
       background: linear-gradient(90deg, #e8e8e8 25%, #f5f5f5 50%, #e8e8e8 75%);
       background-size: 600px 100%;
       animation: shimmer 1.4s infinite linear;
-      border-radius: 8px;
+      border-radius: 12px;
     }
 
-    /* ── Sticky category tabs shadow ── */
-    .tabs-shadow { box-shadow: 0 2px 12px rgba(0,0,0,0.08); }
-
-    /* ── Card hover ── */
-    .product-card {
-      transition: transform 0.18s ease, box-shadow 0.18s ease;
+    /* ── Cart pulse ── */
+    @keyframes cart-pop {
+      0%   { transform: scale(1); }
+      40%  { transform: scale(1.18); }
+      100% { transform: scale(1); }
     }
-    .product-card:active {
-      transform: scale(0.97);
-    }
+    .cart-pop { animation: cart-pop 0.25s ease-out; }
 
-    /* ── Scrollbar hide for category tabs ── */
+    /* ── Fade up ── */
+    @keyframes fadeUp {
+      from { opacity: 0; transform: translateY(20px); }
+      to   { opacity: 1; transform: translateY(0); }
+    }
+    .fade-up { animation: fadeUp 0.4s ease-out both; }
+
+    /* ── Scrollbar hide ── */
     .tabs-scroll::-webkit-scrollbar { display: none; }
     .tabs-scroll { -ms-overflow-style: none; scrollbar-width: none; }
 
-    /* ── Fade-in for content ── */
-    @keyframes fadeUp {
-      from { opacity: 0; transform: translateY(16px); }
-      to   { opacity: 1; transform: translateY(0); }
+    /* ── Hero cover ── */
+    .hero-cover {
+      height: 220px;
+      background: linear-gradient(160deg, var(--brand-secondary) 0%, #3a1a00 100%);
+      position: relative;
+      overflow: hidden;
     }
-    .fade-up { animation: fadeUp 0.35s ease-out both; }
+    .hero-cover img {
+      width: 100%; height: 100%;
+      object-fit: cover;
+      opacity: 0.55;
+    }
+    .hero-overlay {
+      position: absolute; inset: 0;
+      background: linear-gradient(to top, rgba(0,0,0,0.7) 0%, transparent 60%);
+    }
+    .hero-content {
+      position: absolute;
+      bottom: 0; right: 0; left: 0;
+      padding: 20px;
+    }
+
+    /* ── Search bar ── */
+    .search-bar {
+      position: relative;
+    }
+    .search-bar input {
+      width: 100%;
+      background: #fff;
+      border: 1.5px solid #eee;
+      border-radius: 14px;
+      padding: 11px 44px 11px 16px;
+      font-size: 14px;
+      color: #333;
+      outline: none;
+      transition: border-color 0.2s;
+    }
+    .search-bar input:focus {
+      border-color: var(--brand-primary);
+    }
+    .search-bar .icon {
+      position: absolute;
+      right: 14px; top: 50%;
+      transform: translateY(-50%);
+      color: #aaa;
+      pointer-events: none;
+    }
+
+    /* ── Product card ── */
+    .product-card {
+      transition: transform 0.18s ease, box-shadow 0.18s ease;
+      border-radius: 18px;
+      overflow: hidden;
+    }
+    .product-card:active { transform: scale(0.97); }
+
+    /* ── Badge ── */
+    .badge {
+      display: inline-flex;
+      align-items: center;
+      gap: 3px;
+      font-size: 10px;
+      font-weight: 800;
+      padding: 2px 8px;
+      border-radius: 20px;
+      line-height: 1.6;
+    }
+    .badge-hot   { background: #fff0f0; color: #e53e3e; }
+    .badge-new   { background: #f0fff4; color: #22863a; }
+    .badge-chef  { background: #fffbeb; color: #b7791f; }
+
+    /* ── Qty btn ── */
+    .qty-btn {
+      width: 30px; height: 30px;
+      border-radius: 10px;
+      display: flex; align-items: center; justify-content: center;
+      font-size: 17px; font-weight: 900;
+      transition: transform 0.1s;
+    }
+    .qty-btn:active { transform: scale(0.88); }
+
+    /* ── Tab active indicator ── */
+    .cat-tab {
+      flex-shrink: 0;
+      padding: 7px 18px;
+      border-radius: 30px;
+      font-size: 13px;
+      font-weight: 700;
+      transition: all 0.2s;
+      border: 2px solid transparent;
+      white-space: nowrap;
+    }
+    .cat-tab.active {
+      background-color: var(--brand-primary);
+      color: #fff;
+    }
+    .cat-tab.inactive {
+      background: #fff;
+      color: #666;
+      border-color: #e5e7eb;
+    }
+
+    /* ── Cart bar ── */
+    .cart-bar-inner {
+      border-radius: 20px;
+      padding: 14px 18px;
+      display: flex;
+      align-items: center;
+      justify-content: space-between;
+      box-shadow: 0 8px 30px rgba(0,0,0,0.22);
+    }
+
+    /* ── Bottom sheet ── */
+    .sheet-enter {
+      animation: sheetUp 0.3s cubic-bezier(0.34,1.56,0.64,1) both;
+    }
+    @keyframes sheetUp {
+      from { transform: translateY(100%); }
+      to   { transform: translateY(0); }
+    }
+
+    /* ── Product modal ── */
+    .modal-enter {
+      animation: modalIn 0.28s ease both;
+    }
+    @keyframes modalIn {
+      from { opacity: 0; transform: scale(0.94); }
+      to   { opacity: 1; transform: scale(1); }
+    }
+
+    /* ── Option chip ── */
+    .option-chip {
+      border: 2px solid #e5e7eb;
+      border-radius: 12px;
+      padding: 6px 14px;
+      font-size: 13px;
+      font-weight: 600;
+      color: #555;
+      cursor: pointer;
+      transition: all 0.15s;
+      background: #fff;
+    }
+    .option-chip.selected {
+      border-color: var(--brand-primary);
+      color: var(--brand-primary);
+      background: var(--brand-light);
+    }
+
+    /* ── Sticky tabs shadow ── */
+    .tabs-wrap {
+      box-shadow: 0 2px 12px rgba(0,0,0,0.07);
+    }
+
+    /* ── No results ── */
+    .no-results {
+      text-align: center;
+      padding: 60px 20px;
+      color: #aaa;
+    }
   </style>
 </head>
 
 <body class="bg-gray-50 min-h-screen">
 
-  <!-- ══════════════════════════════════════
-       STATES: Loading / Error / App
-  ══════════════════════════════════════ -->
-
-  <!-- Loading State -->
-  <div id="state-loading" class="p-4 max-w-lg mx-auto">
-    <!-- Header skeleton -->
-    <div class="skeleton h-40 w-full mb-4"></div>
-    <!-- Tabs skeleton -->
-    <div class="flex gap-2 mb-6">
-      <div class="skeleton h-8 w-20"></div>
-      <div class="skeleton h-8 w-24"></div>
-      <div class="skeleton h-8 w-16"></div>
-    </div>
-    <!-- Cards skeleton -->
-    <div class="space-y-4">
-      <div class="skeleton h-28 w-full"></div>
-      <div class="skeleton h-28 w-full"></div>
-      <div class="skeleton h-28 w-full"></div>
-      <div class="skeleton h-28 w-full"></div>
+  <!-- ══════════ LOADING ══════════ -->
+  <div id="state-loading" class="max-w-lg mx-auto">
+    <div class="skeleton h-56 w-full mb-0 rounded-none"></div>
+    <div class="p-4 space-y-4">
+      <div class="flex gap-2">
+        <div class="skeleton h-9 w-20"></div>
+        <div class="skeleton h-9 w-28"></div>
+        <div class="skeleton h-9 w-16"></div>
+      </div>
+      <div class="skeleton h-12 w-full"></div>
+      <div class="skeleton h-32 w-full"></div>
+      <div class="skeleton h-32 w-full"></div>
+      <div class="skeleton h-32 w-full"></div>
     </div>
   </div>
 
-  <!-- Error State -->
+  <!-- ══════════ ERROR ══════════ -->
   <div id="state-error" class="hidden flex flex-col items-center justify-center min-h-screen p-8 text-center">
-    <div class="text-6xl mb-4">🍽️</div>
-    <h2 class="text-xl font-bold text-gray-800 mb-2">لم نجد هذا المطعم</h2>
-    <p id="error-msg" class="text-gray-500 text-sm">تحقق من الرابط وحاول مجدداً</p>
+    <div class="text-7xl mb-4">🍽️</div>
+    <h2 class="text-xl font-extrabold text-gray-800 mb-2">لم نجد هذا المطعم</h2>
+    <p id="error-msg" class="text-gray-400 text-sm">تحقق من الرابط وحاول مجدداً</p>
   </div>
 
-  <!-- App Shell (hidden until data loads) -->
+  <!-- ══════════ APP ══════════ -->
   <div id="state-app" class="hidden max-w-lg mx-auto pb-36">
 
-    <!-- زر الرجوع للداشبورد — يظهر فقط لو جاي من المعاينة -->
-    <div id="back-to-dash" class="hidden bg-gray-800 text-white text-xs font-bold
-                                  px-4 py-2 flex items-center justify-between">
-      <span>أنت في وضع المعاينة</span>
-      <a href="./dashboard.html"
-         class="bg-white text-gray-800 px-3 py-1 rounded-lg font-bold">
-        ← الرجوع للوحة التحكم
-      </a>
+    <!-- Preview bar -->
+    <div id="back-to-dash" class="hidden bg-gray-900 text-white text-xs font-bold px-4 py-2 flex items-center justify-between">
+      <span>🔍 وضع المعاينة</span>
+      <a href="./dashboard.html" class="bg-white text-gray-900 px-3 py-1 rounded-lg font-bold">← لوحة التحكم</a>
     </div>
 
-    <!-- ── Header ── -->
-    <header id="restaurant-header" class="relative brand-bg text-white">
-      <div class="p-6 pt-10 pb-8">
-        <div class="flex items-center gap-4">
+    <!-- ── HERO HEADER ── -->
+    <div class="hero-cover" id="hero-cover">
+      <img id="hero-cover-img" src="" alt="" style="display:none" />
+      <div class="hero-overlay"></div>
+      <div class="hero-content">
+        <div class="flex items-end gap-3">
           <img id="restaurant-logo"
                src="" alt="لوجو"
-               class="w-16 h-16 rounded-2xl object-cover bg-white/20 hidden" />
+               class="w-16 h-16 rounded-2xl object-cover border-2 border-white/30 hidden shadow-lg" />
           <div>
-            <p class="text-white/70 text-sm font-medium">أهلاً بك في</p>
-            <h1 id="restaurant-name" class="text-2xl font-extrabold leading-tight"></h1>
+            <p class="text-white/60 text-xs font-semibold mb-0.5">أهلاً بك في</p>
+            <h1 id="restaurant-name" class="text-2xl font-black text-white leading-tight drop-shadow"></h1>
           </div>
         </div>
       </div>
-      <!-- Wave divider -->
-      <svg class="w-full -mb-px block" viewBox="0 0 390 24" preserveAspectRatio="none">
-        <path d="M0,0 C130,24 260,24 390,0 L390,24 L0,24 Z" fill="#f9fafb"/>
-      </svg>
-    </header>
+    </div>
 
-    <!-- ── Category Tabs (sticky) ── -->
-    <div class="sticky top-0 z-20 bg-gray-50 tabs-shadow">
-      <div id="category-tabs"
-           class="tabs-scroll flex gap-2 overflow-x-auto px-4 py-3">
-        <!-- injected by JS -->
+    <!-- ── SEARCH ── -->
+    <div class="px-4 pt-4 pb-2">
+      <div class="search-bar">
+        <input type="search" id="search-input" placeholder="ابحث عن أكلة..." oninput="handleSearch()" />
+        <span class="icon">
+          <svg width="17" height="17" fill="none" stroke="currentColor" stroke-width="2.2" viewBox="0 0 24 24">
+            <circle cx="11" cy="11" r="8"/><path d="m21 21-4.35-4.35"/>
+          </svg>
+        </span>
       </div>
     </div>
 
-    <!-- ── Products ── -->
-    <main id="products-container" class="px-4 pt-4 space-y-8">
-      <!-- injected by JS -->
+    <!-- ── CATEGORY TABS ── -->
+    <div class="sticky top-0 z-20 bg-gray-50 tabs-wrap">
+      <div id="category-tabs" class="tabs-scroll flex gap-2 overflow-x-auto px-4 py-3">
+        <!-- injected -->
+      </div>
+    </div>
+
+    <!-- ── PRODUCTS ── -->
+    <main id="products-container" class="px-4 pt-2 space-y-8">
+      <!-- injected -->
     </main>
+
+    <!-- ── NO RESULTS ── -->
+    <div id="no-results" class="no-results hidden">
+      <div class="text-5xl mb-3">🔍</div>
+      <p class="font-bold text-gray-500">لا توجد نتائج</p>
+      <p class="text-sm text-gray-400 mt-1">جرب كلمة بحث مختلفة</p>
+    </div>
 
   </div>
 
-  <!-- ══════════════════════════════════════
-       CART — Floating Bar
-  ══════════════════════════════════════ -->
-  <div id="cart-bar"
-       class="hidden fixed bottom-0 left-0 right-0 z-30 max-w-lg mx-auto p-4">
-    <button onclick="openCartSheet()"
-            class="brand-bg w-full text-white font-bold rounded-2xl p-4
-                   flex items-center justify-between shadow-2xl
-                   active:opacity-90 transition-opacity">
-      <span id="cart-count-badge"
-            class="bg-white/20 text-sm px-3 py-1 rounded-full font-bold">
-        0 منتج
-      </span>
-      <span>عرض السلة 🛒</span>
-      <span id="cart-total-badge" class="text-sm font-bold">0.00</span>
+  <!-- ══════════ CART BAR ══════════ -->
+  <div id="cart-bar" class="hidden fixed bottom-0 left-0 right-0 z-30 max-w-lg mx-auto p-4">
+    <button onclick="openCartSheet()" class="brand-bg cart-bar-inner w-full text-white">
+      <span id="cart-count-badge" class="bg-white/20 text-sm px-3 py-1 rounded-full font-bold">0 منتج</span>
+      <span class="font-extrabold">عرض السلة 🛒</span>
+      <span id="cart-total-badge" class="text-sm font-bold">0 ج.م</span>
     </button>
   </div>
 
-  <!-- ══════════════════════════════════════
-       CART SHEET — Bottom Sheet
-  ══════════════════════════════════════ -->
-  <div id="cart-sheet"
-       class="hidden fixed inset-0 z-40 flex flex-col justify-end">
+  <!-- ══════════ CART SHEET ══════════ -->
+  <div id="cart-sheet" class="hidden fixed inset-0 z-40 flex flex-col justify-end">
+    <div class="absolute inset-0 bg-black/50 backdrop-blur-sm" onclick="closeCartSheet()"></div>
+    <div class="sheet-enter relative bg-white rounded-t-3xl max-h-[88vh] flex flex-col shadow-2xl">
 
-    <!-- Overlay -->
-    <div class="absolute inset-0 bg-black/50 backdrop-blur-sm"
-         onclick="closeCartSheet()"></div>
-
-    <!-- Sheet -->
-    <div class="relative bg-white rounded-t-3xl max-h-[85vh] flex flex-col shadow-2xl">
-      <div class="flex items-center justify-between p-5 border-b border-gray-100">
-        <h2 class="text-lg font-extrabold text-gray-800">سلة الطلبات</h2>
-        <button onclick="closeCartSheet()"
-                class="text-gray-400 hover:text-gray-600 text-2xl leading-none">&times;</button>
-      </div>
-
-      <!-- Cart Items -->
-      <div id="cart-items-list" class="flex-1 overflow-y-auto p-4 space-y-3">
-        <!-- injected by JS -->
-      </div>
-
-      <!-- Table Input + Send -->
-      <div class="p-4 border-t border-gray-100 space-y-3">
-        <input id="table-number-input"
-               type="text"
-               placeholder="رقم الطاولة (اختياري)"
-               class="w-full border border-gray-200 rounded-xl px-4 py-3
-                      text-sm text-gray-700 focus:outline-none focus:ring-2
-                      focus:ring-offset-1 brand-border" />
-
-        <div class="flex items-center justify-between text-sm font-bold text-gray-600 px-1">
-          <span>الإجمالي</span>
-          <span id="cart-grand-total" class="text-lg brand-text">0.00 ر.س</span>
+      <div class="flex items-center justify-between px-5 pt-5 pb-4 border-b border-gray-100">
+        <div>
+          <h2 class="text-lg font-extrabold text-gray-800">سلة الطلبات</h2>
+          <p id="cart-items-count" class="text-xs text-gray-400 mt-0.5"></p>
         </div>
+        <button onclick="closeCartSheet()" class="w-9 h-9 rounded-full bg-gray-100 text-gray-500 flex items-center justify-center text-xl font-bold">&times;</button>
+      </div>
 
-        <button id="send-order-btn"
-                onclick="sendOrder()"
+      <div id="cart-items-list" class="flex-1 overflow-y-auto p-4 space-y-3"></div>
+
+      <div class="p-4 border-t border-gray-100 space-y-3 bg-white">
+        <input id="table-number-input" type="text" placeholder="رقم الطاولة (اختياري)"
+               class="w-full border border-gray-200 rounded-2xl px-4 py-3 text-sm text-gray-700
+                      focus:outline-none focus:border-[var(--brand-primary)] transition-colors" />
+        <div class="flex items-center justify-between px-1">
+          <span class="text-sm font-bold text-gray-500">الإجمالي</span>
+          <span id="cart-grand-total" class="text-xl font-black brand-text">0 ج.م</span>
+        </div>
+        <button id="send-order-btn" onclick="sendOrder()"
                 class="brand-bg w-full text-white font-extrabold rounded-2xl p-4
                        active:opacity-80 transition-opacity disabled:opacity-50
-                       flex items-center justify-center gap-2">
+                       flex items-center justify-center gap-2 text-base">
           <span>إرسال الطلب عبر واتساب</span>
           <span class="text-xl">📲</span>
         </button>
@@ -212,40 +343,50 @@
     </div>
   </div>
 
+  <!-- ══════════ PRODUCT MODAL ══════════ -->
+  <div id="product-modal" class="hidden fixed inset-0 z-50 flex items-end justify-center sm:items-center p-0 sm:p-4">
+    <div class="absolute inset-0 bg-black/60 backdrop-blur-sm" onclick="closeModal()"></div>
+    <div id="product-modal-content"
+         class="modal-enter relative bg-white w-full max-w-lg rounded-t-3xl sm:rounded-3xl
+                max-h-[92vh] overflow-y-auto shadow-2xl">
+      <!-- injected by JS -->
+    </div>
+  </div>
 
-  <!-- ══════════════════════════════════════
-       JAVASCRIPT
-  ══════════════════════════════════════ -->
+  <!-- ══════════ JAVASCRIPT ══════════ -->
   <script>
-  // ─────────────────────────────────────────
-  // 0. CONFIG — ضع مفاتيحك هنا
-  // ─────────────────────────────────────────
+  // ─────────────────────────────────
+  // 0. CONFIG
+  // ─────────────────────────────────
   const SUPABASE_URL  = 'https://pcmyugeqveyjnappulng.supabase.co'
   const SUPABASE_ANON = 'eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6InBjbXl1Z2VxdmV5am5hcHB1bG5nIiwicm9sZSI6ImFub24iLCJpYXQiOjE3ODExNjU0NDAsImV4cCI6MjA5Njc0MTQ0MH0.uwn0X4CvNRW38FGh_0rYD9KjBRM19CydXucfBsCDYeo'
 
   const { createClient } = supabase
   const db = createClient(SUPABASE_URL, SUPABASE_ANON)
 
-  // ─────────────────────────────────────────
-  // 1. STATE — كل حالة التطبيق في مكان واحد
-  // ─────────────────────────────────────────
+  const CURRENCY = 'ج.م'
+
+  // ─────────────────────────────────
+  // 1. STATE
+  // ─────────────────────────────────
   const state = {
-    restaurant: null,
-    categories: [],
-    products:   [],
-    cart:       [],            // [{ product, qty }]
-    activeCategory: null
+    restaurant:     null,
+    categories:     [],
+    products:       [],
+    cart:           [],
+    activeCategory: null,
+    searchQuery:    '',
+    modalProduct:   null,
+    modalQty:       1,
+    modalOption:    null,
   }
 
-  // ─────────────────────────────────────────
-  // 2. BOOT — نقطة الدخول الوحيدة
-  // ─────────────────────────────────────────
+  // ─────────────────────────────────
+  // 2. BOOT
+  // ─────────────────────────────────
   async function boot() {
     const slug = new URLSearchParams(location.search).get('r')
-
-    if (!slug) {
-      return showError('لم يتم تحديد المطعم في الرابط. مثال: menu.html?r=burger-house')
-    }
+    if (!slug) return showError('لم يتم تحديد المطعم. مثال: ?r=my-restaurant')
 
     try {
       await loadRestaurantData(slug)
@@ -259,23 +400,20 @@
     }
   }
 
-  // ─────────────────────────────────────────
-  // 3. DATA — جلب كل البيانات في طلبين متوازيين
-  // ─────────────────────────────────────────
+  // ─────────────────────────────────
+  // 3. DATA
+  // ─────────────────────────────────
   async function loadRestaurantData(slug) {
-    // طلب 1: بيانات المطعم
     const { data: restaurant, error: rErr } = await db
       .from('restaurants')
-      .select('id, name, logo_url, whatsapp, theme, slug')
+      .select('id, name, logo_url, cover_url, whatsapp, theme, slug')
       .eq('slug', slug)
       .eq('is_active', true)
       .single()
 
     if (rErr || !restaurant) throw new Error('المطعم غير موجود أو غير نشط')
-
     state.restaurant = restaurant
 
-    // طلبان متوازيان: التصنيفات + المنتجات
     const [catRes, prodRes] = await Promise.all([
       db.from('categories')
         .select('id, name, sort_order')
@@ -283,7 +421,7 @@
         .order('sort_order'),
 
       db.from('products')
-        .select('id, category_id, name, description, price, image_url, sort_order')
+        .select('id, category_id, name, description, price, image_url, sort_order, badge, options')
         .eq('restaurant_id', restaurant.id)
         .eq('is_available', true)
         .order('sort_order')
@@ -292,202 +430,351 @@
     if (catRes.error)  throw new Error('فشل تحميل التصنيفات')
     if (prodRes.error) throw new Error('فشل تحميل المنتجات')
 
-    state.categories   = catRes.data
-    state.products     = prodRes.data
+    state.categories    = catRes.data
+    state.products      = prodRes.data
     state.activeCategory = catRes.data[0]?.id ?? null
   }
 
-  // ─────────────────────────────────────────
-  // 4. THEME — تطبيق ألوان المطعم ديناميكياً
-  // ─────────────────────────────────────────
+  // ─────────────────────────────────
+  // 4. THEME
+  // ─────────────────────────────────
   function applyTheme() {
     const theme = state.restaurant.theme ?? {}
     const root  = document.documentElement.style
-    if (theme.primary)   root.setProperty('--brand-primary',   theme.primary)
+    if (theme.primary) {
+      root.setProperty('--brand-primary', theme.primary)
+      // light tint = primary at 10% opacity on white
+      root.setProperty('--brand-light', hexToTint(theme.primary, 0.1))
+    }
     if (theme.secondary) root.setProperty('--brand-secondary', theme.secondary)
   }
 
-  // ─────────────────────────────────────────
-  // 5. RENDER FUNCTIONS
-  // ─────────────────────────────────────────
+  function hexToTint(hex, alpha) {
+    const r = parseInt(hex.slice(1,3),16)
+    const g = parseInt(hex.slice(3,5),16)
+    const b = parseInt(hex.slice(5,7),16)
+    return `rgba(${r},${g},${b},${alpha})`
+  }
 
+  // ─────────────────────────────────
+  // 5. RENDER HEADER
+  // ─────────────────────────────────
   function renderHeader() {
     const r = state.restaurant
     document.title = r.name
 
-    const nameEl = document.getElementById('restaurant-name')
-    const logoEl = document.getElementById('restaurant-logo')
-
-    nameEl.textContent = r.name
+    document.getElementById('restaurant-name').textContent = r.name
 
     if (r.logo_url) {
-      logoEl.src = r.logo_url
-      logoEl.classList.remove('hidden')
+      const logo = document.getElementById('restaurant-logo')
+      logo.src = r.logo_url
+      logo.classList.remove('hidden')
+    }
+
+    if (r.cover_url) {
+      const img = document.getElementById('hero-cover-img')
+      img.src = r.cover_url
+      img.style.display = 'block'
+    } else {
+      // Gradient fallback using brand color
+      document.getElementById('hero-cover').style.background =
+        `linear-gradient(160deg, var(--brand-secondary) 0%, var(--brand-primary) 100%)`
     }
   }
 
+  // ─────────────────────────────────
+  // 6. RENDER TABS
+  // ─────────────────────────────────
   function renderCategoryTabs() {
     const container = document.getElementById('category-tabs')
     container.innerHTML = state.categories.map(cat => `
       <button
         data-cat="${cat.id}"
         onclick="filterByCategory('${cat.id}')"
-        class="category-tab flex-shrink-0 px-4 py-1.5 rounded-full text-sm font-bold
-               transition-all duration-200 border-2
-               ${cat.id === state.activeCategory
-                 ? 'brand-bg text-white border-transparent'
-                 : 'bg-white text-gray-600 border-gray-200'}"
+        class="cat-tab ${cat.id === state.activeCategory ? 'active' : 'inactive'}"
       >${cat.name}</button>
     `).join('')
   }
 
-  function renderProducts() {
-    const container = document.getElementById('products-container')
+  function filterByCategory(catId) {
+    state.activeCategory = catId
+    state.searchQuery = ''
+    document.getElementById('search-input').value = ''
 
+    document.querySelectorAll('.cat-tab').forEach(btn => {
+      btn.className = 'cat-tab ' + (btn.dataset.cat === catId ? 'active' : 'inactive')
+    })
+
+    const section = document.getElementById(`cat-${catId}`)
+    if (section) {
+      const offset = 68
+      const top = section.getBoundingClientRect().top + window.scrollY - offset
+      window.scrollTo({ top, behavior: 'smooth' })
+    }
+  }
+
+  // ─────────────────────────────────
+  // 7. RENDER PRODUCTS
+  // ─────────────────────────────────
+  function renderProducts(filtered = null) {
+    const container   = document.getElementById('products-container')
+    const noResults   = document.getElementById('no-results')
+    const products    = filtered ?? state.products
+
+    if (filtered !== null && filtered.length === 0) {
+      container.innerHTML = ''
+      noResults.classList.remove('hidden')
+      return
+    }
+    noResults.classList.add('hidden')
+
+    // Group by category
     const sections = state.categories.map(cat => {
-      const items = state.products.filter(p => p.category_id === cat.id)
+      const items = products.filter(p => p.category_id === cat.id)
       if (!items.length) return ''
-
       return `
         <section id="cat-${cat.id}" class="fade-up">
           <h2 class="text-base font-extrabold text-gray-800 mb-3 px-1">${cat.name}</h2>
           <div class="space-y-3">
             ${items.map(p => productCard(p)).join('')}
           </div>
-        </section>
-      `
+        </section>`
     }).join('')
 
-    // منتجات بدون تصنيف
-    const uncategorized = state.products.filter(p => !p.category_id)
+    const uncategorized = products.filter(p => !p.category_id)
     const uncatSection = uncategorized.length ? `
       <section class="fade-up">
         <h2 class="text-base font-extrabold text-gray-800 mb-3 px-1">منتجات أخرى</h2>
-        <div class="space-y-3">
-          ${uncategorized.map(p => productCard(p)).join('')}
-        </div>
+        <div class="space-y-3">${uncategorized.map(p => productCard(p)).join('')}</div>
       </section>` : ''
 
     container.innerHTML = sections + uncatSection
   }
 
+  // ─────────────────────────────────
+  // 8. PRODUCT CARD
+  // ─────────────────────────────────
+  const BADGES = {
+    hot:  { label: '🔥 الأكثر طلباً', cls: 'badge-hot' },
+    new:  { label: '✨ جديد',          cls: 'badge-new' },
+    chef: { label: '👨‍🍳 اختيار الشيف', cls: 'badge-chef' },
+  }
+
+  function badgeHTML(badge) {
+    if (!badge || !BADGES[badge]) return ''
+    const b = BADGES[badge]
+    return `<span class="badge ${b.cls}">${b.label}</span>`
+  }
+
   function productCard(p) {
+    const hasOptions = p.options && Array.isArray(p.options) && p.options.length > 0
+    const cartItem   = state.cart.find(c => c.product.id === p.id)
+    const inCart     = !!cartItem
+
     return `
-      <div class="product-card bg-white rounded-2xl shadow-sm overflow-hidden
-                  flex items-stretch border border-gray-100">
-        ${p.image_url ? `
-          <img src="${p.image_url}" alt="${p.name}"
-               class="w-28 h-28 object-cover flex-shrink-0"
-               loading="lazy" />
-        ` : `
-          <div class="w-28 h-28 bg-gray-100 flex items-center justify-center
-                      text-3xl flex-shrink-0">🍽️</div>
-        `}
+      <div class="product-card bg-white flex items-stretch border border-gray-100 shadow-sm"
+           onclick="openModal('${p.id}')">
         <div class="flex-1 p-3 flex flex-col justify-between">
           <div>
-            <h3 class="font-bold text-gray-800 text-sm leading-snug">${p.name}</h3>
-            ${p.description ? `
-              <p class="text-xs text-gray-400 mt-0.5 line-clamp-2">${p.description}</p>
-            ` : ''}
+            ${badgeHTML(p.badge)}
+            <h3 class="font-bold text-gray-800 text-sm leading-snug mt-1">${p.name}</h3>
+            ${p.description ? `<p class="text-xs text-gray-400 mt-1 line-clamp-2">${p.description}</p>` : ''}
           </div>
           <div class="flex items-center justify-between mt-2">
-            <span class="brand-text font-extrabold text-sm">
-              ${Number(p.price).toFixed(2)} ر.س
-            </span>
-            <button
-              onclick="addToCart('${p.id}')"
-              class="brand-bg text-white w-8 h-8 rounded-xl font-bold text-lg
-                     flex items-center justify-center leading-none
-                     active:opacity-70 transition-opacity"
-              aria-label="أضف ${p.name}">+</button>
+            <span class="brand-text font-extrabold text-sm">${formatPrice(p.price)}</span>
+            ${inCart
+              ? `<div class="flex items-center gap-1.5" onclick="event.stopPropagation()">
+                   <button onclick="changeQty('${p.id}',-1)" class="qty-btn bg-gray-100 text-gray-700">−</button>
+                   <span class="w-5 text-center font-bold text-sm">${cartItem.qty}</span>
+                   <button onclick="changeQty('${p.id}',1)"  class="qty-btn brand-bg text-white">+</button>
+                 </div>`
+              : `<button onclick="event.stopPropagation(); quickAdd('${p.id}')"
+                         class="brand-bg text-white w-9 h-9 rounded-xl font-bold text-xl
+                                flex items-center justify-center active:opacity-70 transition-opacity">+</button>`
+            }
           </div>
         </div>
-      </div>
-    `
+        <div class="relative flex-shrink-0">
+          ${p.image_url
+            ? `<img src="${p.image_url}" alt="${p.name}"
+                    class="w-28 h-full object-cover min-h-[100px]" loading="lazy" />`
+            : `<div class="w-28 h-full min-h-[100px] bg-gray-100 flex items-center justify-center text-3xl">🍽️</div>`
+          }
+        </div>
+      </div>`
   }
 
-  // ─────────────────────────────────────────
-  // 6. CATEGORY FILTER — scroll + highlight
-  // ─────────────────────────────────────────
-  function filterByCategory(catId) {
-    state.activeCategory = catId
-
-    // تحديث الـ tabs
-    document.querySelectorAll('.category-tab').forEach(btn => {
-      const isActive = btn.dataset.cat === catId
-      btn.className = btn.className
-        .replace(/brand-bg text-white border-transparent|bg-white text-gray-600 border-gray-200/g, '')
-        .trim()
-      btn.classList.add(
-        ...(isActive
-          ? ['brand-bg','text-white','border-transparent']
-          : ['bg-white','text-gray-600','border-gray-200'])
-      )
-    })
-
-    // Scroll للسكشن
-    const section = document.getElementById(`cat-${catId}`)
-    if (section) {
-      const offset = 72 // ارتفاع الـ sticky tabs تقريباً
-      const top = section.getBoundingClientRect().top + window.scrollY - offset
-      window.scrollTo({ top, behavior: 'smooth' })
+  // ─────────────────────────────────
+  // 9. SEARCH
+  // ─────────────────────────────────
+  function handleSearch() {
+    const q = document.getElementById('search-input').value.trim().toLowerCase()
+    state.searchQuery = q
+    if (!q) {
+      renderProducts()
+      return
     }
+    const filtered = state.products.filter(p =>
+      p.name.toLowerCase().includes(q) ||
+      (p.description && p.description.toLowerCase().includes(q))
+    )
+    renderProducts(filtered)
   }
 
-  // ─────────────────────────────────────────
-  // 7. CART LOGIC
-  // ─────────────────────────────────────────
-  function addToCart(productId) {
+  // ─────────────────────────────────
+  // 10. PRODUCT MODAL
+  // ─────────────────────────────────
+  function openModal(productId) {
     const product = state.products.find(p => p.id === productId)
     if (!product) return
 
-    const existing = state.cart.find(c => c.product.id === productId)
+    state.modalProduct = product
+    state.modalQty     = 1
+    state.modalOption  = product.options?.[0] ?? null
+
+    renderModal()
+    document.getElementById('product-modal').classList.remove('hidden')
+    document.body.style.overflow = 'hidden'
+  }
+
+  function closeModal() {
+    document.getElementById('product-modal').classList.add('hidden')
+    document.body.style.overflow = ''
+    state.modalProduct = null
+  }
+
+  function renderModal() {
+    const p   = state.modalProduct
+    const opt = state.modalOption
+
+    // Price: if option selected and has price, use option price, else product price
+    const price = opt?.price ?? Number(p.price)
+    const total = price * state.modalQty
+
+    const optionsHTML = p.options?.length ? `
+      <div class="mt-4">
+        <p class="text-sm font-bold text-gray-700 mb-2">اختر الحجم / النوع</p>
+        <div class="flex flex-wrap gap-2">
+          ${p.options.map(o => `
+            <button onclick="selectOption(${JSON.stringify(o).replace(/"/g,"'")})"
+                    class="option-chip ${state.modalOption?.label === o.label ? 'selected' : ''}">
+              ${o.label}${o.price ? ` — ${formatPrice(o.price)}` : ''}
+            </button>`).join('')}
+        </div>
+      </div>` : ''
+
+    document.getElementById('product-modal-content').innerHTML = `
+      <div>
+        ${p.image_url
+          ? `<img src="${p.image_url}" alt="${p.name}" class="w-full h-52 object-cover" />`
+          : `<div class="w-full h-44 bg-gray-100 flex items-center justify-center text-6xl">🍽️</div>`
+        }
+        <button onclick="closeModal()"
+                class="absolute top-4 left-4 w-9 h-9 rounded-full bg-black/40 text-white
+                       flex items-center justify-center text-xl font-bold backdrop-blur-sm">&times;</button>
+      </div>
+      <div class="p-5">
+        <div class="flex items-start justify-between gap-2">
+          <div>
+            ${badgeHTML(p.badge)}
+            <h2 class="text-lg font-extrabold text-gray-900 mt-1">${p.name}</h2>
+          </div>
+          <span class="brand-text font-extrabold text-lg whitespace-nowrap">${formatPrice(price)}</span>
+        </div>
+        ${p.description ? `<p class="text-sm text-gray-500 mt-2 leading-relaxed">${p.description}</p>` : ''}
+        ${optionsHTML}
+        <div class="flex items-center justify-between mt-5">
+          <div class="flex items-center gap-3">
+            <button onclick="modalQty(-1)" class="qty-btn bg-gray-100 text-gray-700 w-10 h-10 text-xl">−</button>
+            <span id="modal-qty-display" class="w-6 text-center font-extrabold text-lg">${state.modalQty}</span>
+            <button onclick="modalQty(1)"  class="qty-btn brand-bg text-white w-10 h-10 text-xl">+</button>
+          </div>
+          <button onclick="addFromModal()"
+                  class="brand-bg text-white font-extrabold rounded-2xl px-6 py-3
+                         active:opacity-80 transition-opacity flex-1 mr-4 text-sm">
+            أضف للسلة — <span id="modal-total">${formatPrice(total)}</span>
+          </button>
+        </div>
+      </div>`
+  }
+
+  function selectOption(opt) {
+    state.modalOption = opt
+    renderModal()
+  }
+
+  function modalQty(delta) {
+    state.modalQty = Math.max(1, state.modalQty + delta)
+    renderModal()
+  }
+
+  function addFromModal() {
+    const p   = state.modalProduct
+    const opt = state.modalOption
+    const price = opt?.price ?? Number(p.price)
+
+    // Add as separate item if option differs
+    const key = opt ? `${p.id}__${opt.label}` : p.id
+    const existing = state.cart.find(c => c.key === key)
+
+    if (existing) {
+      existing.qty += state.modalQty
+    } else {
+      state.cart.push({
+        key,
+        product: { ...p, price, displayName: opt ? `${p.name} (${opt.label})` : p.name },
+        qty: state.modalQty
+      })
+    }
+
+    closeModal()
+    updateCartUI()
+    renderProducts()
+  }
+
+  // ─────────────────────────────────
+  // 11. QUICK ADD (no options)
+  // ─────────────────────────────────
+  function quickAdd(productId) {
+    const product = state.products.find(p => p.id === productId)
+    if (!product) return
+
+    if (product.options?.length) {
+      openModal(productId)
+      return
+    }
+
+    const existing = state.cart.find(c => c.key === productId)
     if (existing) {
       existing.qty += 1
     } else {
-      state.cart.push({ product, qty: 1 })
+      state.cart.push({ key: productId, product: { ...product, displayName: product.name }, qty: 1 })
     }
 
     updateCartUI()
+    renderProducts()
 
-    // Animation على الزر
-    const btn = document.querySelector(`button[onclick="addToCart('${productId}')"]`)
+    // Pop animation
+    const btn = document.querySelector(`button[onclick="event.stopPropagation(); quickAdd('${productId}')"]`)
     if (btn) {
       btn.classList.add('cart-pop')
       setTimeout(() => btn.classList.remove('cart-pop'), 300)
     }
   }
 
+  // ─────────────────────────────────
+  // 12. CART LOGIC
+  // ─────────────────────────────────
   function changeQty(productId, delta) {
+    // Find by product id (not key) for inline card buttons
     const idx = state.cart.findIndex(c => c.product.id === productId)
     if (idx === -1) return
-
     state.cart[idx].qty += delta
-
-    if (state.cart[idx].qty <= 0) {
-      state.cart.splice(idx, 1)
-    }
-
+    if (state.cart[idx].qty <= 0) state.cart.splice(idx, 1)
     updateCartUI()
-    renderCartItems()
-  }
-
-  function updateCartUI() {
-    const totalItems = state.cart.reduce((s, c) => s + c.qty, 0)
-    const totalPrice = cartTotal()
-
-    const cartBar = document.getElementById('cart-bar')
-    const countBadge = document.getElementById('cart-count-badge')
-    const totalBadge = document.getElementById('cart-total-badge')
-
-    countBadge.textContent = `${totalItems} ${totalItems === 1 ? 'منتج' : 'منتجات'}`
-    totalBadge.textContent = `${totalPrice.toFixed(2)} ر.س`
-
-    if (totalItems > 0) {
-      cartBar.classList.remove('hidden')
-    } else {
-      cartBar.classList.add('hidden')
-      closeCartSheet()
+    renderProducts()
+    if (document.getElementById('cart-sheet').classList.contains('hidden') === false) {
+      renderCartItems()
     }
   }
 
@@ -495,9 +782,26 @@
     return state.cart.reduce((s, c) => s + (c.product.price * c.qty), 0)
   }
 
-  // ─────────────────────────────────────────
-  // 8. CART SHEET
-  // ─────────────────────────────────────────
+  function updateCartUI() {
+    const totalItems = state.cart.reduce((s, c) => s + c.qty, 0)
+    const totalPrice = cartTotal()
+    const bar = document.getElementById('cart-bar')
+
+    document.getElementById('cart-count-badge').textContent =
+      `${totalItems} ${totalItems === 1 ? 'منتج' : 'منتجات'}`
+    document.getElementById('cart-total-badge').textContent = formatPrice(totalPrice)
+
+    if (totalItems > 0) {
+      bar.classList.remove('hidden')
+    } else {
+      bar.classList.add('hidden')
+      closeCartSheet()
+    }
+  }
+
+  // ─────────────────────────────────
+  // 13. CART SHEET
+  // ─────────────────────────────────
   function openCartSheet() {
     renderCartItems()
     document.getElementById('cart-sheet').classList.remove('hidden')
@@ -512,120 +816,127 @@
   function renderCartItems() {
     const container = document.getElementById('cart-items-list')
     const grandTotal = document.getElementById('cart-grand-total')
+    const countEl    = document.getElementById('cart-items-count')
+
+    const total = cartTotal()
+    const count = state.cart.reduce((s,c) => s+c.qty, 0)
+    countEl.textContent = `${count} ${count === 1 ? 'منتج' : 'منتجات'}`
 
     if (!state.cart.length) {
       container.innerHTML = `
-        <div class="text-center py-8 text-gray-400">
-          <div class="text-4xl mb-2">🛒</div>
-          <p class="text-sm">السلة فارغة</p>
+        <div class="text-center py-10 text-gray-300">
+          <div class="text-5xl mb-3">🛒</div>
+          <p class="font-bold text-gray-400">السلة فارغة</p>
+          <p class="text-xs text-gray-300 mt-1">أضف منتجات من المنيو</p>
         </div>`
-      grandTotal.textContent = '0.00 ر.س'
+      grandTotal.textContent = `0 ${CURRENCY}`
       return
     }
 
     container.innerHTML = state.cart.map(c => `
-      <div class="flex items-center gap-3 bg-gray-50 rounded-xl p-3">
-        <div class="flex-1">
-          <p class="font-bold text-gray-800 text-sm">${c.product.name}</p>
-          <p class="brand-text text-xs font-bold mt-0.5">
-            ${(c.product.price * c.qty).toFixed(2)} ر.س
-          </p>
+      <div class="flex items-center gap-3 bg-gray-50 rounded-2xl p-3">
+        ${c.product.image_url
+          ? `<img src="${c.product.image_url}" class="w-14 h-14 rounded-xl object-cover flex-shrink-0" />`
+          : `<div class="w-14 h-14 rounded-xl bg-gray-200 flex items-center justify-center text-2xl flex-shrink-0">🍽️</div>`
+        }
+        <div class="flex-1 min-w-0">
+          <p class="font-bold text-gray-800 text-sm leading-tight truncate">${c.product.displayName}</p>
+          <p class="brand-text text-xs font-bold mt-0.5">${formatPrice(c.product.price * c.qty)}</p>
         </div>
-        <div class="flex items-center gap-2">
-          <button onclick="changeQty('${c.product.id}', -1)"
-                  class="w-7 h-7 rounded-lg bg-gray-200 text-gray-700 font-bold
-                         flex items-center justify-center text-base leading-none">−</button>
-          <span class="w-5 text-center font-bold text-sm text-gray-800">${c.qty}</span>
-          <button onclick="changeQty('${c.product.id}', 1)"
-                  class="brand-bg w-7 h-7 rounded-lg text-white font-bold
-                         flex items-center justify-center text-base leading-none">+</button>
+        <div class="flex items-center gap-1.5 flex-shrink-0">
+          <button onclick="cartSheetQty('${c.key}',-1)"
+                  class="qty-btn bg-white border border-gray-200 text-gray-600 shadow-sm">−</button>
+          <span class="w-5 text-center font-extrabold text-sm text-gray-800">${c.qty}</span>
+          <button onclick="cartSheetQty('${c.key}',1)"
+                  class="qty-btn brand-bg text-white">+</button>
         </div>
-      </div>
-    `).join('')
+      </div>`).join('')
 
-    grandTotal.textContent = `${cartTotal().toFixed(2)} ر.س`
+    grandTotal.textContent = formatPrice(total)
   }
 
-  // ─────────────────────────────────────────
-  // 9. SEND ORDER — Backend أولاً، واتساب ثانياً
-  // ─────────────────────────────────────────
+  function cartSheetQty(key, delta) {
+    const idx = state.cart.findIndex(c => c.key === key)
+    if (idx === -1) return
+    state.cart[idx].qty += delta
+    if (state.cart[idx].qty <= 0) state.cart.splice(idx, 1)
+    updateCartUI()
+    renderCartItems()
+    renderProducts()
+  }
+
+  // ─────────────────────────────────
+  // 14. SEND ORDER
+  // ─────────────────────────────────
   async function sendOrder() {
     if (!state.cart.length) return
 
     const btn = document.getElementById('send-order-btn')
     btn.disabled = true
-    btn.innerHTML = '<span class="opacity-70">جاري الإرسال...</span>'
+    btn.innerHTML = '<span class="opacity-60">جاري الإرسال...</span>'
 
     const tableNumber = document.getElementById('table-number-input').value.trim()
 
-    // بناء snapshot الطلب
     const items = state.cart.map(c => ({
-      id:    c.product.id,
-      name:  c.product.name,
-      price: Number(c.product.price),
-      qty:   c.qty,
+      id:       c.product.id,
+      name:     c.product.displayName,
+      price:    Number(c.product.price),
+      qty:      c.qty,
       subtotal: Number((c.product.price * c.qty).toFixed(2))
     }))
 
     const total = cartTotal()
 
-    // إنشاء رقم الطلب في الـ Backend
-    const { data: orderData, error } = await db.rpc('generate_order_number')
-      .then(async (res) => {
-        if (res.error) throw res.error
+    let orderNumber = 'TMP-' + Date.now()
 
-        // حفظ الطلب في قاعدة البيانات
-        return await db.from('orders').insert({
+    try {
+      const { data: rpcData, error: rpcErr } = await db.rpc('generate_order_number')
+      if (!rpcErr && rpcData) {
+        const { data: orderData } = await db.from('orders').insert({
           restaurant_id: state.restaurant.id,
-          order_number:  res.data,
+          order_number:  rpcData,
           items,
           total,
           table_number: tableNumber || null
         }).select('order_number').single()
-      })
-
-    if (error || !orderData) {
-      // لو فشل الحفظ، لا نوقف العميل — نرسل بدون رقم طلب
-      console.warn('Order save failed, continuing without ID')
+        if (orderData?.order_number) orderNumber = orderData.order_number
+      }
+    } catch (e) {
+      console.warn('Order save failed, continuing:', e)
     }
 
-    const orderNumber = orderData?.order_number ?? 'TMP-' + Date.now()
-
-    // بناء رسالة الواتساب
-    const now = new Date().toLocaleTimeString('ar-SA', { hour: '2-digit', minute: '2-digit' })
-
+    const now = new Date().toLocaleTimeString('ar-EG', { hour: '2-digit', minute: '2-digit' })
     const lines = [
       `🧾 *طلب جديد ${orderNumber}*`,
       `─────────────────`,
-      ...items.map(i => `${i.name} × ${i.qty} — ${i.subtotal.toFixed(2)} ر.س`),
+      ...items.map(i => `• ${i.name} × ${i.qty}  —  ${formatPrice(i.subtotal)}`),
       `─────────────────`,
-      `💰 *الإجمالي: ${total.toFixed(2)} ر.س*`,
+      `💰 *الإجمالي: ${formatPrice(total)}*`,
       tableNumber ? `📍 الطاولة: ${tableNumber}` : '',
       `⏰ ${now}`
     ].filter(Boolean).join('\n')
 
-    const waUrl = `https://wa.me/${state.restaurant.whatsapp}?text=${encodeURIComponent(lines)}`
+    window.open(`https://wa.me/${state.restaurant.whatsapp}?text=${encodeURIComponent(lines)}`, '_blank')
 
-    // فتح واتساب
-    window.open(waUrl, '_blank')
-
-    // تفريغ السلة
     state.cart = []
     updateCartUI()
     closeCartSheet()
 
-    // إعادة الزر
     btn.disabled = false
     btn.innerHTML = '<span>إرسال الطلب عبر واتساب</span><span class="text-xl">📲</span>'
   }
 
-  // ─────────────────────────────────────────
-  // 10. HELPERS
-  // ─────────────────────────────────────────
+  // ─────────────────────────────────
+  // 15. HELPERS
+  // ─────────────────────────────────
+  function formatPrice(val) {
+    return `${Number(val).toFixed(0)} ${CURRENCY}`
+  }
+
   function showState(name) {
-    document.getElementById('state-loading').classList.add('hidden')
-    document.getElementById('state-error').classList.add('hidden')
-    document.getElementById('state-app').classList.add('hidden')
+    ['loading','error','app'].forEach(s =>
+      document.getElementById(`state-${s}`).classList.add('hidden')
+    )
     document.getElementById(`state-${name}`).classList.remove('hidden')
   }
 
@@ -634,10 +945,9 @@
     showState('error')
   }
 
-  // ─────────────────────────────────────────
+  // ─────────────────────────────────
   // START
-  // ─────────────────────────────────────────
-  // إظهار زر الرجوع لو جاي من المعاينة
+  // ─────────────────────────────────
   if (document.referrer.includes('dashboard')) {
     document.getElementById('back-to-dash').classList.remove('hidden')
   }
