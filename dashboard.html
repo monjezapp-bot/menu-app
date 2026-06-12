@@ -1,0 +1,712 @@
+<!DOCTYPE html>
+<html lang="ar" dir="rtl">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>لوحة التحكم</title>
+  <script src="https://cdn.tailwindcss.com"></script>
+  <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
+  <link href="https://fonts.googleapis.com/css2?family=Tajawal:wght@400;500;700;800&display=swap" rel="stylesheet" />
+  <style>
+    * { font-family: 'Tajawal', sans-serif; }
+    .tab-active { border-bottom: 3px solid #FF6B00; color: #FF6B00; }
+    .input-base {
+      @apply w-full border border-gray-200 rounded-xl px-4 py-3 text-sm
+             focus:outline-none focus:ring-2 focus:ring-orange-400;
+    }
+    @keyframes fadeUp {
+      from { opacity:0; transform:translateY(12px); }
+      to   { opacity:1; transform:translateY(0); }
+    }
+    .fade-up { animation: fadeUp .3s ease both; }
+    .spinner {
+      border: 3px solid #f3f3f3;
+      border-top: 3px solid #FF6B00;
+      border-radius: 50%;
+      width: 22px; height: 22px;
+      animation: spin .7s linear infinite;
+      display: inline-block;
+    }
+    @keyframes spin { to { transform: rotate(360deg); } }
+  </style>
+</head>
+<body class="bg-gray-50 min-h-screen">
+
+<!-- ════════════════════════════════
+     LOGIN SCREEN
+════════════════════════════════ -->
+<div id="screen-login" class="min-h-screen flex items-center justify-center p-6">
+  <div class="bg-white rounded-3xl shadow-xl w-full max-w-sm p-8 fade-up">
+    <div class="text-center mb-8">
+      <div class="text-5xl mb-3">🍽️</div>
+      <h1 class="text-2xl font-extrabold text-gray-800">لوحة التحكم</h1>
+      <p class="text-gray-400 text-sm mt-1">سجّل دخولك لإدارة مطعمك</p>
+    </div>
+    <div class="space-y-4">
+      <input id="login-email" type="email" placeholder="البريد الإلكتروني"
+             class="w-full border border-gray-200 rounded-xl px-4 py-3 text-sm
+                    focus:outline-none focus:ring-2 focus:ring-orange-400" />
+      <input id="login-pass" type="password" placeholder="كلمة المرور"
+             class="w-full border border-gray-200 rounded-xl px-4 py-3 text-sm
+                    focus:outline-none focus:ring-2 focus:ring-orange-400" />
+      <p id="login-error" class="text-red-500 text-xs text-center hidden"></p>
+      <button onclick="doLogin()"
+              class="w-full bg-orange-500 hover:bg-orange-600 text-white font-bold
+                     rounded-xl py-3 transition-colors flex items-center justify-center gap-2">
+        <span id="login-btn-text">دخول</span>
+      </button>
+    </div>
+  </div>
+</div>
+
+<!-- ════════════════════════════════
+     DASHBOARD SCREEN
+════════════════════════════════ -->
+<div id="screen-dashboard" class="hidden min-h-screen">
+
+  <!-- Top Bar -->
+  <header class="bg-white border-b border-gray-100 px-4 py-4 flex items-center justify-between sticky top-0 z-30">
+    <div>
+      <p class="text-xs text-gray-400">إدارة مطعم</p>
+      <h1 id="dash-restaurant-name" class="text-lg font-extrabold text-gray-800"></h1>
+    </div>
+    <div class="flex items-center gap-3">
+      <a id="preview-link" href="#" target="_blank"
+         class="text-xs bg-orange-50 text-orange-500 font-bold px-3 py-2 rounded-xl">
+        👁️ معاينة
+      </a>
+      <button onclick="doLogout()"
+              class="text-xs text-gray-400 hover:text-red-500 font-bold px-3 py-2 rounded-xl
+                     border border-gray-200 transition-colors">
+        خروج
+      </button>
+    </div>
+  </header>
+
+  <!-- Tabs -->
+  <div class="bg-white border-b border-gray-100 px-4 flex gap-6 sticky top-[69px] z-20">
+    <button onclick="showTab('products')" id="tab-products"
+            class="tab-btn py-3 text-sm font-bold text-gray-400 transition-colors tab-active">
+      المنتجات
+    </button>
+    <button onclick="showTab('categories')" id="tab-categories"
+            class="tab-btn py-3 text-sm font-bold text-gray-400 transition-colors">
+      التصنيفات
+    </button>
+    <button onclick="showTab('orders')" id="tab-orders"
+            class="tab-btn py-3 text-sm font-bold text-gray-400 transition-colors">
+      الطلبات
+    </button>
+    <button onclick="showTab('settings')" id="tab-settings"
+            class="tab-btn py-3 text-sm font-bold text-gray-400 transition-colors">
+      الإعدادات
+    </button>
+  </div>
+
+  <!-- Tab Content -->
+  <main class="p-4 max-w-2xl mx-auto">
+
+    <!-- ── PRODUCTS TAB ── -->
+    <div id="tab-content-products" class="fade-up">
+      <div class="flex items-center justify-between mb-4">
+        <h2 class="font-extrabold text-gray-800">المنتجات</h2>
+        <button onclick="openProductModal()"
+                class="bg-orange-500 text-white text-sm font-bold px-4 py-2 rounded-xl">
+          + إضافة منتج
+        </button>
+      </div>
+      <div id="products-list" class="space-y-3">
+        <div class="spinner mx-auto mt-8"></div>
+      </div>
+    </div>
+
+    <!-- ── CATEGORIES TAB ── -->
+    <div id="tab-content-categories" class="hidden fade-up">
+      <div class="flex items-center justify-between mb-4">
+        <h2 class="font-extrabold text-gray-800">التصنيفات</h2>
+        <button onclick="openCatModal()"
+                class="bg-orange-500 text-white text-sm font-bold px-4 py-2 rounded-xl">
+          + إضافة تصنيف
+        </button>
+      </div>
+      <div id="categories-list" class="space-y-3"></div>
+    </div>
+
+    <!-- ── ORDERS TAB ── -->
+    <div id="tab-content-orders" class="hidden fade-up">
+      <h2 class="font-extrabold text-gray-800 mb-4">الطلبات الواردة</h2>
+      <div id="orders-list" class="space-y-4"></div>
+    </div>
+
+    <!-- ── SETTINGS TAB ── -->
+    <div id="tab-content-settings" class="hidden fade-up">
+      <h2 class="font-extrabold text-gray-800 mb-4">إعدادات المطعم</h2>
+      <div class="bg-white rounded-2xl p-5 shadow-sm space-y-4">
+        <div>
+          <label class="text-xs font-bold text-gray-500 mb-1 block">اسم المطعم</label>
+          <input id="set-name" type="text"
+                 class="w-full border border-gray-200 rounded-xl px-4 py-3 text-sm
+                        focus:outline-none focus:ring-2 focus:ring-orange-400" />
+        </div>
+        <div>
+          <label class="text-xs font-bold text-gray-500 mb-1 block">رقم الواتساب (مع كود الدولة)</label>
+          <input id="set-whatsapp" type="text" placeholder="966XXXXXXXXX"
+                 class="w-full border border-gray-200 rounded-xl px-4 py-3 text-sm
+                        focus:outline-none focus:ring-2 focus:ring-orange-400" />
+        </div>
+        <div>
+          <label class="text-xs font-bold text-gray-500 mb-1 block">اللون الرئيسي</label>
+          <div class="flex items-center gap-3">
+            <input id="set-color" type="color" value="#FF6B00"
+                   class="w-12 h-12 rounded-xl border border-gray-200 cursor-pointer p-1" />
+            <span id="set-color-val" class="text-sm text-gray-500 font-mono">#FF6B00</span>
+          </div>
+        </div>
+        <div>
+          <label class="text-xs font-bold text-gray-500 mb-1 block">رابط اللوجو (URL)</label>
+          <input id="set-logo" type="text" placeholder="https://..."
+                 class="w-full border border-gray-200 rounded-xl px-4 py-3 text-sm
+                        focus:outline-none focus:ring-2 focus:ring-orange-400" />
+        </div>
+        <button onclick="saveSettings()"
+                class="w-full bg-orange-500 text-white font-bold rounded-xl py-3
+                       hover:bg-orange-600 transition-colors">
+          حفظ الإعدادات
+        </button>
+        <p id="settings-msg" class="text-center text-sm hidden"></p>
+      </div>
+    </div>
+
+  </main>
+</div>
+
+<!-- ════════════════════════════════
+     PRODUCT MODAL
+════════════════════════════════ -->
+<div id="modal-product" class="hidden fixed inset-0 z-50 flex items-end justify-center">
+  <div class="absolute inset-0 bg-black/50" onclick="closeProductModal()"></div>
+  <div class="relative bg-white rounded-t-3xl w-full max-w-lg p-6 space-y-4 max-h-[90vh] overflow-y-auto">
+    <h3 id="product-modal-title" class="text-lg font-extrabold text-gray-800">إضافة منتج</h3>
+
+    <input type="hidden" id="pm-id" />
+    <div>
+      <label class="text-xs font-bold text-gray-500 mb-1 block">اسم المنتج *</label>
+      <input id="pm-name" type="text"
+             class="w-full border border-gray-200 rounded-xl px-4 py-3 text-sm
+                    focus:outline-none focus:ring-2 focus:ring-orange-400" />
+    </div>
+    <div>
+      <label class="text-xs font-bold text-gray-500 mb-1 block">الوصف</label>
+      <textarea id="pm-desc" rows="2"
+                class="w-full border border-gray-200 rounded-xl px-4 py-3 text-sm
+                       focus:outline-none focus:ring-2 focus:ring-orange-400 resize-none"></textarea>
+    </div>
+    <div>
+      <label class="text-xs font-bold text-gray-500 mb-1 block">السعر *</label>
+      <input id="pm-price" type="number" step="0.01" min="0"
+             class="w-full border border-gray-200 rounded-xl px-4 py-3 text-sm
+                    focus:outline-none focus:ring-2 focus:ring-orange-400" />
+    </div>
+    <div>
+      <label class="text-xs font-bold text-gray-500 mb-1 block">التصنيف</label>
+      <select id="pm-category"
+              class="w-full border border-gray-200 rounded-xl px-4 py-3 text-sm
+                     focus:outline-none focus:ring-2 focus:ring-orange-400 bg-white">
+        <option value="">بدون تصنيف</option>
+      </select>
+    </div>
+    <div>
+      <label class="text-xs font-bold text-gray-500 mb-1 block">رابط الصورة (URL)</label>
+      <input id="pm-image" type="text" placeholder="https://..."
+             class="w-full border border-gray-200 rounded-xl px-4 py-3 text-sm
+                    focus:outline-none focus:ring-2 focus:ring-orange-400" />
+    </div>
+    <div class="flex items-center gap-3">
+      <input id="pm-available" type="checkbox" checked
+             class="w-5 h-5 accent-orange-500 rounded" />
+      <label class="text-sm font-bold text-gray-700">متاح للطلب</label>
+    </div>
+    <p id="pm-error" class="text-red-500 text-xs hidden"></p>
+    <div class="flex gap-3 pt-2">
+      <button onclick="saveProduct()"
+              class="flex-1 bg-orange-500 text-white font-bold rounded-xl py-3
+                     hover:bg-orange-600 transition-colors">
+        حفظ
+      </button>
+      <button onclick="closeProductModal()"
+              class="flex-1 bg-gray-100 text-gray-600 font-bold rounded-xl py-3">
+        إلغاء
+      </button>
+    </div>
+  </div>
+</div>
+
+<!-- ════════════════════════════════
+     CATEGORY MODAL
+════════════════════════════════ -->
+<div id="modal-category" class="hidden fixed inset-0 z-50 flex items-end justify-center">
+  <div class="absolute inset-0 bg-black/50" onclick="closeCatModal()"></div>
+  <div class="relative bg-white rounded-t-3xl w-full max-w-lg p-6 space-y-4">
+    <h3 id="cat-modal-title" class="text-lg font-extrabold text-gray-800">إضافة تصنيف</h3>
+    <input type="hidden" id="cm-id" />
+    <div>
+      <label class="text-xs font-bold text-gray-500 mb-1 block">اسم التصنيف *</label>
+      <input id="cm-name" type="text"
+             class="w-full border border-gray-200 rounded-xl px-4 py-3 text-sm
+                    focus:outline-none focus:ring-2 focus:ring-orange-400" />
+    </div>
+    <p id="cm-error" class="text-red-500 text-xs hidden"></p>
+    <div class="flex gap-3 pt-2">
+      <button onclick="saveCat()"
+              class="flex-1 bg-orange-500 text-white font-bold rounded-xl py-3">حفظ</button>
+      <button onclick="closeCatModal()"
+              class="flex-1 bg-gray-100 text-gray-600 font-bold rounded-xl py-3">إلغاء</button>
+    </div>
+  </div>
+</div>
+
+<!-- ════════════════════════════════
+     TOAST
+════════════════════════════════ -->
+<div id="toast"
+     class="hidden fixed top-6 left-1/2 -translate-x-1/2 z-[60]
+            bg-gray-800 text-white text-sm font-bold px-5 py-3 rounded-2xl shadow-xl">
+</div>
+
+<!-- ════════════════════════════════
+     JAVASCRIPT
+════════════════════════════════ -->
+<script>
+// ─── CONFIG ───────────────────────────────
+const SUPABASE_URL  = 'https://pcmyugeqveyjnappulng.supabase.co'
+const SUPABASE_ANON = 'eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6InBjbXl1Z2VxdmV5am5hcHB1bG5nIiwicm9sZSI6ImFub24iLCJpYXQiOjE3ODExNjU0NDAsImV4cCI6MjA5Njc0MTQ0MH0.uwn0X4CvNRW38FGh_0rYD9KjBRM19CydXucfBsCDYeo'
+const MENU_BASE_URL = 'https://monjezapp-bot.github.io/menu-app/'
+
+const { createClient } = supabase
+const db = createClient(SUPABASE_URL, SUPABASE_ANON)
+
+// ─── STATE ────────────────────────────────
+const state = {
+  restaurant: null,
+  categories: [],
+  products:   [],
+  orders:     []
+}
+
+// ─── BOOT ────────────────────────────────
+async function boot() {
+  const { data: { session } } = await db.auth.getSession()
+  if (session) {
+    await loadDashboard()
+  } else {
+    showScreen('login')
+  }
+
+  // مستمع لتغيير الجلسة
+  db.auth.onAuthStateChange(async (event, session) => {
+    if (event === 'SIGNED_IN')  await loadDashboard()
+    if (event === 'SIGNED_OUT') showScreen('login')
+  })
+}
+
+// ─── AUTH ─────────────────────────────────
+async function doLogin() {
+  const email = document.getElementById('login-email').value.trim()
+  const pass  = document.getElementById('login-pass').value
+  const errEl = document.getElementById('login-error')
+  const btn   = document.getElementById('login-btn-text')
+
+  errEl.classList.add('hidden')
+  btn.innerHTML = '<span class="spinner"></span>'
+
+  const { error } = await db.auth.signInWithPassword({ email, password: pass })
+
+  if (error) {
+    errEl.textContent = 'بيانات الدخول غير صحيحة'
+    errEl.classList.remove('hidden')
+    btn.textContent = 'دخول'
+  }
+}
+
+async function doLogout() {
+  await db.auth.signOut()
+}
+
+// ─── LOAD DASHBOARD ───────────────────────
+async function loadDashboard() {
+  showScreen('dashboard')
+
+  const { data: { user } } = await db.auth.getUser()
+
+  // جلب بيانات المطعم
+  const { data: restaurant } = await db
+    .from('restaurants')
+    .select('*')
+    .eq('owner_id', user.id)
+    .single()
+
+  if (!restaurant) {
+    showToast('لم يتم العثور على مطعم مرتبط بهذا الحساب')
+    return
+  }
+
+  state.restaurant = restaurant
+
+  // هيدر
+  document.getElementById('dash-restaurant-name').textContent = restaurant.name
+  document.getElementById('preview-link').href = MENU_BASE_URL + '?r=' + restaurant.slug
+
+  // تحميل البيانات
+  await Promise.all([loadCategories(), loadProducts(), loadOrders()])
+
+  // إعدادات
+  document.getElementById('set-name').value     = restaurant.name
+  document.getElementById('set-whatsapp').value = restaurant.whatsapp
+  document.getElementById('set-logo').value     = restaurant.logo_url || ''
+  const primary = restaurant.theme?.primary || '#FF6B00'
+  document.getElementById('set-color').value    = primary
+  document.getElementById('set-color-val').textContent = primary
+
+  document.getElementById('set-color').addEventListener('input', e => {
+    document.getElementById('set-color-val').textContent = e.target.value
+  })
+}
+
+// ─── CATEGORIES ───────────────────────────
+async function loadCategories() {
+  const { data } = await db
+    .from('categories')
+    .select('*')
+    .eq('restaurant_id', state.restaurant.id)
+    .order('sort_order')
+
+  state.categories = data || []
+  renderCategories()
+  updateCategorySelect()
+}
+
+function renderCategories() {
+  const el = document.getElementById('categories-list')
+  if (!state.categories.length) {
+    el.innerHTML = `<p class="text-center text-gray-400 text-sm py-8">لا توجد تصنيفات بعد</p>`
+    return
+  }
+  el.innerHTML = state.categories.map(cat => `
+    <div class="bg-white rounded-2xl p-4 shadow-sm flex items-center justify-between">
+      <span class="font-bold text-gray-800">${cat.name}</span>
+      <div class="flex gap-2">
+        <button onclick="openCatModal('${cat.id}')"
+                class="text-xs bg-gray-100 text-gray-600 font-bold px-3 py-2 rounded-xl">تعديل</button>
+        <button onclick="deleteCat('${cat.id}')"
+                class="text-xs bg-red-50 text-red-500 font-bold px-3 py-2 rounded-xl">حذف</button>
+      </div>
+    </div>
+  `).join('')
+}
+
+function updateCategorySelect() {
+  const sel = document.getElementById('pm-category')
+  sel.innerHTML = '<option value="">بدون تصنيف</option>' +
+    state.categories.map(c => `<option value="${c.id}">${c.name}</option>`).join('')
+}
+
+function openCatModal(id = null) {
+  document.getElementById('cm-id').value   = id || ''
+  document.getElementById('cm-error').classList.add('hidden')
+  if (id) {
+    const cat = state.categories.find(c => c.id === id)
+    document.getElementById('cm-name').value = cat.name
+    document.getElementById('cat-modal-title').textContent = 'تعديل تصنيف'
+  } else {
+    document.getElementById('cm-name').value = ''
+    document.getElementById('cat-modal-title').textContent = 'إضافة تصنيف'
+  }
+  document.getElementById('modal-category').classList.remove('hidden')
+}
+
+function closeCatModal() {
+  document.getElementById('modal-category').classList.add('hidden')
+}
+
+async function saveCat() {
+  const id   = document.getElementById('cm-id').value
+  const name = document.getElementById('cm-name').value.trim()
+  const errEl = document.getElementById('cm-error')
+
+  if (!name) { errEl.textContent = 'اسم التصنيف مطلوب'; errEl.classList.remove('hidden'); return }
+  errEl.classList.add('hidden')
+
+  if (id) {
+    await db.from('categories').update({ name }).eq('id', id)
+  } else {
+    await db.from('categories').insert({
+      restaurant_id: state.restaurant.id,
+      name,
+      sort_order: state.categories.length
+    })
+  }
+
+  closeCatModal()
+  await loadCategories()
+  showToast(id ? 'تم تعديل التصنيف' : 'تم إضافة التصنيف')
+}
+
+async function deleteCat(id) {
+  if (!confirm('هل تريد حذف هذا التصنيف؟')) return
+  await db.from('categories').delete().eq('id', id)
+  await loadCategories()
+  showToast('تم حذف التصنيف')
+}
+
+// ─── PRODUCTS ─────────────────────────────
+async function loadProducts() {
+  const { data } = await db
+    .from('products')
+    .select('*')
+    .eq('restaurant_id', state.restaurant.id)
+    .order('sort_order')
+
+  state.products = data || []
+  renderProducts()
+}
+
+function renderProducts() {
+  const el = document.getElementById('products-list')
+  if (!state.products.length) {
+    el.innerHTML = `<p class="text-center text-gray-400 text-sm py-8">لا توجد منتجات بعد</p>`
+    return
+  }
+  el.innerHTML = state.products.map(p => {
+    const cat = state.categories.find(c => c.id === p.category_id)
+    return `
+    <div class="bg-white rounded-2xl p-4 shadow-sm flex items-center gap-3">
+      ${p.image_url
+        ? `<img src="${p.image_url}" class="w-16 h-16 rounded-xl object-cover flex-shrink-0" />`
+        : `<div class="w-16 h-16 rounded-xl bg-gray-100 flex items-center justify-center text-2xl flex-shrink-0">🍽️</div>`
+      }
+      <div class="flex-1 min-w-0">
+        <div class="flex items-center gap-2">
+          <p class="font-bold text-gray-800 truncate">${p.name}</p>
+          ${!p.is_available ? `<span class="text-xs bg-red-50 text-red-400 px-2 py-0.5 rounded-full">مخفي</span>` : ''}
+        </div>
+        ${cat ? `<p class="text-xs text-orange-500 font-bold">${cat.name}</p>` : ''}
+        <p class="text-sm font-extrabold text-gray-700 mt-1">${Number(p.price).toFixed(2)} ر.س</p>
+      </div>
+      <div class="flex flex-col gap-2">
+        <button onclick="openProductModal('${p.id}')"
+                class="text-xs bg-gray-100 text-gray-600 font-bold px-3 py-2 rounded-xl">تعديل</button>
+        <button onclick="deleteProduct('${p.id}')"
+                class="text-xs bg-red-50 text-red-500 font-bold px-3 py-2 rounded-xl">حذف</button>
+      </div>
+    </div>`
+  }).join('')
+}
+
+function openProductModal(id = null) {
+  document.getElementById('pm-id').value        = id || ''
+  document.getElementById('pm-error').classList.add('hidden')
+  updateCategorySelect()
+
+  if (id) {
+    const p = state.products.find(x => x.id === id)
+    document.getElementById('pm-name').value      = p.name
+    document.getElementById('pm-desc').value      = p.description || ''
+    document.getElementById('pm-price').value     = p.price
+    document.getElementById('pm-category').value  = p.category_id || ''
+    document.getElementById('pm-image').value     = p.image_url || ''
+    document.getElementById('pm-available').checked = p.is_available
+    document.getElementById('product-modal-title').textContent = 'تعديل منتج'
+  } else {
+    document.getElementById('pm-name').value      = ''
+    document.getElementById('pm-desc').value      = ''
+    document.getElementById('pm-price').value     = ''
+    document.getElementById('pm-category').value  = ''
+    document.getElementById('pm-image').value     = ''
+    document.getElementById('pm-available').checked = true
+    document.getElementById('product-modal-title').textContent = 'إضافة منتج'
+  }
+  document.getElementById('modal-product').classList.remove('hidden')
+}
+
+function closeProductModal() {
+  document.getElementById('modal-product').classList.add('hidden')
+}
+
+async function saveProduct() {
+  const id    = document.getElementById('pm-id').value
+  const name  = document.getElementById('pm-name').value.trim()
+  const price = parseFloat(document.getElementById('pm-price').value)
+  const errEl = document.getElementById('pm-error')
+
+  if (!name)         { errEl.textContent = 'اسم المنتج مطلوب';  errEl.classList.remove('hidden'); return }
+  if (isNaN(price))  { errEl.textContent = 'السعر غير صحيح';    errEl.classList.remove('hidden'); return }
+  errEl.classList.add('hidden')
+
+  const payload = {
+    name,
+    description:  document.getElementById('pm-desc').value.trim() || null,
+    price,
+    category_id:  document.getElementById('pm-category').value || null,
+    image_url:    document.getElementById('pm-image').value.trim() || null,
+    is_available: document.getElementById('pm-available').checked
+  }
+
+  if (id) {
+    await db.from('products').update(payload).eq('id', id)
+  } else {
+    await db.from('products').insert({
+      ...payload,
+      restaurant_id: state.restaurant.id,
+      sort_order: state.products.length
+    })
+  }
+
+  closeProductModal()
+  await loadProducts()
+  showToast(id ? 'تم تعديل المنتج' : 'تم إضافة المنتج ✅')
+}
+
+async function deleteProduct(id) {
+  if (!confirm('هل تريد حذف هذا المنتج؟')) return
+  await db.from('products').delete().eq('id', id)
+  await loadProducts()
+  showToast('تم حذف المنتج')
+}
+
+// ─── ORDERS ───────────────────────────────
+async function loadOrders() {
+  const { data } = await db
+    .from('orders')
+    .select('*')
+    .eq('restaurant_id', state.restaurant.id)
+    .order('created_at', { ascending: false })
+    .limit(50)
+
+  state.orders = data || []
+  renderOrders()
+}
+
+function renderOrders() {
+  const el = document.getElementById('orders-list')
+  if (!state.orders.length) {
+    el.innerHTML = `<p class="text-center text-gray-400 text-sm py-8">لا توجد طلبات بعد</p>`
+    return
+  }
+
+  const statusLabel = { pending: 'جديد', confirmed: 'مؤكد', done: 'منتهي', cancelled: 'ملغي' }
+  const statusColor = { pending: 'bg-yellow-50 text-yellow-600', confirmed: 'bg-blue-50 text-blue-600',
+                        done: 'bg-green-50 text-green-600', cancelled: 'bg-red-50 text-red-500' }
+
+  el.innerHTML = state.orders.map(o => `
+    <div class="bg-white rounded-2xl p-4 shadow-sm">
+      <div class="flex items-center justify-between mb-3">
+        <div>
+          <p class="font-extrabold text-gray-800">${o.order_number}</p>
+          ${o.table_number ? `<p class="text-xs text-gray-400">طاولة ${o.table_number}</p>` : ''}
+        </div>
+        <div class="flex items-center gap-2">
+          <span class="text-xs font-bold px-3 py-1 rounded-full ${statusColor[o.status]}">
+            ${statusLabel[o.status]}
+          </span>
+          <select onchange="updateOrderStatus('${o.id}', this.value)"
+                  class="text-xs border border-gray-200 rounded-xl px-2 py-1 bg-white focus:outline-none">
+            <option value="pending"   ${o.status==='pending'   ? 'selected':''}>جديد</option>
+            <option value="confirmed" ${o.status==='confirmed' ? 'selected':''}>مؤكد</option>
+            <option value="done"      ${o.status==='done'      ? 'selected':''}>منتهي</option>
+            <option value="cancelled" ${o.status==='cancelled' ? 'selected':''}>ملغي</option>
+          </select>
+        </div>
+      </div>
+      <div class="space-y-1 border-t border-gray-50 pt-3">
+        ${o.items.map(i => `
+          <div class="flex justify-between text-sm">
+            <span class="text-gray-600">${i.name} × ${i.qty}</span>
+            <span class="font-bold text-gray-800">${i.subtotal.toFixed(2)} ر.س</span>
+          </div>
+        `).join('')}
+        <div class="flex justify-between text-sm font-extrabold pt-2 border-t border-gray-100">
+          <span>الإجمالي</span>
+          <span class="text-orange-500">${Number(o.total).toFixed(2)} ر.س</span>
+        </div>
+      </div>
+      <p class="text-xs text-gray-300 mt-2">
+        ${new Date(o.created_at).toLocaleString('ar-EG')}
+      </p>
+    </div>
+  `).join('')
+}
+
+async function updateOrderStatus(id, status) {
+  await db.from('orders').update({ status }).eq('id', id)
+  await loadOrders()
+  showToast('تم تحديث حالة الطلب')
+}
+
+// ─── SETTINGS ─────────────────────────────
+async function saveSettings() {
+  const name      = document.getElementById('set-name').value.trim()
+  const whatsapp  = document.getElementById('set-whatsapp').value.trim()
+  const logo_url  = document.getElementById('set-logo').value.trim() || null
+  const primary   = document.getElementById('set-color').value
+  const msgEl     = document.getElementById('settings-msg')
+
+  if (!name || !whatsapp) {
+    msgEl.textContent = 'الاسم والواتساب مطلوبان'
+    msgEl.className = 'text-center text-sm text-red-500'
+    msgEl.classList.remove('hidden')
+    return
+  }
+
+  const { error } = await db.from('restaurants').update({
+    name,
+    whatsapp,
+    logo_url,
+    theme: { primary, secondary: '#1A1A1A' }
+  }).eq('id', state.restaurant.id)
+
+  if (error) {
+    msgEl.textContent = 'حدث خطأ أثناء الحفظ'
+    msgEl.className = 'text-center text-sm text-red-500'
+  } else {
+    state.restaurant.name = name
+    document.getElementById('dash-restaurant-name').textContent = name
+    msgEl.textContent = 'تم الحفظ بنجاح ✅'
+    msgEl.className = 'text-center text-sm text-green-500'
+    showToast('تم حفظ الإعدادات ✅')
+  }
+  msgEl.classList.remove('hidden')
+  setTimeout(() => msgEl.classList.add('hidden'), 3000)
+}
+
+// ─── UI HELPERS ───────────────────────────
+function showScreen(name) {
+  document.getElementById('screen-login').classList.add('hidden')
+  document.getElementById('screen-dashboard').classList.add('hidden')
+  document.getElementById('screen-' + name).classList.remove('hidden')
+}
+
+function showTab(name) {
+  ['products','categories','orders','settings'].forEach(t => {
+    document.getElementById('tab-content-' + t).classList.add('hidden')
+    document.getElementById('tab-' + t).classList.remove('tab-active')
+    document.getElementById('tab-' + t).classList.add('text-gray-400')
+  })
+  document.getElementById('tab-content-' + name).classList.remove('hidden')
+  document.getElementById('tab-' + name).classList.add('tab-active')
+  document.getElementById('tab-' + name).classList.remove('text-gray-400')
+
+  if (name === 'orders') loadOrders()
+}
+
+function showToast(msg) {
+  const t = document.getElementById('toast')
+  t.textContent = msg
+  t.classList.remove('hidden')
+  setTimeout(() => t.classList.add('hidden'), 2500)
+}
+
+// ─── START ────────────────────────────────
+boot()
+</script>
+</body>
+</html>
