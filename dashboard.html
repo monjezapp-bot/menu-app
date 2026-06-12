@@ -236,12 +236,13 @@
         </div>
         <div>
           <label class="text-xs font-bold text-gray-500 mb-1 block">اللوجو</label>
+          <!-- رفع صورة أو رابط -->
           <div class="flex gap-2 mb-2">
             <button onclick="document.getElementById('logo-file-input').click()"
                     class="flex-1 border-2 border-dashed border-gray-200 rounded-xl py-3
                            text-sm text-gray-400 font-bold hover:border-orange-300
                            hover:text-orange-400 transition-colors">
-              📁 رفع اللوجو
+              📁 رفع صورة
             </button>
             <input id="logo-file-input" type="file" accept="image/*" class="hidden"
                    onchange="uploadLogoFile(this)" />
@@ -253,27 +254,6 @@
             <img id="logo-preview" src="" class="w-16 h-16 rounded-xl object-cover border border-gray-200" />
           </div>
           <p id="logo-upload-msg" class="text-xs text-gray-400 mt-1 hidden"></p>
-        </div>
-        <div>
-          <label class="text-xs font-bold text-gray-500 mb-1 block">صورة الغلاف (Cover)</label>
-          <div class="flex gap-2 mb-2">
-            <button onclick="document.getElementById('cover-file-input').click()"
-                    class="flex-1 border-2 border-dashed border-gray-200 rounded-xl py-3
-                           text-sm text-gray-400 font-bold hover:border-orange-300
-                           hover:text-orange-400 transition-colors">
-              🖼️ رفع صورة الغلاف
-            </button>
-            <input id="cover-file-input" type="file" accept="image/*" class="hidden"
-                   onchange="uploadCoverFile(this)" />
-          </div>
-          <input id="set-cover" type="text" placeholder="أو رابط الصورة https://..."
-                 class="w-full border border-gray-200 rounded-xl px-4 py-3 text-sm
-                        focus:outline-none focus:ring-2 focus:ring-orange-400" />
-          <div id="cover-preview-wrap" class="mt-2 hidden">
-            <img id="cover-preview" src=""
-                 class="w-full h-28 rounded-xl object-cover border border-gray-200" />
-          </div>
-          <p id="cover-upload-msg" class="text-xs text-gray-400 mt-1 hidden"></p>
         </div>
         <!-- أزرار الحفظ والتراجع -->
         <div class="flex gap-3">
@@ -417,22 +397,10 @@
                     focus:outline-none focus:ring-2 focus:ring-orange-400" />
     </div>
     <div>
-      <label class="text-xs font-bold text-gray-500 mb-1 block">أيقونة التصنيف</label>
-      <button onclick="document.getElementById('cat-icon-file').click()"
-              class="w-full border-2 border-dashed border-gray-200 rounded-xl py-3
-                     text-sm text-gray-400 font-bold hover:border-orange-300
-                     hover:text-orange-400 transition-colors mb-2">
-        📁 رفع صورة أيقونة
-      </button>
-      <input id="cat-icon-file" type="file" accept="image/*" class="hidden"
-             onchange="uploadCatIcon(this)" />
-      <input id="cm-icon" type="text" placeholder="أو إيموجي 🍔 أو رابط https://..."
+      <label class="text-xs font-bold text-gray-500 mb-1 block">أيقونة التصنيف (إيموجي أو رابط صورة)</label>
+      <input id="cm-icon" type="text" placeholder="مثال: 🍔 أو https://..."
              class="w-full border border-gray-200 rounded-xl px-4 py-3 text-sm
                     focus:outline-none focus:ring-2 focus:ring-orange-400" />
-      <div id="cm-icon-preview-wrap" class="mt-2 hidden">
-        <img id="cm-icon-preview" src="" class="w-12 h-12 rounded-xl object-cover border border-gray-200" />
-      </div>
-      <p id="cat-upload-msg" class="text-xs text-gray-400 mt-1 hidden"></p>
     </div>
     <p id="cm-error" class="text-red-500 text-xs hidden"></p>
     <div class="flex gap-3 pt-2">
@@ -519,16 +487,18 @@ const state = {
 
 // ─── BOOT ────────────────────────────────
 async function boot() {
-  try {
-    const { data: { session } } = await db.auth.getSession()
-    if (session) {
-      await loadDashboard()
-    } else {
-      showScreen('login')
-    }
-  } catch(e) {
+  const { data: { session } } = await db.auth.getSession()
+  if (session) {
+    await loadDashboard()
+  } else {
     showScreen('login')
   }
+
+  // مستمع لتغيير الجلسة
+  db.auth.onAuthStateChange(async (event, session) => {
+    if (event === 'SIGNED_IN')  await loadDashboard()
+    if (event === 'SIGNED_OUT') showScreen('login')
+  })
 }
 
 // ─── AUTH ─────────────────────────────────
@@ -538,34 +508,13 @@ async function doLogin() {
   const errEl = document.getElementById('login-error')
   const btn   = document.getElementById('login-btn-text')
 
-  if (!email || !pass) {
-    errEl.textContent = 'أدخل الإيميل وكلمة المرور'
-    errEl.classList.remove('hidden')
-    return
-  }
-
   errEl.classList.add('hidden')
   btn.innerHTML = '<span class="spinner"></span>'
 
-  try {
-    const { data, error } = await db.auth.signInWithPassword({ email, password: pass })
+  const { error } = await db.auth.signInWithPassword({ email, password: pass })
 
-    if (error) {
-      errEl.textContent = 'خطأ Supabase: ' + error.message
-      errEl.classList.remove('hidden')
-      btn.textContent = 'دخول'
-      return
-    }
-
-    if (data.session) {
-      await loadDashboard()
-    } else {
-      errEl.textContent = 'لم يتم إنشاء جلسة — جرب مجدداً'
-      errEl.classList.remove('hidden')
-      btn.textContent = 'دخول'
-    }
-  } catch(e) {
-    errEl.textContent = 'خطأ: ' + e.message
+  if (error) {
+    errEl.textContent = 'بيانات الدخول غير صحيحة'
     errEl.classList.remove('hidden')
     btn.textContent = 'دخول'
   }
@@ -579,117 +528,90 @@ async function doLogout() {
 async function loadDashboard() {
   showScreen('dashboard')
 
-  try {
-    const { data: { user } } = await db.auth.getUser()
+  const { data: { user } } = await db.auth.getUser()
 
-    const { data: restaurant } = await db
-      .from('restaurants')
-      .select('*')
-      .eq('owner_id', user.id)
-      .single()
+  // جلب بيانات المطعم
+  const { data: restaurant } = await db
+    .from('restaurants')
+    .select('*')
+    .eq('owner_id', user.id)
+    .single()
 
-    if (!restaurant) {
-      showToast('لم يتم العثور على مطعم مرتبط بهذا الحساب')
-      return
-    }
-
-    state.restaurant = restaurant
-
-    document.getElementById('dash-restaurant-name').textContent = restaurant.name
-    document.getElementById('preview-link').href = MENU_BASE_URL + '?r=' + restaurant.slug
-
-    await Promise.all([loadCategories(), loadProducts(), loadOrders()])
-
-    // إعدادات
-    document.getElementById('set-name').value      = restaurant.name
-    document.getElementById('set-whatsapp').value  = restaurant.whatsapp || ''
-    document.getElementById('set-logo').value      = restaurant.logo_url || ''
-    document.getElementById('set-cover').value     = restaurant.cover_url || ''
-    const primary = restaurant.theme?.primary || '#FF6B00'
-    document.getElementById('set-color').value     = primary
-    document.getElementById('set-color-hex').value = primary
-
-    if (restaurant.cover_url) {
-      document.getElementById('cover-preview').src = restaurant.cover_url
-      document.getElementById('cover-preview-wrap').classList.remove('hidden')
-    }
-    if (restaurant.logo_url) {
-      document.getElementById('logo-preview').src = restaurant.logo_url
-      document.getElementById('logo-preview-wrap').classList.remove('hidden')
-    }
-
-    setTimeout(() => {
-      try { initPickr(primary) } catch(e) { console.warn('Pickr error:', e) }
-    }, 200)
-
-  } catch(e) {
-    console.error('loadDashboard error:', e)
-    showToast('حدث خطأ في تحميل البيانات')
-  }
-}
-
-// ── Pickr Color Picker (Global) ───────────
-const DEFAULT_COLOR = '#FF6B00'
-let pickrInstance = null
-
-function initPickr(initialColor) {
-  if (pickrInstance) {
-    try { pickrInstance.destroyAndRemove() } catch(e) {}
-    pickrInstance = null
+  if (!restaurant) {
+    showToast('لم يتم العثور على مطعم مرتبط بهذا الحساب')
+    return
   }
 
-  // تأكد إن العنصر موجود
-  const el = document.getElementById('pickr-container')
-  if (!el) return
+  state.restaurant = restaurant
 
-  pickrInstance = Pickr.create({
-    el: '#pickr-container',
-    theme: 'nano',
-    default: initialColor || DEFAULT_COLOR,
-    components: {
-      preview: true, opacity: false, hue: true,
-      interaction: { hex: true, input: true, save: true }
-    },
-    i18n: { 'btn:save': 'اختيار' }
-  })
+  // هيدر
+  document.getElementById('dash-restaurant-name').textContent = restaurant.name
+  document.getElementById('preview-link').href = MENU_BASE_URL + '?r=' + restaurant.slug
 
-  pickrInstance.on('save', color => {
-    const hex = color.toHEXA().toString().slice(0,7)
-    document.getElementById('set-color').value     = hex
-    document.getElementById('set-color-hex').value = hex
-    pickrInstance.hide()
-  })
+  // تحميل البيانات
+  await Promise.all([loadCategories(), loadProducts(), loadOrders()])
 
-  pickrInstance.on('change', color => {
-    const hex = color.toHEXA().toString().slice(0,7)
-    document.getElementById('set-color').value     = hex
-    document.getElementById('set-color-hex').value = hex
-  })
+  // إعدادات
+  document.getElementById('set-name').value      = restaurant.name
+  document.getElementById('set-whatsapp').value  = restaurant.whatsapp
+  document.getElementById('set-logo').value      = restaurant.logo_url || ''
+  const primary = restaurant.theme?.primary || '#FF6B00'
+  document.getElementById('set-color').value     = primary
+  document.getElementById('set-color-hex').value = primary
+
+  // تهيئة Pickr بعد تحميل الصفحة
+  setTimeout(() => initPickr(primary), 100)
+
+  // ── Pickr Color Picker ───────────────────
+  const DEFAULT_COLOR = '#FF6B00'
+  let pickrInstance = null
+
+  function initPickr(initialColor) {
+    if (pickrInstance) { pickrInstance.destroyAndRemove(); pickrInstance = null }
+
+    pickrInstance = Pickr.create({
+      el: '#pickr-container',
+      theme: 'nano',
+      default: initialColor || DEFAULT_COLOR,
+      components: {
+        preview: true, opacity: false, hue: true,
+        interaction: { hex: true, input: true, save: true }
+      },
+      i18n: { 'btn:save': 'اختيار' }
+    })
+
+    pickrInstance.on('save', color => {
+      const hex = color.toHEXA().toString().slice(0,7)
+      document.getElementById('set-color').value     = hex
+      document.getElementById('set-color-hex').value = hex
+      pickrInstance.hide()
+    })
+
+    pickrInstance.on('change', color => {
+      const hex = color.toHEXA().toString().slice(0,7)
+      document.getElementById('set-color').value     = hex
+      document.getElementById('set-color-hex').value = hex
+    })
+  }
 
   // مزامنة HEX input → Pickr
-  const hexInput = document.getElementById('set-color-hex')
-  hexInput.oninput = e => {
+  document.getElementById('set-color-hex').addEventListener('input', e => {
     const val = e.target.value
     if (/^#[0-9A-Fa-f]{6}$/.test(val)) {
       document.getElementById('set-color').value = val
       if (pickrInstance) pickrInstance.setColor(val)
     }
-  }
-}
+  })
 
-// إظهار preview اللوجو لو في رابط (يتنفذ مرة واحدة بعد تحميل الصفحة)
-document.addEventListener('DOMContentLoaded', () => {
-  const logoInput = document.getElementById('set-logo')
-  if (logoInput) {
-    logoInput.addEventListener('input', e => {
-      const url  = e.target.value.trim()
-      const wrap = document.getElementById('logo-preview-wrap')
-      const img  = document.getElementById('logo-preview')
-      if (url) { img.src = url; wrap.classList.remove('hidden') }
-      else      { wrap.classList.add('hidden') }
-    })
-  }
-})
+  // إظهار preview اللوجو لو في رابط
+  document.getElementById('set-logo').addEventListener('input', e => {
+    const url  = e.target.value.trim()
+    const wrap = document.getElementById('logo-preview-wrap')
+    const img  = document.getElementById('logo-preview')
+    if (url) { img.src = url; wrap.classList.remove('hidden') }
+    else      { wrap.classList.add('hidden') }
+  })
+}
 
 // ─── CATEGORIES ───────────────────────────
 async function loadCategories() {
@@ -737,15 +659,9 @@ function openCatModal(id = null) {
     document.getElementById('cm-name').value = cat.name
     document.getElementById('cm-icon').value = cat.icon_url || ''
     document.getElementById('cat-modal-title').textContent = 'تعديل تصنيف'
-    if (cat.icon_url && cat.icon_url.startsWith('http')) {
-      document.getElementById('cm-icon-preview').src = cat.icon_url
-      document.getElementById('cm-icon-preview-wrap').classList.remove('hidden')
-    }
   } else {
     document.getElementById('cm-name').value = ''
     document.getElementById('cm-icon').value = ''
-    document.getElementById('cm-icon-preview-wrap').classList.add('hidden')
-    document.getElementById('cat-upload-msg').classList.add('hidden')
     document.getElementById('cat-modal-title').textContent = 'إضافة تصنيف'
   }
   document.getElementById('modal-category').classList.remove('hidden')
@@ -1080,7 +996,6 @@ async function saveSettings() {
   const name      = document.getElementById('set-name').value.trim()
   const whatsapp  = document.getElementById('set-whatsapp').value.trim()
   const logo_url  = document.getElementById('set-logo').value.trim() || null
-  const cover_url = document.getElementById('set-cover').value.trim() || null
   const primary   = document.getElementById('set-color').value
   const msgEl     = document.getElementById('settings-msg')
 
@@ -1091,6 +1006,7 @@ async function saveSettings() {
     return
   }
 
+  // حفظ snapshot قبل التعديل
   settingsSnapshot = {
     name:     document.getElementById('set-name').dataset.original || name,
     whatsapp: document.getElementById('set-whatsapp').dataset.original || whatsapp,
@@ -1099,7 +1015,7 @@ async function saveSettings() {
   }
 
   const { error } = await db.from('restaurants').update({
-    name, whatsapp, logo_url, cover_url,
+    name, whatsapp, logo_url,
     theme: { primary, secondary: '#1A1A1A' }
   }).eq('id', state.restaurant.id)
 
@@ -1184,41 +1100,7 @@ async function uploadLogoFile(input) {
   }
 }
 
-async function uploadCatIcon(input) {
-  const file = input.files[0]
-  if (!file) return
-  const msgEl = document.getElementById('cat-upload-msg')
-  msgEl.textContent = 'جاري الرفع...'
-  msgEl.classList.remove('hidden')
-  try {
-    const path = `categories/${state.restaurant.id}-${Date.now()}.${file.name.split('.').pop()}`
-    const url  = await uploadToSupabase(file, 'restaurant-images', path)
-    document.getElementById('cm-icon').value = url
-    const preview = document.getElementById('cm-icon-preview')
-    const wrap    = document.getElementById('cm-icon-preview-wrap')
-    preview.src   = url
-    wrap.classList.remove('hidden')
-    msgEl.textContent = 'تم الرفع ✅'
-  } catch { msgEl.textContent = 'فشل الرفع' }
-}
-
-async function uploadCoverFile(input) {
-  const file = input.files[0]
-  if (!file) return
-  const msgEl = document.getElementById('cover-upload-msg')
-  msgEl.textContent = 'جاري الرفع...'
-  msgEl.classList.remove('hidden')
-  try {
-    const path = `covers/${state.restaurant.id}-${Date.now()}.${file.name.split('.').pop()}`
-    const url  = await uploadToSupabase(file, 'restaurant-images', path)
-    document.getElementById('set-cover').value = url
-    const preview = document.getElementById('cover-preview')
-    const wrap    = document.getElementById('cover-preview-wrap')
-    preview.src   = url
-    wrap.classList.remove('hidden')
-    msgEl.textContent = 'تم الرفع ✅'
-  } catch { msgEl.textContent = 'فشل الرفع' }
-}
+async function uploadProductImage(input) {
   const file = input.files[0]
   if (!file) return
   const msgEl = document.getElementById('product-upload-msg')
