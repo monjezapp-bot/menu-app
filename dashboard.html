@@ -519,18 +519,16 @@ const state = {
 
 // ─── BOOT ────────────────────────────────
 async function boot() {
-  const { data: { session } } = await db.auth.getSession()
-  if (session) {
-    await loadDashboard()
-  } else {
+  try {
+    const { data: { session } } = await db.auth.getSession()
+    if (session) {
+      await loadDashboard()
+    } else {
+      showScreen('login')
+    }
+  } catch(e) {
     showScreen('login')
   }
-
-  // مستمع لتغيير الجلسة
-  db.auth.onAuthStateChange(async (event, session) => {
-    if (event === 'SIGNED_IN')  await loadDashboard()
-    if (event === 'SIGNED_OUT') showScreen('login')
-  })
 }
 
 // ─── AUTH ─────────────────────────────────
@@ -540,13 +538,30 @@ async function doLogin() {
   const errEl = document.getElementById('login-error')
   const btn   = document.getElementById('login-btn-text')
 
+  if (!email || !pass) {
+    errEl.textContent = 'أدخل الإيميل وكلمة المرور'
+    errEl.classList.remove('hidden')
+    return
+  }
+
   errEl.classList.add('hidden')
   btn.innerHTML = '<span class="spinner"></span>'
 
-  const { error } = await db.auth.signInWithPassword({ email, password: pass })
+  try {
+    const { data, error } = await db.auth.signInWithPassword({ email, password: pass })
 
-  if (error) {
-    errEl.textContent = 'بيانات الدخول غير صحيحة'
+    if (error) {
+      errEl.textContent = 'بيانات الدخول غير صحيحة'
+      errEl.classList.remove('hidden')
+      btn.textContent = 'دخول'
+      return
+    }
+
+    if (data.session) {
+      await loadDashboard()
+    }
+  } catch(e) {
+    errEl.textContent = 'حدث خطأ، حاول مجدداً'
     errEl.classList.remove('hidden')
     btn.textContent = 'دخول'
   }
@@ -560,52 +575,53 @@ async function doLogout() {
 async function loadDashboard() {
   showScreen('dashboard')
 
-  const { data: { user } } = await db.auth.getUser()
+  try {
+    const { data: { user } } = await db.auth.getUser()
 
-  // جلب بيانات المطعم
-  const { data: restaurant } = await db
-    .from('restaurants')
-    .select('*')
-    .eq('owner_id', user.id)
-    .single()
+    const { data: restaurant } = await db
+      .from('restaurants')
+      .select('*')
+      .eq('owner_id', user.id)
+      .single()
 
-  if (!restaurant) {
-    showToast('لم يتم العثور على مطعم مرتبط بهذا الحساب')
-    return
+    if (!restaurant) {
+      showToast('لم يتم العثور على مطعم مرتبط بهذا الحساب')
+      return
+    }
+
+    state.restaurant = restaurant
+
+    document.getElementById('dash-restaurant-name').textContent = restaurant.name
+    document.getElementById('preview-link').href = MENU_BASE_URL + '?r=' + restaurant.slug
+
+    await Promise.all([loadCategories(), loadProducts(), loadOrders()])
+
+    // إعدادات
+    document.getElementById('set-name').value      = restaurant.name
+    document.getElementById('set-whatsapp').value  = restaurant.whatsapp || ''
+    document.getElementById('set-logo').value      = restaurant.logo_url || ''
+    document.getElementById('set-cover').value     = restaurant.cover_url || ''
+    const primary = restaurant.theme?.primary || '#FF6B00'
+    document.getElementById('set-color').value     = primary
+    document.getElementById('set-color-hex').value = primary
+
+    if (restaurant.cover_url) {
+      document.getElementById('cover-preview').src = restaurant.cover_url
+      document.getElementById('cover-preview-wrap').classList.remove('hidden')
+    }
+    if (restaurant.logo_url) {
+      document.getElementById('logo-preview').src = restaurant.logo_url
+      document.getElementById('logo-preview-wrap').classList.remove('hidden')
+    }
+
+    setTimeout(() => {
+      try { initPickr(primary) } catch(e) { console.warn('Pickr error:', e) }
+    }, 200)
+
+  } catch(e) {
+    console.error('loadDashboard error:', e)
+    showToast('حدث خطأ في تحميل البيانات')
   }
-
-  state.restaurant = restaurant
-
-  // هيدر
-  document.getElementById('dash-restaurant-name').textContent = restaurant.name
-  document.getElementById('preview-link').href = MENU_BASE_URL + '?r=' + restaurant.slug
-
-  // تحميل البيانات
-  await Promise.all([loadCategories(), loadProducts(), loadOrders()])
-
-  // إعدادات
-  document.getElementById('set-name').value      = restaurant.name
-  document.getElementById('set-whatsapp').value  = restaurant.whatsapp
-  document.getElementById('set-logo').value      = restaurant.logo_url || ''
-  document.getElementById('set-cover').value     = restaurant.cover_url || ''
-  const primary = restaurant.theme?.primary || '#FF6B00'
-  document.getElementById('set-color').value     = primary
-  document.getElementById('set-color-hex').value = primary
-
-  // إظهار preview الغلاف لو موجود
-  if (restaurant.cover_url) {
-    document.getElementById('cover-preview').src = restaurant.cover_url
-    document.getElementById('cover-preview-wrap').classList.remove('hidden')
-  }
-
-  // إظهار preview اللوجو لو موجود
-  if (restaurant.logo_url) {
-    document.getElementById('logo-preview').src = restaurant.logo_url
-    document.getElementById('logo-preview-wrap').classList.remove('hidden')
-  }
-
-  // تهيئة Pickr بعد تحميل الصفحة
-  setTimeout(() => initPickr(primary), 100)
 }
 
 // ── Pickr Color Picker (Global) ───────────
