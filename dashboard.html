@@ -551,7 +551,7 @@ async function doLogin() {
     const { data, error } = await db.auth.signInWithPassword({ email, password: pass })
 
     if (error) {
-      errEl.textContent = 'بيانات الدخول غير صحيحة'
+      errEl.textContent = 'خطأ Supabase: ' + error.message
       errEl.classList.remove('hidden')
       btn.textContent = 'دخول'
       return
@@ -559,9 +559,13 @@ async function doLogin() {
 
     if (data.session) {
       await loadDashboard()
+    } else {
+      errEl.textContent = 'لم يتم إنشاء جلسة — جرب مجدداً'
+      errEl.classList.remove('hidden')
+      btn.textContent = 'دخول'
     }
   } catch(e) {
-    errEl.textContent = 'حدث خطأ، حاول مجدداً'
+    errEl.textContent = 'خطأ: ' + e.message
     errEl.classList.remove('hidden')
     btn.textContent = 'دخول'
   }
@@ -685,7 +689,7 @@ document.addEventListener('DOMContentLoaded', () => {
       else      { wrap.classList.add('hidden') }
     })
   }
-}
+})
 
 // ─── CATEGORIES ───────────────────────────
 async function loadCategories() {
