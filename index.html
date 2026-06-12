@@ -12,17 +12,11 @@
   <style>
     * { font-family: 'Tajawal', sans-serif; box-sizing: border-box; }
 
-    :root {
-      --brand:   #FF6B00;
-      --brand2:  #1A1A1A;
-      --bg:      #F5F5F5;
-    }
+    :root { --brand: #FF6B00; --brand2: #1A1A1A; --bg: #F5F5F5; }
 
     body { background: var(--bg); }
-
-    .brand-bg     { background-color: var(--brand); }
-    .brand-text   { color: var(--brand); }
-    .brand-border { border-color: var(--brand); }
+    .brand-bg   { background-color: var(--brand); }
+    .brand-text { color: var(--brand); }
 
     /* shimmer */
     @keyframes shimmer {
@@ -36,22 +30,24 @@
       border-radius: 12px;
     }
 
-    /* fadeUp */
     @keyframes fadeUp {
       from { opacity:0; transform:translateY(14px); }
       to   { opacity:1; transform:translateY(0); }
     }
     .fade-up { animation: fadeUp 0.3s ease both; }
 
-    /* cart pop */
-    @keyframes pop {
-      0%  { transform:scale(1); }
-      40% { transform:scale(1.2); }
-      100%{ transform:scale(1); }
+    @keyframes slideUp {
+      from { transform:translateY(100%); }
+      to   { transform:translateY(0); }
     }
-    .do-pop { animation: pop 0.22s ease; }
+    .sheet { animation: slideUp 0.3s cubic-bezier(0.34,1.1,0.64,1) both; }
 
-    /* hide scrollbar */
+    @keyframes modalIn {
+      from { transform:translateY(50px); opacity:0; }
+      to   { transform:translateY(0); opacity:1; }
+    }
+    .modal-in { animation: modalIn 0.28s ease both; }
+
     .no-scroll::-webkit-scrollbar { display:none; }
     .no-scroll { -ms-overflow-style:none; scrollbar-width:none; }
 
@@ -59,98 +55,88 @@
     .hero {
       background: linear-gradient(135deg, var(--brand2) 0%, var(--brand) 100%);
       padding: 36px 20px 52px;
-      position: relative;
-      overflow: hidden;
+      position: relative; overflow: hidden;
     }
     .hero::after {
-      content:'';
-      position:absolute; inset:0;
+      content:''; position:absolute; inset:0;
       background: radial-gradient(circle at 20% 60%, rgba(255,255,255,0.07) 0%, transparent 55%);
     }
 
     /* search */
-    .search-box {
-      position: relative;
-      margin: -28px 16px 0;
-      z-index: 10;
-    }
+    .search-box { position:relative; margin:-28px 16px 0; z-index:10; }
     .search-box input {
-      width:100%; background:#fff;
-      border: none; border-radius: 16px;
-      padding: 14px 46px 14px 16px;
-      font-size: 14px; color: #333;
-      outline: none;
-      box-shadow: 0 4px 20px rgba(0,0,0,0.12);
-      font-family:'Tajawal',sans-serif;
+      width:100%; background:#fff; border:none; border-radius:16px;
+      padding:14px 46px 14px 16px; font-size:14px; color:#333; outline:none;
+      box-shadow:0 4px 20px rgba(0,0,0,0.12); font-family:'Tajawal',sans-serif;
     }
     .search-box .ico {
       position:absolute; right:15px; top:50%;
-      transform:translateY(-50%); color:#bbb;
-      pointer-events:none;
+      transform:translateY(-50%); color:#bbb; pointer-events:none;
     }
 
     /* category grid */
-    .cat-grid {
-      display: grid;
-      grid-template-columns: repeat(4, 1fr);
-      gap: 10px;
-      padding: 16px;
-    }
+    .cat-grid { display:grid; grid-template-columns:repeat(4,1fr); gap:10px; padding:16px; }
     .cat-item {
       display:flex; flex-direction:column; align-items:center; gap:6px;
       background:#fff; border-radius:14px; padding:10px 6px;
-      border: 2px solid transparent;
-      cursor:pointer;
-      transition: all 0.2s;
-      box-shadow: 0 1px 6px rgba(0,0,0,0.06);
+      border:2px solid transparent; cursor:pointer; transition:all 0.2s;
+      box-shadow:0 1px 6px rgba(0,0,0,0.06);
     }
-    .cat-item.active {
-      border-color: var(--brand);
-      background: #FFF3EB;
-    }
-    .cat-item img {
-      width:44px; height:44px; object-fit:cover; border-radius:10px;
-    }
-    .cat-item .cat-placeholder {
+    .cat-item.active { border-color:var(--brand); background:#FFF3EB; }
+    .cat-item img { width:44px; height:44px; object-fit:cover; border-radius:10px; }
+    .cat-item .cat-ph {
       width:44px; height:44px; border-radius:10px;
-      background:#f0f0f0; display:flex; align-items:center;
-      justify-content:center; font-size:22px;
+      background:#f0f0f0; display:flex; align-items:center; justify-content:center; font-size:22px;
     }
-    .cat-item span {
-      font-size:11px; font-weight:700; color:#444;
-      text-align:center; line-height:1.3;
-    }
-    .cat-item.active span { color: var(--brand); }
+    .cat-item span { font-size:11px; font-weight:700; color:#444; text-align:center; line-height:1.3; }
+    .cat-item.active span { color:var(--brand); }
 
-    /* section header */
-    .section-title {
-      font-size: 17px; font-weight: 900; color: #1a1a1a;
-      padding: 4px 16px 10px;
+    /* bundle tab */
+    .bundle-tab {
+      display:flex; align-items:center; gap:6px;
+      background:#fff; border-radius:14px; padding:10px 6px;
+      border:2px solid transparent; cursor:pointer; transition:all 0.2s;
+      box-shadow:0 1px 6px rgba(0,0,0,0.06); justify-content:center;
     }
+    .bundle-tab.active { border-color:var(--brand); background:#FFF3EB; }
+    .bundle-tab span { font-size:11px; font-weight:700; color:#444; }
+    .bundle-tab.active span { color:var(--brand); }
 
-    /* product card — list style */
+    /* section title */
+    .section-title { font-size:17px; font-weight:900; color:#1a1a1a; padding:4px 16px 10px; }
+
+    /* product card */
     .prod-card {
-      background:#fff; border-radius:16px;
-      display:flex; align-items:stretch;
-      overflow:hidden;
-      box-shadow: 0 1px 8px rgba(0,0,0,0.07);
-      margin: 0 16px 10px;
-      cursor:pointer;
-      transition: transform 0.15s;
-      border: 1.5px solid #f0f0f0;
+      background:#fff; border-radius:16px; display:flex; align-items:stretch;
+      overflow:hidden; box-shadow:0 1px 8px rgba(0,0,0,0.07);
+      margin:0 16px 10px; cursor:pointer; transition:transform 0.15s;
+      border:1.5px solid #f0f0f0;
     }
     .prod-card:active { transform:scale(0.98); }
-    .prod-card .info  { flex:1; padding:12px; display:flex; flex-direction:column; justify-content:space-between; }
+    .prod-card .info { flex:1; padding:12px; display:flex; flex-direction:column; justify-content:space-between; }
     .prod-card .thumb { width:110px; flex-shrink:0; position:relative; }
     .prod-card .thumb img { width:100%; height:100%; object-fit:cover; }
     .prod-card .thumb .no-img {
       width:100%; height:100%; min-height:90px;
-      background:#f5f5f5; display:flex; align-items:center;
-      justify-content:center; font-size:32px;
+      background:#f5f5f5; display:flex; align-items:center; justify-content:center; font-size:32px;
     }
     .prod-card h3 { font-size:13px; font-weight:800; color:#1a1a1a; line-height:1.4; margin-bottom:3px; }
     .prod-card p  { font-size:11px; color:#999; line-height:1.5; display:-webkit-box; -webkit-line-clamp:2; -webkit-box-orient:vertical; overflow:hidden; }
-    .prod-card .price { font-size:13px; font-weight:900; color:var(--brand); margin-top:6px; }
+
+    /* offer badge */
+    .offer-badge {
+      position:absolute; top:8px; right:8px;
+      background:var(--brand); color:#fff;
+      font-size:10px; font-weight:900;
+      padding:3px 8px; border-radius:20px;
+      box-shadow:0 2px 6px rgba(255,107,0,0.4);
+    }
+
+    /* prices */
+    .price-row { display:flex; align-items:center; gap:6px; margin-top:6px; }
+    .price-original { font-size:11px; font-weight:700; color:#bbb; text-decoration:line-through; }
+    .price-discount  { font-size:14px; font-weight:900; color:var(--brand); }
+    .price-normal    { font-size:13px; font-weight:900; color:var(--brand); margin-top:6px; }
 
     /* add btn */
     .add-btn {
@@ -159,60 +145,54 @@
       background:var(--brand); color:#fff;
       display:flex; align-items:center; justify-content:center;
       font-size:20px; font-weight:700;
-      box-shadow: 0 3px 10px rgba(255,107,0,0.4);
-      transition: transform 0.15s;
+      box-shadow:0 3px 10px rgba(255,107,0,0.4);
+      transition:transform 0.15s;
     }
     .add-btn:active { transform:scale(0.88); }
 
     /* qty inline */
-    .qty-row {
-      display:flex; align-items:center; gap:6px; margin-top:6px;
-    }
+    .qty-row { display:flex; align-items:center; gap:6px; margin-top:6px; }
     .qty-btn {
       width:28px; height:28px; border-radius:8px;
       display:flex; align-items:center; justify-content:center;
-      font-size:16px; font-weight:900; cursor:pointer;
-      transition:transform 0.1s;
+      font-size:16px; font-weight:900; cursor:pointer; transition:transform 0.1s;
     }
     .qty-btn:active { transform:scale(0.85); }
 
+    /* bundle card */
+    .bundle-card {
+      background:#fff; border-radius:16px; overflow:hidden;
+      margin:0 16px 10px; cursor:pointer;
+      box-shadow:0 1px 8px rgba(0,0,0,0.07);
+      border:1.5px solid #f0f0f0; transition:transform 0.15s;
+    }
+    .bundle-card:active { transform:scale(0.98); }
+    .bundle-card img { width:100%; height:150px; object-fit:cover; }
+    .bundle-card .no-img { width:100%; height:150px; background:#f5f5f5; display:flex; align-items:center; justify-content:center; font-size:48px; }
+    .bundle-card .b-info { padding:12px; }
+    .bundle-card .b-info h3 { font-size:15px; font-weight:900; color:#1a1a1a; margin-bottom:4px; }
+    .bundle-card .b-info p  { font-size:12px; color:#999; line-height:1.5; margin-bottom:8px; }
+    .bundle-card .b-footer { display:flex; align-items:center; justify-content:space-between; }
+    .bundle-card .b-price  { font-size:16px; font-weight:900; color:var(--brand); }
+    .bundle-add {
+      background:var(--brand); color:#fff; font-size:13px; font-weight:900;
+      padding:8px 16px; border-radius:10px;
+      box-shadow:0 3px 10px rgba(255,107,0,0.3);
+    }
+
     /* cart bar */
-    .cart-bar {
-      position:fixed; bottom:0; left:0; right:0;
-      z-index:30; padding:12px 16px;
-      max-width:480px; margin:0 auto;
-    }
+    .cart-bar { position:fixed; bottom:0; left:0; right:0; z-index:30; padding:12px 16px; max-width:480px; margin:0 auto; }
     .cart-bar-btn {
-      background:var(--brand); color:#fff;
-      border-radius:18px; padding:14px 18px;
+      background:var(--brand); color:#fff; border-radius:18px; padding:14px 18px;
       display:flex; align-items:center; justify-content:space-between;
-      box-shadow: 0 8px 28px rgba(255,107,0,0.35);
-      cursor:pointer;
+      box-shadow:0 8px 28px rgba(255,107,0,0.35); cursor:pointer;
     }
-
-    /* sheet */
-    @keyframes slideUp {
-      from { transform:translateY(100%); }
-      to   { transform:translateY(0); }
-    }
-    .sheet { animation: slideUp 0.3s cubic-bezier(0.34,1.1,0.64,1) both; }
-
-    /* modal */
-    @keyframes modalIn {
-      from { transform:translateY(50px); opacity:0; }
-      to   { transform:translateY(0);    opacity:1; }
-    }
-    .modal-in { animation: modalIn 0.28s ease both; }
 
     /* suggested */
-    .suggest-scroll {
-      display:flex; gap:10px; overflow-x:auto; padding:4px 16px 12px;
-    }
+    .suggest-scroll { display:flex; gap:10px; overflow-x:auto; padding:4px 16px 12px; }
     .suggest-card {
       flex-shrink:0; width:110px; background:#fff;
-      border-radius:14px; overflow:hidden;
-      box-shadow:0 1px 6px rgba(0,0,0,0.08);
-      cursor:pointer;
+      border-radius:14px; overflow:hidden; box-shadow:0 1px 6px rgba(0,0,0,0.08); cursor:pointer;
     }
     .suggest-card img { width:100%; height:70px; object-fit:cover; }
     .suggest-card .no-img { width:100%; height:70px; background:#f5f5f5; display:flex; align-items:center; justify-content:center; font-size:24px; }
@@ -224,7 +204,7 @@
 
 <body>
 
-<!-- ══════ LOADING ══════ -->
+<!-- LOADING -->
 <div id="state-loading" class="max-w-[480px] mx-auto">
   <div class="skeleton rounded-none" style="height:160px"></div>
   <div style="height:28px"></div>
@@ -235,27 +215,27 @@
     <div class="skeleton" style="height:82px"></div>
     <div class="skeleton" style="height:82px"></div>
   </div>
-  <div class="space-y-3 px-4 mt-2">
+  <div style="padding:0 16px" class="space-y-3">
     <div class="skeleton" style="height:100px"></div>
     <div class="skeleton" style="height:100px"></div>
     <div class="skeleton" style="height:100px"></div>
   </div>
 </div>
 
-<!-- ══════ ERROR ══════ -->
+<!-- ERROR -->
 <div id="state-error" class="hidden flex flex-col items-center justify-center min-h-screen p-8 text-center">
-  <div class="text-6xl mb-4">🍽️</div>
-  <h2 class="text-xl font-bold text-gray-800 mb-2">لم نجد هذا المطعم</h2>
-  <p id="error-msg" class="text-gray-400 text-sm">تحقق من الرابط وحاول مجدداً</p>
+  <div style="font-size:64px;margin-bottom:16px">🍽️</div>
+  <h2 style="font-size:20px;font-weight:900;color:#1a1a1a;margin-bottom:8px">لم نجد هذا المطعم</h2>
+  <p id="error-msg" style="font-size:13px;color:#aaa">تحقق من الرابط وحاول مجدداً</p>
 </div>
 
-<!-- ══════ APP ══════ -->
+<!-- APP -->
 <div id="state-app" class="hidden max-w-[480px] mx-auto pb-28">
 
   <!-- preview bar -->
-  <div id="back-to-dash" class="hidden bg-gray-900 text-white text-xs font-bold px-4 py-2 flex items-center justify-between">
+  <div id="back-to-dash" class="hidden" style="background:#1a1a1a;color:#fff;font-size:12px;font-weight:700;padding:8px 16px;display:flex;align-items:center;justify-content:space-between">
     <span>🔍 وضع المعاينة</span>
-    <a href="./dashboard.html" class="bg-white text-gray-900 px-3 py-1 rounded-lg font-bold">← لوحة التحكم</a>
+    <a href="./dashboard.html" style="background:#fff;color:#1a1a1a;padding:4px 12px;border-radius:8px;font-weight:700">← لوحة التحكم</a>
   </div>
 
   <!-- HERO -->
@@ -283,21 +263,19 @@
   <!-- CATEGORY GRID -->
   <div id="cat-grid" class="cat-grid" style="margin-top:20px"></div>
 
-  <!-- DIVIDER -->
-  <div id="products-wrapper">
-    <!-- sections injected here -->
-  </div>
+  <!-- PRODUCTS -->
+  <div id="products-wrapper"></div>
 
   <!-- NO RESULTS -->
-  <div id="no-results" class="hidden text-center py-16">
-    <div class="text-5xl mb-3">🔍</div>
-    <p class="font-bold text-gray-400">لا توجد نتائج</p>
-    <p class="text-xs text-gray-300 mt-1">جرب كلمة بحث مختلفة</p>
+  <div id="no-results" class="hidden" style="text-align:center;padding:60px 20px">
+    <div style="font-size:48px;margin-bottom:12px">🔍</div>
+    <p style="font-weight:700;color:#bbb">لا توجد نتائج</p>
+    <p style="font-size:12px;color:#ccc;margin-top:4px">جرب كلمة بحث مختلفة</p>
   </div>
 
 </div>
 
-<!-- ══════ CART BAR ══════ -->
+<!-- CART BAR -->
 <div id="cart-bar" class="cart-bar hidden">
   <div class="cart-bar-btn" onclick="openCartSheet()">
     <span id="cart-count-badge" style="background:rgba(255,255,255,0.2);padding:4px 12px;border-radius:20px;font-size:13px;font-weight:700">0 منتج</span>
@@ -306,60 +284,60 @@
   </div>
 </div>
 
-<!-- ══════ CART SHEET ══════ -->
+<!-- CART SHEET -->
 <div id="cart-sheet" class="hidden fixed inset-0 z-40 flex flex-col justify-end">
   <div class="absolute inset-0 bg-black/50 backdrop-blur-sm" onclick="closeCartSheet()"></div>
-  <div class="sheet relative bg-white rounded-t-3xl max-h-[88vh] flex flex-col shadow-2xl">
+  <div class="sheet relative bg-white rounded-t-3xl shadow-2xl" style="max-height:88vh;display:flex;flex-direction:column">
     <div style="display:flex;align-items:center;justify-content:space-between;padding:18px 20px 14px;border-bottom:1px solid #f0f0f0">
       <div>
         <p style="font-size:17px;font-weight:900;color:#1a1a1a">سلة الطلبات</p>
         <p id="cart-count-text" style="font-size:12px;color:#aaa;margin-top:2px"></p>
       </div>
-      <button onclick="closeCartSheet()"
-              style="width:36px;height:36px;border-radius:50%;background:#f5f5f5;color:#888;font-size:20px;display:flex;align-items:center;justify-content:center;font-weight:700">&times;</button>
+      <button onclick="closeCartSheet()" style="width:36px;height:36px;border-radius:50%;background:#f5f5f5;color:#888;font-size:20px;font-weight:700;display:flex;align-items:center;justify-content:center">&times;</button>
     </div>
     <div id="cart-items-list" style="flex:1;overflow-y:auto;padding:14px 16px"></div>
     <div style="padding:14px 16px;border-top:1px solid #f0f0f0;background:#fff">
       <input id="table-number-input" type="text" placeholder="رقم الطاولة (اختياري)"
-             style="width:100%;border:1.5px solid #eee;border-radius:14px;padding:11px 14px;
-                    font-size:13px;color:#444;outline:none;font-family:'Tajawal',sans-serif;margin-bottom:10px" />
+             style="width:100%;border:1.5px solid #eee;border-radius:14px;padding:11px 14px;font-size:13px;color:#444;outline:none;font-family:'Tajawal',sans-serif;margin-bottom:10px" />
       <div style="display:flex;align-items:center;justify-content:space-between;margin-bottom:12px;padding:0 2px">
         <span style="font-size:14px;font-weight:700;color:#888">الإجمالي</span>
         <span id="cart-grand-total" style="font-size:22px;font-weight:900;color:var(--brand)">0 ج.م</span>
       </div>
       <button id="send-order-btn" onclick="sendOrder()"
-              style="width:100%;background:var(--brand);color:#fff;font-size:15px;font-weight:900;
-                     border-radius:16px;padding:15px;display:flex;align-items:center;justify-content:center;gap:8px">
+              style="width:100%;background:var(--brand);color:#fff;font-size:15px;font-weight:900;border-radius:16px;padding:15px;display:flex;align-items:center;justify-content:center;gap:8px">
         <span>إرسال الطلب عبر واتساب</span><span style="font-size:20px">📲</span>
       </button>
     </div>
   </div>
 </div>
 
-<!-- ══════ PRODUCT MODAL ══════ -->
+<!-- PRODUCT MODAL -->
 <div id="product-modal" class="hidden fixed inset-0 z-50 flex items-end justify-center">
   <div class="absolute inset-0 bg-black/60 backdrop-blur-sm" onclick="closeModal()"></div>
-  <div id="modal-inner"
-       class="modal-in relative bg-white w-full max-w-[480px] rounded-t-3xl overflow-y-auto shadow-2xl"
-       style="max-height:92vh">
-    <!-- injected -->
+  <div id="modal-inner" class="modal-in relative bg-white w-full max-w-[480px] rounded-t-3xl shadow-2xl no-scroll" style="max-height:92vh;overflow-y:auto">
   </div>
 </div>
 
-<!-- ══════ JS ══════ -->
+<!-- BUNDLE MODAL -->
+<div id="bundle-modal" class="hidden fixed inset-0 z-50 flex items-end justify-center">
+  <div class="absolute inset-0 bg-black/60 backdrop-blur-sm" onclick="closeBundleModal()"></div>
+  <div id="bundle-modal-inner" class="modal-in relative bg-white w-full max-w-[480px] rounded-t-3xl shadow-2xl no-scroll" style="max-height:92vh;overflow-y:auto">
+  </div>
+</div>
+
 <script>
 const SUPABASE_URL  = 'https://pcmyugeqveyjnappulng.supabase.co'
 const SUPABASE_ANON = 'eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6InBjbXl1Z2VxdmV5am5hcHB1bG5nIiwicm9sZSI6ImFub24iLCJpYXQiOjE3ODExNjU0NDAsImV4cCI6MjA5Njc0MTQ0MH0.uwn0X4CvNRW38FGh_0rYD9KjBRM19CydXucfBsCDYeo'
 const { createClient } = supabase
 const db = createClient(SUPABASE_URL, SUPABASE_ANON)
 
-// ── STATE ──
 const S = {
   restaurant: null,
   categories: [],
   products:   [],
+  bundles:    [],
   cart:       [],
-  activeCat:  null,
+  activeCat:  null,  // null = show all, 'bundles' = show bundles
   search:     ''
 }
 
@@ -386,18 +364,26 @@ async function loadData(slug) {
   if (rErr || !r) throw new Error('المطعم غير موجود أو غير نشط')
   S.restaurant = r
 
-  const [catRes, prodRes] = await Promise.all([
+  const [catRes, prodRes, bundleRes] = await Promise.all([
     db.from('categories')
       .select('id, name, sort_order, icon_url')
       .eq('restaurant_id', r.id).order('sort_order'),
+
     db.from('products')
-      .select('id, category_id, name, description, price, image_url, sort_order')
-      .eq('restaurant_id', r.id).eq('is_available', true).order('sort_order')
+      .select('id, category_id, name, description, price, discount_price, offer_badge, image_url, sort_order, is_available')
+      .eq('restaurant_id', r.id).eq('is_available', true).order('sort_order'),
+
+    db.from('bundles')
+      .select('id, name, description, price, image_url, items, sort_order')
+      .eq('restaurant_id', r.id).eq('is_active', true).order('sort_order')
   ])
+
   if (catRes.error)  throw new Error('فشل تحميل التصنيفات')
   if (prodRes.error) throw new Error('فشل تحميل المنتجات')
+
   S.categories = catRes.data
   S.products   = prodRes.data
+  S.bundles    = bundleRes.data ?? []
   S.activeCat  = catRes.data[0]?.id ?? null
 }
 
@@ -422,14 +408,22 @@ function renderHeader() {
 // ── CATEGORY GRID ──
 function renderCatGrid() {
   const el = document.getElementById('cat-grid')
-  el.innerHTML = S.categories.map(c => `
-    <div class="cat-item ${c.id === S.activeCat ? 'active' : ''}"
-         onclick="selectCat('${c.id}')">
+  const hasBundles = S.bundles.length > 0
+
+  const catsHTML = S.categories.map(c => `
+    <div class="cat-item ${c.id === S.activeCat ? 'active' : ''}" onclick="selectCat('${c.id}')">
       ${c.icon_url
         ? `<img src="${c.icon_url}" alt="${c.name}" />`
-        : `<div class="cat-placeholder">🍽️</div>`}
+        : `<div class="cat-ph">🍽️</div>`}
       <span>${c.name}</span>
     </div>`).join('')
+
+  const bundleTabHTML = hasBundles ? `
+    <div class="bundle-tab ${S.activeCat === 'bundles' ? 'active' : ''}" onclick="selectCat('bundles')">
+      <span>🎁 العروض</span>
+    </div>` : ''
+
+  el.innerHTML = catsHTML + bundleTabHTML
 }
 
 function selectCat(id) {
@@ -438,28 +432,30 @@ function selectCat(id) {
   document.getElementById('search-input').value = ''
   renderCatGrid()
   renderAllSections()
-  const sec = document.getElementById('sec-' + id)
+  const targetId = id === 'bundles' ? 'sec-bundles' : 'sec-' + id
+  const sec = document.getElementById(targetId)
   if (sec) {
     const top = sec.getBoundingClientRect().top + window.scrollY - 20
     window.scrollTo({ top, behavior: 'smooth' })
   }
 }
 
-// ── RENDER SECTIONS ──
+// ── RENDER ALL SECTIONS ──
 function renderAllSections(filtered) {
-  const wrap    = document.getElementById('products-wrapper')
-  const noRes   = document.getElementById('no-results')
-  const products = filtered !== undefined ? filtered : S.products
+  const wrap   = document.getElementById('products-wrapper')
+  const noRes  = document.getElementById('no-results')
+  const prods  = filtered !== undefined ? filtered : S.products
 
-  if (filtered !== undefined && filtered.length === 0) {
+  if (filtered !== undefined && filtered.length === 0 && S.bundles.length === 0) {
     wrap.innerHTML = ''
     noRes.classList.remove('hidden')
     return
   }
   noRes.classList.add('hidden')
 
-  wrap.innerHTML = S.categories.map(cat => {
-    const items = products.filter(p => p.category_id === cat.id)
+  // product sections
+  const prodsHTML = S.categories.map(cat => {
+    const items = prods.filter(p => p.category_id === cat.id)
     if (!items.length) return ''
     return `
       <div id="sec-${cat.id}" class="fade-up" style="margin-top:6px">
@@ -468,19 +464,36 @@ function renderAllSections(filtered) {
       </div>`
   }).join('')
 
-  const uncat = products.filter(p => !p.category_id)
-  if (uncat.length) {
-    wrap.innerHTML += `
-      <div class="fade-up" style="margin-top:6px">
-        <p class="section-title">منتجات أخرى</p>
-        ${uncat.map(p => prodCardHTML(p)).join('')}
-      </div>`
-  }
+  // bundles section
+  const bundlesHTML = S.bundles.length && !filtered ? `
+    <div id="sec-bundles" class="fade-up" style="margin-top:6px">
+      <p class="section-title">🎁 العروض والباقات</p>
+      ${S.bundles.map(b => bundleCardHTML(b)).join('')}
+    </div>` : ''
+
+  const uncatItems = prods.filter(p => !p.category_id)
+  const uncatHTML = uncatItems.length ? `
+    <div class="fade-up" style="margin-top:6px">
+      <p class="section-title">منتجات أخرى</p>
+      ${uncatItems.map(p => prodCardHTML(p)).join('')}
+    </div>` : ''
+
+  wrap.innerHTML = prodsHTML + bundlesHTML + uncatHTML
 }
 
 // ── PRODUCT CARD ──
 function prodCardHTML(p) {
-  const ci = S.cart.find(c => c.product.id === p.id)
+  const ci = S.cart.find(c => c.id === p.id && c.type === 'product')
+  const hasDiscount = p.discount_price && Number(p.discount_price) < Number(p.price)
+  const displayPrice = hasDiscount ? Number(p.discount_price) : Number(p.price)
+
+  const priceHTML = hasDiscount
+    ? `<div class="price-row">
+         <span class="price-original">${fmt(p.price)}</span>
+         <span class="price-discount">${fmt(p.discount_price)}</span>
+       </div>`
+    : `<div class="price-normal">${fmt(p.price)}</div>`
+
   return `
     <div class="prod-card" onclick="openModal('${p.id}')">
       <div class="info">
@@ -488,19 +501,38 @@ function prodCardHTML(p) {
           <h3>${p.name}</h3>
           ${p.description ? `<p>${p.description}</p>` : ''}
         </div>
-        <div class="price">${fmt(p.price)}</div>
+        ${priceHTML}
         ${ci ? `
           <div class="qty-row" onclick="event.stopPropagation()">
-            <div class="qty-btn brand-bg" style="color:#fff" onclick="cQty('${p.id}',-1)">−</div>
+            <div class="qty-btn brand-bg" style="color:#fff" onclick="cQty('${p.id}','product',-1)">−</div>
             <span style="font-size:14px;font-weight:900;min-width:20px;text-align:center">${ci.qty}</span>
-            <div class="qty-btn brand-bg" style="color:#fff" onclick="cQty('${p.id}',1)">+</div>
+            <div class="qty-btn brand-bg" style="color:#fff" onclick="cQty('${p.id}','product',1)">+</div>
           </div>` : ''}
       </div>
       <div class="thumb">
         ${p.image_url
           ? `<img src="${p.image_url}" alt="${p.name}" />`
           : `<div class="no-img">🍽️</div>`}
+        ${p.offer_badge ? `<div class="offer-badge">${p.offer_badge}</div>` : ''}
         ${!ci ? `<div class="add-btn" onclick="event.stopPropagation(); quickAdd('${p.id}')">+</div>` : ''}
+      </div>
+    </div>`
+}
+
+// ── BUNDLE CARD ──
+function bundleCardHTML(b) {
+  return `
+    <div class="bundle-card" onclick="openBundleModal('${b.id}')">
+      ${b.image_url
+        ? `<img src="${b.image_url}" alt="${b.name}" />`
+        : `<div class="no-img">🎁</div>`}
+      <div class="b-info">
+        <h3>${b.name}</h3>
+        ${b.description ? `<p>${b.description}</p>` : ''}
+        <div class="b-footer">
+          <span class="b-price">${fmt(b.price)}</span>
+          <div class="bundle-add" onclick="event.stopPropagation(); addBundleToCart('${b.id}')">أضف للسلة +</div>
+        </div>
       </div>
     </div>`
 }
@@ -516,17 +548,24 @@ function handleSearch() {
   renderAllSections(f)
 }
 
-// ── MODAL ──
+// ── PRODUCT MODAL ──
 function openModal(pid) {
   const p  = S.products.find(x => x.id === pid)
   if (!p) return
-  const ci = S.cart.find(c => c.product.id === pid)
+  const ci = S.cart.find(c => c.id === pid && c.type === 'product')
   const qty = ci ? ci.qty : 1
+  const hasDiscount = p.discount_price && Number(p.discount_price) < Number(p.price)
+  const displayPrice = hasDiscount ? Number(p.discount_price) : Number(p.price)
 
-  // suggested = same category, different product
+  const priceHTML = hasDiscount
+    ? `<div style="display:flex;align-items:center;gap:8px">
+         <span style="font-size:13px;font-weight:700;color:#bbb;text-decoration:line-through">${fmt(p.price)}</span>
+         <span style="font-size:18px;font-weight:900;color:var(--brand)">${fmt(p.discount_price)}</span>
+       </div>`
+    : `<span style="font-size:18px;font-weight:900;color:var(--brand)">${fmt(p.price)}</span>`
+
   const suggested = S.products
-    .filter(x => x.category_id === p.category_id && x.id !== p.id)
-    .slice(0, 6)
+    .filter(x => x.category_id === p.category_id && x.id !== p.id).slice(0, 6)
 
   const suggestedHTML = suggested.length ? `
     <div style="padding:14px 0 0">
@@ -534,12 +573,10 @@ function openModal(pid) {
       <div class="suggest-scroll no-scroll">
         ${suggested.map(s => `
           <div class="suggest-card" onclick="closeModal(); openModal('${s.id}')">
-            ${s.image_url
-              ? `<img src="${s.image_url}" alt="${s.name}" />`
-              : `<div class="no-img">🍽️</div>`}
+            ${s.image_url ? `<img src="${s.image_url}" alt="${s.name}" />` : `<div class="no-img">🍽️</div>`}
             <div class="sc-info">
               <p>${s.name}</p>
-              <span>${fmt(s.price)}</span>
+              <span>${fmt(s.discount_price && Number(s.discount_price) < Number(s.price) ? s.discount_price : s.price)}</span>
             </div>
           </div>`).join('')}
       </div>
@@ -550,40 +587,33 @@ function openModal(pid) {
       ${p.image_url
         ? `<img src="${p.image_url}" alt="${p.name}" style="width:100%;height:220px;object-fit:cover" />`
         : `<div style="width:100%;height:180px;background:#f0f0f0;display:flex;align-items:center;justify-content:center;font-size:64px">🍽️</div>`}
-      <button onclick="closeModal()"
-              style="position:absolute;top:12px;left:12px;width:36px;height:36px;
-                     border-radius:50%;background:rgba(0,0,0,0.45);backdrop-filter:blur(4px);
-                     color:#fff;font-size:20px;font-weight:700;display:flex;align-items:center;justify-content:center">&times;</button>
+      ${p.offer_badge ? `<div class="offer-badge" style="top:12px;right:12px;font-size:12px;padding:4px 12px">${p.offer_badge}</div>` : ''}
+      <button onclick="closeModal()" style="position:absolute;top:12px;left:12px;width:36px;height:36px;border-radius:50%;background:rgba(0,0,0,0.45);backdrop-filter:blur(4px);color:#fff;font-size:20px;font-weight:700;display:flex;align-items:center;justify-content:center">&times;</button>
     </div>
     <div style="padding:16px 16px 8px">
       <div style="display:flex;align-items:flex-start;justify-content:space-between;gap:8px">
         <h2 style="font-size:18px;font-weight:900;color:#1a1a1a;line-height:1.3">${p.name}</h2>
-        <span style="font-size:17px;font-weight:900;color:var(--brand);white-space:nowrap">${fmt(p.price)}</span>
+        ${priceHTML}
       </div>
       ${p.description ? `<p style="font-size:13px;color:#888;margin-top:8px;line-height:1.7">${p.description}</p>` : ''}
     </div>
     ${suggestedHTML}
     <div style="padding:12px 16px 20px;display:flex;align-items:center;gap:10px">
       <div style="display:flex;align-items:center;gap:8px;background:#f5f5f5;border-radius:14px;padding:8px 12px">
-        <button onclick="mQty(-1)"
-                style="width:32px;height:32px;border-radius:10px;background:#fff;box-shadow:0 1px 4px rgba(0,0,0,0.1);
-                       color:#333;font-size:18px;font-weight:900;display:flex;align-items:center;justify-content:center">−</button>
+        <button onclick="mQty(-1)" style="width:32px;height:32px;border-radius:10px;background:#fff;box-shadow:0 1px 4px rgba(0,0,0,0.1);color:#333;font-size:18px;font-weight:900;display:flex;align-items:center;justify-content:center">−</button>
         <span id="m-qty" style="font-size:16px;font-weight:900;min-width:24px;text-align:center">${qty}</span>
-        <button onclick="mQty(1)"
-                style="width:32px;height:32px;border-radius:10px;background:var(--brand);
-                       color:#fff;font-size:18px;font-weight:900;display:flex;align-items:center;justify-content:center">+</button>
+        <button onclick="mQty(1)" style="width:32px;height:32px;border-radius:10px;background:var(--brand);color:#fff;font-size:18px;font-weight:900;display:flex;align-items:center;justify-content:center">+</button>
       </div>
       <button onclick="addFromModal('${pid}')"
-              style="flex:1;background:var(--brand);color:#fff;font-size:14px;font-weight:900;
-                     border-radius:14px;padding:14px;display:flex;align-items:center;justify-content:space-between">
+              style="flex:1;background:var(--brand);color:#fff;font-size:14px;font-weight:900;border-radius:14px;padding:14px;display:flex;align-items:center;justify-content:space-between">
         <span>أضف للسلة</span>
-        <span id="m-total">${fmt(p.price * qty)}</span>
+        <span id="m-total">${fmt(displayPrice * qty)}</span>
       </button>
     </div>`
 
   const modal = document.getElementById('product-modal')
   modal.dataset.pid   = pid
-  modal.dataset.price = p.price
+  modal.dataset.price = displayPrice
   modal.dataset.qty   = qty
   modal.classList.remove('hidden')
   document.body.style.overflow = 'hidden'
@@ -593,18 +623,20 @@ function mQty(d) {
   const modal = document.getElementById('product-modal')
   let qty = Math.max(1, parseInt(modal.dataset.qty) + d)
   modal.dataset.qty = qty
-  const price = parseFloat(modal.dataset.price)
   document.getElementById('m-qty').textContent   = qty
-  document.getElementById('m-total').textContent = fmt(price * qty)
+  document.getElementById('m-total').textContent = fmt(parseFloat(modal.dataset.price) * qty)
 }
 
 function addFromModal(pid) {
   const modal = document.getElementById('product-modal')
   const qty   = parseInt(modal.dataset.qty)
+  const price = parseFloat(modal.dataset.price)
   const p     = S.products.find(x => x.id === pid)
   if (!p) return
-  const ci = S.cart.find(c => c.product.id === pid)
-  if (ci) { ci.qty = qty } else { S.cart.push({ product: p, qty }) }
+  const ci = S.cart.find(c => c.id === pid && c.type === 'product')
+  if (ci) { ci.qty = qty } else {
+    S.cart.push({ id: pid, type: 'product', name: p.name, price, image_url: p.image_url, qty })
+  }
   closeModal()
   updateCartUI()
   renderAllSections()
@@ -615,18 +647,76 @@ function closeModal() {
   document.body.style.overflow = ''
 }
 
+// ── BUNDLE MODAL ──
+function openBundleModal(bid) {
+  const b = S.bundles.find(x => x.id === bid)
+  if (!b) return
+
+  const itemsHTML = b.items && Array.isArray(b.items) && b.items.length
+    ? `<div style="margin:12px 0">
+        <p style="font-size:13px;font-weight:900;color:#1a1a1a;margin-bottom:8px">محتويات الباقة:</p>
+        ${b.items.map(item => `
+          <div style="display:flex;align-items:center;gap:8px;padding:8px 0;border-bottom:1px solid #f5f5f5">
+            <span style="color:var(--brand);font-weight:900">✓</span>
+            <span style="font-size:13px;color:#444;font-weight:600">${item.name || item}</span>
+            ${item.qty ? `<span style="font-size:12px;color:#aaa;margin-right:auto">× ${item.qty}</span>` : ''}
+          </div>`).join('')}
+      </div>` : ''
+
+  document.getElementById('bundle-modal-inner').innerHTML = `
+    <div style="position:relative">
+      ${b.image_url
+        ? `<img src="${b.image_url}" alt="${b.name}" style="width:100%;height:200px;object-fit:cover" />`
+        : `<div style="width:100%;height:160px;background:linear-gradient(135deg,var(--brand2),var(--brand));display:flex;align-items:center;justify-content:center;font-size:64px">🎁</div>`}
+      <button onclick="closeBundleModal()" style="position:absolute;top:12px;left:12px;width:36px;height:36px;border-radius:50%;background:rgba(0,0,0,0.45);backdrop-filter:blur(4px);color:#fff;font-size:20px;font-weight:700;display:flex;align-items:center;justify-content:center">&times;</button>
+    </div>
+    <div style="padding:16px">
+      <div style="display:flex;align-items:flex-start;justify-content:space-between;gap:8px;margin-bottom:8px">
+        <h2 style="font-size:18px;font-weight:900;color:#1a1a1a">${b.name}</h2>
+        <span style="font-size:18px;font-weight:900;color:var(--brand);white-space:nowrap">${fmt(b.price)}</span>
+      </div>
+      ${b.description ? `<p style="font-size:13px;color:#888;line-height:1.7;margin-bottom:8px">${b.description}</p>` : ''}
+      ${itemsHTML}
+      <button onclick="addBundleToCart('${bid}'); closeBundleModal()"
+              style="width:100%;background:var(--brand);color:#fff;font-size:15px;font-weight:900;border-radius:16px;padding:15px;display:flex;align-items:center;justify-content:center;gap:8px;margin-top:12px">
+        <span>أضف للسلة</span><span style="font-size:20px">🛒</span>
+      </button>
+    </div>`
+
+  document.getElementById('bundle-modal').classList.remove('hidden')
+  document.body.style.overflow = 'hidden'
+}
+
+function closeBundleModal() {
+  document.getElementById('bundle-modal').classList.add('hidden')
+  document.body.style.overflow = ''
+}
+
 // ── CART ──
 function quickAdd(pid) {
   const p = S.products.find(x => x.id === pid)
   if (!p) return
-  const ci = S.cart.find(c => c.product.id === pid)
-  if (ci) { ci.qty += 1 } else { S.cart.push({ product: p, qty: 1 }) }
+  const price = (p.discount_price && Number(p.discount_price) < Number(p.price))
+    ? Number(p.discount_price) : Number(p.price)
+  const ci = S.cart.find(c => c.id === pid && c.type === 'product')
+  if (ci) { ci.qty += 1 }
+  else { S.cart.push({ id: pid, type: 'product', name: p.name, price, image_url: p.image_url, qty: 1 }) }
   updateCartUI()
   renderAllSections()
 }
 
-function cQty(pid, d) {
-  const idx = S.cart.findIndex(c => c.product.id === pid)
+function addBundleToCart(bid) {
+  const b = S.bundles.find(x => x.id === bid)
+  if (!b) return
+  const ci = S.cart.find(c => c.id === bid && c.type === 'bundle')
+  if (ci) { ci.qty += 1 }
+  else { S.cart.push({ id: bid, type: 'bundle', name: b.name, price: Number(b.price), image_url: b.image_url, qty: 1 }) }
+  updateCartUI()
+  renderAllSections()
+}
+
+function cQty(id, type, d) {
+  const idx = S.cart.findIndex(c => c.id === id && c.type === type)
   if (idx === -1) return
   S.cart[idx].qty += d
   if (S.cart[idx].qty <= 0) S.cart.splice(idx, 1)
@@ -635,7 +725,7 @@ function cQty(pid, d) {
   if (!document.getElementById('cart-sheet').classList.contains('hidden')) renderCartItems()
 }
 
-function cartTotal() { return S.cart.reduce((s,c) => s + c.product.price * c.qty, 0) }
+function cartTotal() { return S.cart.reduce((s,c) => s + c.price * c.qty, 0) }
 
 function updateCartUI() {
   const n = S.cart.reduce((s,c) => s+c.qty, 0)
@@ -645,7 +735,6 @@ function updateCartUI() {
   n > 0 ? bar.classList.remove('hidden') : (bar.classList.add('hidden'), closeCartSheet())
 }
 
-// ── CART SHEET ──
 function openCartSheet() {
   renderCartItems()
   document.getElementById('cart-sheet').classList.remove('hidden')
@@ -658,41 +747,38 @@ function closeCartSheet() {
 }
 
 function renderCartItems() {
-  const el    = document.getElementById('cart-items-list')
-  const total = document.getElementById('cart-grand-total')
-  const cnt   = document.getElementById('cart-count-text')
-  const n     = S.cart.reduce((s,c) => s+c.qty, 0)
+  const el  = document.getElementById('cart-items-list')
+  const tot = document.getElementById('cart-grand-total')
+  const cnt = document.getElementById('cart-count-text')
+  const n   = S.cart.reduce((s,c) => s+c.qty, 0)
   cnt.textContent = `${n} ${n===1?'منتج':'منتجات'}`
 
   if (!S.cart.length) {
-    el.innerHTML = `<div style="text-align:center;padding:40px 0;color:#ccc">
+    el.innerHTML = `<div style="text-align:center;padding:40px 0">
       <div style="font-size:48px;margin-bottom:10px">🛒</div>
       <p style="font-weight:700;color:#bbb">السلة فارغة</p></div>`
-    total.textContent = '0 ج.م'
+    tot.textContent = '0 ج.م'
     return
   }
 
   el.innerHTML = S.cart.map(c => `
     <div style="display:flex;align-items:center;gap:10px;background:#f9f9f9;border-radius:14px;padding:10px;margin-bottom:8px">
-      ${c.product.image_url
-        ? `<img src="${c.product.image_url}" style="width:52px;height:52px;border-radius:10px;object-fit:cover;flex-shrink:0" />`
-        : `<div style="width:52px;height:52px;border-radius:10px;background:#eee;display:flex;align-items:center;justify-content:center;font-size:22px;flex-shrink:0">🍽️</div>`}
+      ${c.image_url
+        ? `<img src="${c.image_url}" style="width:52px;height:52px;border-radius:10px;object-fit:cover;flex-shrink:0" />`
+        : `<div style="width:52px;height:52px;border-radius:10px;background:#eee;display:flex;align-items:center;justify-content:center;font-size:22px;flex-shrink:0">${c.type==='bundle'?'🎁':'🍽️'}</div>`}
       <div style="flex:1;min-width:0">
-        <p style="font-size:13px;font-weight:800;color:#1a1a1a;white-space:nowrap;overflow:hidden;text-overflow:ellipsis">${c.product.name}</p>
-        <p style="font-size:12px;font-weight:900;color:var(--brand);margin-top:2px">${fmt(c.product.price * c.qty)}</p>
+        <p style="font-size:13px;font-weight:800;color:#1a1a1a;white-space:nowrap;overflow:hidden;text-overflow:ellipsis">${c.name}</p>
+        ${c.type === 'bundle' ? `<span style="font-size:10px;background:#FFF3EB;color:var(--brand);padding:2px 6px;border-radius:6px;font-weight:700">باقة</span>` : ''}
+        <p style="font-size:12px;font-weight:900;color:var(--brand);margin-top:2px">${fmt(c.price * c.qty)}</p>
       </div>
       <div style="display:flex;align-items:center;gap:6px;flex-shrink:0">
-        <button onclick="cQty('${c.product.id}',-1)"
-                style="width:30px;height:30px;border-radius:9px;background:#fff;border:1.5px solid #eee;
-                       color:#555;font-size:16px;font-weight:900;display:flex;align-items:center;justify-content:center">−</button>
+        <button onclick="cQty('${c.id}','${c.type}',-1)" style="width:30px;height:30px;border-radius:9px;background:#fff;border:1.5px solid #eee;color:#555;font-size:16px;font-weight:900;display:flex;align-items:center;justify-content:center">−</button>
         <span style="font-size:14px;font-weight:900;min-width:20px;text-align:center">${c.qty}</span>
-        <button onclick="cQty('${c.product.id}',1)"
-                style="width:30px;height:30px;border-radius:9px;background:var(--brand);
-                       color:#fff;font-size:16px;font-weight:900;display:flex;align-items:center;justify-content:center">+</button>
+        <button onclick="cQty('${c.id}','${c.type}',1)" style="width:30px;height:30px;border-radius:9px;background:var(--brand);color:#fff;font-size:16px;font-weight:900;display:flex;align-items:center;justify-content:center">+</button>
       </div>
     </div>`).join('')
 
-  total.textContent = fmt(cartTotal())
+  tot.textContent = fmt(cartTotal())
 }
 
 // ── SEND ORDER ──
@@ -704,9 +790,9 @@ async function sendOrder() {
 
   const table = document.getElementById('table-number-input').value.trim()
   const items = S.cart.map(c => ({
-    id: c.product.id, name: c.product.name,
-    price: Number(c.product.price), qty: c.qty,
-    subtotal: Number((c.product.price * c.qty).toFixed(2))
+    id: c.id, type: c.type, name: c.name,
+    price: c.price, qty: c.qty,
+    subtotal: Number((c.price * c.qty).toFixed(2))
   }))
   const total = cartTotal()
   let orderNumber = 'TMP-' + Date.now()
@@ -723,11 +809,11 @@ async function sendOrder() {
     }
   } catch(e) { console.warn(e) }
 
-  const now  = new Date().toLocaleTimeString('ar-EG', { hour:'2-digit', minute:'2-digit' })
+  const now = new Date().toLocaleTimeString('ar-EG', { hour:'2-digit', minute:'2-digit' })
   const text = [
     `🧾 *طلب جديد ${orderNumber}*`,
     `─────────────────`,
-    ...items.map(i => `• ${i.name} × ${i.qty}  —  ${fmt(i.subtotal)}`),
+    ...items.map(i => `• ${i.name}${i.type==='bundle'?' 🎁':''} × ${i.qty}  —  ${fmt(i.subtotal)}`),
     `─────────────────`,
     `💰 *الإجمالي: ${fmt(total)}*`,
     table ? `📍 الطاولة: ${table}` : '',
@@ -756,7 +842,6 @@ function showError(msg) {
   showState('error')
 }
 
-// ── START ──
 if (document.referrer.includes('dashboard'))
   document.getElementById('back-to-dash').classList.remove('hidden')
 boot()
