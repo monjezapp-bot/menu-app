@@ -84,21 +84,29 @@
   </header>
 
   <!-- Tabs -->
-  <div class="bg-white border-b border-gray-100 px-4 flex gap-6 sticky top-[69px] z-20">
+  <div class="bg-white border-b border-gray-100 px-2 flex gap-1 sticky top-[69px] z-20 overflow-x-auto">
     <button onclick="showTab('products')" id="tab-products"
-            class="tab-btn py-3 text-sm font-bold text-gray-400 transition-colors tab-active">
+            class="tab-btn flex-shrink-0 py-3 px-3 text-sm font-bold text-gray-400 transition-colors tab-active">
       المنتجات
     </button>
     <button onclick="showTab('categories')" id="tab-categories"
-            class="tab-btn py-3 text-sm font-bold text-gray-400 transition-colors">
+            class="tab-btn flex-shrink-0 py-3 px-3 text-sm font-bold text-gray-400 transition-colors">
       التصنيفات
     </button>
+    <button onclick="showTab('bundles')" id="tab-bundles"
+            class="tab-btn flex-shrink-0 py-3 px-3 text-sm font-bold text-gray-400 transition-colors">
+      العروض
+    </button>
     <button onclick="showTab('orders')" id="tab-orders"
-            class="tab-btn py-3 text-sm font-bold text-gray-400 transition-colors">
+            class="tab-btn flex-shrink-0 py-3 px-3 text-sm font-bold text-gray-400 transition-colors">
       الطلبات
     </button>
+    <button onclick="showTab('analytics')" id="tab-analytics"
+            class="tab-btn flex-shrink-0 py-3 px-3 text-sm font-bold text-gray-400 transition-colors">
+      📊 إحصائيات
+    </button>
     <button onclick="showTab('settings')" id="tab-settings"
-            class="tab-btn py-3 text-sm font-bold text-gray-400 transition-colors">
+            class="tab-btn flex-shrink-0 py-3 px-3 text-sm font-bold text-gray-400 transition-colors">
       الإعدادات
     </button>
   </div>
@@ -125,7 +133,55 @@
       </div>
     </div>
 
-    <!-- ── CATEGORIES TAB ── -->
+    <!-- ── BUNDLES TAB ── -->
+    <div id="tab-content-bundles" class="hidden fade-up">
+      <div class="flex items-center justify-between mb-4">
+        <h2 class="font-extrabold text-gray-800">العروض المجمعة</h2>
+        <button onclick="openBundleModal()"
+                class="bg-orange-500 text-white text-sm font-bold px-4 py-2 rounded-xl">
+          + عرض جديد
+        </button>
+      </div>
+      <div id="bundles-list" class="space-y-3"></div>
+    </div>
+
+    <!-- ── ANALYTICS TAB ── -->
+    <div id="tab-content-analytics" class="hidden fade-up">
+      <h2 class="font-extrabold text-gray-800 mb-4">📊 إحصائيات المبيعات</h2>
+      <!-- Best Sellers -->
+      <div class="bg-white rounded-2xl p-4 shadow-sm mb-4">
+        <h3 class="font-bold text-gray-700 mb-3 flex items-center gap-2">
+          🔥 أكثر 5 منتجات طلباً
+        </h3>
+        <div id="best-sellers-list" class="space-y-2"></div>
+      </div>
+      <!-- Recent Products -->
+      <div class="bg-white rounded-2xl p-4 shadow-sm mb-4">
+        <h3 class="font-bold text-gray-700 mb-3 flex items-center gap-2">
+          🆕 آخر 5 منتجات أُضيفت
+        </h3>
+        <div id="recent-products-list" class="space-y-2"></div>
+      </div>
+      <!-- Orders Summary -->
+      <div class="grid grid-cols-2 gap-3">
+        <div class="bg-orange-50 rounded-2xl p-4 text-center">
+          <p class="text-3xl font-extrabold text-orange-500" id="stat-total-orders">—</p>
+          <p class="text-xs text-gray-500 mt-1">إجمالي الطلبات</p>
+        </div>
+        <div class="bg-green-50 rounded-2xl p-4 text-center">
+          <p class="text-3xl font-extrabold text-green-500" id="stat-total-revenue">—</p>
+          <p class="text-xs text-gray-500 mt-1">إجمالي الإيرادات (ج.م)</p>
+        </div>
+        <div class="bg-blue-50 rounded-2xl p-4 text-center">
+          <p class="text-3xl font-extrabold text-blue-500" id="stat-today-orders">—</p>
+          <p class="text-xs text-gray-500 mt-1">طلبات اليوم</p>
+        </div>
+        <div class="bg-purple-50 rounded-2xl p-4 text-center">
+          <p class="text-3xl font-extrabold text-purple-500" id="stat-products-count">—</p>
+          <p class="text-xs text-gray-500 mt-1">عدد المنتجات</p>
+        </div>
+      </div>
+    </div>
     <div id="tab-content-categories" class="hidden fade-up">
       <div class="flex items-center justify-between mb-4">
         <h2 class="font-extrabold text-gray-800">التصنيفات</h2>
@@ -321,6 +377,51 @@
       <button onclick="saveCat()"
               class="flex-1 bg-orange-500 text-white font-bold rounded-xl py-3">حفظ</button>
       <button onclick="closeCatModal()"
+              class="flex-1 bg-gray-100 text-gray-600 font-bold rounded-xl py-3">إلغاء</button>
+    </div>
+  </div>
+</div>
+
+<!-- ════════════════════════════════
+     BUNDLE MODAL
+════════════════════════════════ -->
+<div id="modal-bundle" class="hidden fixed inset-0 z-50 flex items-end justify-center">
+  <div class="absolute inset-0 bg-black/50" onclick="closeBundleModal()"></div>
+  <div class="relative bg-white rounded-t-3xl w-full max-w-lg p-6 space-y-4 max-h-[90vh] overflow-y-auto">
+    <h3 id="bundle-modal-title" class="text-lg font-extrabold text-gray-800">عرض مجمع جديد</h3>
+    <input type="hidden" id="bm-id" />
+    <div>
+      <label class="text-xs font-bold text-gray-500 mb-1 block">اسم العرض *</label>
+      <input id="bm-name" type="text" placeholder="مثال: وجبة العائلة"
+             class="w-full border border-gray-200 rounded-xl px-4 py-3 text-sm
+                    focus:outline-none focus:ring-2 focus:ring-orange-400" />
+    </div>
+    <div>
+      <label class="text-xs font-bold text-gray-500 mb-1 block">الوصف</label>
+      <textarea id="bm-desc" rows="2"
+                class="w-full border border-gray-200 rounded-xl px-4 py-3 text-sm
+                       focus:outline-none focus:ring-2 focus:ring-orange-400 resize-none"></textarea>
+    </div>
+    <div>
+      <label class="text-xs font-bold text-gray-500 mb-1 block">سعر العرض (ج.م) *</label>
+      <input id="bm-price" type="number" step="0.01" min="0"
+             class="w-full border border-gray-200 rounded-xl px-4 py-3 text-sm
+                    focus:outline-none focus:ring-2 focus:ring-orange-400" />
+    </div>
+    <div>
+      <label class="text-xs font-bold text-gray-500 mb-1 block">المنتجات المضمنة في العرض</label>
+      <div id="bm-products-checkboxes" class="space-y-2 max-h-48 overflow-y-auto border border-gray-100 rounded-xl p-3">
+      </div>
+    </div>
+    <div class="flex items-center gap-3">
+      <input id="bm-active" type="checkbox" checked class="w-5 h-5 accent-orange-500 rounded" />
+      <label class="text-sm font-bold text-gray-700">العرض نشط</label>
+    </div>
+    <p id="bm-error" class="text-red-500 text-xs hidden"></p>
+    <div class="flex gap-3 pt-2">
+      <button onclick="saveBundle()"
+              class="flex-1 bg-orange-500 text-white font-bold rounded-xl py-3">حفظ</button>
+      <button onclick="closeBundleModal()"
               class="flex-1 bg-gray-100 text-gray-600 font-bold rounded-xl py-3">إلغاء</button>
     </div>
   </div>
@@ -588,36 +689,57 @@ function renderProducts() {
     return
   }
   el.innerHTML = filtered.map(p => {
-    const cat = state.categories.find(c => c.id === p.category_id)
+    const cat        = state.categories.find(c => c.id === p.category_id)
+    const hasDiscount = p.discount_price && p.discount_price > 0
+    const discountOn  = p.discount_active
     return `
-    <div class="bg-white rounded-2xl p-4 shadow-sm flex items-center gap-3">
-      ${p.image_url
-        ? `<img src="${p.image_url}" class="w-16 h-16 rounded-xl object-cover flex-shrink-0" />`
-        : `<div class="w-16 h-16 rounded-xl bg-gray-100 flex items-center justify-center text-2xl flex-shrink-0">🍽️</div>`
-      }
-      <div class="flex-1 min-w-0">
-        <div class="flex items-center gap-2">
-          <p class="font-bold text-gray-800 truncate">${p.name}</p>
-          ${!p.is_available ? `<span class="text-xs bg-red-50 text-red-400 px-2 py-0.5 rounded-full">مخفي</span>` : ''}
+    <div class="bg-white rounded-2xl p-4 shadow-sm border ${!p.is_available ? 'border-red-100 opacity-70' : 'border-gray-100'}">
+      <div class="flex items-center gap-3">
+        ${p.image_url
+          ? `<img src="${p.image_url}" class="w-16 h-16 rounded-xl object-cover flex-shrink-0" />`
+          : `<div class="w-16 h-16 rounded-xl bg-gray-100 flex items-center justify-center text-2xl flex-shrink-0">🍽️</div>`
+        }
+        <div class="flex-1 min-w-0">
+          <div class="flex items-center gap-2 flex-wrap">
+            <p class="font-bold text-gray-800 truncate">${p.name}</p>
+            ${!p.is_available ? `<span class="text-xs bg-red-50 text-red-400 px-2 py-0.5 rounded-full">نفذ المخزون</span>` : ''}
+            ${discountOn ? `<span class="text-xs bg-orange-100 text-orange-500 px-2 py-0.5 rounded-full">خصم نشط</span>` : ''}
+          </div>
+          ${cat ? `<p class="text-xs text-orange-500 font-bold">${cat.name}</p>` : ''}
+          <p class="text-sm font-extrabold text-gray-700 mt-1">
+            ${hasDiscount && discountOn
+              ? `<span class="line-through text-gray-400 text-xs ml-1">${Number(p.price).toFixed(2)}</span>
+                 <span class="text-orange-500">${Number(p.discount_price).toFixed(2)} ج.م</span>
+                 <span class="bg-orange-100 text-orange-500 text-xs px-1.5 rounded-full">
+                   ${Math.round((1-p.discount_price/p.price)*100)}%
+                 </span>`
+              : `${Number(p.price).toFixed(2)} ج.م`
+            }
+          </p>
         </div>
-        ${cat ? `<p class="text-xs text-orange-500 font-bold">${cat.name}</p>` : ''}
-        <p class="text-sm font-extrabold text-gray-700 mt-1">
-          ${p.discount_price
-            ? `<span class="line-through text-gray-400 text-xs ml-1">${Number(p.price).toFixed(2)}</span>
-               <span class="text-orange-500">${Number(p.discount_price).toFixed(2)} ر.س</span>
-               <span class="bg-orange-100 text-orange-500 text-xs px-1.5 py-0.5 rounded-full mr-1">
-                 خصم ${Math.round((1 - p.discount_price/p.price)*100)}%
-               </span>`
-            : `${Number(p.price).toFixed(2)} ر.س`
-          }
-        </p>
       </div>
-      <div class="flex flex-col gap-2">
+      <div class="flex gap-2 mt-3 flex-wrap">
+        ${hasDiscount ? `
+        <button onclick="toggleDiscount('${p.id}', ${discountOn})"
+                class="flex-1 text-xs font-bold px-3 py-2 rounded-xl transition-colors
+                       ${discountOn ? 'bg-orange-500 text-white' : 'bg-orange-50 text-orange-500 border border-orange-200'}">
+          ${discountOn ? '🏷️ إلغاء الخصم' : '🏷️ تفعيل الخصم'}
+        </button>` : ''}
+        <button onclick="toggleAvailability('${p.id}', ${p.is_available})"
+                class="flex-1 text-xs font-bold px-3 py-2 rounded-xl transition-colors
+                       ${p.is_available ? 'bg-gray-100 text-gray-600' : 'bg-red-500 text-white'}">
+          ${p.is_available ? '👁️ إخفاء' : '✅ إظهار'}
+        </button>
         <button onclick="openProductModal('${p.id}')"
                 class="text-xs bg-gray-100 text-gray-600 font-bold px-3 py-2 rounded-xl">تعديل</button>
         <button onclick="deleteProduct('${p.id}')"
                 class="text-xs bg-red-50 text-red-500 font-bold px-3 py-2 rounded-xl">حذف</button>
       </div>
+      ${p.discount_starts_at || p.discount_ends_at ? `
+      <div class="mt-2 text-xs text-gray-400 border-t border-gray-50 pt-2">
+        ${p.discount_starts_at ? `⏰ يبدأ: ${new Date(p.discount_starts_at).toLocaleString('ar-EG')}` : ''}
+        ${p.discount_ends_at   ? ` — ينتهي: ${new Date(p.discount_ends_at).toLocaleString('ar-EG')}` : ''}
+      </div>` : ''}
     </div>`
   }).join('')
 }
@@ -925,7 +1047,8 @@ function showScreen(name) {
 }
 
 function showTab(name) {
-  ['products','categories','orders','settings'].forEach(t => {
+  const tabs = ['products','categories','bundles','orders','analytics','settings']
+  tabs.forEach(t => {
     document.getElementById('tab-content-' + t).classList.add('hidden')
     document.getElementById('tab-' + t).classList.remove('tab-active')
     document.getElementById('tab-' + t).classList.add('text-gray-400')
@@ -934,7 +1057,9 @@ function showTab(name) {
   document.getElementById('tab-' + name).classList.add('tab-active')
   document.getElementById('tab-' + name).classList.remove('text-gray-400')
 
-  if (name === 'orders') loadOrders()
+  if (name === 'orders')    loadOrders()
+  if (name === 'bundles')   loadBundles()
+  if (name === 'analytics') loadAnalytics()
 }
 
 function showToast(msg) {
@@ -951,6 +1076,233 @@ function showToastWithUndo(msg, undoFn) {
             class="underline font-extrabold text-orange-300 mr-2">تراجع</button>`
   t.classList.remove('hidden')
   setTimeout(() => t.classList.add('hidden'), 5000)
+}
+
+// ─── TOGGLE DISCOUNT ──────────────────────
+async function toggleDiscount(id, currentState) {
+  await db.from('products')
+    .update({ discount_active: !currentState })
+    .eq('id', id)
+  await loadProducts()
+  showToast(!currentState ? '🏷️ تم تفعيل الخصم' : 'تم إلغاء الخصم')
+}
+
+// ─── TOGGLE AVAILABILITY ──────────────────
+async function toggleAvailability(id, currentState) {
+  await db.from('products')
+    .update({ is_available: !currentState })
+    .eq('id', id)
+  await loadProducts()
+  showToast(!currentState ? '✅ المنتج متاح الآن' : '🚫 تم إخفاء المنتج')
+}
+
+// ─── BUNDLES ──────────────────────────────
+let state_bundles = []
+
+async function loadBundles() {
+  const { data } = await db
+    .from('bundles')
+    .select('*, bundle_items(product_id, quantity)')
+    .eq('restaurant_id', state.restaurant.id)
+    .order('created_at', { ascending: false })
+  state_bundles = data || []
+  renderBundles()
+}
+
+function renderBundles() {
+  const el = document.getElementById('bundles-list')
+  if (!state_bundles.length) {
+    el.innerHTML = `<p class="text-center text-gray-400 text-sm py-8">لا توجد عروض مجمعة بعد</p>`
+    return
+  }
+  el.innerHTML = state_bundles.map(b => {
+    const items = (b.bundle_items || []).map(bi => {
+      const prod = state.products.find(p => p.id === bi.product_id)
+      return prod ? `${prod.name} × ${bi.quantity}` : ''
+    }).filter(Boolean).join(' + ')
+    return `
+    <div class="bg-white rounded-2xl p-4 shadow-sm border border-gray-100">
+      <div class="flex items-start justify-between">
+        <div class="flex-1">
+          <div class="flex items-center gap-2">
+            <p class="font-bold text-gray-800">🎁 ${b.name}</p>
+            <span class="text-xs px-2 py-0.5 rounded-full ${b.is_active ? 'bg-green-50 text-green-500' : 'bg-gray-100 text-gray-400'}">
+              ${b.is_active ? 'نشط' : 'متوقف'}
+            </span>
+          </div>
+          ${b.description ? `<p class="text-xs text-gray-400 mt-1">${b.description}</p>` : ''}
+          ${items ? `<p class="text-xs text-orange-500 mt-1">${items}</p>` : ''}
+          <p class="font-extrabold text-orange-500 mt-2">${Number(b.price).toFixed(2)} ج.م</p>
+        </div>
+      </div>
+      <div class="flex gap-2 mt-3">
+        <button onclick="toggleBundle('${b.id}', ${b.is_active})"
+                class="flex-1 text-xs font-bold px-3 py-2 rounded-xl
+                       ${b.is_active ? 'bg-gray-100 text-gray-600' : 'bg-green-500 text-white'}">
+          ${b.is_active ? 'إيقاف' : 'تفعيل'}
+        </button>
+        <button onclick="openBundleModal('${b.id}')"
+                class="flex-1 text-xs bg-gray-100 text-gray-600 font-bold px-3 py-2 rounded-xl">تعديل</button>
+        <button onclick="deleteBundle('${b.id}')"
+                class="text-xs bg-red-50 text-red-500 font-bold px-3 py-2 rounded-xl">حذف</button>
+      </div>
+    </div>`
+  }).join('')
+}
+
+function openBundleModal(id = null) {
+  document.getElementById('bm-id').value = id || ''
+  document.getElementById('bm-error').classList.add('hidden')
+
+  // تعبئة قائمة المنتجات كـ checkboxes
+  const container = document.getElementById('bm-products-checkboxes')
+  container.innerHTML = state.products.map(p => `
+    <label class="flex items-center gap-3 py-1 cursor-pointer">
+      <input type="checkbox" value="${p.id}" class="bundle-product-check w-4 h-4 accent-orange-500"
+             data-price="${p.price}" />
+      <span class="text-sm text-gray-700">${p.name}</span>
+      <span class="text-xs text-gray-400 mr-auto">${Number(p.price).toFixed(2)} ج.م</span>
+    </label>
+  `).join('')
+
+  if (id) {
+    const b = state_bundles.find(x => x.id === id)
+    document.getElementById('bm-name').value  = b.name
+    document.getElementById('bm-desc').value  = b.description || ''
+    document.getElementById('bm-price').value = b.price
+    document.getElementById('bm-active').checked = b.is_active
+    document.getElementById('bundle-modal-title').textContent = 'تعديل العرض'
+    // تحديد المنتجات المضمنة
+    const selectedIds = (b.bundle_items || []).map(bi => bi.product_id)
+    container.querySelectorAll('.bundle-product-check').forEach(cb => {
+      if (selectedIds.includes(cb.value)) cb.checked = true
+    })
+  } else {
+    document.getElementById('bm-name').value  = ''
+    document.getElementById('bm-desc').value  = ''
+    document.getElementById('bm-price').value = ''
+    document.getElementById('bm-active').checked = true
+    document.getElementById('bundle-modal-title').textContent = 'عرض مجمع جديد'
+  }
+  document.getElementById('modal-bundle').classList.remove('hidden')
+}
+
+function closeBundleModal() {
+  document.getElementById('modal-bundle').classList.add('hidden')
+}
+
+async function saveBundle() {
+  const id    = document.getElementById('bm-id').value
+  const name  = document.getElementById('bm-name').value.trim()
+  const price = parseFloat(document.getElementById('bm-price').value)
+  const errEl = document.getElementById('bm-error')
+
+  const selectedProducts = [...document.querySelectorAll('.bundle-product-check:checked')]
+    .map(cb => cb.value)
+
+  if (!name)              { errEl.textContent = 'اسم العرض مطلوب';         errEl.classList.remove('hidden'); return }
+  if (isNaN(price))       { errEl.textContent = 'السعر غير صحيح';          errEl.classList.remove('hidden'); return }
+  if (!selectedProducts.length) { errEl.textContent = 'اختر منتجاً واحداً على الأقل'; errEl.classList.remove('hidden'); return }
+  errEl.classList.add('hidden')
+
+  const payload = {
+    name,
+    description:   document.getElementById('bm-desc').value.trim() || null,
+    price,
+    is_active:     document.getElementById('bm-active').checked,
+    restaurant_id: state.restaurant.id
+  }
+
+  let bundleId = id
+  if (id) {
+    await db.from('bundles').update(payload).eq('id', id)
+    await db.from('bundle_items').delete().eq('bundle_id', id)
+  } else {
+    const { data } = await db.from('bundles').insert(payload).select('id').single()
+    bundleId = data.id
+  }
+
+  // إضافة المنتجات
+  await db.from('bundle_items').insert(
+    selectedProducts.map(pid => ({ bundle_id: bundleId, product_id: pid, quantity: 1 }))
+  )
+
+  closeBundleModal()
+  await loadBundles()
+  showToast(id ? 'تم تعديل العرض ✅' : 'تم إضافة العرض ✅')
+}
+
+async function toggleBundle(id, currentState) {
+  await db.from('bundles').update({ is_active: !currentState }).eq('id', id)
+  await loadBundles()
+  showToast(!currentState ? 'تم تفعيل العرض' : 'تم إيقاف العرض')
+}
+
+async function deleteBundle(id) {
+  if (!confirm('هل تريد حذف هذا العرض؟')) return
+  await db.from('bundles').delete().eq('id', id)
+  await loadBundles()
+  showToast('تم حذف العرض')
+}
+
+// ─── ANALYTICS ────────────────────────────
+async function loadAnalytics() {
+  const restId = state.restaurant.id
+
+  // إجمالي الطلبات والإيرادات
+  const { data: orders } = await db
+    .from('orders')
+    .select('total, items, created_at')
+    .eq('restaurant_id', restId)
+    .neq('status', 'cancelled')
+
+  const total   = (orders || []).reduce((s, o) => s + Number(o.total), 0)
+  const today   = new Date().toDateString()
+  const todayOrders = (orders || []).filter(o =>
+    new Date(o.created_at).toDateString() === today
+  ).length
+
+  document.getElementById('stat-total-orders').textContent   = orders?.length || 0
+  document.getElementById('stat-total-revenue').textContent  = total.toFixed(2)
+  document.getElementById('stat-today-orders').textContent   = todayOrders
+  document.getElementById('stat-products-count').textContent = state.products.length
+
+  // Best Sellers — نحسب من الـ items JSONB
+  const counter = {}
+  ;(orders || []).forEach(o => {
+    ;(o.items || []).forEach(item => {
+      counter[item.name] = (counter[item.name] || 0) + (item.qty || 1)
+    })
+  })
+  const sorted = Object.entries(counter)
+    .sort((a, b) => b[1] - a[1])
+    .slice(0, 5)
+
+  const bsEl = document.getElementById('best-sellers-list')
+  bsEl.innerHTML = sorted.length
+    ? sorted.map(([name, qty], i) => `
+      <div class="flex items-center justify-between py-2 border-b border-gray-50 last:border-0">
+        <div class="flex items-center gap-2">
+          <span class="text-lg">${['🥇','🥈','🥉','4️⃣','5️⃣'][i]}</span>
+          <span class="text-sm text-gray-700 font-bold">${name}</span>
+        </div>
+        <span class="text-xs bg-orange-50 text-orange-500 font-bold px-2 py-1 rounded-full">${qty} طلب</span>
+      </div>`).join('')
+    : `<p class="text-center text-gray-400 text-sm py-4">لا توجد طلبات بعد</p>`
+
+  // آخر 5 منتجات
+  const recent = [...state.products]
+    .sort((a, b) => new Date(b.created_at||0) - new Date(a.created_at||0))
+    .slice(0, 5)
+
+  const rpEl = document.getElementById('recent-products-list')
+  rpEl.innerHTML = recent.length
+    ? recent.map(p => `
+      <div class="flex items-center justify-between py-2 border-b border-gray-50 last:border-0">
+        <span class="text-sm text-gray-700 font-bold">${p.name}</span>
+        <span class="text-xs text-gray-400">${Number(p.price).toFixed(2)} ج.م</span>
+      </div>`).join('')
+    : `<p class="text-center text-gray-400 text-sm py-4">لا توجد منتجات</p>`
 }
 
 // ─── START ────────────────────────────────
