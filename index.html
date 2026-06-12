@@ -370,8 +370,8 @@ async function loadData(slug) {
       .eq('restaurant_id', r.id).order('sort_order'),
 
     db.from('products')
-      .select('id, category_id, name, description, price, discount_price, offer_badge, image_url, sort_order, is_available')
-      .eq('restaurant_id', r.id).eq('is_available', true).order('sort_order'),
+      .select('id, category_id, name, description, price, discount_price, offer_badge, discount_active, discount_starts_at, discount_ends_at, image_url, sort_order, is_available, status, availability')
+      .eq('restaurant_id', r.id).neq('status', 'hidden').order('sort_order'),
 
     db.from('bundles')
       .select('id, name, description, price, image_url, items, sort_order')
@@ -483,9 +483,9 @@ function renderAllSections(filtered) {
 
 // ── PRODUCT CARD ──
 function prodCardHTML(p) {
-  const ci = S.cart.find(c => c.id === p.id && c.type === 'product')
-  const hasDiscount = p.discount_price && Number(p.discount_price) < Number(p.price)
-  const displayPrice = hasDiscount ? Number(p.discount_price) : Number(p.price)
+  const ci          = S.cart.find(c => c.id === p.id && c.type === 'product')
+  const hasDiscount = isDiscountActive(p)
+  const unavailable = p.availability === 'unavailable' || p.status === 'unavailable'
 
   const priceHTML = hasDiscount
     ? `<div class="price-row">
@@ -495,14 +495,18 @@ function prodCardHTML(p) {
     : `<div class="price-normal">${fmt(p.price)}</div>`
 
   return `
-    <div class="prod-card" onclick="openModal('${p.id}')">
+    <div class="prod-card${unavailable ? ' opacity-60' : ''}"
+         onclick="${unavailable ? '' : `openModal('${p.id}')`}"
+         style="${unavailable ? 'cursor:default' : ''}">
       <div class="info">
         <div>
           <h3>${p.name}</h3>
           ${p.description ? `<p>${p.description}</p>` : ''}
         </div>
         ${priceHTML}
-        ${ci ? `
+        ${unavailable
+          ? `<div style="margin-top:6px;background:#f0f0f0;color:#999;font-size:11px;font-weight:700;padding:4px 10px;border-radius:8px;display:inline-block">غير متوفر حالياً</div>`
+          : ci ? `
           <div class="qty-row" onclick="event.stopPropagation()">
             <div class="qty-btn brand-bg" style="color:#fff" onclick="cQty('${p.id}','product',-1)">−</div>
             <span style="font-size:14px;font-weight:900;min-width:20px;text-align:center">${ci.qty}</span>
@@ -514,7 +518,8 @@ function prodCardHTML(p) {
           ? `<img src="${p.image_url}" alt="${p.name}" />`
           : `<div class="no-img">🍽️</div>`}
         ${p.offer_badge ? `<div class="offer-badge">${p.offer_badge}</div>` : ''}
-        ${!ci ? `<div class="add-btn" onclick="event.stopPropagation(); quickAdd('${p.id}')">+</div>` : ''}
+        ${!ci && !unavailable ? `<div class="add-btn" onclick="event.stopPropagation(); quickAdd('${p.id}')">+</div>` : ''}
+        ${unavailable ? `<div style="position:absolute;inset:0;background:rgba(255,255,255,0.4)"></div>` : ''}
       </div>
     </div>`
 }
@@ -537,7 +542,17 @@ function bundleCardHTML(b) {
     </div>`
 }
 
-// ── SEARCH ──
+function isDiscountActive(p) {
+  if (!p.discount_price || !p.discount_active) return false
+  const now = new Date()
+  if (p.discount_starts_at && new Date(p.discount_starts_at) > now) return false
+  if (p.discount_ends_at   && new Date(p.discount_ends_at)   < now) return false
+  return Number(p.discount_price) < Number(p.price)
+}
+
+function isProductAvailable(p) {
+  return p.status !== 'hidden' && p.is_available !== false && p.availability !== 'hidden'
+}
 function handleSearch() {
   const q = document.getElementById('search-input').value.trim().toLowerCase()
   S.search = q
