@@ -115,6 +115,11 @@
           + إضافة منتج
         </button>
       </div>
+      <!-- فلتر التصنيفات -->
+      <div id="product-filter-tabs"
+           class="flex gap-2 overflow-x-auto pb-2 mb-3 -mx-4 px-4"
+           style="-ms-overflow-style:none;scrollbar-width:none;">
+      </div>
       <div id="products-list" class="space-y-3">
         <div class="spinner mx-auto mt-8"></div>
       </div>
@@ -159,20 +164,47 @@
           <div class="flex items-center gap-3">
             <input id="set-color" type="color" value="#FF6B00"
                    class="w-12 h-12 rounded-xl border border-gray-200 cursor-pointer p-1" />
-            <span id="set-color-val" class="text-sm text-gray-500 font-mono">#FF6B00</span>
+            <input id="set-color-hex" type="text" value="#FF6B00" maxlength="7"
+                   placeholder="#FF6B00"
+                   class="w-32 border border-gray-200 rounded-xl px-3 py-2 text-sm
+                          font-mono focus:outline-none focus:ring-2 focus:ring-orange-400" />
           </div>
         </div>
         <div>
-          <label class="text-xs font-bold text-gray-500 mb-1 block">رابط اللوجو (URL)</label>
-          <input id="set-logo" type="text" placeholder="https://..."
+          <label class="text-xs font-bold text-gray-500 mb-1 block">اللوجو</label>
+          <!-- رفع صورة أو رابط -->
+          <div class="flex gap-2 mb-2">
+            <button onclick="document.getElementById('logo-file-input').click()"
+                    class="flex-1 border-2 border-dashed border-gray-200 rounded-xl py-3
+                           text-sm text-gray-400 font-bold hover:border-orange-300
+                           hover:text-orange-400 transition-colors">
+              📁 رفع صورة
+            </button>
+            <input id="logo-file-input" type="file" accept="image/*" class="hidden"
+                   onchange="uploadLogoFile(this)" />
+          </div>
+          <input id="set-logo" type="text" placeholder="أو ضع رابط الصورة https://..."
                  class="w-full border border-gray-200 rounded-xl px-4 py-3 text-sm
                         focus:outline-none focus:ring-2 focus:ring-orange-400" />
+          <div id="logo-preview-wrap" class="mt-2 hidden">
+            <img id="logo-preview" src="" class="w-16 h-16 rounded-xl object-cover border border-gray-200" />
+          </div>
+          <p id="logo-upload-msg" class="text-xs text-gray-400 mt-1 hidden"></p>
         </div>
-        <button onclick="saveSettings()"
-                class="w-full bg-orange-500 text-white font-bold rounded-xl py-3
-                       hover:bg-orange-600 transition-colors">
-          حفظ الإعدادات
-        </button>
+        <!-- أزرار الحفظ والتراجع -->
+        <div class="flex gap-3">
+          <button onclick="saveSettings()"
+                  class="flex-1 bg-orange-500 text-white font-bold rounded-xl py-3
+                         hover:bg-orange-600 transition-colors">
+            حفظ الإعدادات
+          </button>
+          <button onclick="undoSettings()"
+                  id="undo-settings-btn"
+                  class="flex-1 bg-gray-100 text-gray-600 font-bold rounded-xl py-3
+                         hover:bg-gray-200 transition-colors hidden">
+            ↩ تراجع
+          </button>
+        </div>
         <p id="settings-msg" class="text-center text-sm hidden"></p>
       </div>
     </div>
@@ -216,10 +248,22 @@
       </select>
     </div>
     <div>
-      <label class="text-xs font-bold text-gray-500 mb-1 block">رابط الصورة (URL)</label>
-      <input id="pm-image" type="text" placeholder="https://..."
+      <label class="text-xs font-bold text-gray-500 mb-1 block">صورة المنتج</label>
+      <button onclick="document.getElementById('product-file-input').click()"
+              class="w-full border-2 border-dashed border-gray-200 rounded-xl py-3
+                     text-sm text-gray-400 font-bold hover:border-orange-300
+                     hover:text-orange-400 transition-colors mb-2">
+        📁 رفع صورة
+      </button>
+      <input id="product-file-input" type="file" accept="image/*" class="hidden"
+             onchange="uploadProductImage(this)" />
+      <input id="pm-image" type="text" placeholder="أو رابط الصورة https://..."
              class="w-full border border-gray-200 rounded-xl px-4 py-3 text-sm
                     focus:outline-none focus:ring-2 focus:ring-orange-400" />
+      <div id="pm-image-preview-wrap" class="mt-2 hidden">
+        <img id="pm-image-preview" src="" class="w-20 h-20 rounded-xl object-cover border border-gray-200" />
+      </div>
+      <p id="product-upload-msg" class="text-xs text-gray-400 mt-1 hidden"></p>
     </div>
     <div class="flex items-center gap-3">
       <input id="pm-available" type="checkbox" checked
@@ -368,7 +412,24 @@ async function loadDashboard() {
   document.getElementById('set-color-val').textContent = primary
 
   document.getElementById('set-color').addEventListener('input', e => {
-    document.getElementById('set-color-val').textContent = e.target.value
+    document.getElementById('set-color-hex').value = e.target.value
+  })
+
+  // مزامنة hex → color picker
+  document.getElementById('set-color-hex').addEventListener('input', e => {
+    const val = e.target.value
+    if (/^#[0-9A-Fa-f]{6}$/.test(val)) {
+      document.getElementById('set-color').value = val
+    }
+  })
+
+  // إظهار preview اللوجو لو في رابط
+  document.getElementById('set-logo').addEventListener('input', e => {
+    const url  = e.target.value.trim()
+    const wrap = document.getElementById('logo-preview-wrap')
+    const img  = document.getElementById('logo-preview')
+    if (url) { img.src = url; wrap.classList.remove('hidden') }
+    else      { wrap.classList.add('hidden') }
   })
 }
 
@@ -459,6 +520,9 @@ async function deleteCat(id) {
 }
 
 // ─── PRODUCTS ─────────────────────────────
+let activeProductFilter = 'all'
+let productSnapshot = null  // للتراجع عن آخر حذف
+
 async function loadProducts() {
   const { data } = await db
     .from('products')
@@ -467,16 +531,46 @@ async function loadProducts() {
     .order('sort_order')
 
   state.products = data || []
+  renderProductFilterTabs()
+  renderProducts()
+}
+
+function renderProductFilterTabs() {
+  const el = document.getElementById('product-filter-tabs')
+  if (!el) return
+
+  const tabs = [{ id: 'all', name: 'الكل' }, ...state.categories]
+  el.innerHTML = tabs.map(t => `
+    <button onclick="filterProducts('${t.id}')"
+            data-filter="${t.id}"
+            class="filter-tab flex-shrink-0 px-4 py-1.5 rounded-full text-sm font-bold
+                   border-2 transition-all
+                   ${t.id === activeProductFilter
+                     ? 'bg-orange-500 text-white border-transparent'
+                     : 'bg-white text-gray-500 border-gray-200'}">
+      ${t.name}
+    </button>
+  `).join('')
+}
+
+function filterProducts(catId) {
+  activeProductFilter = catId
+  renderProductFilterTabs()
   renderProducts()
 }
 
 function renderProducts() {
   const el = document.getElementById('products-list')
-  if (!state.products.length) {
-    el.innerHTML = `<p class="text-center text-gray-400 text-sm py-8">لا توجد منتجات بعد</p>`
+  let filtered = state.products
+  if (activeProductFilter !== 'all') {
+    filtered = state.products.filter(p => p.category_id === activeProductFilter)
+  }
+
+  if (!filtered.length) {
+    el.innerHTML = `<p class="text-center text-gray-400 text-sm py-8">لا توجد منتجات في هذا التصنيف</p>`
     return
   }
-  el.innerHTML = state.products.map(p => {
+  el.innerHTML = filtered.map(p => {
     const cat = state.categories.find(c => c.id === p.category_id)
     return `
     <div class="bg-white rounded-2xl p-4 shadow-sm flex items-center gap-3">
@@ -568,9 +662,20 @@ async function saveProduct() {
 
 async function deleteProduct(id) {
   if (!confirm('هل تريد حذف هذا المنتج؟')) return
+  // حفظ نسخة للتراجع
+  productSnapshot = state.products.find(p => p.id === id)
   await db.from('products').delete().eq('id', id)
   await loadProducts()
-  showToast('تم حذف المنتج')
+  showToastWithUndo('تم حذف المنتج', restoreProduct)
+}
+
+async function restoreProduct() {
+  if (!productSnapshot) return
+  const { id, ...rest } = productSnapshot
+  await db.from('products').insert(rest)
+  productSnapshot = null
+  await loadProducts()
+  showToast('تم استعادة المنتج ✅')
 }
 
 // ─── ORDERS ───────────────────────────────
@@ -643,6 +748,9 @@ async function updateOrderStatus(id, status) {
 }
 
 // ─── SETTINGS ─────────────────────────────
+// نسخة احتياطية للتراجع
+let settingsSnapshot = null
+
 async function saveSettings() {
   const name      = document.getElementById('set-name').value.trim()
   const whatsapp  = document.getElementById('set-whatsapp').value.trim()
@@ -657,10 +765,16 @@ async function saveSettings() {
     return
   }
 
+  // حفظ snapshot قبل التعديل
+  settingsSnapshot = {
+    name:     document.getElementById('set-name').dataset.original || name,
+    whatsapp: document.getElementById('set-whatsapp').dataset.original || whatsapp,
+    logo_url: document.getElementById('set-logo').dataset.original || logo_url,
+    primary:  document.getElementById('set-color').dataset.original || primary
+  }
+
   const { error } = await db.from('restaurants').update({
-    name,
-    whatsapp,
-    logo_url,
+    name, whatsapp, logo_url,
     theme: { primary, secondary: '#1A1A1A' }
   }).eq('id', state.restaurant.id)
 
@@ -668,14 +782,87 @@ async function saveSettings() {
     msgEl.textContent = 'حدث خطأ أثناء الحفظ'
     msgEl.className = 'text-center text-sm text-red-500'
   } else {
+    // حفظ القيم الأصلية للتراجع
+    document.getElementById('set-name').dataset.original     = name
+    document.getElementById('set-whatsapp').dataset.original = whatsapp
+    document.getElementById('set-logo').dataset.original     = logo_url || ''
+    document.getElementById('set-color').dataset.original    = primary
+
     state.restaurant.name = name
     document.getElementById('dash-restaurant-name').textContent = name
+    document.getElementById('undo-settings-btn').classList.remove('hidden')
     msgEl.textContent = 'تم الحفظ بنجاح ✅'
     msgEl.className = 'text-center text-sm text-green-500'
     showToast('تم حفظ الإعدادات ✅')
   }
   msgEl.classList.remove('hidden')
   setTimeout(() => msgEl.classList.add('hidden'), 3000)
+}
+
+function undoSettings() {
+  if (!settingsSnapshot) return
+  document.getElementById('set-name').value     = settingsSnapshot.name
+  document.getElementById('set-whatsapp').value = settingsSnapshot.whatsapp
+  document.getElementById('set-logo').value     = settingsSnapshot.logo_url || ''
+  document.getElementById('set-color').value    = settingsSnapshot.primary
+  document.getElementById('set-color-hex').value = settingsSnapshot.primary
+  document.getElementById('undo-settings-btn').classList.add('hidden')
+  settingsSnapshot = null
+  showToast('تم التراجع عن التعديلات')
+}
+
+// ─── IMAGE UPLOAD ─────────────────────────
+async function uploadToSupabase(file, bucket, path) {
+  const { data, error } = await db.storage
+    .from(bucket)
+    .upload(path, file, { upsert: true, contentType: file.type })
+
+  if (error) throw error
+
+  const { data: urlData } = db.storage.from(bucket).getPublicUrl(path)
+  return urlData.publicUrl
+}
+
+async function uploadLogoFile(input) {
+  const file = input.files[0]
+  if (!file) return
+  const msgEl = document.getElementById('logo-upload-msg')
+  msgEl.textContent = 'جاري الرفع...'
+  msgEl.classList.remove('hidden')
+
+  try {
+    const path = `logos/${state.restaurant.id}-${Date.now()}.${file.name.split('.').pop()}`
+    const url  = await uploadToSupabase(file, 'restaurant-images', path)
+    document.getElementById('set-logo').value = url
+    const preview = document.getElementById('logo-preview')
+    const wrap    = document.getElementById('logo-preview-wrap')
+    preview.src   = url
+    wrap.classList.remove('hidden')
+    msgEl.textContent = 'تم الرفع بنجاح ✅'
+  } catch (e) {
+    msgEl.textContent = 'فشل الرفع — جرب رابط URL بدلاً منه'
+  }
+}
+
+async function uploadProductImage(input) {
+  const file = input.files[0]
+  if (!file) return
+  const msgEl = document.getElementById('product-upload-msg')
+  msgEl.textContent = 'جاري الرفع...'
+  msgEl.classList.remove('hidden')
+
+  try {
+    const path = `products/${state.restaurant.id}-${Date.now()}.${file.name.split('.').pop()}`
+    const url  = await uploadToSupabase(file, 'restaurant-images', path)
+    document.getElementById('pm-image').value = url
+    const preview = document.getElementById('pm-image-preview')
+    const wrap    = document.getElementById('pm-image-preview-wrap')
+    preview.src   = url
+    wrap.classList.remove('hidden')
+    msgEl.textContent = 'تم الرفع بنجاح ✅'
+  } catch (e) {
+    msgEl.textContent = 'فشل الرفع — جرب رابط URL بدلاً منه'
+  }
 }
 
 // ─── UI HELPERS ───────────────────────────
@@ -700,9 +887,18 @@ function showTab(name) {
 
 function showToast(msg) {
   const t = document.getElementById('toast')
-  t.textContent = msg
+  t.innerHTML = msg
   t.classList.remove('hidden')
   setTimeout(() => t.classList.add('hidden'), 2500)
+}
+
+function showToastWithUndo(msg, undoFn) {
+  const t = document.getElementById('toast')
+  t.innerHTML = `${msg} &nbsp;
+    <button onclick="(${undoFn.toString()})()"
+            class="underline font-extrabold text-orange-300 mr-2">تراجع</button>`
+  t.classList.remove('hidden')
+  setTimeout(() => t.classList.add('hidden'), 5000)
 }
 
 // ─── START ────────────────────────────────
