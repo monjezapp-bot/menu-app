@@ -101,6 +101,16 @@
   <!-- App Shell (hidden until data loads) -->
   <div id="state-app" class="hidden max-w-lg mx-auto pb-36">
 
+    <!-- زر الرجوع للداشبورد — يظهر فقط لو جاي من المعاينة -->
+    <div id="back-to-dash" class="hidden bg-gray-800 text-white text-xs font-bold
+                                  px-4 py-2 flex items-center justify-between">
+      <span>أنت في وضع المعاينة</span>
+      <a href="./dashboard.html"
+         class="bg-white text-gray-800 px-3 py-1 rounded-lg font-bold">
+        ← الرجوع للوحة التحكم
+      </a>
+    </div>
+
     <!-- ── Header ── -->
     <header id="restaurant-header" class="relative brand-bg text-white">
       <div class="p-6 pt-10 pb-8">
@@ -627,6 +637,10 @@
   // ─────────────────────────────────────────
   // START
   // ─────────────────────────────────────────
+  // إظهار زر الرجوع لو جاي من المعاينة
+  if (document.referrer.includes('dashboard')) {
+    document.getElementById('back-to-dash').classList.remove('hidden')
+  }
   boot()
   </script>
 </body>
