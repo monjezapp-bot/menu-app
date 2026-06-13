@@ -236,7 +236,6 @@
         </div>
         <div>
           <label class="text-xs font-bold text-gray-500 mb-1 block">اللوجو</label>
-          <!-- رفع صورة أو رابط -->
           <div class="flex gap-2 mb-2">
             <button onclick="document.getElementById('logo-file-input').click()"
                     class="flex-1 border-2 border-dashed border-gray-200 rounded-xl py-3
@@ -254,6 +253,28 @@
             <img id="logo-preview" src="" class="w-16 h-16 rounded-xl object-cover border border-gray-200" />
           </div>
           <p id="logo-upload-msg" class="text-xs text-gray-400 mt-1 hidden"></p>
+        </div>
+
+        <!-- صورة الغلاف -->
+        <div>
+          <label class="text-xs font-bold text-gray-500 mb-1 block">صورة الغلاف (Cover)</label>
+          <div class="flex gap-2 mb-2">
+            <button onclick="document.getElementById('cover-file-input').click()"
+                    class="flex-1 border-2 border-dashed border-gray-200 rounded-xl py-3
+                           text-sm text-gray-400 font-bold hover:border-orange-300
+                           hover:text-orange-400 transition-colors">
+              🖼️ رفع صورة غلاف
+            </button>
+            <input id="cover-file-input" type="file" accept="image/*" class="hidden"
+                   onchange="uploadCoverFile(this)" />
+          </div>
+          <input id="set-cover" type="text" placeholder="أو ضع رابط صورة الغلاف https://..."
+                 class="w-full border border-gray-200 rounded-xl px-4 py-3 text-sm
+                        focus:outline-none focus:ring-2 focus:ring-orange-400" />
+          <div id="cover-preview-wrap" class="mt-2 hidden">
+            <img id="cover-preview" src="" class="w-full h-24 rounded-xl object-cover border border-gray-200" />
+          </div>
+          <p id="cover-upload-msg" class="text-xs text-gray-400 mt-1 hidden"></p>
         </div>
         <!-- أزرار الحفظ والتراجع -->
         <div class="flex gap-3">
@@ -439,6 +460,26 @@
                     focus:outline-none focus:ring-2 focus:ring-orange-400" />
     </div>
     <div>
+      <label class="text-xs font-bold text-gray-500 mb-1 block">صورة العرض (اختياري)</label>
+      <div class="flex gap-2 mb-2">
+        <button onclick="document.getElementById('bundle-file-input').click()"
+                class="flex-1 border-2 border-dashed border-gray-200 rounded-xl py-3
+                       text-sm text-gray-400 font-bold hover:border-orange-300
+                       hover:text-orange-400 transition-colors">
+          📁 رفع صورة
+        </button>
+        <input id="bundle-file-input" type="file" accept="image/*" class="hidden"
+               onchange="uploadBundleImage(this)" />
+      </div>
+      <input id="bm-image" type="text" placeholder="أو رابط الصورة https://..."
+             class="w-full border border-gray-200 rounded-xl px-4 py-3 text-sm
+                    focus:outline-none focus:ring-2 focus:ring-orange-400" />
+      <div id="bm-image-preview-wrap" class="mt-2 hidden">
+        <img id="bm-image-preview" src="" class="w-full h-28 rounded-xl object-cover border border-gray-200" />
+      </div>
+      <p id="bundle-upload-msg" class="text-xs text-gray-400 mt-1 hidden"></p>
+    </div>
+    <div>
       <label class="text-xs font-bold text-gray-500 mb-1 block">المنتجات المضمنة في العرض</label>
       <div id="bm-products-checkboxes" class="space-y-2 max-h-48 overflow-y-auto border border-gray-100 rounded-xl p-3">
       </div>
@@ -555,6 +596,7 @@ async function loadDashboard() {
   document.getElementById('set-name').value      = restaurant.name
   document.getElementById('set-whatsapp').value  = restaurant.whatsapp
   document.getElementById('set-logo').value      = restaurant.logo_url || ''
+  document.getElementById('set-cover').value     = restaurant.cover_url || ''
   const primary = restaurant.theme?.primary || '#FF6B00'
   document.getElementById('set-color').value     = primary
   document.getElementById('set-color-hex').value = primary
@@ -996,6 +1038,7 @@ async function saveSettings() {
   const name      = document.getElementById('set-name').value.trim()
   const whatsapp  = document.getElementById('set-whatsapp').value.trim()
   const logo_url  = document.getElementById('set-logo').value.trim() || null
+  const cover_url = document.getElementById('set-cover').value.trim() || null
   const primary   = document.getElementById('set-color').value
   const msgEl     = document.getElementById('settings-msg')
 
@@ -1015,7 +1058,7 @@ async function saveSettings() {
   }
 
   const { error } = await db.from('restaurants').update({
-    name, whatsapp, logo_url,
+    name, whatsapp, logo_url, cover_url,
     theme: { primary, secondary: '#1A1A1A' }
   }).eq('id', state.restaurant.id)
 
@@ -1092,6 +1135,46 @@ async function uploadLogoFile(input) {
     document.getElementById('set-logo').value = url
     const preview = document.getElementById('logo-preview')
     const wrap    = document.getElementById('logo-preview-wrap')
+    preview.src   = url
+    wrap.classList.remove('hidden')
+    msgEl.textContent = 'تم الرفع بنجاح ✅'
+  } catch (e) {
+    msgEl.textContent = 'فشل الرفع — جرب رابط URL بدلاً منه'
+  }
+}
+
+async function uploadCoverFile(input) {
+  const file = input.files[0]
+  if (!file) return
+  const msgEl = document.getElementById('cover-upload-msg')
+  msgEl.textContent = 'جاري الرفع...'
+  msgEl.classList.remove('hidden')
+  try {
+    const path = `covers/${state.restaurant.id}-${Date.now()}.${file.name.split('.').pop()}`
+    const url  = await uploadToSupabase(file, 'restaurant-images', path)
+    document.getElementById('set-cover').value = url
+    const preview = document.getElementById('cover-preview')
+    const wrap    = document.getElementById('cover-preview-wrap')
+    preview.src   = url
+    wrap.classList.remove('hidden')
+    msgEl.textContent = 'تم الرفع بنجاح ✅'
+  } catch (e) {
+    msgEl.textContent = 'فشل الرفع — جرب رابط URL بدلاً منه'
+  }
+}
+
+async function uploadBundleImage(input) {
+  const file = input.files[0]
+  if (!file) return
+  const msgEl = document.getElementById('bundle-upload-msg')
+  msgEl.textContent = 'جاري الرفع...'
+  msgEl.classList.remove('hidden')
+  try {
+    const path = `bundles/${state.restaurant.id}-${Date.now()}.${file.name.split('.').pop()}`
+    const url  = await uploadToSupabase(file, 'restaurant-images', path)
+    document.getElementById('bm-image').value = url
+    const preview = document.getElementById('bm-image-preview')
+    const wrap    = document.getElementById('bm-image-preview-wrap')
     preview.src   = url
     wrap.classList.remove('hidden')
     msgEl.textContent = 'تم الرفع بنجاح ✅'
@@ -1252,8 +1335,13 @@ function openBundleModal(id = null) {
     document.getElementById('bm-name').value  = b.name
     document.getElementById('bm-desc').value  = b.description || ''
     document.getElementById('bm-price').value = b.price
+    document.getElementById('bm-image').value = b.image_url || ''
     document.getElementById('bm-active').checked = b.is_active
     document.getElementById('bundle-modal-title').textContent = 'تعديل العرض'
+    if (b.image_url) {
+      document.getElementById('bm-image-preview').src = b.image_url
+      document.getElementById('bm-image-preview-wrap').classList.remove('hidden')
+    }
     // تحديد المنتجات المضمنة
     const selectedIds = (b.bundle_items || []).map(bi => bi.product_id)
     container.querySelectorAll('.bundle-product-check').forEach(cb => {
@@ -1263,6 +1351,8 @@ function openBundleModal(id = null) {
     document.getElementById('bm-name').value  = ''
     document.getElementById('bm-desc').value  = ''
     document.getElementById('bm-price').value = ''
+    document.getElementById('bm-image').value = ''
+    document.getElementById('bm-image-preview-wrap').classList.add('hidden')
     document.getElementById('bm-active').checked = true
     document.getElementById('bundle-modal-title').textContent = 'عرض مجمع جديد'
   }
@@ -1291,6 +1381,7 @@ async function saveBundle() {
     name,
     description:   document.getElementById('bm-desc').value.trim() || null,
     price,
+    image_url:     document.getElementById('bm-image').value.trim() || null,
     is_active:     document.getElementById('bm-active').checked,
     restaurant_id: state.restaurant.id
   }
