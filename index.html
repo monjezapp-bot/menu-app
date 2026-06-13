@@ -113,23 +113,58 @@
     /* section title */
     .section-title { font-size:17px; font-weight:900; color:#1a1a1a; padding:4px 16px 10px; }
 
-    /* product card — بدون شادو قوي */
+    /* products grid */
+    .products-grid {
+      display: grid;
+      grid-template-columns: 1fr 1fr;
+      gap: 10px;
+      padding: 0 16px;
+    }
+
+    /* product card — grid style */
     .prod-card {
-      background:#fff; border-radius:16px; display:flex; align-items:stretch;
-      overflow:hidden; box-shadow:none;
-      margin:0 16px 8px; cursor:pointer; transition:transform 0.15s;
+      background:#fff; border-radius:16px;
+      overflow:hidden; cursor:pointer;
+      transition:transform 0.15s;
       border:1.5px solid #ebebeb;
     }
-    .prod-card:active { transform:scale(0.98); }
-    .prod-card .info { flex:1; padding:12px; display:flex; flex-direction:column; justify-content:space-between; }
-    .prod-card .thumb { width:110px; flex-shrink:0; position:relative; }
-    .prod-card .thumb img { width:100%; height:100%; object-fit:cover; }
-    .prod-card .thumb .no-img {
-      width:100%; height:100%; min-height:90px;
-      background:#f8f8f8; display:flex; align-items:center; justify-content:center; font-size:32px;
+    .prod-card:active { transform:scale(0.97); }
+
+    /* صورة المنتج */
+    .prod-card .thumb {
+      position:relative; width:100%;
+      padding-top:100%; /* مربع */
+      background:#f8f8f8;
     }
-    .prod-card h3 { font-size:13px; font-weight:800; color:#1a1a1a; line-height:1.4; margin-bottom:3px; }
-    .prod-card p  { font-size:11px; color:#aaa; line-height:1.5; display:-webkit-box; -webkit-line-clamp:2; -webkit-box-orient:vertical; overflow:hidden; }
+    .prod-card .thumb img {
+      position:absolute; inset:0;
+      width:100%; height:100%; object-fit:cover;
+    }
+    .prod-card .thumb .no-img {
+      position:absolute; inset:0;
+      display:flex; align-items:center; justify-content:center; font-size:40px;
+    }
+
+    /* زر + */
+    .add-btn {
+      position:absolute; bottom:8px; left:8px;
+      width:34px; height:34px; border-radius:50%;
+      background:#fff; color:var(--brand);
+      display:flex; align-items:center; justify-content:center;
+      font-size:22px; font-weight:900;
+      box-shadow:0 2px 8px rgba(0,0,0,0.15);
+      transition:transform 0.15s;
+      border: none;
+    }
+    .add-btn:active { transform:scale(0.88); }
+
+    /* معلومات المنتج */
+    .prod-card .info { padding:8px 10px 10px; }
+    .prod-card h3 {
+      font-size:13px; font-weight:800; color:#1a1a1a;
+      line-height:1.4; margin-bottom:5px;
+      display:-webkit-box; -webkit-line-clamp:2; -webkit-box-orient:vertical; overflow:hidden;
+    }
 
     /* offer badge */
     .offer-badge {
@@ -137,28 +172,15 @@
       background:var(--brand); color:#fff;
       font-size:10px; font-weight:900;
       padding:3px 8px; border-radius:20px;
-      box-shadow:0 2px 6px rgba(255,107,0,0.4);
     }
 
     /* prices */
-    .price-row { display:flex; align-items:center; gap:6px; margin-top:6px; }
-    .price-original { font-size:11px; font-weight:700; color:#bbb; text-decoration:line-through; }
-    .price-discount  { font-size:14px; font-weight:900; color:var(--brand); }
-    .price-normal    { font-size:13px; font-weight:900; color:var(--brand); margin-top:6px; }
+    .price-new { font-size:15px; font-weight:900; color:var(--brand); }
+    .price-old { font-size:11px; font-weight:700; color:#bbb; text-decoration:line-through; margin-right:4px; }
+    .price-normal { font-size:15px; font-weight:900; color:var(--brand); }
+    .price-row { display:flex; align-items:center; gap:4px; flex-wrap:wrap; }
 
-    /* add btn */
-    .add-btn {
-      position:absolute; bottom:8px; left:8px;
-      width:32px; height:32px; border-radius:10px;
-      background:var(--brand); color:#fff;
-      display:flex; align-items:center; justify-content:center;
-      font-size:20px; font-weight:700;
-      box-shadow:0 3px 10px rgba(255,107,0,0.4);
-      transition:transform 0.15s;
-    }
-    .add-btn:active { transform:scale(0.88); }
-
-    /* qty inline */
+    /* qty في الكارد */
     .qty-row { display:flex; align-items:center; gap:6px; margin-top:6px; }
     .qty-btn {
       width:28px; height:28px; border-radius:8px;
@@ -166,6 +188,12 @@
       font-size:16px; font-weight:900; cursor:pointer; transition:transform 0.1s;
     }
     .qty-btn:active { transform:scale(0.85); }
+
+    /* unavailable overlay */
+    .unavail-overlay {
+      position:absolute; inset:0;
+      background:rgba(255,255,255,0.5);
+    }
 
     /* bundle card */
     .bundle-card {
@@ -484,18 +512,16 @@ function renderAllSections(filtered) {
   }
   noRes.classList.add('hidden')
 
-  // product sections
   const prodsHTML = S.categories.map(cat => {
     const items = prods.filter(p => p.category_id === cat.id)
     if (!items.length) return ''
     return `
       <div id="sec-${cat.id}" class="fade-up" style="margin-top:6px">
         <p class="section-title">${cat.name}</p>
-        ${items.map(p => prodCardHTML(p)).join('')}
+        <div class="products-grid">${items.map(p => prodCardHTML(p)).join('')}</div>
       </div>`
   }).join('')
 
-  // bundles section
   const bundlesHTML = S.bundles.length && !filtered ? `
     <div id="sec-bundles" class="fade-up" style="margin-top:6px">
       <p class="section-title">🎁 العروض والباقات</p>
@@ -506,7 +532,7 @@ function renderAllSections(filtered) {
   const uncatHTML = uncatItems.length ? `
     <div class="fade-up" style="margin-top:6px">
       <p class="section-title">منتجات أخرى</p>
-      ${uncatItems.map(p => prodCardHTML(p)).join('')}
+      <div class="products-grid">${uncatItems.map(p => prodCardHTML(p)).join('')}</div>
     </div>` : ''
 
   wrap.innerHTML = prodsHTML + bundlesHTML + uncatHTML
@@ -520,37 +546,36 @@ function prodCardHTML(p) {
 
   const priceHTML = hasDiscount
     ? `<div class="price-row">
-         <span class="price-original">${fmt(p.price)}</span>
-         <span class="price-discount">${fmt(p.discount_price)}</span>
+         <span class="price-new">${fmt(p.discount_price)}</span>
+         <span class="price-old">${fmt(p.price)}</span>
        </div>`
-    : `<div class="price-normal">${fmt(p.price)}</div>`
+    : `<span class="price-normal">${fmt(p.price)}</span>`
 
   return `
     <div class="prod-card${unavailable ? ' opacity-60' : ''}"
          onclick="${unavailable ? '' : `openModal('${p.id}')`}"
          style="${unavailable ? 'cursor:default' : ''}">
-      <div class="info">
-        <div>
-          <h3>${p.name}</h3>
-          ${p.description ? `<p>${p.description}</p>` : ''}
-        </div>
-        ${priceHTML}
-        ${unavailable
-          ? `<div style="margin-top:6px;background:#f0f0f0;color:#999;font-size:11px;font-weight:700;padding:4px 10px;border-radius:8px;display:inline-block">غير متوفر حالياً</div>`
-          : ci ? `
-          <div class="qty-row" onclick="event.stopPropagation()">
-            <div class="qty-btn brand-bg" style="color:#fff" onclick="cQty('${p.id}','product',-1)">−</div>
-            <span style="font-size:14px;font-weight:900;min-width:20px;text-align:center">${ci.qty}</span>
-            <div class="qty-btn brand-bg" style="color:#fff" onclick="cQty('${p.id}','product',1)">+</div>
-          </div>` : ''}
-      </div>
       <div class="thumb">
         ${p.image_url
           ? `<img src="${p.image_url}" alt="${p.name}" />`
           : `<div class="no-img">🍽️</div>`}
         ${p.offer_badge ? `<div class="offer-badge">${p.offer_badge}</div>` : ''}
-        ${!ci && !unavailable ? `<div class="add-btn" onclick="event.stopPropagation(); quickAdd('${p.id}')">+</div>` : ''}
-        ${unavailable ? `<div style="position:absolute;inset:0;background:rgba(255,255,255,0.4)"></div>` : ''}
+        ${unavailable ? `<div class="unavail-overlay"></div>` : ''}
+        ${!ci && !unavailable
+          ? `<button class="add-btn" onclick="event.stopPropagation(); quickAdd('${p.id}')">+</button>`
+          : ''}
+      </div>
+      <div class="info">
+        <h3>${p.name}</h3>
+        ${priceHTML}
+        ${unavailable
+          ? `<span style="font-size:10px;background:#f0f0f0;color:#999;font-weight:700;padding:3px 8px;border-radius:8px;display:inline-block;margin-top:4px">غير متوفر</span>`
+          : ci ? `
+          <div class="qty-row" onclick="event.stopPropagation()">
+            <div class="qty-btn brand-bg" style="color:#fff" onclick="cQty('${p.id}','product',-1)">−</div>
+            <span style="font-size:13px;font-weight:900;min-width:20px;text-align:center">${ci.qty}</span>
+            <div class="qty-btn brand-bg" style="color:#fff" onclick="cQty('${p.id}','product',1)">+</div>
+          </div>` : ''}
       </div>
     </div>`
 }
