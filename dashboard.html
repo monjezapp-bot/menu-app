@@ -1267,7 +1267,7 @@ let state_bundles = []
 async function loadBundles() {
   const { data } = await db
     .from('bundles')
-    .select('*, bundle_items(product_id, quantity)')
+    .select('*')
     .eq('restaurant_id', state.restaurant.id)
     .order('created_at', { ascending: false })
   state_bundles = data || []
@@ -1281,10 +1281,7 @@ function renderBundles() {
     return
   }
   el.innerHTML = state_bundles.map(b => {
-    const items = (b.bundle_items || []).map(bi => {
-      const prod = state.products.find(p => p.id === bi.product_id)
-      return prod ? `${prod.name} × ${bi.quantity}` : ''
-    }).filter(Boolean).join(' + ')
+    const items = (b.items || []).map(i => `${i.name} × ${i.quantity}`).join(' + ')
     return `
     <div class="bg-white rounded-2xl p-4 shadow-sm border border-gray-100">
       <div class="flex items-start justify-between">
@@ -1343,7 +1340,7 @@ function openBundleModal(id = null) {
       document.getElementById('bm-image-preview-wrap').classList.remove('hidden')
     }
     // تحديد المنتجات المضمنة
-    const selectedIds = (b.bundle_items || []).map(bi => bi.product_id)
+    const selectedIds = (b.items || []).map(i => i.product_id)
     container.querySelectorAll('.bundle-product-check').forEach(cb => {
       if (selectedIds.includes(cb.value)) cb.checked = true
     })
@@ -1377,28 +1374,28 @@ async function saveBundle() {
   if (!selectedProducts.length) { errEl.textContent = 'اختر منتجاً واحداً على الأقل'; errEl.classList.remove('hidden'); return }
   errEl.classList.add('hidden')
 
+  const items = selectedProducts.map(pid => {
+    const prod = state.products.find(p => p.id === pid)
+    return { product_id: pid, name: prod?.name || '', price: prod?.price || 0, quantity: 1 }
+  })
+
   const payload = {
     name,
     description:   document.getElementById('bm-desc').value.trim() || null,
     price,
+    items,
     image_url:     document.getElementById('bm-image').value.trim() || null,
     is_active:     document.getElementById('bm-active').checked,
     restaurant_id: state.restaurant.id
   }
 
-  let bundleId = id
   if (id) {
-    await db.from('bundles').update(payload).eq('id', id)
-    await db.from('bundle_items').delete().eq('bundle_id', id)
+    const { error } = await db.from('bundles').update(payload).eq('id', id)
+    if (error) { errEl.textContent = 'خطأ: ' + error.message; errEl.classList.remove('hidden'); return }
   } else {
-    const { data } = await db.from('bundles').insert(payload).select('id').single()
-    bundleId = data.id
+    const { error } = await db.from('bundles').insert(payload)
+    if (error) { errEl.textContent = 'خطأ: ' + error.message; errEl.classList.remove('hidden'); return }
   }
-
-  // إضافة المنتجات
-  await db.from('bundle_items').insert(
-    selectedProducts.map(pid => ({ bundle_id: bundleId, product_id: pid, quantity: 1 }))
-  )
 
   closeBundleModal()
   await loadBundles()
