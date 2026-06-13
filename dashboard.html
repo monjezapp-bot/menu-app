@@ -255,7 +255,27 @@
           </div>
           <p id="logo-upload-msg" class="text-xs text-gray-400 mt-1 hidden"></p>
         </div>
-        <!-- أزرار الحفظ والتراجع -->
+        <div>
+          <label class="text-xs font-bold text-gray-500 mb-1 block">صورة الغلاف (Cover)</label>
+          <div class="flex gap-2 mb-2">
+            <button onclick="document.getElementById('cover-file-input').click()"
+                    class="flex-1 border-2 border-dashed border-gray-200 rounded-xl py-3
+                           text-sm text-gray-400 font-bold hover:border-orange-300
+                           hover:text-orange-400 transition-colors">
+              🖼️ رفع صورة الغلاف
+            </button>
+            <input id="cover-file-input" type="file" accept="image/*" class="hidden"
+                   onchange="uploadCoverFile(this)" />
+          </div>
+          <input id="set-cover" type="text" placeholder="أو رابط الصورة https://..."
+                 class="w-full border border-gray-200 rounded-xl px-4 py-3 text-sm
+                        focus:outline-none focus:ring-2 focus:ring-orange-400" />
+          <div id="cover-preview-wrap" class="mt-2 hidden">
+            <img id="cover-preview" src=""
+                 class="w-full h-28 rounded-xl object-cover border border-gray-200" />
+          </div>
+          <p id="cover-upload-msg" class="text-xs text-gray-400 mt-1 hidden"></p>
+        </div>
         <div class="flex gap-3">
           <button onclick="saveSettings()"
                   class="flex-1 bg-orange-500 text-white font-bold rounded-xl py-3
@@ -269,6 +289,7 @@
             ↩ تراجع
           </button>
         </div>
+        <p id="settings-msg" class="text-center text-sm hidden"></p>
         <p id="settings-msg" class="text-center text-sm hidden"></p>
       </div>
     </div>
@@ -397,10 +418,24 @@
                     focus:outline-none focus:ring-2 focus:ring-orange-400" />
     </div>
     <div>
-      <label class="text-xs font-bold text-gray-500 mb-1 block">أيقونة التصنيف (إيموجي أو رابط صورة)</label>
-      <input id="cm-icon" type="text" placeholder="مثال: 🍔 أو https://..."
-             class="w-full border border-gray-200 rounded-xl px-4 py-3 text-sm
-                    focus:outline-none focus:ring-2 focus:ring-orange-400" />
+      <label class="text-xs font-bold text-gray-500 mb-1 block">أيقونة التصنيف</label>
+      <div class="flex gap-2 mb-2">
+        <input type="text" id="cm-icon"
+               class="flex-1 border border-gray-200 rounded-xl px-4 py-3 text-sm
+                      focus:outline-none focus:ring-2 focus:ring-orange-400"
+               placeholder="رابط الصورة أو إيموجي 🍔" />
+        <input type="file" id="cat-icon-file" class="hidden"
+               accept="image/*" onchange="uploadCatIcon(this)" />
+        <button onclick="document.getElementById('cat-icon-file').click()"
+                class="bg-gray-100 hover:bg-gray-200 px-4 rounded-xl text-xl transition-colors">
+          📁
+        </button>
+      </div>
+      <div id="cm-icon-preview-wrap" class="hidden">
+        <img id="cm-icon-preview" src=""
+             class="w-12 h-12 rounded-xl object-cover border border-gray-200" />
+      </div>
+      <p id="cat-upload-msg" class="text-xs text-gray-400 mt-1 hidden"></p>
     </div>
     <p id="cm-error" class="text-red-500 text-xs hidden"></p>
     <div class="flex gap-3 pt-2">
@@ -553,8 +588,9 @@ async function loadDashboard() {
 
   // إعدادات
   document.getElementById('set-name').value      = restaurant.name
-  document.getElementById('set-whatsapp').value  = restaurant.whatsapp
+  document.getElementById('set-whatsapp').value  = restaurant.whatsapp || ''
   document.getElementById('set-logo').value      = restaurant.logo_url || ''
+  document.getElementById('set-cover').value     = restaurant.cover_url || ''
   const primary = restaurant.theme?.primary || '#FF6B00'
   document.getElementById('set-color').value     = primary
   document.getElementById('set-color-hex').value = primary
@@ -1121,6 +1157,38 @@ async function uploadProductImage(input) {
   }
 }
 
+async function uploadCoverFile(input) {
+  const file = input.files[0]
+  if (!file) return
+  const msgEl = document.getElementById('cover-upload-msg')
+  msgEl.textContent = 'جاري الرفع...'
+  msgEl.classList.remove('hidden')
+  try {
+    const path = `covers/${state.restaurant.id}-${Date.now()}.${file.name.split('.').pop()}`
+    const url  = await uploadToSupabase(file, 'restaurant-images', path)
+    document.getElementById('set-cover').value = url
+    document.getElementById('cover-preview').src = url
+    document.getElementById('cover-preview-wrap').classList.remove('hidden')
+    msgEl.textContent = 'تم الرفع ✅'
+  } catch { msgEl.textContent = 'فشل الرفع' }
+}
+
+async function uploadCatIcon(input) {
+  const file = input.files[0]
+  if (!file) return
+  const msgEl = document.getElementById('cat-upload-msg')
+  msgEl.textContent = 'جاري الرفع...'
+  msgEl.classList.remove('hidden')
+  try {
+    const path = `categories/${state.restaurant.id}-${Date.now()}.${file.name.split('.').pop()}`
+    const url  = await uploadToSupabase(file, 'restaurant-images', path)
+    document.getElementById('cm-icon').value = url
+    document.getElementById('cm-icon-preview').src = url
+    document.getElementById('cm-icon-preview-wrap').classList.remove('hidden')
+    msgEl.textContent = 'تم الرفع ✅'
+  } catch { msgEl.textContent = 'فشل الرفع' }
+}
+
 // ─── UI HELPERS ───────────────────────────
 function showScreen(name) {
   document.getElementById('screen-login').classList.add('hidden')
@@ -1385,6 +1453,73 @@ async function loadAnalytics() {
         <span class="text-xs text-gray-400">${Number(p.price).toFixed(2)} ج.م</span>
       </div>`).join('')
     : `<p class="text-center text-gray-400 text-sm py-4">لا توجد منتجات</p>`
+}
+
+// ─── SETTINGS ─────────────────────────────
+let settingsSnapshot = null
+
+async function saveSettings() {
+  const name      = document.getElementById('set-name').value.trim()
+  const whatsapp  = document.getElementById('set-whatsapp').value.trim()
+  const logo_url  = document.getElementById('set-logo').value.trim() || null
+  const cover_url = document.getElementById('set-cover').value.trim() || null
+  const primary   = document.getElementById('set-color').value
+  const msgEl     = document.getElementById('settings-msg')
+
+  if (!name || !whatsapp) {
+    msgEl.textContent = 'الاسم والواتساب مطلوبان'
+    msgEl.className = 'text-center text-sm text-red-500'
+    msgEl.classList.remove('hidden')
+    return
+  }
+
+  settingsSnapshot = {
+    name:     document.getElementById('set-name').value,
+    whatsapp: document.getElementById('set-whatsapp').value,
+    logo_url: document.getElementById('set-logo').value,
+    primary
+  }
+
+  const { error } = await db.from('restaurants').update({
+    name, whatsapp, logo_url, cover_url,
+    theme: { primary, secondary: '#1A1A1A' }
+  }).eq('id', state.restaurant.id)
+
+  if (error) {
+    msgEl.textContent = 'حدث خطأ أثناء الحفظ'
+    msgEl.className = 'text-center text-sm text-red-500'
+  } else {
+    state.restaurant.name = name
+    document.getElementById('dash-restaurant-name').textContent = name
+    document.getElementById('undo-settings-btn').classList.remove('hidden')
+    msgEl.textContent = 'تم الحفظ بنجاح ✅'
+    msgEl.className = 'text-center text-sm text-green-500'
+    showToast('تم حفظ الإعدادات ✅')
+  }
+  msgEl.classList.remove('hidden')
+  setTimeout(() => msgEl.classList.add('hidden'), 3000)
+}
+
+function undoSettings() {
+  if (!settingsSnapshot) return
+  document.getElementById('set-name').value     = settingsSnapshot.name
+  document.getElementById('set-whatsapp').value = settingsSnapshot.whatsapp
+  document.getElementById('set-logo').value     = settingsSnapshot.logo_url || ''
+  document.getElementById('set-color').value    = settingsSnapshot.primary
+  document.getElementById('set-color-hex').value = settingsSnapshot.primary
+  document.getElementById('undo-settings-btn').classList.add('hidden')
+  settingsSnapshot = null
+  showToast('تم التراجع عن التعديلات')
+}
+
+function resetColor() {
+  const DEFAULT_COLOR = '#FF6B00'
+  document.getElementById('set-color').value     = DEFAULT_COLOR
+  document.getElementById('set-color-hex').value = DEFAULT_COLOR
+  if (typeof pickrInstance !== 'undefined' && pickrInstance) {
+    try { pickrInstance.setColor(DEFAULT_COLOR) } catch(e) {}
+  }
+  showToast('تم إعادة اللون للافتراضي')
 }
 
 // ─── START ────────────────────────────────
