@@ -359,7 +359,7 @@ async function boot() {
 async function loadData(slug) {
   const { data: r, error: rErr } = await db
     .from('restaurants')
-    .select('id, name, logo_url, whatsapp, theme, slug')
+      .select('id, name, logo_url, cover_url, whatsapp, theme, slug')
     .eq('slug', slug).eq('is_active', true).single()
   if (rErr || !r) throw new Error('المطعم غير موجود أو غير نشط')
   S.restaurant = r
@@ -398,10 +398,23 @@ function applyTheme() {
 function renderHeader() {
   document.title = S.restaurant.name
   document.getElementById('restaurant-name').textContent = S.restaurant.name
+
   if (S.restaurant.logo_url) {
     const l = document.getElementById('restaurant-logo')
     l.src = S.restaurant.logo_url
     l.classList.remove('hidden')
+  }
+
+  if (S.restaurant.cover_url) {
+    const hero = document.querySelector('.hero')
+    hero.style.backgroundImage = `url('${S.restaurant.cover_url}')`
+    hero.style.backgroundSize  = 'cover'
+    hero.style.backgroundPosition = 'center'
+    hero.style.position = 'relative'
+    // overlay عشان النص يبقى مقروء
+    const overlay = document.createElement('div')
+    overlay.style.cssText = 'position:absolute;inset:0;background:linear-gradient(to top,rgba(0,0,0,0.65) 0%,rgba(0,0,0,0.2) 100%);z-index:0'
+    hero.insertBefore(overlay, hero.firstChild)
   }
 }
 
