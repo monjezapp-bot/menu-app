@@ -58,15 +58,13 @@
       background: linear-gradient(135deg, var(--brand2) 0%, var(--brand) 100%);
       padding: 36px 20px 64px;
       position: relative;
-      overflow: visible;
+      overflow: hidden;
       transition: padding 0.3s ease, min-height 0.3s ease;
     }
     .hero::before {
       content:''; position:absolute; inset:0;
       background: radial-gradient(ellipse at 80% 20%, rgba(255,255,255,0.08) 0%, transparent 60%);
       pointer-events: none;
-      overflow: hidden;
-      border-radius: inherit;
     }
 
     /* hero shrunk */
@@ -110,31 +108,28 @@
       display: flex; align-items: center; gap: 14px;
     }
 
-    /* ── Search (inside hero) ── */
+    /* ── Search (embedded in hero) ── */
     .search-wrap {
       position: relative;
-      margin: -26px 0 0;
+      margin: -26px 16px 0;
       z-index: 10;
     }
     .search-wrap input {
       width: 100%;
       background: #fff;
       border: none;
-      border-radius: 14px;
-      padding: 14px 48px 14px 16px;
+      border-radius: 16px;
+      padding: 15px 48px 15px 16px;
       font-size: 14px; font-weight: 500; color: #333;
       outline: none;
       font-family: 'Rubik', sans-serif;
-      box-shadow: 0 4px 20px rgba(0,0,0,0.18);
+      box-shadow: 0 4px 20px rgba(0,0,0,0.10);
       transition: box-shadow 0.2s;
     }
-    .search-wrap input::placeholder { color: #bbb; }
-    .search-wrap input:focus {
-      box-shadow: 0 4px 24px rgba(0,0,0,0.22);
-    }
+    .search-wrap input:focus { box-shadow: 0 4px 24px rgba(0,0,0,0.14), 0 0 0 2px var(--brand); }
     .search-wrap .search-ico {
       position: absolute; right: 16px; top: 50%;
-      transform: translateY(-50%); color: #ccc; pointer-events: none;
+      transform: translateY(-50%); color: #bbb; pointer-events: none;
     }
 
     /* search overlay (mini mode) */
@@ -163,8 +158,8 @@
     .search-suggestions {
       position: absolute; top: calc(100% + 8px); right: 0; left: 0;
       background: #fff; border-radius: 16px; overflow: hidden;
-      box-shadow: 0 8px 32px rgba(0,0,0,0.18);
-      border: 1px solid #f0f0f0; z-index: 50;
+      box-shadow: 0 8px 32px rgba(0,0,0,0.12);
+      border: 1px solid #f0f0f0; z-index: 20;
     }
     .suggestion-item {
       display: flex; align-items: center; gap: 12px;
@@ -467,23 +462,23 @@
           <h1 id="restaurant-name" style="color:#fff;font-size:23px;font-weight:900;line-height:1.2;letter-spacing:-0.4px"></h1>
         </div>
       </div>
+    </div>
 
-      <!-- SEARCH (inside hero) -->
-      <div class="search-wrap" id="search-box-wrap">
-        <input id="search-input" type="search" placeholder="ابحث عن أكلة..."
-               oninput="handleSearch()" onfocus="showSuggestions()"
-               onblur="hideSuggestions()" autocomplete="off" />
-        <span class="search-ico">
-          <svg width="17" height="17" fill="none" stroke="currentColor" stroke-width="2.2" viewBox="0 0 24 24">
-            <circle cx="11" cy="11" r="8"/><path d="m21 21-4.35-4.35"/>
-          </svg>
-        </span>
-        <div id="search-suggestions" class="search-suggestions hidden"></div>
-      </div>
+    <!-- SEARCH (full mode) -->
+    <div class="search-wrap" id="search-box-wrap">
+      <input id="search-input" type="search" placeholder="ابحث عن أكلة..."
+             oninput="handleSearch()" onfocus="showSuggestions()"
+             onblur="hideSuggestions()" autocomplete="off" />
+      <span class="search-ico">
+        <svg width="17" height="17" fill="none" stroke="currentColor" stroke-width="2.2" viewBox="0 0 24 24">
+          <circle cx="11" cy="11" r="8"/><path d="m21 21-4.35-4.35"/>
+        </svg>
+      </span>
+      <div id="search-suggestions" class="search-suggestions hidden"></div>
     </div>
 
     <!-- CATEGORY TABS -->
-    <div class="cat-tabs-wrap" style="margin-top:0">
+    <div class="cat-tabs-wrap" style="margin-top:16px">
       <div id="cat-grid" class="cat-tabs"></div>
     </div>
   </div>
