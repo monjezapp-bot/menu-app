@@ -10,19 +10,13 @@
   <link href="https://fonts.googleapis.com/css2?family=Rubik:wght@400;500;600;700;800;900&display=swap" rel="stylesheet" />
 
   <style>
-    * { font-family: 'Rubik', sans-serif; box-sizing: border-box; }
+    * { font-family: 'Rubik', sans-serif; box-sizing: border-box; user-select: none; -webkit-user-select: none; }
+    input, textarea { user-select: text; -webkit-user-select: text; }
 
-    :root {
-      --brand:  #FF6B00;
-      --brand2: #1A1A1A;
-      --bg:     #F5F5F5;
-    }
-
+    :root { --brand: #FF6B00; --brand2: #1A1A1A; --bg: #F5F5F5; }
     body { background: var(--bg); }
-    .brand-bg   { background-color: var(--brand); }
-    .brand-text { color: var(--brand); }
 
-    /* ── Shimmer skeleton ── */
+    /* ── Shimmer ── */
     @keyframes shimmer {
       0%   { background-position: -600px 0; }
       100% { background-position:  600px 0; }
@@ -35,58 +29,84 @@
     }
 
     /* ── Animations ── */
-    @keyframes fadeUp {
-      from { opacity: 0; transform: translateY(16px); }
-      to   { opacity: 1; transform: translateY(0); }
-    }
+    @keyframes fadeUp { from { opacity:0; transform:translateY(16px); } to { opacity:1; transform:translateY(0); } }
     .fade-up { animation: fadeUp 0.3s ease both; }
 
-    @keyframes slideUp {
-      from { transform: translateY(100%); }
-      to   { transform: translateY(0); }
-    }
-    .sheet { animation: slideUp 0.32s cubic-bezier(0.34, 1.1, 0.64, 1) both; }
+    @keyframes slideUp { from { transform:translateY(100%); } to { transform:translateY(0); } }
+    .sheet { animation: slideUp 0.32s cubic-bezier(0.34,1.1,0.64,1) both; }
 
-    @keyframes modalIn {
-      from { transform: translateY(60px); opacity: 0; }
-      to   { transform: translateY(0);    opacity: 1; }
-    }
+    @keyframes modalIn { from { transform:translateY(60px); opacity:0; } to { transform:translateY(0); opacity:1; } }
     .modal-in { animation: modalIn 0.28s ease both; }
 
-    @keyframes popIn {
-      0%   { transform: scale(0.8); opacity: 0; }
-      70%  { transform: scale(1.08); }
-      100% { transform: scale(1);   opacity: 1; }
+    @keyframes cartBounce { 0%,100% { transform:scale(1); } 40% { transform:scale(1.04); } }
+
+    @keyframes fadeIn { from { opacity:0; } to { opacity:1; } }
+
+    .no-scroll::-webkit-scrollbar { display:none; }
+    .no-scroll { -ms-overflow-style:none; scrollbar-width:none; }
+
+    /* ── Hero (full mode) ── */
+    .hero-wrap {
+      position: sticky;
+      top: 0;
+      z-index: 25;
     }
-    .pop-in { animation: popIn 0.22s ease both; }
 
-    @keyframes cartBounce {
-      0%, 100% { transform: translateY(0); }
-      40%       { transform: translateY(-6px); }
-    }
-
-    .no-scroll::-webkit-scrollbar { display: none; }
-    .no-scroll { -ms-overflow-style: none; scrollbar-width: none; }
-
-    /* ── Hero ── */
     .hero {
       background: linear-gradient(135deg, var(--brand2) 0%, var(--brand) 100%);
-      padding: 40px 20px 56px;
+      padding: 36px 20px 64px;
       position: relative;
       overflow: hidden;
+      transition: padding 0.3s ease, min-height 0.3s ease;
     }
     .hero::before {
-      content: '';
-      position: absolute; inset: 0;
+      content:''; position:absolute; inset:0;
       background: radial-gradient(ellipse at 80% 20%, rgba(255,255,255,0.08) 0%, transparent 60%);
-    }
-    .hero::after {
-      content: '';
-      position: absolute; inset: 0;
-      background: radial-gradient(ellipse at 10% 80%, rgba(0,0,0,0.15) 0%, transparent 50%);
+      pointer-events: none;
     }
 
-    /* ── Search box — floats over hero ── */
+    /* hero shrunk */
+    .hero-wrap.shrunk .hero {
+      padding: 12px 20px 12px;
+    }
+    .hero-wrap.shrunk .hero-full-content { display: none; }
+    .hero-wrap.shrunk .hero-mini { display: flex !important; }
+    .hero-wrap.shrunk .search-wrap { display: none; }
+
+    .hero-mini {
+      display: none;
+      align-items: center;
+      gap: 10px;
+      position: relative; z-index: 1;
+    }
+    .hero-mini img {
+      width: 36px; height: 36px;
+      border-radius: 10px; object-fit: cover;
+      border: 2px solid rgba(255,255,255,0.3);
+    }
+    .hero-mini h2 {
+      color: #fff;
+      font-size: 16px;
+      font-weight: 800;
+      flex: 1;
+    }
+    .hero-mini .search-icon-btn {
+      width: 36px; height: 36px;
+      border-radius: 50%;
+      background: rgba(255,255,255,0.2);
+      display: flex; align-items: center; justify-content: center;
+      color: #fff; cursor: pointer;
+      border: none;
+      transition: background 0.2s;
+    }
+    .hero-mini .search-icon-btn:active { background: rgba(255,255,255,0.35); }
+
+    .hero-full-content {
+      position: relative; z-index: 1;
+      display: flex; align-items: center; gap: 14px;
+    }
+
+    /* ── Search (embedded in hero) ── */
     .search-wrap {
       position: relative;
       margin: -26px 16px 0;
@@ -98,52 +118,59 @@
       border: none;
       border-radius: 16px;
       padding: 15px 48px 15px 16px;
-      font-size: 14px;
-      font-weight: 500;
-      color: #333;
+      font-size: 14px; font-weight: 500; color: #333;
       outline: none;
       font-family: 'Rubik', sans-serif;
       box-shadow: 0 4px 20px rgba(0,0,0,0.10);
       transition: box-shadow 0.2s;
     }
-    .search-wrap input:focus {
-      box-shadow: 0 4px 24px rgba(0,0,0,0.14), 0 0 0 2px var(--brand);
-    }
+    .search-wrap input:focus { box-shadow: 0 4px 24px rgba(0,0,0,0.14), 0 0 0 2px var(--brand); }
     .search-wrap .search-ico {
-      position: absolute;
-      right: 16px; top: 50%;
-      transform: translateY(-50%);
-      color: #bbb;
-      pointer-events: none;
+      position: absolute; right: 16px; top: 50%;
+      transform: translateY(-50%); color: #bbb; pointer-events: none;
     }
-    .search-suggestions {
-      position: absolute;
-      top: calc(100% + 8px); right: 0; left: 0;
+
+    /* search overlay (mini mode) */
+    .search-overlay {
+      position: fixed; inset: 0; z-index: 50;
+      background: rgba(0,0,0,0.5);
+      display: flex; align-items: flex-start;
+      padding: 60px 16px 0;
+      animation: fadeIn 0.2s ease;
+    }
+    .search-overlay input {
+      width: 100%;
       background: #fff;
-      border-radius: 16px;
-      overflow: hidden;
+      border: none; border-radius: 16px;
+      padding: 15px 48px 15px 16px;
+      font-size: 14px; font-weight: 500; color: #333;
+      outline: none; font-family: 'Rubik', sans-serif;
+      box-shadow: 0 4px 20px rgba(0,0,0,0.2);
+    }
+    .search-overlay .search-ico {
+      position: absolute; right: 30px; top: 76px;
+      color: #bbb; pointer-events: none;
+    }
+
+    /* suggestions */
+    .search-suggestions {
+      position: absolute; top: calc(100% + 8px); right: 0; left: 0;
+      background: #fff; border-radius: 16px; overflow: hidden;
       box-shadow: 0 8px 32px rgba(0,0,0,0.12);
-      border: 1px solid #f0f0f0;
-      z-index: 20;
+      border: 1px solid #f0f0f0; z-index: 20;
     }
     .suggestion-item {
       display: flex; align-items: center; gap: 12px;
-      padding: 11px 14px;
-      cursor: pointer;
-      transition: background 0.15s;
+      padding: 11px 14px; cursor: pointer; transition: background 0.15s;
     }
     .suggestion-item:hover { background: #fff8f3; }
     .suggestion-item:not(:last-child) { border-bottom: 1px solid #f5f5f5; }
-    .suggestion-img {
-      width: 40px; height: 40px;
-      border-radius: 10px; object-fit: cover;
-      flex-shrink: 0; background: #f5f5f5;
-    }
-    .suggestion-name  { font-size: 13px; font-weight: 700; color: #1a1a1a; }
-    .suggestion-price { font-size: 11px; font-weight: 700; color: var(--brand); margin-top: 2px; }
-    .suggestion-match { color: var(--brand); }
+    .suggestion-img { width:40px; height:40px; border-radius:10px; object-fit:cover; flex-shrink:0; background:#f5f5f5; }
+    .suggestion-name  { font-size:13px; font-weight:700; color:#1a1a1a; }
+    .suggestion-price { font-size:11px; font-weight:700; color:var(--brand); margin-top:2px; }
+    .suggestion-match { color:var(--brand); }
 
-    /* ── Category Tabs — Talabat underline style ── */
+    /* ── Category Tabs ── */
     .cat-tabs-wrap {
       position: sticky;
       top: 0;
@@ -152,266 +179,186 @@
       border-bottom: 1px solid #f0f0f0;
       box-shadow: 0 2px 12px rgba(0,0,0,0.06);
     }
-    .cat-tabs {
-      display: flex;
-      overflow-x: auto;
-      padding: 0 12px;
-      gap: 0;
-      -ms-overflow-style: none;
-      scrollbar-width: none;
-    }
-    .cat-tabs::-webkit-scrollbar { display: none; }
+    .cat-tabs { display:flex; overflow-x:auto; padding:0 12px; -ms-overflow-style:none; scrollbar-width:none; }
+    .cat-tabs::-webkit-scrollbar { display:none; }
     .cat-tab {
-      flex-shrink: 0;
-      padding: 14px 16px 12px;
-      font-size: 13px;
-      font-weight: 600;
-      color: #999;
-      cursor: pointer;
-      white-space: nowrap;
-      border-bottom: 3px solid transparent;
-      transition: color 0.2s, border-color 0.2s;
+      flex-shrink:0; padding:14px 16px 12px;
+      font-size:13px; font-weight:600; color:#999;
+      cursor:pointer; white-space:nowrap;
+      border-bottom:3px solid transparent;
+      transition:color 0.2s, border-color 0.2s;
+    }
+    .cat-tab:active { opacity:0.7; }
+    .cat-tab.active { color:var(--brand); border-bottom-color:var(--brand); font-weight:800; }
+
+    /* ── Announcement Banner ── */
+    .announcement-bar {
+      margin: 12px 16px 0;
+      background: linear-gradient(135deg, #fff8f3, #fff3ea);
+      border: 1.5px solid #ffe0c8;
+      border-radius: 14px;
+      padding: 10px 14px;
+      display: flex; align-items: flex-start; gap: 8px;
+      font-size: 13px; color: #7a3c00; font-weight: 600;
+      line-height: 1.5;
+    }
+    .announcement-bar .ann-icon { font-size: 16px; flex-shrink: 0; margin-top: 1px; }
+
+    /* ── Ad Banner ── */
+    .ad-banner-wrap {
+      margin: 12px 16px 0;
+      border-radius: 16px;
+      overflow: hidden;
       position: relative;
     }
-    .cat-tab:active { opacity: 0.7; }
-    .cat-tab.active {
-      color: var(--brand);
-      border-bottom-color: var(--brand);
-      font-weight: 800;
+    .ad-banner-wrap img {
+      width: 100%; display: block;
+      border-radius: 16px;
+      max-height: 140px; object-fit: cover;
+      cursor: pointer;
+      transition: opacity 0.2s;
+    }
+    .ad-banner-wrap img:active { opacity: 0.85; }
+    .ad-banner-dots {
+      display: flex; justify-content: center; gap: 5px;
+      padding: 6px 0 2px;
+    }
+    .ad-dot {
+      width: 6px; height: 6px; border-radius: 50%;
+      background: #ddd; transition: background 0.3s, width 0.3s;
+    }
+    .ad-dot.active { background: var(--brand); width: 18px; border-radius: 3px; }
+
+    /* ── Platform Ad Space ── */
+    #platform-ad-space {
+      margin: 10px 16px 0;
     }
 
     /* ── Section title ── */
-    .section-title {
-      font-size: 18px;
-      font-weight: 900;
-      color: #1a1a1a;
-      padding: 20px 16px 12px;
-      letter-spacing: -0.3px;
-    }
+    .section-title { font-size:18px; font-weight:900; color:#1a1a1a; padding:20px 16px 12px; letter-spacing:-0.3px; }
 
-    /* ── Products Grid (2 columns — unchanged) ── */
-    .products-grid {
-      display: grid;
-      grid-template-columns: 1fr 1fr;
-      gap: 10px;
-      padding: 0 16px;
-    }
+    /* ── Products Grid ── */
+    .products-grid { display:grid; grid-template-columns:1fr 1fr; gap:10px; padding:0 16px; }
 
     /* ── Product Card ── */
     .prod-card {
-      background: #fff;
-      border-radius: 18px;
-      overflow: hidden;
-      cursor: pointer;
-      transition: transform 0.15s, box-shadow 0.2s;
-      border: 1.5px solid #efefef;
-      position: relative;
+      background:#fff; border-radius:18px; overflow:hidden;
+      cursor:pointer; transition:transform 0.15s;
+      border:1.5px solid #efefef; position:relative;
     }
-    .prod-card:active { transform: scale(0.96); }
-
-    .prod-card .thumb {
-      position: relative;
-      width: 100%;
-      padding-top: 100%;
-      background: #f8f8f8;
-    }
-    .prod-card .thumb img {
-      position: absolute; inset: 0;
-      width: 100%; height: 100%;
-      object-fit: cover;
-    }
+    .prod-card:active { transform:scale(0.96); }
+    .prod-card .thumb { position:relative; width:100%; padding-top:100%; background:#f8f8f8; }
+    .prod-card .thumb img { position:absolute; inset:0; width:100%; height:100%; object-fit:cover; }
     .prod-card .thumb .no-img {
-      position: absolute; inset: 0;
-      display: flex; align-items: center; justify-content: center;
-      font-size: 38px;
-      background: linear-gradient(135deg, #f8f8f8, #f0f0f0);
+      position:absolute; inset:0;
+      display:flex; align-items:center; justify-content:center;
+      font-size:38px;
+      background:linear-gradient(135deg,#f8f8f8,#f0f0f0);
     }
-
-    /* زر + */
     .add-btn {
-      position: absolute;
-      bottom: 8px; left: 8px;
-      width: 36px; height: 36px;
-      border-radius: 50%;
-      background: #fff;
-      color: var(--brand);
-      display: flex; align-items: center; justify-content: center;
-      font-size: 24px;
-      font-weight: 900;
-      box-shadow: 0 2px 10px rgba(0,0,0,0.16);
-      transition: transform 0.15s, box-shadow 0.15s;
-      border: none;
-      line-height: 1;
+      position:absolute; bottom:8px; left:8px;
+      width:36px; height:36px; border-radius:50%;
+      background:#fff; color:var(--brand);
+      display:flex; align-items:center; justify-content:center;
+      font-size:24px; font-weight:900;
+      box-shadow:0 2px 10px rgba(0,0,0,0.16);
+      transition:transform 0.15s; border:none; line-height:1;
     }
-    .add-btn:active { transform: scale(0.85); }
-
-    /* Offer badge */
+    .add-btn:active { transform:scale(0.85); }
     .offer-badge {
-      position: absolute; top: 8px; right: 8px;
-      background: var(--brand); color: #fff;
-      font-size: 10px; font-weight: 900;
-      padding: 3px 9px; border-radius: 20px;
-      letter-spacing: 0.2px;
+      position:absolute; top:8px; right:8px;
+      background:var(--brand); color:#fff;
+      font-size:10px; font-weight:900;
+      padding:3px 9px; border-radius:20px;
     }
-
-    /* Card info */
-    .prod-card .info { padding: 10px 10px 12px; }
+    .disc-pct {
+      position:absolute; top:8px; left:8px;
+      background:#ff3b30; color:#fff;
+      font-size:9px; font-weight:900;
+      padding:2px 7px; border-radius:20px;
+    }
+    .prod-card .info { padding:10px 10px 12px; }
     .prod-card h3 {
-      font-size: 13px; font-weight: 700; color: #1a1a1a;
-      line-height: 1.45; margin-bottom: 6px;
-      display: -webkit-box;
-      -webkit-line-clamp: 2;
-      -webkit-box-orient: vertical;
-      overflow: hidden;
+      font-size:13px; font-weight:700; color:#1a1a1a;
+      line-height:1.45; margin-bottom:6px;
+      display:-webkit-box; -webkit-line-clamp:2; -webkit-box-orient:vertical; overflow:hidden;
     }
-
-    /* Prices */
-    .price-row    { display: flex; align-items: baseline; gap: 5px; flex-wrap: wrap; }
-    .price-new    { font-size: 15px; font-weight: 900; color: var(--brand); }
-    .price-old    { font-size: 11px; font-weight: 600; color: #bbb; text-decoration: line-through; }
-    .price-normal { font-size: 15px; font-weight: 900; color: var(--brand); }
-
-    /* Qty controls inside card */
-    .qty-row { display: flex; align-items: center; gap: 6px; margin-top: 8px; }
+    .price-row    { display:flex; align-items:baseline; gap:5px; flex-wrap:wrap; }
+    .price-new    { font-size:15px; font-weight:900; color:var(--brand); }
+    .price-old    { font-size:11px; font-weight:600; color:#bbb; text-decoration:line-through; }
+    .price-normal { font-size:15px; font-weight:900; color:var(--brand); }
+    .qty-row { display:flex; align-items:center; gap:6px; margin-top:8px; }
     .qty-btn {
-      width: 28px; height: 28px;
-      border-radius: 8px;
-      display: flex; align-items: center; justify-content: center;
-      font-size: 16px; font-weight: 900;
-      cursor: pointer;
-      transition: transform 0.1s;
-      background: var(--brand); color: #fff;
+      width:28px; height:28px; border-radius:8px;
+      display:flex; align-items:center; justify-content:center;
+      font-size:16px; font-weight:900; cursor:pointer;
+      background:var(--brand); color:#fff; transition:transform 0.1s;
     }
-    .qty-btn:active { transform: scale(0.82); }
-
-    /* Unavailable */
-    .unavail-overlay {
-      position: absolute; inset: 0;
-      background: rgba(255,255,255,0.55);
-    }
+    .qty-btn:active { transform:scale(0.82); }
+    .unavail-overlay { position:absolute; inset:0; background:rgba(255,255,255,0.55); }
 
     /* ── Bundle Card ── */
     .bundle-card {
-      background: #fff;
-      border-radius: 18px;
-      overflow: hidden;
-      margin: 0 16px 10px;
-      cursor: pointer;
-      border: 1.5px solid #efefef;
-      transition: transform 0.15s;
+      background:#fff; border-radius:18px; overflow:hidden;
+      margin:0 16px 10px; cursor:pointer;
+      border:1.5px solid #efefef; transition:transform 0.15s;
     }
-    .bundle-card:active { transform: scale(0.98); }
-    .bundle-card img { width: 100%; height: 155px; object-fit: cover; }
-    .bundle-card .no-img {
-      width: 100%; height: 155px;
-      background: linear-gradient(135deg, #fff5ee, #ffeee0);
-      display: flex; align-items: center; justify-content: center;
-      font-size: 52px;
-    }
-    .bundle-card .b-info  { padding: 12px 14px 14px; }
-    .bundle-card .b-info h3 { font-size: 15px; font-weight: 900; color: #1a1a1a; margin-bottom: 4px; }
-    .bundle-card .b-info p  { font-size: 12px; color: #aaa; line-height: 1.6; margin-bottom: 10px; }
-    .bundle-card .b-footer  { display: flex; align-items: center; justify-content: space-between; }
-    .bundle-card .b-price   { font-size: 17px; font-weight: 900; color: var(--brand); }
-    .bundle-add {
-      background: var(--brand); color: #fff;
-      font-size: 13px; font-weight: 800;
-      padding: 9px 18px; border-radius: 12px;
-      transition: opacity 0.15s;
-    }
-    .bundle-add:active { opacity: 0.8; }
+    .bundle-card:active { transform:scale(0.98); }
+    .bundle-card img { width:100%; height:155px; object-fit:cover; }
+    .bundle-card .no-img { width:100%; height:155px; background:linear-gradient(135deg,#fff5ee,#ffeee0); display:flex; align-items:center; justify-content:center; font-size:52px; }
+    .bundle-card .b-info  { padding:12px 14px 14px; }
+    .bundle-card .b-info h3 { font-size:15px; font-weight:900; color:#1a1a1a; margin-bottom:4px; }
+    .bundle-card .b-info p  { font-size:12px; color:#aaa; line-height:1.6; margin-bottom:10px; }
+    .bundle-card .b-footer  { display:flex; align-items:center; justify-content:space-between; }
+    .bundle-card .b-price   { font-size:17px; font-weight:900; color:var(--brand); }
+    .bundle-add { background:var(--brand); color:#fff; font-size:13px; font-weight:800; padding:9px 18px; border-radius:12px; }
 
-    /* ── Cart Bar — Talabat pill style ── */
+    /* ── Cart Bar ── */
     .cart-bar {
-      position: fixed;
-      bottom: 0; left: 0; right: 0;
-      z-index: 30;
-      padding: 10px 16px 18px;
-      /* safe area iPhone */
-      padding-bottom: calc(18px + env(safe-area-inset-bottom));
+      position:fixed; bottom:0; left:0; right:0; z-index:30;
+      padding:10px 16px;
+      padding-bottom: calc(14px + env(safe-area-inset-bottom));
     }
     .cart-bar-btn {
-      background: var(--brand);
-      color: #fff;
-      border-radius: 100px;
-      padding: 0 6px 0 20px;
-      height: 58px;
-      display: flex;
-      align-items: center;
-      justify-content: space-between;
-      box-shadow: 0 8px 24px rgba(255,107,0,0.38);
-      cursor: pointer;
-      transition: transform 0.15s, box-shadow 0.15s;
-      gap: 8px;
+      background:var(--brand); color:#fff;
+      border-radius:100px; padding:0 6px 0 20px; height:58px;
+      display:flex; align-items:center; justify-content:space-between;
+      box-shadow:0 8px 24px rgba(255,107,0,0.38); cursor:pointer;
+      transition:transform 0.15s, box-shadow 0.15s; gap:8px;
     }
-    .cart-bar-btn:active {
-      transform: scale(0.97);
-      box-shadow: 0 4px 12px rgba(255,107,0,0.3);
-    }
-    .cart-bar-label {
-      font-size: 15px;
-      font-weight: 800;
-      flex: 1;
-      text-align: center;
-    }
-    .cart-bar-count {
-      background: rgba(255,255,255,0.22);
-      padding: 4px 12px;
-      border-radius: 100px;
-      font-size: 13px;
-      font-weight: 700;
-      flex-shrink: 0;
-    }
-    .cart-bar-total {
-      background: rgba(0,0,0,0.18);
-      padding: 0 16px;
-      border-radius: 100px;
-      font-size: 14px;
-      font-weight: 800;
-      height: 44px;
-      display: flex;
-      align-items: center;
-      flex-shrink: 0;
-    }
+    .cart-bar-btn:active { transform:scale(0.97); box-shadow:0 4px 12px rgba(255,107,0,0.3); }
+    .cart-bar-label { font-size:15px; font-weight:800; flex:1; text-align:center; }
+    .cart-bar-count { background:rgba(255,255,255,0.22); padding:4px 12px; border-radius:100px; font-size:13px; font-weight:700; flex-shrink:0; }
+    .cart-bar-total { background:rgba(0,0,0,0.18); padding:0 16px; border-radius:100px; font-size:14px; font-weight:800; height:44px; display:flex; align-items:center; flex-shrink:0; }
 
-    /* ── Suggested (inside modal) ── */
-    .suggest-scroll { display: flex; gap: 10px; overflow-x: auto; padding: 4px 16px 14px; }
-    .suggest-card {
-      flex-shrink: 0; width: 108px;
-      background: #fff; border-radius: 14px; overflow: hidden;
-      border: 1.5px solid #efefef; cursor: pointer;
+    /* ── Back to Top ── */
+    .back-to-top {
+      position: fixed; bottom: 84px; left: 50%; transform: translateX(-50%);
+      background: #1a1a1a; color: #fff;
+      border: none; border-radius: 100px;
+      padding: 10px 20px; font-size: 13px; font-weight: 700;
+      display: flex; align-items: center; gap: 7px;
+      box-shadow: 0 4px 16px rgba(0,0,0,0.2);
+      cursor: pointer; z-index: 28;
+      transition: opacity 0.3s, transform 0.3s;
+      font-family: 'Rubik', sans-serif;
     }
-    .suggest-card img { width: 100%; height: 72px; object-fit: cover; }
-    .suggest-card .no-img { width: 100%; height: 72px; background: #f8f8f8; display: flex; align-items: center; justify-content: center; font-size: 24px; }
-    .suggest-card .sc-info { padding: 6px 8px 8px; }
-    .suggest-card .sc-info p    { font-size: 11px; font-weight: 700; color: #1a1a1a; line-height: 1.35; }
-    .suggest-card .sc-info span { font-size: 11px; font-weight: 900; color: var(--brand); }
+    .back-to-top.hidden-btn { opacity: 0; pointer-events: none; transform: translateX(-50%) translateY(10px); }
+    .back-to-top:active { transform: translateX(-50%) scale(0.96); }
 
-    /* ── Discount badge on card ── */
-    .disc-pct {
-      position: absolute; top: 8px; left: 8px;
-      background: #ff3b30; color: #fff;
-      font-size: 9px; font-weight: 900;
-      padding: 2px 7px; border-radius: 20px;
-    }
-
-    /* min-order hint */
-    .min-order-hint {
-      position: fixed;
-      bottom: 86px; left: 50%; transform: translateX(-50%);
-      background: rgba(26,26,26,0.82);
-      backdrop-filter: blur(6px);
-      color: #fff; font-size: 12px; font-weight: 600;
-      padding: 7px 18px; border-radius: 100px;
-      z-index: 29; white-space: nowrap;
-      pointer-events: none;
-    }
+    /* ── Suggested ── */
+    .suggest-scroll { display:flex; gap:10px; overflow-x:auto; padding:4px 16px 14px; }
+    .suggest-card { flex-shrink:0; width:108px; background:#fff; border-radius:14px; overflow:hidden; border:1.5px solid #efefef; cursor:pointer; }
+    .suggest-card img { width:100%; height:72px; object-fit:cover; }
+    .suggest-card .no-img { width:100%; height:72px; background:#f8f8f8; display:flex; align-items:center; justify-content:center; font-size:24px; }
+    .suggest-card .sc-info { padding:6px 8px 8px; }
+    .suggest-card .sc-info p    { font-size:11px; font-weight:700; color:#1a1a1a; line-height:1.35; }
+    .suggest-card .sc-info span { font-size:11px; font-weight:900; color:var(--brand); }
   </style>
 </head>
-
 <body>
 
-<!-- ═══════════════════════════ LOADING ═══════════════════════════ -->
+<!-- LOADING -->
 <div id="state-loading" class="max-w-[480px] mx-auto">
   <div class="skeleton rounded-none" style="height:170px"></div>
   <div style="height:26px"></div>
@@ -421,8 +368,8 @@
     <div class="skeleton" style="height:14px;width:80px;margin-left:16px;border-radius:4px"></div>
     <div class="skeleton" style="height:14px;width:50px;border-radius:4px"></div>
   </div>
-  <div style="padding:16px 16px 0" class="space-y-3">
-    <div class="skeleton" style="height:20px;width:80px;border-radius:4px"></div>
+  <div style="padding:16px 16px 0">
+    <div class="skeleton" style="height:20px;width:80px;border-radius:4px;margin-bottom:12px"></div>
     <div style="display:grid;grid-template-columns:1fr 1fr;gap:10px">
       <div class="skeleton" style="height:190px"></div>
       <div class="skeleton" style="height:190px"></div>
@@ -432,51 +379,81 @@
   </div>
 </div>
 
-<!-- ═══════════════════════════ ERROR ═══════════════════════════ -->
+<!-- ERROR -->
 <div id="state-error" class="hidden flex flex-col items-center justify-center min-h-screen p-8 text-center">
   <div style="font-size:68px;margin-bottom:16px">🍽️</div>
   <h2 style="font-size:20px;font-weight:900;color:#1a1a1a;margin-bottom:8px">لم نجد هذا المطعم</h2>
   <p id="error-msg" style="font-size:13px;color:#aaa">تحقق من الرابط وحاول مجدداً</p>
 </div>
 
-<!-- ═══════════════════════════ APP ═══════════════════════════ -->
+<!-- APP -->
 <div id="state-app" class="hidden max-w-[480px] mx-auto pb-36">
 
   <!-- Preview bar -->
-  <div id="back-to-dash" class="hidden" style="background:#1a1a1a;color:#fff;font-size:12px;font-weight:700;padding:9px 16px;display:flex;align-items:center;justify-content:space-between">
+  <div id="back-to-dash" class="hidden" style="background:#1a1a1a;color:#fff;font-size:12px;font-weight:700;padding:9px 16px;display:flex;align-items:center;justify-content:space-between;position:relative;z-index:40">
     <span>🔍 وضع المعاينة</span>
     <a href="./dashboard.html" style="background:#fff;color:#1a1a1a;padding:4px 12px;border-radius:8px;font-weight:700">← لوحة التحكم</a>
   </div>
 
-  <!-- HERO -->
-  <div class="hero" id="hero-section">
-    <div style="position:relative;z-index:1;display:flex;align-items:center;gap:14px">
-      <img id="restaurant-logo" src="" alt="" class="hidden"
-           style="width:64px;height:64px;border-radius:18px;object-fit:cover;border:2.5px solid rgba(255,255,255,0.35);box-shadow:0 4px 16px rgba(0,0,0,0.2)" />
-      <div>
-        <p style="color:rgba(255,255,255,0.6);font-size:12px;font-weight:500;margin-bottom:3px">أهلاً بك في</p>
-        <h1 id="restaurant-name" style="color:#fff;font-size:23px;font-weight:900;line-height:1.2;letter-spacing:-0.4px"></h1>
+  <!-- HERO WRAP (sticky) -->
+  <div class="hero-wrap" id="hero-wrap">
+    <div class="hero" id="hero-section">
+      <!-- Mini mode -->
+      <div class="hero-mini" id="hero-mini">
+        <img id="mini-logo" src="" alt="" style="display:none" />
+        <h2 id="mini-name"></h2>
+        <button class="search-icon-btn" onclick="openSearchOverlay()">
+          <svg width="17" height="17" fill="none" stroke="currentColor" stroke-width="2.2" viewBox="0 0 24 24">
+            <circle cx="11" cy="11" r="8"/><path d="m21 21-4.35-4.35"/>
+          </svg>
+        </button>
       </div>
+      <!-- Full mode -->
+      <div class="hero-full-content" id="hero-full">
+        <img id="restaurant-logo" src="" alt="" class="hidden"
+             style="width:64px;height:64px;border-radius:18px;object-fit:cover;border:2.5px solid rgba(255,255,255,0.35);box-shadow:0 4px 16px rgba(0,0,0,0.2)" />
+        <div>
+          <p style="color:rgba(255,255,255,0.6);font-size:12px;font-weight:500;margin-bottom:3px">أهلاً بك في</p>
+          <h1 id="restaurant-name" style="color:#fff;font-size:23px;font-weight:900;line-height:1.2;letter-spacing:-0.4px"></h1>
+        </div>
+      </div>
+    </div>
+
+    <!-- SEARCH (full mode) -->
+    <div class="search-wrap" id="search-box-wrap">
+      <input id="search-input" type="search" placeholder="ابحث عن أكلة..."
+             oninput="handleSearch()" onfocus="showSuggestions()"
+             onblur="hideSuggestions()" autocomplete="off" />
+      <span class="search-ico">
+        <svg width="17" height="17" fill="none" stroke="currentColor" stroke-width="2.2" viewBox="0 0 24 24">
+          <circle cx="11" cy="11" r="8"/><path d="m21 21-4.35-4.35"/>
+        </svg>
+      </span>
+      <div id="search-suggestions" class="search-suggestions hidden"></div>
+    </div>
+
+    <!-- CATEGORY TABS -->
+    <div class="cat-tabs-wrap" style="margin-top:16px">
+      <div id="cat-grid" class="cat-tabs"></div>
     </div>
   </div>
 
-  <!-- SEARCH -->
-  <div class="search-wrap" id="search-box-wrap">
-    <input id="search-input" type="search" placeholder="ابحث عن أكلة..."
-           oninput="handleSearch()" onfocus="showSuggestions()"
-           onblur="hideSuggestions()" autocomplete="off" />
-    <span class="search-ico">
-      <svg width="17" height="17" fill="none" stroke="currentColor" stroke-width="2.2" viewBox="0 0 24 24">
-        <circle cx="11" cy="11" r="8"/><path d="m21 21-4.35-4.35"/>
-      </svg>
-    </span>
-    <div id="search-suggestions" class="search-suggestions hidden"></div>
+  <!-- ANNOUNCEMENT BAR -->
+  <div id="announcement-bar" class="announcement-bar hidden">
+    <span class="ann-icon">📢</span>
+    <span id="announcement-text"></span>
   </div>
 
-  <!-- CATEGORY TABS -->
-  <div class="cat-tabs-wrap" style="margin-top:16px">
-    <div id="cat-grid" class="cat-tabs"></div>
+  <!-- AD BANNERS -->
+  <div id="ad-banners-wrap" class="hidden">
+    <div class="ad-banner-wrap">
+      <img id="ad-banner-img" src="" alt="" onclick="handleBannerClick()" />
+    </div>
+    <div class="ad-banner-dots" id="ad-dots"></div>
   </div>
+
+  <!-- PLATFORM AD SPACE -->
+  <div id="platform-ad-space"></div>
 
   <!-- PRODUCTS -->
   <div id="products-wrapper"></div>
@@ -490,7 +467,29 @@
 
 </div>
 
-<!-- ═══════════════════════════ CART BAR ═══════════════════════════ -->
+<!-- SEARCH OVERLAY (mini mode) -->
+<div id="search-overlay" class="search-overlay hidden" onclick="closeSearchOverlay(event)">
+  <div style="position:relative;width:100%">
+    <input id="search-overlay-input" type="search" placeholder="ابحث عن أكلة..."
+           oninput="handleOverlaySearch()" autocomplete="off" />
+    <span class="search-ico" style="position:absolute;right:16px;top:50%;transform:translateY(-50%);color:#bbb;pointer-events:none">
+      <svg width="17" height="17" fill="none" stroke="currentColor" stroke-width="2.2" viewBox="0 0 24 24">
+        <circle cx="11" cy="11" r="8"/><path d="m21 21-4.35-4.35"/>
+      </svg>
+    </span>
+    <div id="overlay-suggestions" class="search-suggestions hidden" style="top:calc(100% + 8px)"></div>
+  </div>
+</div>
+
+<!-- BACK TO TOP -->
+<button class="back-to-top hidden-btn" id="back-to-top-btn" onclick="scrollToTop()">
+  <svg width="14" height="14" fill="none" stroke="currentColor" stroke-width="2.5" viewBox="0 0 24 24">
+    <path d="M18 15l-6-6-6 6"/>
+  </svg>
+  الأعلى
+</button>
+
+<!-- CART BAR -->
 <div id="cart-bar" class="cart-bar hidden">
   <div class="cart-bar-btn" onclick="openCartSheet()">
     <span class="cart-bar-count" id="cart-count-badge">0</span>
@@ -499,11 +498,10 @@
   </div>
 </div>
 
-<!-- ═══════════════════════════ CART SHEET ═══════════════════════════ -->
+<!-- CART SHEET -->
 <div id="cart-sheet" class="hidden fixed inset-0 z-40 flex flex-col justify-end">
   <div class="absolute inset-0 bg-black/50 backdrop-blur-sm" onclick="closeCartSheet()"></div>
   <div class="sheet relative bg-white rounded-t-3xl shadow-2xl" style="max-height:88vh;display:flex;flex-direction:column">
-    <!-- Handle -->
     <div style="display:flex;justify-content:center;padding:12px 0 0">
       <div style="width:40px;height:4px;background:#e8e8e8;border-radius:4px"></div>
     </div>
@@ -530,13 +528,13 @@
   </div>
 </div>
 
-<!-- ═══════════════════════════ PRODUCT MODAL ═══════════════════════════ -->
+<!-- PRODUCT MODAL -->
 <div id="product-modal" class="hidden fixed inset-0 z-50 flex items-end justify-center">
   <div class="absolute inset-0 bg-black/60 backdrop-blur-sm" onclick="closeModal()"></div>
   <div id="modal-inner" class="modal-in relative bg-white w-full max-w-[480px] rounded-t-3xl shadow-2xl no-scroll" style="max-height:92vh;overflow-y:auto"></div>
 </div>
 
-<!-- ═══════════════════════════ BUNDLE MODAL ═══════════════════════════ -->
+<!-- BUNDLE MODAL -->
 <div id="bundle-modal" class="hidden fixed inset-0 z-50 flex items-end justify-center">
   <div class="absolute inset-0 bg-black/60 backdrop-blur-sm" onclick="closeBundleModal()"></div>
   <div id="bundle-modal-inner" class="modal-in relative bg-white w-full max-w-[480px] rounded-t-3xl shadow-2xl no-scroll" style="max-height:92vh;overflow-y:auto"></div>
@@ -549,13 +547,8 @@ const { createClient } = supabase
 const db = createClient(SUPABASE_URL, SUPABASE_ANON)
 
 const S = {
-  restaurant: null,
-  categories: [],
-  products:   [],
-  bundles:    [],
-  cart:       [],
-  activeCat:  null,
-  search:     ''
+  restaurant: null, categories: [], products: [], bundles: [], banners: [],
+  cart: [], activeCat: null, search: '', currentBanner: 0
 }
 
 // ── BOOT ──────────────────────────────────────────────────────────
@@ -567,8 +560,11 @@ async function boot() {
     applyTheme()
     renderHeader()
     renderCatGrid()
+    renderAnnouncement()
+    renderAdBanners()
     renderAllSections()
     showState('app')
+    initScrollBehavior()
     initScrollSpy()
   } catch(e) { showError(e.message) }
 }
@@ -577,23 +573,16 @@ async function boot() {
 async function loadData(slug) {
   const { data: r, error: rErr } = await db
     .from('restaurants')
-    .select('id, name, logo_url, cover_url, whatsapp, theme, slug')
+    .select('id, name, logo_url, cover_url, whatsapp, theme, slug, announcement_text, announcement_active')
     .eq('slug', slug).eq('is_active', true).single()
   if (rErr || !r) throw new Error('المطعم غير موجود أو غير نشط')
   S.restaurant = r
 
-  const [catRes, prodRes, bundleRes] = await Promise.all([
-    db.from('categories')
-      .select('id, name, sort_order, icon_url')
-      .eq('restaurant_id', r.id).order('sort_order'),
-
-    db.from('products')
-      .select('id, category_id, name, description, price, discount_price, offer_badge, discount_active, discount_starts_at, discount_ends_at, image_url, sort_order, is_available, status, availability')
-      .eq('restaurant_id', r.id).neq('status', 'hidden').order('sort_order'),
-
-    db.from('bundles')
-      .select('id, name, description, price, image_url, items, sort_order')
-      .eq('restaurant_id', r.id).eq('is_active', true).order('sort_order')
+  const [catRes, prodRes, bundleRes, bannerRes] = await Promise.all([
+    db.from('categories').select('id,name,sort_order,icon_url').eq('restaurant_id', r.id).order('sort_order'),
+    db.from('products').select('id,category_id,name,description,price,discount_price,offer_badge,discount_active,discount_starts_at,discount_ends_at,image_url,sort_order,is_available,status,availability').eq('restaurant_id', r.id).neq('status','hidden').order('sort_order'),
+    db.from('bundles').select('id,name,description,price,image_url,items,sort_order').eq('restaurant_id', r.id).eq('is_active', true).order('sort_order'),
+    db.from('banners').select('id,image_url,link_type,link_value,sort_order').eq('restaurant_id', r.id).order('sort_order')
   ])
 
   if (catRes.error)  throw new Error('فشل تحميل التصنيفات')
@@ -602,6 +591,7 @@ async function loadData(slug) {
   S.categories = catRes.data
   S.products   = prodRes.data
   S.bundles    = bundleRes.data ?? []
+  S.banners    = bannerRes.data ?? []
   S.activeCat  = catRes.data[0]?.id ?? null
 }
 
@@ -616,11 +606,13 @@ function applyTheme() {
 function renderHeader() {
   document.title = S.restaurant.name
   document.getElementById('restaurant-name').textContent = S.restaurant.name
+  document.getElementById('mini-name').textContent = S.restaurant.name
 
   if (S.restaurant.logo_url) {
     const l = document.getElementById('restaurant-logo')
-    l.src = S.restaurant.logo_url
-    l.classList.remove('hidden')
+    l.src = S.restaurant.logo_url; l.classList.remove('hidden')
+    const ml = document.getElementById('mini-logo')
+    ml.src = S.restaurant.logo_url; ml.style.display = 'block'
   }
 
   if (S.restaurant.cover_url) {
@@ -629,74 +621,181 @@ function renderHeader() {
     hero.style.backgroundSize     = 'cover'
     hero.style.backgroundPosition = 'center'
     const overlay = document.createElement('div')
-    overlay.style.cssText = 'position:absolute;inset:0;background:linear-gradient(to top,rgba(0,0,0,0.7) 0%,rgba(0,0,0,0.25) 100%);z-index:0'
+    overlay.style.cssText = 'position:absolute;inset:0;background:linear-gradient(to top,rgba(0,0,0,0.72) 0%,rgba(0,0,0,0.28) 100%);z-index:0'
     hero.insertBefore(overlay, hero.firstChild)
   }
+}
+
+// ── ANNOUNCEMENT ────────────────────────────────────────────────────
+function renderAnnouncement() {
+  const bar = document.getElementById('announcement-bar')
+  if (S.restaurant.announcement_active && S.restaurant.announcement_text) {
+    document.getElementById('announcement-text').textContent = S.restaurant.announcement_text
+    bar.classList.remove('hidden')
+  }
+}
+
+// ── AD BANNERS ──────────────────────────────────────────────────────
+let bannerTimer = null
+
+function renderAdBanners() {
+  if (!S.banners.length) return
+  const wrap = document.getElementById('ad-banners-wrap')
+  wrap.classList.remove('hidden')
+  showBanner(0)
+
+  if (S.banners.length > 1) {
+    const dots = document.getElementById('ad-dots')
+    dots.innerHTML = S.banners.map((_, i) => `<div class="ad-dot ${i===0?'active':''}" id="dot-${i}"></div>`).join('')
+    bannerTimer = setInterval(() => {
+      S.currentBanner = (S.currentBanner + 1) % S.banners.length
+      showBanner(S.currentBanner)
+    }, 3500)
+  }
+}
+
+function showBanner(idx) {
+  const b = S.banners[idx]
+  if (!b) return
+  document.getElementById('ad-banner-img').src = b.image_url
+  S.currentBanner = idx
+  document.querySelectorAll('.ad-dot').forEach((d,i) => {
+    d.classList.toggle('active', i === idx)
+  })
+}
+
+function handleBannerClick() {
+  const b = S.banners[S.currentBanner]
+  if (!b || !b.link_value) return
+  if (b.link_type === 'external') {
+    window.open(b.link_value, '_blank')
+  } else if (b.link_type === 'product') {
+    openModal(b.link_value)
+  } else if (b.link_type === 'category') {
+    selectCat(b.link_value)
+  }
+}
+
+// ── SCROLL BEHAVIOR (shrinking hero + back to top) ──────────────────
+function initScrollBehavior() {
+  const heroWrap  = document.getElementById('hero-wrap')
+  const backBtn   = document.getElementById('back-to-top-btn')
+  const cartBar   = document.getElementById('cart-bar')
+  let lastScrollY = 0
+
+  window.addEventListener('scroll', () => {
+    const y = window.scrollY
+
+    // shrink hero after 80px
+    if (y > 80) {
+      heroWrap.classList.add('shrunk')
+    } else {
+      heroWrap.classList.remove('shrunk')
+    }
+
+    // back-to-top: show after 400px AND near bottom
+    const nearBottom = (window.innerHeight + y) >= (document.body.scrollHeight - 120)
+    if (y > 400 || nearBottom) {
+      backBtn.classList.remove('hidden-btn')
+      // shift up if cart bar visible
+      backBtn.style.bottom = cartBar.classList.contains('hidden') ? '24px' : '84px'
+    } else {
+      backBtn.classList.add('hidden-btn')
+    }
+
+    lastScrollY = y
+  }, { passive: true })
+}
+
+function scrollToTop() {
+  window.scrollTo({ top: 0, behavior: 'smooth' })
+}
+
+// ── SEARCH OVERLAY (mini mode) ────────────────────────────────────
+function openSearchOverlay() {
+  document.getElementById('search-overlay').classList.remove('hidden')
+  setTimeout(() => document.getElementById('search-overlay-input').focus(), 100)
+}
+
+function closeSearchOverlay(e) {
+  if (e && e.target !== document.getElementById('search-overlay')) return
+  document.getElementById('search-overlay').classList.add('hidden')
+  document.getElementById('search-overlay-input').value = ''
+  document.getElementById('overlay-suggestions').classList.add('hidden')
+}
+
+function handleOverlaySearch() {
+  const q = document.getElementById('search-overlay-input').value.trim()
+  if (!q) { document.getElementById('overlay-suggestions').classList.add('hidden'); return }
+
+  const filtered = S.products
+    .map(p => ({ p, r: fuzzyMatch(p.name + ' ' + (p.description || ''), q) }))
+    .filter(x => x.r.match).sort((a,b) => b.r.score - a.r.score).map(x => x.p)
+
+  const el = document.getElementById('overlay-suggestions')
+  if (!filtered.length) { el.classList.add('hidden'); return }
+
+  el.innerHTML = filtered.slice(0,5).map(p => {
+    const hl    = p.name.replace(new RegExp(q.replace(/[.*+?^${}()|[\]\\]/g,'\\$&'),'gi'), m => `<span class="suggestion-match">${m}</span>`)
+    const price = isDiscountActive(p) ? fmt(p.discount_price) : fmt(p.price)
+    return `<div class="suggestion-item" onmousedown="overlaySelectSuggestion('${p.id}')">
+      ${p.image_url ? `<img class="suggestion-img" src="${p.image_url}" />` : `<div class="suggestion-img" style="display:flex;align-items:center;justify-content:center;font-size:18px">🍽️</div>`}
+      <div><div class="suggestion-name">${hl}</div><div class="suggestion-price">${price}</div></div>
+    </div>`
+  }).join('')
+  el.classList.remove('hidden')
+}
+
+function overlaySelectSuggestion(pid) {
+  document.getElementById('search-overlay').classList.add('hidden')
+  document.getElementById('search-overlay-input').value = ''
+  document.getElementById('overlay-suggestions').classList.add('hidden')
+  setTimeout(() => openModal(pid), 100)
 }
 
 // ── CATEGORY GRID ──────────────────────────────────────────────────
 function renderCatGrid() {
   const el = document.getElementById('cat-grid')
   const hasBundles = S.bundles.length > 0
-
   const catsHTML = S.categories.map(c => `
-    <button class="cat-tab ${c.id === S.activeCat ? 'active' : ''}"
-            onclick="selectCat('${c.id}')">
-      ${c.name}
-    </button>`).join('')
-
-  const bundleTabHTML = hasBundles ? `
-    <button class="cat-tab ${S.activeCat === 'bundles' ? 'active' : ''}"
-            onclick="selectCat('bundles')">
-      🎁 العروض
-    </button>` : ''
-
+    <button class="cat-tab ${c.id === S.activeCat ? 'active' : ''}" onclick="selectCat('${c.id}')">${c.name}</button>`).join('')
+  const bundleTabHTML = hasBundles
+    ? `<button class="cat-tab ${S.activeCat === 'bundles' ? 'active' : ''}" onclick="selectCat('bundles')">🎁 العروض</button>` : ''
   el.innerHTML = catsHTML + bundleTabHTML
 }
 
 function selectCat(id) {
-  S.activeCat = id
-  S.search    = ''
+  S.activeCat = id; S.search = ''
   document.getElementById('search-input').value = ''
-  hideSuggestions()
-  renderCatGrid()
-  renderAllSections()
-
-  // scroll tab into view
+  hideSuggestions(); renderCatGrid(); renderAllSections()
   const tabEl = document.querySelector(`.cat-tab[onclick="selectCat('${id}')"]`)
-  if (tabEl) tabEl.scrollIntoView({ behavior: 'smooth', block: 'nearest', inline: 'center' })
-
-  // scroll to section
-  const targetId = id === 'bundles' ? 'sec-bundles' : 'sec-' + id
-  const sec = document.getElementById(targetId)
+  if (tabEl) tabEl.scrollIntoView({ behavior:'smooth', block:'nearest', inline:'center' })
+  const sec = document.getElementById(id === 'bundles' ? 'sec-bundles' : 'sec-' + id)
   if (sec) {
     setTimeout(() => {
-      const tabsH = document.querySelector('.cat-tabs-wrap')?.offsetHeight ?? 48
-      const top   = sec.getBoundingClientRect().top + window.scrollY - tabsH - 8
-      window.scrollTo({ top, behavior: 'smooth' })
+      const heroH = document.getElementById('hero-wrap').offsetHeight
+      const top   = sec.getBoundingClientRect().top + window.scrollY - heroH - 8
+      window.scrollTo({ top, behavior:'smooth' })
     }, 50)
   }
 }
 
-// ── SCROLL SPY: highlight tab as user scrolls ──────────────────────
+// ── SCROLL SPY ────────────────────────────────────────────────────
 function initScrollSpy() {
   const observer = new IntersectionObserver(entries => {
     entries.forEach(entry => {
       if (entry.isIntersecting) {
         const id = entry.target.id.replace('sec-', '')
         if (id !== S.activeCat) {
-          S.activeCat = id === 'bundles' ? 'bundles' : id
+          S.activeCat = id
           renderCatGrid()
-          const tabEl = document.querySelector(`.cat-tab[onclick="selectCat('${S.activeCat}')"]`)
-          if (tabEl) tabEl.scrollIntoView({ behavior: 'smooth', block: 'nearest', inline: 'center' })
+          const tabEl = document.querySelector(`.cat-tab[onclick="selectCat('${id}')"]`)
+          if (tabEl) tabEl.scrollIntoView({ behavior:'smooth', block:'nearest', inline:'center' })
         }
       }
     })
-  }, { rootMargin: '-40% 0px -50% 0px', threshold: 0 })
-
-  setTimeout(() => {
-    document.querySelectorAll('[id^="sec-"]').forEach(el => observer.observe(el))
-  }, 300)
+  }, { rootMargin:'-40% 0px -50% 0px', threshold:0 })
+  setTimeout(() => document.querySelectorAll('[id^="sec-"]').forEach(el => observer.observe(el)), 300)
 }
 
 // ── RENDER ALL SECTIONS ────────────────────────────────────────────
@@ -705,21 +804,18 @@ function renderAllSections(filtered) {
   const noRes = document.getElementById('no-results')
   const prods = filtered !== undefined ? filtered : S.products
 
-  if (filtered !== undefined && filtered.length === 0 && S.bundles.length === 0) {
-    wrap.innerHTML = ''
-    noRes.classList.remove('hidden')
-    return
+  if (filtered !== undefined && filtered.length === 0) {
+    wrap.innerHTML = ''; noRes.classList.remove('hidden'); return
   }
   noRes.classList.add('hidden')
 
   const prodsHTML = S.categories.map(cat => {
     const items = prods.filter(p => p.category_id === cat.id)
     if (!items.length) return ''
-    return `
-      <div id="sec-${cat.id}" class="fade-up" style="margin-top:4px">
-        <p class="section-title">${cat.name}</p>
-        <div class="products-grid">${items.map(p => prodCardHTML(p)).join('')}</div>
-      </div>`
+    return `<div id="sec-${cat.id}" class="fade-up" style="margin-top:4px">
+      <p class="section-title">${cat.name}</p>
+      <div class="products-grid">${items.map(p => prodCardHTML(p)).join('')}</div>
+    </div>`
   }).join('')
 
   const bundlesHTML = S.bundles.length && !filtered ? `
@@ -743,64 +839,49 @@ function prodCardHTML(p) {
   const ci          = S.cart.find(c => c.id === p.id && c.type === 'product')
   const hasDiscount = isDiscountActive(p)
   const unavailable = p.availability === 'unavailable' || p.status === 'unavailable'
-
-  const discPct = hasDiscount
-    ? Math.round((1 - Number(p.discount_price) / Number(p.price)) * 100)
-    : 0
+  const discPct     = hasDiscount ? Math.round((1 - Number(p.discount_price) / Number(p.price)) * 100) : 0
 
   const priceHTML = hasDiscount
-    ? `<div class="price-row">
-         <span class="price-new">${fmt(p.discount_price)}</span>
-         <span class="price-old">${fmt(p.price)}</span>
-       </div>`
+    ? `<div class="price-row"><span class="price-new">${fmt(p.discount_price)}</span><span class="price-old">${fmt(p.price)}</span></div>`
     : `<span class="price-normal">${fmt(p.price)}</span>`
 
-  return `
-    <div class="prod-card${unavailable ? ' opacity-60' : ''}"
-         onclick="${unavailable ? '' : `openModal('${p.id}')`}"
-         style="${unavailable ? 'cursor:default' : ''}">
-      <div class="thumb">
-        ${p.image_url
-          ? `<img src="${p.image_url}" alt="${p.name}" loading="lazy" />`
-          : `<div class="no-img">🍽️</div>`}
-        ${p.offer_badge ? `<div class="offer-badge">${p.offer_badge}</div>` : ''}
-        ${discPct >= 5 && !p.offer_badge ? `<div class="disc-pct">-${discPct}%</div>` : ''}
-        ${unavailable ? `<div class="unavail-overlay"></div>` : ''}
-        ${!ci && !unavailable
-          ? `<button class="add-btn" onclick="event.stopPropagation(); quickAdd('${p.id}')">+</button>`
-          : ''}
-      </div>
-      <div class="info">
-        <h3>${p.name}</h3>
-        ${priceHTML}
-        ${unavailable
-          ? `<span style="font-size:10px;background:#f0f0f0;color:#999;font-weight:700;padding:3px 8px;border-radius:8px;display:inline-block;margin-top:4px">غير متوفر</span>`
-          : ci ? `
-          <div class="qty-row" onclick="event.stopPropagation()">
+  return `<div class="prod-card${unavailable?' opacity-60':''}"
+       onclick="${unavailable ? '' : `openModal('${p.id}')`}"
+       style="${unavailable ? 'cursor:default' : ''}">
+    <div class="thumb">
+      ${p.image_url ? `<img src="${p.image_url}" alt="${p.name}" loading="lazy" />` : `<div class="no-img">🍽️</div>`}
+      ${p.offer_badge ? `<div class="offer-badge">${p.offer_badge}</div>` : ''}
+      ${discPct >= 5 && !p.offer_badge ? `<div class="disc-pct">-${discPct}%</div>` : ''}
+      ${unavailable ? `<div class="unavail-overlay"></div>` : ''}
+      ${!ci && !unavailable ? `<button class="add-btn" onclick="event.stopPropagation(); quickAdd('${p.id}')">+</button>` : ''}
+    </div>
+    <div class="info">
+      <h3>${p.name}</h3>
+      ${priceHTML}
+      ${unavailable
+        ? `<span style="font-size:10px;background:#f0f0f0;color:#999;font-weight:700;padding:3px 8px;border-radius:8px;display:inline-block;margin-top:4px">غير متوفر</span>`
+        : ci ? `<div class="qty-row" onclick="event.stopPropagation()">
             <div class="qty-btn" onclick="cQty('${p.id}','product',-1)">−</div>
             <span style="font-size:13px;font-weight:900;min-width:20px;text-align:center">${ci.qty}</span>
             <div class="qty-btn" onclick="cQty('${p.id}','product',1)">+</div>
           </div>` : ''}
-      </div>
-    </div>`
+    </div>
+  </div>`
 }
 
 // ── BUNDLE CARD ─────────────────────────────────────────────────────
 function bundleCardHTML(b) {
-  return `
-    <div class="bundle-card" onclick="openBundleModal('${b.id}')">
-      ${b.image_url
-        ? `<img src="${b.image_url}" alt="${b.name}" loading="lazy" />`
-        : `<div class="no-img">🎁</div>`}
-      <div class="b-info">
-        <h3>${b.name}</h3>
-        ${b.description ? `<p>${b.description}</p>` : ''}
-        <div class="b-footer">
-          <span class="b-price">${fmt(b.price)}</span>
-          <div class="bundle-add" onclick="event.stopPropagation(); addBundleToCart('${b.id}')">أضف للسلة +</div>
-        </div>
+  return `<div class="bundle-card" onclick="openBundleModal('${b.id}')">
+    ${b.image_url ? `<img src="${b.image_url}" alt="${b.name}" loading="lazy" />` : `<div class="no-img">🎁</div>`}
+    <div class="b-info">
+      <h3>${b.name}</h3>
+      ${b.description ? `<p>${b.description}</p>` : ''}
+      <div class="b-footer">
+        <span class="b-price">${fmt(b.price)}</span>
+        <div class="bundle-add" onclick="event.stopPropagation(); addBundleToCart('${b.id}')">أضف للسلة +</div>
       </div>
-    </div>`
+    </div>
+  </div>`
 }
 
 // ── HELPERS ──────────────────────────────────────────────────────────
@@ -811,46 +892,29 @@ function isDiscountActive(p) {
   if (p.discount_ends_at   && new Date(p.discount_ends_at)   < now) return false
   return Number(p.discount_price) < Number(p.price)
 }
-
 function fmt(v) { return `${Number(v).toFixed(0)} ج.م` }
-
 function showState(name) {
-  ['loading','error','app'].forEach(s =>
-    document.getElementById('state-'+s).classList.add('hidden'))
+  ['loading','error','app'].forEach(s => document.getElementById('state-'+s).classList.add('hidden'))
   document.getElementById('state-'+name).classList.remove('hidden')
 }
-function showError(msg) {
-  document.getElementById('error-msg').textContent = msg
-  showState('error')
-}
+function showError(msg) { document.getElementById('error-msg').textContent = msg; showState('error') }
 
 // ── SEARCH ───────────────────────────────────────────────────────────
 function fuzzyMatch(text, query) {
-  text  = text.toLowerCase()
-  query = query.toLowerCase()
-  if (text.includes(query)) return { match: true, score: 2 }
-  let ti = 0, qi = 0
-  while (ti < text.length && qi < query.length) {
-    if (text[ti] === query[qi]) qi++
-    ti++
-  }
-  return { match: qi === query.length, score: 1 }
+  text = text.toLowerCase(); query = query.toLowerCase()
+  if (text.includes(query)) return { match:true, score:2 }
+  let ti=0, qi=0
+  while (ti<text.length && qi<query.length) { if (text[ti]===query[qi]) qi++; ti++ }
+  return { match: qi===query.length, score:1 }
 }
 
 let suggestTimeout = null
-
 function handleSearch() {
   const q = document.getElementById('search-input').value.trim()
-  S.search = q
-  clearTimeout(suggestTimeout)
+  S.search = q; clearTimeout(suggestTimeout)
   if (!q) { renderAllSections(); hideSuggestions(); return }
-
-  const filtered = S.products
-    .map(p => ({ p, r: fuzzyMatch(p.name + ' ' + (p.description || ''), q) }))
-    .filter(x => x.r.match)
-    .sort((a,b) => b.r.score - a.r.score)
-    .map(x => x.p)
-
+  const filtered = S.products.map(p => ({ p, r:fuzzyMatch(p.name+' '+(p.description||''), q) }))
+    .filter(x => x.r.match).sort((a,b) => b.r.score - a.r.score).map(x => x.p)
   renderAllSections(filtered)
   suggestTimeout = setTimeout(() => renderSuggestions(q, filtered), 80)
 }
@@ -858,51 +922,36 @@ function handleSearch() {
 function renderSuggestions(q, results) {
   const el = document.getElementById('search-suggestions')
   if (!results.length) { el.classList.add('hidden'); return }
-  const top = results.slice(0, 5)
-  el.innerHTML = top.map(p => {
-    const hl    = p.name.replace(new RegExp(q.replace(/[.*+?^${}()|[\]\\]/g,'\\$&'), 'gi'),
-                    m => `<span class="suggestion-match">${m}</span>`)
+  el.innerHTML = results.slice(0,5).map(p => {
+    const hl    = p.name.replace(new RegExp(q.replace(/[.*+?^${}()|[\]\\]/g,'\\$&'),'gi'), m => `<span class="suggestion-match">${m}</span>`)
     const price = isDiscountActive(p) ? fmt(p.discount_price) : fmt(p.price)
-    return `
-      <div class="suggestion-item" onmousedown="selectSuggestion('${p.id}')">
-        ${p.image_url
-          ? `<img class="suggestion-img" src="${p.image_url}" />`
-          : `<div class="suggestion-img" style="display:flex;align-items:center;justify-content:center;font-size:18px">🍽️</div>`}
-        <div>
-          <div class="suggestion-name">${hl}</div>
-          <div class="suggestion-price">${price}</div>
-        </div>
-      </div>`
+    return `<div class="suggestion-item" onmousedown="selectSuggestion('${p.id}')">
+      ${p.image_url ? `<img class="suggestion-img" src="${p.image_url}" />` : `<div class="suggestion-img" style="display:flex;align-items:center;justify-content:center;font-size:18px">🍽️</div>`}
+      <div><div class="suggestion-name">${hl}</div><div class="suggestion-price">${price}</div></div>
+    </div>`
   }).join('')
   el.classList.remove('hidden')
 }
-
 function selectSuggestion(pid) {
   document.getElementById('search-input').value = ''
-  hideSuggestions()
-  renderAllSections()
+  hideSuggestions(); renderAllSections()
   setTimeout(() => openModal(pid), 80)
 }
-
 function showSuggestions() {
   const q = document.getElementById('search-input').value.trim()
   if (q) renderSuggestions(q, S.products.filter(p => fuzzyMatch(p.name, q).match))
 }
 function hideSuggestions() {
-  setTimeout(() => {
-    const el = document.getElementById('search-suggestions')
-    if (el) el.classList.add('hidden')
-  }, 150)
+  setTimeout(() => { const el = document.getElementById('search-suggestions'); if (el) el.classList.add('hidden') }, 150)
 }
 
 // ── PRODUCT MODAL ────────────────────────────────────────────────────
 function openModal(pid) {
-  const p  = S.products.find(x => x.id === pid)
-  if (!p) return
-  const ci  = S.cart.find(c => c.id === pid && c.type === 'product')
+  const p = S.products.find(x => x.id === pid); if (!p) return
+  const ci = S.cart.find(c => c.id === pid && c.type === 'product')
   const qty = ci ? ci.qty : 1
-  const hasDiscount   = p.discount_price && Number(p.discount_price) < Number(p.price)
-  const displayPrice  = hasDiscount ? Number(p.discount_price) : Number(p.price)
+  const hasDiscount  = p.discount_price && Number(p.discount_price) < Number(p.price)
+  const displayPrice = hasDiscount ? Number(p.discount_price) : Number(p.price)
 
   const priceHTML = hasDiscount
     ? `<div style="display:flex;align-items:center;gap:8px;flex-wrap:wrap">
@@ -911,32 +960,23 @@ function openModal(pid) {
        </div>`
     : `<span style="font-size:19px;font-weight:900;color:var(--brand)">${fmt(p.price)}</span>`
 
-  const suggested = S.products
-    .filter(x => x.category_id === p.category_id && x.id !== p.id).slice(0, 6)
-
+  const suggested = S.products.filter(x => x.category_id === p.category_id && x.id !== p.id).slice(0,6)
   const suggestedHTML = suggested.length ? `
     <div style="padding:14px 0 0;border-top:1px solid #f5f5f5">
       <p style="font-size:14px;font-weight:900;color:#1a1a1a;padding:0 16px 10px">تطلب معها أيضاً 🤩</p>
       <div class="suggest-scroll no-scroll">
-        ${suggested.map(s => `
-          <div class="suggest-card" onclick="closeModal(); openModal('${s.id}')">
-            ${s.image_url ? `<img src="${s.image_url}" alt="${s.name}" />` : `<div class="no-img">🍽️</div>`}
-            <div class="sc-info">
-              <p>${s.name}</p>
-              <span>${fmt(s.discount_price && Number(s.discount_price) < Number(s.price) ? s.discount_price : s.price)}</span>
-            </div>
-          </div>`).join('')}
+        ${suggested.map(s => `<div class="suggest-card" onclick="closeModal(); openModal('${s.id}')">
+          ${s.image_url ? `<img src="${s.image_url}" />` : `<div class="no-img">🍽️</div>`}
+          <div class="sc-info"><p>${s.name}</p><span>${fmt(s.discount_price && Number(s.discount_price)<Number(s.price) ? s.discount_price : s.price)}</span></div>
+        </div>`).join('')}
       </div>
     </div>` : ''
 
   document.getElementById('modal-inner').innerHTML = `
     <div style="position:relative">
-      ${p.image_url
-        ? `<img src="${p.image_url}" alt="${p.name}" style="width:100%;height:230px;object-fit:cover" />`
+      ${p.image_url ? `<img src="${p.image_url}" alt="${p.name}" style="width:100%;height:230px;object-fit:cover" />`
         : `<div style="width:100%;height:190px;background:linear-gradient(135deg,#f0f0f0,#e8e8e8);display:flex;align-items:center;justify-content:center;font-size:72px">🍽️</div>`}
       ${p.offer_badge ? `<div class="offer-badge" style="top:12px;right:12px;font-size:12px;padding:4px 12px">${p.offer_badge}</div>` : ''}
-      <!-- Handle -->
-      <div style="position:absolute;top:12px;left:50%;transform:translateX(-50%);width:40px;height:4px;background:rgba(255,255,255,0.5);border-radius:4px"></div>
       <button onclick="closeModal()" style="position:absolute;top:12px;left:12px;width:36px;height:36px;border-radius:50%;background:rgba(0,0,0,0.45);backdrop-filter:blur(4px);color:#fff;font-size:20px;font-weight:700;display:flex;align-items:center;justify-content:center">&times;</button>
     </div>
     <div style="padding:18px 16px 10px">
@@ -961,11 +1001,8 @@ function openModal(pid) {
     </div>`
 
   const modal = document.getElementById('product-modal')
-  modal.dataset.pid   = pid
-  modal.dataset.price = displayPrice
-  modal.dataset.qty   = qty
-  modal.classList.remove('hidden')
-  document.body.style.overflow = 'hidden'
+  modal.dataset.pid = pid; modal.dataset.price = displayPrice; modal.dataset.qty = qty
+  modal.classList.remove('hidden'); document.body.style.overflow = 'hidden'
 }
 
 function mQty(d) {
@@ -975,46 +1012,32 @@ function mQty(d) {
   document.getElementById('m-qty').textContent   = qty
   document.getElementById('m-total').textContent = fmt(parseFloat(modal.dataset.price) * qty)
 }
-
 function addFromModal(pid) {
   const modal = document.getElementById('product-modal')
-  const qty   = parseInt(modal.dataset.qty)
-  const price = parseFloat(modal.dataset.price)
-  const p     = S.products.find(x => x.id === pid)
-  if (!p) return
+  const qty = parseInt(modal.dataset.qty), price = parseFloat(modal.dataset.price)
+  const p = S.products.find(x => x.id === pid); if (!p) return
   const ci = S.cart.find(c => c.id === pid && c.type === 'product')
-  if (ci) { ci.qty = qty }
-  else { S.cart.push({ id: pid, type: 'product', name: p.name, price, image_url: p.image_url, qty }) }
-  closeModal()
-  updateCartUI()
-  renderAllSections()
+  if (ci) { ci.qty = qty } else { S.cart.push({ id:pid, type:'product', name:p.name, price, image_url:p.image_url, qty }) }
+  closeModal(); updateCartUI(); renderAllSections()
 }
-
-function closeModal() {
-  document.getElementById('product-modal').classList.add('hidden')
-  document.body.style.overflow = ''
-}
+function closeModal() { document.getElementById('product-modal').classList.add('hidden'); document.body.style.overflow = '' }
 
 // ── BUNDLE MODAL ─────────────────────────────────────────────────────
 function openBundleModal(bid) {
-  const b = S.bundles.find(x => x.id === bid)
-  if (!b) return
-
+  const b = S.bundles.find(x => x.id === bid); if (!b) return
   const itemsHTML = b.items && Array.isArray(b.items) && b.items.length
     ? `<div style="margin:14px 0 0">
         <p style="font-size:13px;font-weight:800;color:#1a1a1a;margin-bottom:10px">محتويات الباقة:</p>
-        ${b.items.map(item => `
-          <div style="display:flex;align-items:center;gap:10px;padding:9px 0;border-bottom:1px solid #f5f5f5">
-            <span style="color:var(--brand);font-weight:900;font-size:14px">✓</span>
-            <span style="font-size:13px;color:#444;font-weight:600">${item.name || item}</span>
-            ${item.qty ? `<span style="font-size:12px;color:#aaa;margin-right:auto">× ${item.qty}</span>` : ''}
-          </div>`).join('')}
+        ${b.items.map(item => `<div style="display:flex;align-items:center;gap:10px;padding:9px 0;border-bottom:1px solid #f5f5f5">
+          <span style="color:var(--brand);font-weight:900;font-size:14px">✓</span>
+          <span style="font-size:13px;color:#444;font-weight:600">${item.name||item}</span>
+          ${item.qty ? `<span style="font-size:12px;color:#aaa;margin-right:auto">× ${item.qty}</span>` : ''}
+        </div>`).join('')}
       </div>` : ''
 
   document.getElementById('bundle-modal-inner').innerHTML = `
     <div style="position:relative">
-      ${b.image_url
-        ? `<img src="${b.image_url}" alt="${b.name}" style="width:100%;height:210px;object-fit:cover" />`
+      ${b.image_url ? `<img src="${b.image_url}" alt="${b.name}" style="width:100%;height:210px;object-fit:cover" />`
         : `<div style="width:100%;height:170px;background:linear-gradient(135deg,var(--brand2),var(--brand));display:flex;align-items:center;justify-content:center;font-size:72px">🎁</div>`}
       <button onclick="closeBundleModal()" style="position:absolute;top:12px;left:12px;width:36px;height:36px;border-radius:50%;background:rgba(0,0,0,0.45);backdrop-filter:blur(4px);color:#fff;font-size:20px;font-weight:700;display:flex;align-items:center;justify-content:center">&times;</button>
     </div>
@@ -1031,101 +1054,63 @@ function openBundleModal(bid) {
       </button>
     </div>`
 
-  document.getElementById('bundle-modal').classList.remove('hidden')
-  document.body.style.overflow = 'hidden'
+  document.getElementById('bundle-modal').classList.remove('hidden'); document.body.style.overflow = 'hidden'
 }
-
-function closeBundleModal() {
-  document.getElementById('bundle-modal').classList.add('hidden')
-  document.body.style.overflow = ''
-}
+function closeBundleModal() { document.getElementById('bundle-modal').classList.add('hidden'); document.body.style.overflow = '' }
 
 // ── CART ──────────────────────────────────────────────────────────────
 function quickAdd(pid) {
-  const p = S.products.find(x => x.id === pid)
-  if (!p) return
+  const p = S.products.find(x => x.id === pid); if (!p) return
   const price = isDiscountActive(p) ? Number(p.discount_price) : Number(p.price)
-  const ci    = S.cart.find(c => c.id === pid && c.type === 'product')
-  if (ci) { ci.qty += 1 }
-  else { S.cart.push({ id: pid, type: 'product', name: p.name, price, image_url: p.image_url, qty: 1 }) }
-  updateCartUI()
-  renderAllSections()
+  const ci = S.cart.find(c => c.id === pid && c.type === 'product')
+  if (ci) { ci.qty += 1 } else { S.cart.push({ id:pid, type:'product', name:p.name, price, image_url:p.image_url, qty:1 }) }
+  updateCartUI(); renderAllSections()
 }
-
 function addBundleToCart(bid) {
-  const b  = S.bundles.find(x => x.id === bid)
-  if (!b) return
+  const b = S.bundles.find(x => x.id === bid); if (!b) return
   const ci = S.cart.find(c => c.id === bid && c.type === 'bundle')
-  if (ci) { ci.qty += 1 }
-  else { S.cart.push({ id: bid, type: 'bundle', name: b.name, price: Number(b.price), image_url: b.image_url, qty: 1 }) }
-  updateCartUI()
-  renderAllSections()
+  if (ci) { ci.qty += 1 } else { S.cart.push({ id:bid, type:'bundle', name:b.name, price:Number(b.price), image_url:b.image_url, qty:1 }) }
+  updateCartUI(); renderAllSections()
 }
-
 function cQty(id, type, d) {
-  const idx = S.cart.findIndex(c => c.id === id && c.type === type)
-  if (idx === -1) return
+  const idx = S.cart.findIndex(c => c.id === id && c.type === type); if (idx===-1) return
   S.cart[idx].qty += d
   if (S.cart[idx].qty <= 0) S.cart.splice(idx, 1)
-  updateCartUI()
-  renderAllSections()
+  updateCartUI(); renderAllSections()
   if (!document.getElementById('cart-sheet').classList.contains('hidden')) renderCartItems()
 }
-
-function cartTotal() { return S.cart.reduce((s,c) => s + c.price * c.qty, 0) }
-
+function cartTotal() { return S.cart.reduce((s,c) => s + c.price*c.qty, 0) }
 function updateCartUI() {
-  const n   = S.cart.reduce((s,c) => s + c.qty, 0)
+  const n   = S.cart.reduce((s,c) => s+c.qty, 0)
   const bar = document.getElementById('cart-bar')
   document.getElementById('cart-count-badge').textContent = n
   document.getElementById('cart-total-badge').textContent = fmt(cartTotal())
   if (n > 0) {
     bar.classList.remove('hidden')
-    // bounce animation
     const btn = bar.querySelector('.cart-bar-btn')
-    btn.style.animation = 'none'
-    btn.offsetHeight
-    btn.style.animation = 'cartBounce 0.35s ease'
-  } else {
-    bar.classList.add('hidden')
-    closeCartSheet()
-  }
+    btn.style.animation = 'none'; btn.offsetHeight; btn.style.animation = 'cartBounce 0.35s ease'
+  } else { bar.classList.add('hidden'); closeCartSheet() }
 }
-
-function openCartSheet() {
-  renderCartItems()
-  document.getElementById('cart-sheet').classList.remove('hidden')
-  document.body.style.overflow = 'hidden'
-}
-function closeCartSheet() {
-  document.getElementById('cart-sheet').classList.add('hidden')
-  document.body.style.overflow = ''
-}
-
+function openCartSheet() { renderCartItems(); document.getElementById('cart-sheet').classList.remove('hidden'); document.body.style.overflow = 'hidden' }
+function closeCartSheet() { document.getElementById('cart-sheet').classList.add('hidden'); document.body.style.overflow = '' }
 function renderCartItems() {
-  const el  = document.getElementById('cart-items-list')
+  const el = document.getElementById('cart-items-list')
   const tot = document.getElementById('cart-grand-total')
   const cnt = document.getElementById('cart-count-text')
-  const n   = S.cart.reduce((s,c) => s + c.qty, 0)
-  cnt.textContent = `${n} ${n === 1 ? 'منتج' : 'منتجات'}`
-
+  const n   = S.cart.reduce((s,c) => s+c.qty, 0)
+  cnt.textContent = `${n} ${n===1?'منتج':'منتجات'}`
   if (!S.cart.length) {
-    el.innerHTML = `<div style="text-align:center;padding:40px 0">
-      <div style="font-size:52px;margin-bottom:12px">🛒</div>
-      <p style="font-weight:800;color:#bbb;font-size:15px">السلة فارغة</p></div>`
-    tot.textContent = '0 ج.م'
-    return
+    el.innerHTML = `<div style="text-align:center;padding:40px 0"><div style="font-size:52px;margin-bottom:12px">🛒</div><p style="font-weight:800;color:#bbb;font-size:15px">السلة فارغة</p></div>`
+    tot.textContent = '0 ج.م'; return
   }
-
   el.innerHTML = S.cart.map(c => `
     <div style="display:flex;align-items:center;gap:10px;background:#f9f9f9;border-radius:16px;padding:11px 12px;margin-bottom:8px">
-      ${c.image_url
-        ? `<img src="${c.image_url}" style="width:54px;height:54px;border-radius:12px;object-fit:cover;flex-shrink:0" />`
+      ${c.image_url ? `<img src="${c.image_url}" style="width:54px;height:54px;border-radius:12px;object-fit:cover;flex-shrink:0" />`
         : `<div style="width:54px;height:54px;border-radius:12px;background:#eee;display:flex;align-items:center;justify-content:center;font-size:22px;flex-shrink:0">${c.type==='bundle'?'🎁':'🍽️'}</div>`}
       <div style="flex:1;min-width:0">
         <p style="font-size:13px;font-weight:800;color:#1a1a1a;white-space:nowrap;overflow:hidden;text-overflow:ellipsis">${c.name}</p>
-        ${c.type === 'bundle' ? `<span style="font-size:10px;background:#FFF3EB;color:var(--brand);padding:2px 7px;border-radius:6px;font-weight:700">باقة</span>` : ''}
-        <p style="font-size:13px;font-weight:900;color:var(--brand);margin-top:3px">${fmt(c.price * c.qty)}</p>
+        ${c.type==='bundle'?`<span style="font-size:10px;background:#FFF3EB;color:var(--brand);padding:2px 7px;border-radius:6px;font-weight:700">باقة</span>`:''}
+        <p style="font-size:13px;font-weight:900;color:var(--brand);margin-top:3px">${fmt(c.price*c.qty)}</p>
       </div>
       <div style="display:flex;align-items:center;gap:6px;flex-shrink:0">
         <button onclick="cQty('${c.id}','${c.type}',-1)" style="width:30px;height:30px;border-radius:9px;background:#fff;border:1.5px solid #eee;color:#555;font-size:16px;font-weight:900;display:flex;align-items:center;justify-content:center">−</button>
@@ -1133,7 +1118,6 @@ function renderCartItems() {
         <button onclick="cQty('${c.id}','${c.type}',1)" style="width:30px;height:30px;border-radius:9px;background:var(--brand);color:#fff;font-size:16px;font-weight:900;display:flex;align-items:center;justify-content:center">+</button>
       </div>
     </div>`).join('')
-
   tot.textContent = fmt(cartTotal())
 }
 
@@ -1141,53 +1125,29 @@ function renderCartItems() {
 async function sendOrder() {
   if (!S.cart.length) return
   const btn = document.getElementById('send-order-btn')
-  btn.style.opacity = '0.6'
-  btn.innerHTML = '<span>جاري الإرسال...</span>'
-
+  btn.style.opacity = '0.6'; btn.innerHTML = '<span>جاري الإرسال...</span>'
   const table = document.getElementById('table-number-input').value.trim()
-  const items = S.cart.map(c => ({
-    id: c.id, type: c.type, name: c.name,
-    price: c.price, qty: c.qty,
-    subtotal: Number((c.price * c.qty).toFixed(2))
-  }))
+  const items = S.cart.map(c => ({ id:c.id, type:c.type, name:c.name, price:c.price, qty:c.qty, subtotal:Number((c.price*c.qty).toFixed(2)) }))
   const total = cartTotal()
   let orderNumber = 'TMP-' + Date.now()
-
   try {
-    const { data: rpc, error: re } = await db.rpc('generate_order_number')
+    const { data:rpc, error:re } = await db.rpc('generate_order_number')
     if (!re && rpc) {
-      const { data: od } = await db.from('orders').insert({
-        restaurant_id: S.restaurant.id,
-        order_number: rpc, items, total,
-        table_number: table || null
-      }).select('order_number').single()
+      const { data:od } = await db.from('orders').insert({ restaurant_id:S.restaurant.id, order_number:rpc, items, total, table_number:table||null }).select('order_number').single()
       if (od?.order_number) orderNumber = od.order_number
     }
   } catch(e) { console.warn(e) }
-
-  const now  = new Date().toLocaleTimeString('ar-EG', { hour: '2-digit', minute: '2-digit' })
-  const text = [
-    `🧾 *طلب جديد ${orderNumber}*`,
-    `─────────────────`,
+  const now  = new Date().toLocaleTimeString('ar-EG', { hour:'2-digit', minute:'2-digit' })
+  const text = [`🧾 *طلب جديد ${orderNumber}*`, `─────────────────`,
     ...items.map(i => `• ${i.name}${i.type==='bundle'?' 🎁':''} × ${i.qty}  —  ${fmt(i.subtotal)}`),
-    `─────────────────`,
-    `💰 *الإجمالي: ${fmt(total)}*`,
-    table ? `📍 الطاولة: ${table}` : '',
-    `⏰ ${now}`
-  ].filter(Boolean).join('\n')
-
+    `─────────────────`, `💰 *الإجمالي: ${fmt(total)}*`,
+    table ? `📍 الطاولة: ${table}` : '', `⏰ ${now}`].filter(Boolean).join('\n')
   window.open(`https://wa.me/${S.restaurant.whatsapp}?text=${encodeURIComponent(text)}`, '_blank')
-  S.cart = []
-  updateCartUI()
-  closeCartSheet()
-  btn.style.opacity = '1'
-  btn.innerHTML = '<span>إرسال الطلب عبر واتساب</span><span style="font-size:20px">📲</span>'
+  S.cart = []; updateCartUI(); closeCartSheet()
+  btn.style.opacity = '1'; btn.innerHTML = '<span>إرسال الطلب عبر واتساب</span><span style="font-size:20px">📲</span>'
 }
 
-// ── INIT ──────────────────────────────────────────────────────────
-if (document.referrer.includes('dashboard'))
-  document.getElementById('back-to-dash').classList.remove('hidden')
-
+if (document.referrer.includes('dashboard')) document.getElementById('back-to-dash').classList.remove('hidden')
 boot()
 </script>
 </body>
