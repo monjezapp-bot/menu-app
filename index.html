@@ -1096,7 +1096,7 @@ function openModal(pid) {
     <div style="padding:10px 0 0;border-top:1px solid #f5f5f5">
       <p style="font-size:12px;font-weight:800;color:#aaa;padding:0 16px 8px">تطلب معها أيضاً 🤩</p>
       <div class="suggest-scroll no-scroll">
-        ${suggested.map(s => `<div class="suggest-card" onclick="addFromModalThenOpen('${pid}','${s.id}')">
+        ${suggested.map(s => `<div class="suggest-card" onclick="addBothAndClose('${pid}','${s.id}')">
           ${s.image_url ? `<img src="${s.image_url}" />` : `<div class="no-img">🍽️</div>`}
           <div class="sc-info"><p>${s.name}</p><span>${fmt(s.discount_price && Number(s.discount_price)<Number(s.price) ? s.discount_price : s.price)}</span></div>
         </div>`).join('')}
@@ -1168,21 +1168,36 @@ function addFromModal(pid) {
 }
 function closeModal() { document.getElementById('product-modal').classList.add('hidden'); document.body.style.overflow = '' }
 
-// يضيف المنتج الحالي للسلة ثم يفتح المقترح — بدون فقدان الاختيار
-function addFromModalThenOpen(currentPid, nextPid) {
+// يضيف المنتج الحالي + المقترح للسلة ويقفل الـ modal
+function addBothAndClose(currentPid, nextPid) {
   const modal = document.getElementById('product-modal')
-  // نقرأ الكمية من العداد المرئي أو input الوحدة، مع fallback لـ dataset
-  const qtyInput = document.getElementById('m-qty-input')
-  const qty = qtyInput
-    ? (parseFloat(qtyInput.value) || 1)
-    : (parseInt(document.getElementById('m-qty')?.textContent) || parseInt(modal.dataset.qty) || 1)
   const price = parseFloat(modal.dataset.price)
   const p = S.products.find(x => x.id === currentPid); if (!p) return
+
+  // قراءة الكمية من العنصر المرئي
+  const qtyInput = document.getElementById('m-qty-input')
+  const qtySpan  = document.getElementById('m-qty')
+  let qty = 1
+  if (qtyInput) qty = parseFloat(qtyInput.value) || 1
+  else if (qtySpan) qty = parseInt(qtySpan.textContent) || 1
+  else qty = parseInt(modal.dataset.qty) || 1
+
+  // إضافة المنتج الأصلي
+  const unit = p.unit || 'قطعة'
   const ci = S.cart.find(c => c.id === currentPid && c.type === 'product')
-  if (ci) { ci.qty = qty; ci.unit = p.unit||'قطعة' }
-  else { S.cart.push({ id:currentPid, type:'product', name:p.name, price, image_url:p.image_url, qty, unit:p.unit||'قطعة' }) }
+  if (ci) { ci.qty = qty; ci.unit = unit }
+  else { S.cart.push({ id:currentPid, type:'product', name:p.name, price, image_url:p.image_url, qty, unit }) }
+
+  // إضافة المنتج المقترح (كمية 1 دايماً)
+  const s = S.products.find(x => x.id === nextPid); if (s) {
+    const sPrice = s.discount_price && Number(s.discount_price) < Number(s.price) ? Number(s.discount_price) : Number(s.price)
+    const si = S.cart.find(c => c.id === nextPid && c.type === 'product')
+    if (si) { si.qty += 1 }
+    else { S.cart.push({ id:nextPid, type:'product', name:s.name, price:sPrice, image_url:s.image_url, qty:1, unit:s.unit||'قطعة' }) }
+  }
+
   saveCart(); updateCartUI(); renderAllSections()
-  openModal(nextPid)
+  closeModal()
 }
 
 // ── BUNDLE MODAL ─────────────────────────────────────────────────────
