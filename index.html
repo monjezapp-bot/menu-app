@@ -1096,7 +1096,7 @@ function openModal(pid) {
     <div style="padding:10px 0 0;border-top:1px solid #f5f5f5">
       <p style="font-size:12px;font-weight:800;color:#aaa;padding:0 16px 8px">تطلب معها أيضاً 🤩</p>
       <div class="suggest-scroll no-scroll">
-        ${suggested.map(s => `<div class="suggest-card" onclick="addSuggestedToCart('${pid}','${s.id}',this)">
+        ${suggested.map(s => `<div class="suggest-card" data-sid="${s.id}" onclick="addSuggestedToCart('${pid}','${s.id}',this)">
           ${s.image_url ? `<img src="${s.image_url}" />` : `<div class="no-img">🍽️</div>`}
           <div class="sc-info"><p>${s.name}</p><span>${fmt(s.discount_price && Number(s.discount_price)<Number(s.price) ? s.discount_price : s.price)}</span></div>
         </div>`).join('')}
@@ -1145,8 +1145,17 @@ function mQty(d) {
   const modal = document.getElementById('product-modal')
   let qty = Math.max(1, parseInt(modal.dataset.qty) + d)
   modal.dataset.qty = qty
-  document.getElementById('m-qty').textContent   = qty
-  document.getElementById('m-total').textContent = fmt(parseFloat(modal.dataset.price) * qty)
+  document.getElementById('m-qty').textContent = qty
+
+  const selectedExtras = [...document.querySelectorAll('.suggest-card.suggest-selected')]
+  let extrasTotal = 0
+  selectedExtras.forEach(card => {
+    const sid = card.getAttribute('data-sid')
+    const sp  = S.products.find(x => x.id === sid)
+    if (sp) extrasTotal += sp.discount_price && Number(sp.discount_price) < Number(sp.price)
+      ? Number(sp.discount_price) : Number(sp.price)
+  })
+  document.getElementById('m-total').textContent = fmt(parseFloat(modal.dataset.price) * qty + extrasTotal)
 }
 function mQtyInput() {
   const modal = document.getElementById('product-modal')
@@ -1158,55 +1167,75 @@ function addFromModal(pid) {
   const modal = document.getElementById('product-modal')
   const price = parseFloat(modal.dataset.price)
   const p = S.products.find(x => x.id === pid); if (!p) return
-  // الكمية — إما input نصي (وحدة) أو عداد
   const qtyInput = document.getElementById('m-qty-input')
   const qty = qtyInput ? (parseFloat(qtyInput.value) || 0.1) : parseInt(modal.dataset.qty)
   const unit = p.unit || 'قطعة'
   const ci = S.cart.find(c => c.id === pid && c.type === 'product')
   if (ci) { ci.qty = qty; ci.unit = unit } else { S.cart.push({ id:pid, type:'product', name:p.name, price, image_url:p.image_url, qty, unit }) }
-  closeModal(); updateCartUI(); renderAllSections()
+  // المقترحات المختارة موجودة بالفعل في S.cart من addSuggestedToCart
+  saveCart(); closeModal(); updateCartUI(); renderAllSections()
 }
 function closeModal() { document.getElementById('product-modal').classList.add('hidden'); document.body.style.overflow = '' }
 
-// يضيف المنتج المقترح للسلة مع المنتج الأصلي ويفضل الـ modal مفتوح
+// يضيف/يشيل المنتج المقترح من السلة مع تحديث السعر المرئي في الزر
 function addSuggestedToCart(currentPid, suggestedPid, el) {
   const modal = document.getElementById('product-modal')
-  const price = parseFloat(modal.dataset.price)
+  const mainPrice = parseFloat(modal.dataset.price)
   const p = S.products.find(x => x.id === currentPid); if (!p) return
-
-  // قراءة كمية المنتج الأصلي
-  const qtyInput = document.getElementById('m-qty-input')
-  const qtySpan  = document.getElementById('m-qty')
-  let qty = 1
-  if (qtyInput) qty = parseFloat(qtyInput.value) || 1
-  else if (qtySpan) qty = parseInt(qtySpan.textContent) || 1
-  else qty = parseInt(modal.dataset.qty) || 1
-
-  // إضافة المنتج الأصلي للسلة
-  const unit = p.unit || 'قطعة'
-  const ci = S.cart.find(c => c.id === currentPid && c.type === 'product')
-  if (ci) { ci.qty = qty; ci.unit = unit }
-  else { S.cart.push({ id:currentPid, type:'product', name:p.name, price, image_url:p.image_url, qty, unit }) }
-
-  // إضافة المنتج المقترح
   const s = S.products.find(x => x.id === suggestedPid); if (!s) return
-  const sPrice = s.discount_price && Number(s.discount_price) < Number(s.price) ? Number(s.discount_price) : Number(s.price)
-  const si = S.cart.find(c => c.id === suggestedPid && c.type === 'product')
-  if (si) { si.qty += 1 }
-  else { S.cart.push({ id:suggestedPid, type:'product', name:s.name, price:sPrice, image_url:s.image_url, qty:1, unit:s.unit||'قطعة' }) }
 
-  saveCart(); updateCartUI(); renderAllSections()
+  const sPrice = s.discount_price && Number(s.discount_price) < Number(s.price)
+    ? Number(s.discount_price) : Number(s.price)
 
-  // إظهار ✓ على الكارد بدون إغلاق الـ modal
-  if (el) {
-    el.style.borderColor = 'var(--brand)'
-    el.style.background  = '#fff8f3'
-    const check = document.createElement('div')
-    check.textContent = '✓'
-    check.style.cssText = 'position:absolute;top:4px;left:4px;background:var(--brand);color:#fff;font-size:10px;font-weight:900;width:18px;height:18px;border-radius:50%;display:flex;align-items:center;justify-content:center;z-index:2'
-    el.style.position = 'relative'
-    if (!el.querySelector('.suggest-check')) { check.classList.add('suggest-check'); el.appendChild(check) }
+  const alreadyAdded = el && el.classList.contains('suggest-selected')
+
+  if (alreadyAdded) {
+    // تراجع — نشيل المنتج المقترح من السلة
+    S.cart = S.cart.filter(c => !(c.id === suggestedPid && c.type === 'product'))
+    if (el) {
+      el.classList.remove('suggest-selected')
+      el.style.borderColor = ''
+      el.style.background  = ''
+      el.querySelector('.suggest-check')?.remove()
+    }
+  } else {
+    // إضافة المنتج المقترح
+    const si = S.cart.find(c => c.id === suggestedPid && c.type === 'product')
+    if (si) { si.qty += 1 }
+    else { S.cart.push({ id:suggestedPid, type:'product', name:s.name, price:sPrice, image_url:s.image_url, qty:1, unit:s.unit||'قطعة' }) }
+    if (el) {
+      el.classList.add('suggest-selected')
+      el.style.borderColor = 'var(--brand)'
+      el.style.background  = '#fff8f3'
+      el.style.position    = 'relative'
+      if (!el.querySelector('.suggest-check')) {
+        const check = document.createElement('div')
+        check.className  = 'suggest-check'
+        check.textContent = '✓'
+        check.style.cssText = 'position:absolute;top:4px;left:4px;background:var(--brand);color:#fff;font-size:10px;font-weight:900;width:18px;height:18px;border-radius:50%;display:flex;align-items:center;justify-content:center;z-index:2'
+        el.appendChild(check)
+      }
+    }
   }
+
+  // حساب الإجمالي = سعر المنتج الأصلي × كميته + كل المقترحات المختارة
+  const qtySpan  = document.getElementById('m-qty')
+  const qtyInput = document.getElementById('m-qty-input')
+  const mainQty  = qtyInput ? (parseFloat(qtyInput.value)||1) : (parseInt(qtySpan?.textContent)||1)
+
+  const selectedExtras = [...document.querySelectorAll('.suggest-card.suggest-selected')]
+  let extrasTotal = 0
+  selectedExtras.forEach(card => {
+    const sid = card.getAttribute('data-sid')
+    const sp  = S.products.find(x => x.id === sid)
+    if (sp) extrasTotal += sp.discount_price && Number(sp.discount_price) < Number(sp.price)
+      ? Number(sp.discount_price) : Number(sp.price)
+  })
+
+  const totalEl = document.getElementById('m-total')
+  if (totalEl) totalEl.textContent = fmt(mainPrice * mainQty + extrasTotal)
+
+  saveCart(); updateCartUI()
 }
 
 // ── BUNDLE MODAL ─────────────────────────────────────────────────────
