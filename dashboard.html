@@ -16,6 +16,52 @@
     .fade-up { animation: fadeUp .3s ease both; }
     .spinner { border:3px solid #f3f3f3; border-top:3px solid #FF6B00; border-radius:50%; width:22px;height:22px; animation:spin .7s linear infinite; display:inline-block; }
     @keyframes spin { to{transform:rotate(360deg);} }
+
+    /* ── Bottom Nav ── */
+    .bottom-nav {
+      position: fixed; bottom: 0; left: 0; right: 0; z-index: 40;
+      background: #fff;
+      border-top: 1px solid #f0f0f0;
+      display: flex;
+      padding-bottom: env(safe-area-inset-bottom);
+      box-shadow: 0 -4px 20px rgba(0,0,0,0.06);
+    }
+    .bnav-btn {
+      flex: 1; display: flex; flex-direction: column; align-items: center;
+      gap: 3px; padding: 10px 4px 8px;
+      font-size: 10px; font-weight: 700; color: #aaa;
+      border: none; background: none; cursor: pointer;
+      transition: color 0.2s; position: relative;
+    }
+    .bnav-btn.active { color: #FF6B00; }
+    .bnav-btn svg { width: 22px; height: 22px; }
+    .bnav-orders-badge {
+      position: absolute; top: 6px; right: calc(50% - 18px);
+      background: #ff3b30; color: #fff;
+      font-size: 9px; font-weight: 900;
+      min-width: 16px; height: 16px;
+      border-radius: 50%; display: none; align-items: center; justify-content: center;
+      border: 2px solid #fff;
+    }
+
+    /* ── Confirm Dialog ── */
+    #confirm-dialog {
+      position: fixed; inset: 0; z-index: 70;
+      background: rgba(0,0,0,0.5); backdrop-filter: blur(4px);
+      display: flex; align-items: flex-end; justify-content: center;
+    }
+    #confirm-dialog-inner {
+      background: #fff; border-radius: 24px 24px 0 0;
+      width: 100%; max-width: 480px; padding: 24px 20px;
+      animation: slideUp .28s cubic-bezier(0.34,1.1,0.64,1) both;
+    }
+    @keyframes slideUp { from{transform:translateY(100%)} to{transform:translateY(0)} }
+
+    /* ── Inputs 16px to prevent zoom on iOS ── */
+    input[type="text"], input[type="email"], input[type="password"],
+    input[type="number"], input[type="tel"], textarea, select {
+      font-size: 16px !important;
+    }
   </style>
 </head>
 <body class="bg-gray-50 min-h-screen">
@@ -59,18 +105,18 @@
     </div>
   </header>
 
-  <!-- Tabs -->
-  <div class="bg-white border-b border-gray-100 px-2 flex gap-1 sticky top-[69px] z-20 overflow-x-auto">
-    <button onclick="showTab('products')"   id="tab-products"   class="tab-btn flex-shrink-0 py-3 px-3 text-sm font-bold text-gray-400 transition-colors tab-active">المنتجات</button>
-    <button onclick="showTab('categories')" id="tab-categories" class="tab-btn flex-shrink-0 py-3 px-3 text-sm font-bold text-gray-400 transition-colors">التصنيفات</button>
-    <button onclick="showTab('bundles')"    id="tab-bundles"    class="tab-btn flex-shrink-0 py-3 px-3 text-sm font-bold text-gray-400 transition-colors">العروض</button>
-    <button onclick="showTab('banners')"    id="tab-banners"    class="tab-btn flex-shrink-0 py-3 px-3 text-sm font-bold text-gray-400 transition-colors">📢 البنرات</button>
-    <button onclick="showTab('orders')"     id="tab-orders"     class="tab-btn flex-shrink-0 py-3 px-3 text-sm font-bold text-gray-400 transition-colors">الطلبات</button>
-    <button onclick="showTab('analytics')"  id="tab-analytics"  class="tab-btn flex-shrink-0 py-3 px-3 text-sm font-bold text-gray-400 transition-colors">📊 إحصائيات</button>
-    <button onclick="showTab('settings')"   id="tab-settings"   class="tab-btn flex-shrink-0 py-3 px-3 text-sm font-bold text-gray-400 transition-colors">الإعدادات</button>
+  <!-- Tabs (hidden on mobile, replaced by bottom nav) -->
+  <div class="bg-white border-b border-gray-100 px-2 gap-1 sticky top-[69px] z-20 overflow-x-auto hidden md:flex">
+    <button onclick="showTab('products')"   id="tab-products-top"   class="tab-btn flex-shrink-0 py-3 px-3 text-sm font-bold text-gray-400 transition-colors tab-active">المنتجات</button>
+    <button onclick="showTab('categories')" id="tab-categories-top" class="tab-btn flex-shrink-0 py-3 px-3 text-sm font-bold text-gray-400 transition-colors">التصنيفات</button>
+    <button onclick="showTab('bundles')"    id="tab-bundles-top"    class="tab-btn flex-shrink-0 py-3 px-3 text-sm font-bold text-gray-400 transition-colors">العروض</button>
+    <button onclick="showTab('banners')"    id="tab-banners-top"    class="tab-btn flex-shrink-0 py-3 px-3 text-sm font-bold text-gray-400 transition-colors">📢 البنرات</button>
+    <button onclick="showTab('orders')"     id="tab-orders-top"     class="tab-btn flex-shrink-0 py-3 px-3 text-sm font-bold text-gray-400 transition-colors">الطلبات</button>
+    <button onclick="showTab('analytics')"  id="tab-analytics-top"  class="tab-btn flex-shrink-0 py-3 px-3 text-sm font-bold text-gray-400 transition-colors">📊 إحصائيات</button>
+    <button onclick="showTab('settings')"   id="tab-settings-top"   class="tab-btn flex-shrink-0 py-3 px-3 text-sm font-bold text-gray-400 transition-colors">الإعدادات</button>
   </div>
 
-  <main class="p-4 max-w-2xl mx-auto">
+  <main class="p-4 max-w-2xl mx-auto pb-28">
 
     <!-- PRODUCTS TAB -->
     <div id="tab-content-products" class="fade-up">
@@ -161,7 +207,7 @@
         </div>
         <div>
           <label class="text-xs font-bold text-gray-500 mb-1 block">رقم الواتساب (مع كود الدولة)</label>
-          <input id="set-whatsapp" type="text" placeholder="966XXXXXXXXX" class="w-full border border-gray-200 rounded-xl px-4 py-3 text-sm focus:outline-none focus:ring-2 focus:ring-orange-400" />
+          <input id="set-whatsapp" type="text" placeholder="مثال: 201012345678 (كود الدولة + الرقم)" class="w-full border border-gray-200 rounded-xl px-4 py-3 text-sm focus:outline-none focus:ring-2 focus:ring-orange-400" />
         </div>
         <div>
           <label class="text-xs font-bold text-gray-500 mb-1 block">اللون الرئيسي</label>
@@ -395,6 +441,63 @@
     <div class="flex gap-3 pt-2">
       <button onclick="saveBanner()" class="flex-1 bg-orange-500 text-white font-bold rounded-xl py-3">حفظ</button>
       <button onclick="closeBannerModal()" class="flex-1 bg-gray-100 text-gray-600 font-bold rounded-xl py-3">إلغاء</button>
+    </div>
+  </div>
+</div>
+
+<!-- BOTTOM NAV (mobile) -->
+<nav class="bottom-nav md:hidden" id="bottom-nav">
+  <button class="bnav-btn active" id="bnav-products" onclick="showTab('products')">
+    <svg fill="none" stroke="currentColor" stroke-width="2" viewBox="0 0 24 24"><path d="M4 6h16M4 10h16M4 14h16M4 18h16"/></svg>
+    المنتجات
+  </button>
+  <button class="bnav-btn" id="bnav-orders" onclick="showTab('orders')">
+    <svg fill="none" stroke="currentColor" stroke-width="2" viewBox="0 0 24 24"><path d="M9 5H7a2 2 0 00-2 2v12a2 2 0 002 2h10a2 2 0 002-2V7a2 2 0 00-2-2h-2M9 5a2 2 0 002 2h2a2 2 0 002-2M9 5a2 2 0 012-2h2a2 2 0 012 2"/></svg>
+    الطلبات
+    <span class="bnav-orders-badge" id="orders-badge"></span>
+  </button>
+  <button class="bnav-btn" id="bnav-more" onclick="showMoreMenu()">
+    <svg fill="none" stroke="currentColor" stroke-width="2" viewBox="0 0 24 24"><circle cx="12" cy="5" r="1"/><circle cx="12" cy="12" r="1"/><circle cx="12" cy="19" r="1"/></svg>
+    المزيد
+  </button>
+  <button class="bnav-btn" id="bnav-settings" onclick="showTab('settings')">
+    <svg fill="none" stroke="currentColor" stroke-width="2" viewBox="0 0 24 24"><path d="M10.325 4.317c.426-1.756 2.924-1.756 3.35 0a1.724 1.724 0 002.573 1.066c1.543-.94 3.31.826 2.37 2.37a1.724 1.724 0 001.065 2.572c1.756.426 1.756 2.924 0 3.35a1.724 1.724 0 00-1.066 2.573c.94 1.543-.826 3.31-2.37 2.37a1.724 1.724 0 00-2.572 1.065c-.426 1.756-2.924 1.756-3.35 0a1.724 1.724 0 00-2.573-1.066c-1.543.94-3.31-.826-2.37-2.37a1.724 1.724 0 00-1.065-2.572c-1.756-.426-1.756-2.924 0-3.35a1.724 1.724 0 001.066-2.573c-.94-1.543.826-3.31 2.37-2.37.996.608 2.296.07 2.572-1.065z"/><circle cx="12" cy="12" r="3"/></svg>
+    الإعدادات
+  </button>
+</nav>
+
+<!-- MORE MENU (slide-up) -->
+<div id="more-menu" class="hidden fixed inset-0 z-50" onclick="hideMoreMenu()">
+  <div class="absolute inset-0 bg-black/40"></div>
+  <div class="absolute bottom-0 left-0 right-0 bg-white rounded-t-3xl p-4 pb-8" onclick="event.stopPropagation()">
+    <div class="w-10 h-1 bg-gray-200 rounded mx-auto mb-4"></div>
+    <div class="grid grid-cols-3 gap-3">
+      <button onclick="hideMoreMenu();showTab('categories')" class="flex flex-col items-center gap-2 bg-gray-50 rounded-2xl p-4">
+        <span class="text-2xl">📂</span><span class="text-xs font-bold text-gray-600">التصنيفات</span>
+      </button>
+      <button onclick="hideMoreMenu();showTab('bundles')" class="flex flex-col items-center gap-2 bg-gray-50 rounded-2xl p-4">
+        <span class="text-2xl">🎁</span><span class="text-xs font-bold text-gray-600">العروض</span>
+      </button>
+      <button onclick="hideMoreMenu();showTab('banners')" class="flex flex-col items-center gap-2 bg-gray-50 rounded-2xl p-4">
+        <span class="text-2xl">📢</span><span class="text-xs font-bold text-gray-600">البنرات</span>
+      </button>
+      <button onclick="hideMoreMenu();showTab('analytics')" class="flex flex-col items-center gap-2 bg-gray-50 rounded-2xl p-4">
+        <span class="text-2xl">📊</span><span class="text-xs font-bold text-gray-600">إحصائيات</span>
+      </button>
+      <button onclick="doLogout()" class="flex flex-col items-center gap-2 bg-red-50 rounded-2xl p-4 col-span-2">
+        <span class="text-2xl">🚪</span><span class="text-xs font-bold text-red-500">تسجيل الخروج</span>
+      </button>
+    </div>
+  </div>
+</div>
+
+<!-- CONFIRM DIALOG -->
+<div id="confirm-dialog" class="hidden">
+  <div id="confirm-dialog-inner">
+    <p id="confirm-msg" class="text-base font-bold text-gray-800 text-center mb-6"></p>
+    <div class="flex gap-3">
+      <button id="confirm-yes-btn" class="flex-1 bg-red-500 text-white font-bold rounded-xl py-3">تأكيد الحذف</button>
+      <button onclick="closeConfirm()" class="flex-1 bg-gray-100 text-gray-600 font-bold rounded-xl py-3">إلغاء</button>
     </div>
   </div>
 </div>
@@ -645,7 +748,8 @@ async function toggleBanner(id, current) {
 }
 
 async function deleteBanner(id) {
-  if (!confirm('هل تريد حذف هذا البنر؟')) return
+  const ok = await showConfirm('هل تريد حذف هذا البنر؟')
+  if (!ok) return
   await db.from('banners').delete().eq('id', id)
   await loadBanners()
   showToast('تم حذف البنر')
@@ -691,6 +795,7 @@ function openCatModal(id=null) {
   if (id) { const cat=state.categories.find(c=>c.id===id); document.getElementById('cm-name').value=cat.name; document.getElementById('cm-icon').value=cat.icon_url||''; document.getElementById('cat-modal-title').textContent='تعديل تصنيف' }
   else    { document.getElementById('cm-name').value=''; document.getElementById('cm-icon').value=''; document.getElementById('cat-modal-title').textContent='إضافة تصنيف' }
   document.getElementById('modal-category').classList.remove('hidden')
+  setTimeout(() => document.getElementById('cm-name').focus(), 100)
 }
 function closeCatModal() { document.getElementById('modal-category').classList.add('hidden') }
 async function saveCat() {
@@ -703,7 +808,8 @@ async function saveCat() {
   closeCatModal(); await loadCategories(); showToast(id?'تم تعديل التصنيف':'تم إضافة التصنيف')
 }
 async function deleteCat(id) {
-  if (!confirm('هل تريد حذف هذا التصنيف؟')) return
+  const ok = await showConfirm('هل تريد حذف هذا التصنيف؟ المنتجات المرتبطة به ستفقد تصنيفها.')
+  if (!ok) return
   await db.from('categories').delete().eq('id',id); await loadCategories(); showToast('تم حذف التصنيف')
 }
 
@@ -804,6 +910,11 @@ function openProductModal(id=null) {
     setUnitField('قطعة')
   }
   document.getElementById('modal-product').classList.remove('hidden')
+  setTimeout(() => document.getElementById('pm-name').focus(), 100)
+  // تحذير إذا لا توجد تصنيفات
+  if (!state.categories.length && !id) {
+    showToast('💡 أضف تصنيفاً أولاً لتنظيم منتجاتك')
+  }
 }
 function closeProductModal() { document.getElementById('modal-product').classList.add('hidden') }
 async function saveProduct() {
@@ -821,7 +932,8 @@ async function saveProduct() {
   closeProductModal(); await loadProducts(); showToast(id?'تم تعديل المنتج':'تم إضافة المنتج ✅')
 }
 async function deleteProduct(id) {
-  if (!confirm('هل تريد حذف هذا المنتج؟')) return
+  const ok = await showConfirm('هل تريد حذف هذا المنتج؟ لن تتمكن من استرجاعه بعد 5 ثواني.')
+  if (!ok) return
   productSnapshot=state.products.find(p=>p.id===id)
   await db.from('products').delete().eq('id',id); await loadProducts(); showToastWithUndo('تم حذف المنتج', restoreProduct)
 }
@@ -904,12 +1016,16 @@ async function saveBundle() {
   closeBundleModal(); await loadBundles(); showToast(id?'تم تعديل العرض ✅':'تم إضافة العرض ✅')
 }
 async function toggleBundle(id,current) { await db.from('bundles').update({is_active:!current}).eq('id',id); await loadBundles(); showToast(!current?'تم تفعيل العرض':'تم إيقاف العرض') }
-async function deleteBundle(id) { if (!confirm('هل تريد حذف هذا العرض؟')) return; await db.from('bundles').delete().eq('id',id); await loadBundles(); showToast('تم حذف العرض') }
+async function deleteBundle(id) { 
+  const ok = await showConfirm('هل تريد حذف هذا العرض؟')
+  if (!ok) return
+  await db.from('bundles').delete().eq('id',id); await loadBundles(); showToast('تم حذف العرض') 
+}
 
 // ── ORDERS ──
 async function loadOrders() {
   const{data}=await db.from('orders').select('*').eq('restaurant_id',state.restaurant.id).order('created_at',{ascending:false}).limit(50)
-  state.orders=data||[]; renderOrders()
+  state.orders=data||[]; renderOrders(); updateOrdersBadge(state.orders)
 }
 function renderOrders() {
   const el=document.getElementById('orders-list')
@@ -1062,14 +1178,59 @@ function showScreen(name) {
   document.getElementById('screen-login').classList.add('hidden'); document.getElementById('screen-dashboard').classList.add('hidden')
   document.getElementById('screen-'+name).classList.remove('hidden')
 }
+function showMoreMenu() { document.getElementById('more-menu').classList.remove('hidden') }
+function hideMoreMenu() { document.getElementById('more-menu').classList.add('hidden') }
+
+// ── CONFIRM DIALOG (بدل alert confirm) ──
+let _confirmResolve = null
+function showConfirm(msg) {
+  return new Promise(resolve => {
+    _confirmResolve = resolve
+    document.getElementById('confirm-msg').textContent = msg
+    document.getElementById('confirm-yes-btn').onclick = () => { closeConfirm(); resolve(true) }
+    document.getElementById('confirm-dialog').classList.remove('hidden')
+  })
+}
+function closeConfirm() {
+  document.getElementById('confirm-dialog').classList.add('hidden')
+  if (_confirmResolve) { _confirmResolve(false); _confirmResolve = null }
+}
+
+// ── ORDERS BADGE ──
+function updateOrdersBadge(orders) {
+  const pending = orders.filter(o => o.status === 'pending').length
+  const badge = document.getElementById('orders-badge')
+  if (!badge) return
+  if (pending > 0) {
+    badge.textContent = pending > 9 ? '9+' : pending
+    badge.style.display = 'flex'
+  } else {
+    badge.style.display = 'none'
+  }
+}
+
 function showTab(name) {
   const tabs=['products','categories','bundles','banners','orders','analytics','settings']
   tabs.forEach(t=>{
     document.getElementById('tab-content-'+t).classList.add('hidden')
-    document.getElementById('tab-'+t).classList.remove('tab-active'); document.getElementById('tab-'+t).classList.add('text-gray-400')
+    // desktop tabs
+    const dTab = document.getElementById('tab-'+t+'-top')
+    if (dTab) { dTab.classList.remove('tab-active'); dTab.classList.add('text-gray-400') }
   })
   document.getElementById('tab-content-'+name).classList.remove('hidden')
-  document.getElementById('tab-'+name).classList.add('tab-active'); document.getElementById('tab-'+name).classList.remove('text-gray-400')
+  const dTabActive = document.getElementById('tab-'+name+'-top')
+  if (dTabActive) { dTabActive.classList.add('tab-active'); dTabActive.classList.remove('text-gray-400') }
+
+  // bottom nav highlight
+  ;['products','orders','settings'].forEach(t => {
+    const btn = document.getElementById('bnav-'+t)
+    if (btn) btn.classList.toggle('active', t === name)
+  })
+  // more menu items
+  const moreItems = ['categories','bundles','banners','analytics']
+  const moreBtn = document.getElementById('bnav-more')
+  if (moreBtn) moreBtn.classList.toggle('active', moreItems.includes(name))
+
   if (name==='orders')    loadOrders()
   if (name==='bundles')   loadBundles()
   if (name==='analytics') loadAnalytics()
