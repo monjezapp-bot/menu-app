@@ -641,7 +641,7 @@
     <div class="success-icon text-6xl mb-4">✅</div>
     <h2 style="font-size:22px;font-weight:900;color:#1a1a1a;margin-bottom:6px">تم إرسال طلبك!</h2>
     <p id="success-order-num" style="font-size:15px;font-weight:700;color:#FF6B00;margin-bottom:6px"></p>
-    <p style="font-size:13px;color:#aaa;margin-bottom:24px">استلمنا طلبك وسيتواصل معك المطعم قريباً 🎉</p>
+    <p id="success-sub-msg" style="font-size:13px;color:#aaa;margin-bottom:24px">استلمنا طلبك وسيتواصل معك المطعم قريباً 🎉</p>
     <button onclick="closeSuccessModal()"
             style="width:100%;background:var(--brand);color:#fff;font-size:15px;font-weight:900;border-radius:16px;padding:14px">
       تمام 👍
@@ -688,6 +688,11 @@ async function boot() {
     showState('app')
     initScrollBehavior()
     initScrollSpy()
+    // تحديث نص زر الإرسال حسب طريقة الاستلام
+    const sendBtn = document.getElementById('send-order-btn')
+    if (sendBtn && (S.restaurant.order_receive_method || 'whatsapp') === 'app') {
+      sendBtn.innerHTML = '<span>إرسال الطلب</span><span style="font-size:20px">✅</span>'
+    }
   } catch(e) { showError(e.message) }
 }
 
@@ -695,7 +700,7 @@ async function boot() {
 async function loadData(slug) {
   const { data: r, error: rErr } = await db
     .from('restaurants')
-    .select('id, name, logo_url, cover_url, whatsapp, theme, slug, announcement_text, announcement_active')
+    .select('id, name, logo_url, cover_url, whatsapp, theme, slug, announcement_text, announcement_active, order_receive_method')
     .eq('slug', slug).eq('is_active', true).single()
   if (rErr || !r) throw new Error('المطعم غير موجود أو غير نشط')
   S.restaurant = r
@@ -1293,7 +1298,11 @@ function renderCartItems() {
 async function sendOrder() {
   if (!S.cart.length) return
   const btn = document.getElementById('send-order-btn')
-  const resetBtn = () => { btn.style.opacity = '1'; btn.innerHTML = '<span>إرسال الطلب عبر واتساب</span><span style="font-size:20px">📲</span>' }
+  const method = S.restaurant.order_receive_method || 'whatsapp'
+  const btnLabel = method === 'app'
+    ? '<span>إرسال الطلب</span><span style="font-size:20px">✅</span>'
+    : '<span>إرسال الطلب عبر واتساب</span><span style="font-size:20px">📲</span>'
+  const resetBtn = () => { btn.style.opacity = '1'; btn.innerHTML = btnLabel }
   btn.style.opacity = '0.6'; btn.innerHTML = '<span>جاري الإرسال...</span>'
 
   const table    = document.getElementById('table-number-input').value.trim()
@@ -1305,7 +1314,7 @@ async function sendOrder() {
   const items = S.cart.map(c => ({ id:c.id, type:c.type, name:c.name, price:c.price, qty:c.qty, unit:c.unit||'قطعة', subtotal:Number((c.price*c.qty).toFixed(2)) }))
   const total = cartTotal()
 
-  // 1) احفظ في DB أولاً — إذا فشل، أوقف العملية
+  // 1) احفظ في DB أولاً
   let orderNumber
   try {
     const { data:rpc, error:re } = await db.rpc('generate_order_number')
@@ -1325,33 +1334,43 @@ async function sendOrder() {
     return
   }
 
-  // 2) نجح الحفظ — افتح واتساب
-  const now  = new Date().toLocaleTimeString('ar-EG', { hour:'2-digit', minute:'2-digit' })
-  const text = [
-    `🧾 *طلب جديد ${orderNumber}*`, `─────────────────`,
-    ...items.map(i => `• ${i.name}${i.type==='bundle'?' 🎁':''} — ${i.qty} ${i.unit}  —  ${fmt(i.subtotal)}`),
-    `─────────────────`,
-    `💰 *الإجمالي: ${fmt(total)}*`,
-    `⚠️ السعر لا يشمل رسوم التوصيل`,
-    table     ? `📍 الطاولة: ${table}` : '',
-    custName  ? `👤 الاسم: ${custName}` : '',
-    custPhone ? `📞 التواصل: ${custPhone}` : '',
-    custAddr  ? `🏠 العنوان: ${custAddr}` : '',
-    custLoc   ? `📌 الموقع: ${custLoc}` : '',
-    note      ? `📝 ملاحظة: ${note}` : '',
-    `⏰ ${now}`
-  ].filter(Boolean).join('\n')
-  window.open(`https://wa.me/${S.restaurant.whatsapp}?text=${encodeURIComponent(text)}`, '_blank')
+  // 2) تصرف حسب طريقة الاستلام
+  if (method === 'whatsapp') {
+    const now  = new Date().toLocaleTimeString('ar-EG', { hour:'2-digit', minute:'2-digit' })
+    const text = [
+      `🧾 *طلب جديد ${orderNumber}*`, `─────────────────`,
+      ...items.map(i => `• ${i.name}${i.type==='bundle'?' 🎁':''} — ${i.qty} ${i.unit}  —  ${fmt(i.subtotal)}`),
+      `─────────────────`,
+      `💰 *الإجمالي: ${fmt(total)}*`,
+      `⚠️ السعر لا يشمل رسوم التوصيل`,
+      table     ? `📍 الطاولة: ${table}` : '',
+      custName  ? `👤 الاسم: ${custName}` : '',
+      custPhone ? `📞 التواصل: ${custPhone}` : '',
+      custAddr  ? `🏠 العنوان: ${custAddr}` : '',
+      custLoc   ? `📌 الموقع: ${custLoc}` : '',
+      note      ? `📝 ملاحظة: ${note}` : '',
+      `⏰ ${now}`
+    ].filter(Boolean).join('\n')
+    window.open(`https://wa.me/${S.restaurant.whatsapp}?text=${encodeURIComponent(text)}`, '_blank')
+  }
+  // لو method === 'app': الطلب اتحفظ في DB وخلاص — الـ realtime هيبعته للتاجر
 
   // 3) نظف السلة واعرض شاشة النجاح
   clearCart(); updateCartUI(); closeCartSheet()
   ;['order-name','order-phone','order-address','order-location','order-note','table-number-input'].forEach(id=>{const el=document.getElementById(id);if(el)el.value=''})
   resetBtn()
-  showOrderSuccess(orderNumber)
+  showOrderSuccess(orderNumber, method)
 }
 
-function showOrderSuccess(orderNumber) {
+function showOrderSuccess(orderNumber, method) {
   document.getElementById('success-order-num').textContent = `رقم الطلب: ${orderNumber}`
+  // تخصيص الرسالة حسب طريقة الاستلام
+  const msgEl = document.getElementById('success-sub-msg')
+  if (msgEl) {
+    msgEl.textContent = (method === 'app')
+      ? '🔔 المطعم استلم طلبك وهيبعتلك تأكيد قريباً'
+      : '📲 تم إرسال طلبك على واتساب المطعم'
+  }
   document.getElementById('order-success-modal').classList.remove('hidden')
   document.body.style.overflow = 'hidden'
 }

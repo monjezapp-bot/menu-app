@@ -64,6 +64,20 @@
     input[type="number"], input[type="tel"], textarea, select {
       font-size: 16px !important;
     }
+
+    /* ── New Order Popup ── */
+    @keyframes popIn {
+      from { opacity:0; transform:scale(0.85) translateY(20px); }
+      to   { opacity:1; transform:scale(1)    translateY(0); }
+    }
+
+    /* ── ORM option selected state ── */
+    .orm-option-selected {
+      border-color: #FF6B00 !important;
+      background-color: #FFF7F2 !important;
+    }
+    .orm-check-active   { background-color: #FF6B00 !important; }
+    .orm-check-inactive { background-color: #e5e7eb !important; }
   </style>
 </head>
 <body class="bg-gray-50 min-h-screen">
@@ -248,6 +262,39 @@
           <button onclick="undoSettings()" id="undo-settings-btn" class="flex-1 bg-gray-100 text-gray-600 font-bold rounded-xl py-3 hover:bg-gray-200 transition-colors hidden">↩ تراجع</button>
         </div>
         <p id="settings-msg" class="text-center text-sm hidden"></p>
+      </div>
+
+      <!-- ORDER RECEIVE METHOD -->
+      <div class="bg-white rounded-2xl p-5 shadow-sm mt-4">
+        <h3 class="font-extrabold text-gray-800 mb-1">📲 طريقة استلام الطلبات</h3>
+        <p class="text-xs text-gray-400 mb-4">اختر إزاي عايز تستقبل الطلبات من العملاء</p>
+        <div class="space-y-3">
+          <label id="orm-opt-whatsapp" onclick="selectOrderMethod('whatsapp')"
+                 class="orm-option flex items-center gap-4 border-2 rounded-2xl p-4 cursor-pointer transition-all border-orange-400 bg-orange-50">
+            <div class="w-10 h-10 rounded-xl bg-green-100 flex items-center justify-center text-xl flex-shrink-0">💬</div>
+            <div class="flex-1">
+              <p class="font-extrabold text-gray-800 text-sm">واتساب فقط</p>
+              <p class="text-xs text-gray-400 mt-0.5">العميل يضغط "إرسال" وتوصّلك رسالة واتساب مباشرة</p>
+            </div>
+            <div id="orm-check-whatsapp" class="w-5 h-5 rounded-full bg-orange-500 flex items-center justify-center flex-shrink-0">
+              <svg class="w-3 h-3 text-white" fill="none" stroke="currentColor" stroke-width="3" viewBox="0 0 24 24"><path d="M5 13l4 4L19 7"/></svg>
+            </div>
+          </label>
+
+          <label id="orm-opt-app" onclick="selectOrderMethod('app')"
+                 class="orm-option flex items-center gap-4 border-2 rounded-2xl p-4 cursor-pointer transition-all border-gray-200 bg-white">
+            <div class="w-10 h-10 rounded-xl bg-orange-100 flex items-center justify-center text-xl flex-shrink-0">🔔</div>
+            <div class="flex-1">
+              <p class="font-extrabold text-gray-800 text-sm">التطبيق مباشرة</p>
+              <p class="text-xs text-gray-400 mt-0.5">الطلب يجيلك هنا في اللوحة مع صوت تنبيه — وتقدر تشارك تفاصيله على واتساب</p>
+            </div>
+            <div id="orm-check-app" class="w-5 h-5 rounded-full bg-gray-200 flex items-center justify-center flex-shrink-0">
+              <svg class="w-3 h-3 text-white" fill="none" stroke="currentColor" stroke-width="3" viewBox="0 0 24 24"><path d="M5 13l4 4L19 7"/></svg>
+            </div>
+          </label>
+        </div>
+        <button onclick="saveOrderMethod()" class="w-full mt-4 bg-orange-500 text-white font-bold rounded-xl py-3 hover:bg-orange-600 transition-colors">حفظ طريقة الاستلام</button>
+        <p id="orm-msg" class="text-center text-xs mt-2 hidden"></p>
       </div>
     </div>
 
@@ -509,6 +556,53 @@
 <!-- TOAST -->
 <div id="toast" class="hidden fixed top-6 left-1/2 -translate-x-1/2 z-[60] bg-gray-800 text-white text-sm font-bold px-5 py-3 rounded-2xl shadow-xl"></div>
 
+<!-- NEW ORDER POPUP -->
+<div id="new-order-popup" class="hidden fixed inset-0 z-[80] flex items-center justify-center p-4" style="background:rgba(0,0,0,0.7);backdrop-filter:blur(6px)">
+  <div id="new-order-popup-inner" class="bg-white rounded-3xl w-full max-w-sm shadow-2xl overflow-hidden"
+       style="animation:popIn .35s cubic-bezier(0.34,1.2,0.64,1) both">
+    <div class="bg-gradient-to-l from-orange-500 to-orange-600 px-5 py-4 flex items-center gap-3">
+      <div class="w-11 h-11 bg-white/20 rounded-2xl flex items-center justify-center text-2xl">🔔</div>
+      <div>
+        <p class="text-white font-extrabold text-base">طلب جديد!</p>
+        <p id="nop-order-num" class="text-orange-100 text-xs font-bold"></p>
+      </div>
+      <button onclick="dismissNewOrderPopup()" class="mr-auto text-white/70 hover:text-white text-xl font-bold leading-none">✕</button>
+    </div>
+    <div class="px-5 py-4">
+      <div id="nop-items" class="space-y-1.5 mb-3 max-h-48 overflow-y-auto"></div>
+      <div class="flex justify-between items-center border-t border-gray-100 pt-3 mb-1">
+        <span class="text-sm font-bold text-gray-500">الإجمالي</span>
+        <span id="nop-total" class="text-lg font-extrabold text-orange-500"></span>
+      </div>
+      <div id="nop-meta" class="text-xs text-gray-400 space-y-0.5 mt-1"></div>
+    </div>
+    <div class="px-5 pb-5 grid grid-cols-2 gap-3">
+      <button onclick="confirmNewOrder()" class="bg-green-500 hover:bg-green-600 text-white font-extrabold rounded-2xl py-3.5 transition-colors text-sm">✅ قبول</button>
+      <button onclick="rejectNewOrder()" class="bg-red-50 hover:bg-red-100 text-red-500 font-extrabold rounded-2xl py-3.5 transition-colors text-sm">❌ رفض</button>
+      <button onclick="openWhatsappShare()" class="col-span-2 bg-[#25D366] hover:bg-[#1da851] text-white font-extrabold rounded-2xl py-3.5 transition-colors text-sm flex items-center justify-center gap-2">
+        <svg class="w-5 h-5" fill="currentColor" viewBox="0 0 24 24"><path d="M17.472 14.382c-.297-.149-1.758-.867-2.03-.967-.273-.099-.471-.148-.67.15-.197.297-.767.966-.94 1.164-.173.199-.347.223-.644.075-.297-.15-1.255-.463-2.39-1.475-.883-.788-1.48-1.761-1.653-2.059-.173-.297-.018-.458.13-.606.134-.133.298-.347.446-.52.149-.174.198-.298.298-.497.099-.198.05-.371-.025-.52-.075-.149-.669-1.612-.916-2.207-.242-.579-.487-.5-.669-.51-.173-.008-.371-.01-.57-.01-.198 0-.52.074-.792.372-.272.297-1.04 1.016-1.04 2.479 0 1.462 1.065 2.875 1.213 3.074.149.198 2.096 3.2 5.077 4.487.709.306 1.262.489 1.694.625.712.227 1.36.195 1.871.118.571-.085 1.758-.719 2.006-1.413.248-.694.248-1.289.173-1.413-.074-.124-.272-.198-.57-.347m-5.421 7.403h-.004a9.87 9.87 0 01-5.031-1.378l-.361-.214-3.741.982.998-3.648-.235-.374a9.86 9.86 0 01-1.51-5.26c.001-5.45 4.436-9.884 9.888-9.884 2.64 0 5.122 1.03 6.988 2.898a9.825 9.825 0 012.893 6.994c-.003 5.45-4.437 9.884-9.885 9.884m8.413-18.297A11.815 11.815 0 0012.05 0C5.495 0 .16 5.335.157 11.892c0 2.096.547 4.142 1.588 5.945L.057 24l6.305-1.654a11.882 11.882 0 005.683 1.448h.005c6.554 0 11.89-5.335 11.893-11.893a11.821 11.821 0 00-3.48-8.413z"/></svg>
+        مشاركة تفاصيل الطلب
+      </button>
+    </div>
+  </div>
+</div>
+
+<!-- WHATSAPP SHARE MODAL -->
+<div id="wa-share-modal" class="hidden fixed inset-0 z-[90] flex items-end justify-center" style="background:rgba(0,0,0,0.6)">
+  <div class="bg-white rounded-t-3xl w-full max-w-lg p-5 space-y-3" style="animation:slideUp .28s cubic-bezier(0.34,1.1,0.64,1) both">
+    <div class="w-10 h-1 bg-gray-200 rounded mx-auto mb-2"></div>
+    <h3 class="font-extrabold text-gray-800 text-base">📤 مشاركة تفاصيل الطلب على واتساب</h3>
+    <p class="text-xs text-gray-400">اختار المعلومات اللي عايز ترسلها</p>
+    <div id="wa-share-options" class="space-y-2"></div>
+    <button onclick="sendWhatsappShare()" class="w-full bg-[#25D366] text-white font-extrabold rounded-2xl py-3.5 text-sm hover:bg-[#1da851] transition-colors mt-2 flex items-center justify-center gap-2">
+      <svg class="w-5 h-5" fill="currentColor" viewBox="0 0 24 24"><path d="M17.472 14.382c-.297-.149-1.758-.867-2.03-.967-.273-.099-.471-.148-.67.15-.197.297-.767.966-.94 1.164-.173.199-.347.223-.644.075-.297-.15-1.255-.463-2.39-1.475-.883-.788-1.48-1.761-1.653-2.059-.173-.297-.018-.458.13-.606.134-.133.298-.347.446-.52.149-.174.198-.298.298-.497.099-.198.05-.371-.025-.52-.075-.149-.669-1.612-.916-2.207-.242-.579-.487-.5-.669-.51-.173-.008-.371-.01-.57-.01-.198 0-.52.074-.792.372-.272.297-1.04 1.016-1.04 2.479 0 1.462 1.065 2.875 1.213 3.074.149.198 2.096 3.2 5.077 4.487.709.306 1.262.489 1.694.625.712.227 1.36.195 1.871.118.571-.085 1.758-.719 2.006-1.413.248-.694.248-1.289.173-1.413-.074-.124-.272-.198-.57-.347m-5.421 7.403h-.004a9.87 9.87 0 01-5.031-1.378l-.361-.214-3.741.982.998-3.648-.235-.374a9.86 9.86 0 01-1.51-5.26c.001-5.45 4.436-9.884 9.888-9.884 2.64 0 5.122 1.03 6.988 2.898a9.825 9.825 0 012.893 6.994c-.003 5.45-4.437 9.884-9.885 9.884m8.413-18.297A11.815 11.815 0 0012.05 0C5.495 0 .16 5.335.157 11.892c0 2.096.547 4.142 1.588 5.945L.057 24l6.305-1.654a11.882 11.882 0 005.683 1.448h.005c6.554 0 11.89-5.335 11.893-11.893a11.821 11.821 0 00-3.48-8.413z"/></svg>
+      إرسال على واتساب
+    </button>
+    <button onclick="closeWhatsappShare()" class="w-full bg-gray-100 text-gray-600 font-bold rounded-2xl py-3 text-sm">إلغاء</button>
+    <div style="height:env(safe-area-inset-bottom)"></div>
+  </div>
+</div>
+
 <script>
 const SUPABASE_URL  = 'https://pcmyugeqveyjnappulng.supabase.co'
 const SUPABASE_ANON = 'eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6InBjbXl1Z2VxdmV5am5hcHB1bG5nIiwicm9sZSI6ImFub24iLCJpYXQiOjE3ODExNjU0NDAsImV4cCI6MjA5Njc0MTQ0MH0.uwn0X4CvNRW38FGh_0rYD9KjBRM19CydXucfBsCDYeo'
@@ -570,6 +664,14 @@ async function loadDashboard() {
   document.getElementById('ann-active-toggle').checked = restaurant.announcement_active || false
 
   setTimeout(() => initPickr(primary), 100)
+
+  // ORM UI
+  initORMUI()
+
+  // Realtime — يشتغل بس لو طريقة الاستلام "app"
+  if ((state.restaurant.order_receive_method || 'whatsapp') === 'app') {
+    startRealtimeOrders()
+  }
 
   document.getElementById('set-color-hex').addEventListener('input', e => {
     const val = e.target.value
@@ -1244,10 +1346,226 @@ function showTab(name) {
 function showToast(msg) {
   const t=document.getElementById('toast'); t.innerHTML=msg; t.classList.remove('hidden'); setTimeout(()=>t.classList.add('hidden'),2500)
 }
-function showToastWithUndo(msg,undoFn) {
-  const t=document.getElementById('toast')
-  t.innerHTML=`${msg} &nbsp;<button onclick="(${undoFn.toString()})()" class="underline font-extrabold text-orange-300 mr-2">تراجع</button>`
-  t.classList.remove('hidden'); setTimeout(()=>t.classList.add('hidden'),5000)
+// ══════════════════════════════════════════════════════════
+// ── ORDER RECEIVE METHOD (ORM) ──
+// ══════════════════════════════════════════════════════════
+let _currentORM = 'whatsapp'
+
+function selectOrderMethod(method) {
+  _currentORM = method
+  ;['whatsapp','app'].forEach(m => {
+    const opt   = document.getElementById('orm-opt-'  + m)
+    const check = document.getElementById('orm-check-' + m)
+    if (!opt || !check) return
+    opt.style.borderColor = '#e5e7eb'
+    opt.style.backgroundColor = '#fff'
+    check.style.backgroundColor = '#e5e7eb'
+  })
+  const activeOpt   = document.getElementById('orm-opt-'   + method)
+  const activeCheck = document.getElementById('orm-check-' + method)
+  if (activeOpt)   { activeOpt.style.borderColor = '#FF6B00'; activeOpt.style.backgroundColor = '#FFF7F2' }
+  if (activeCheck) { activeCheck.style.backgroundColor = '#FF6B00' }
+}
+
+async function saveOrderMethod() {
+  const msgEl = document.getElementById('orm-msg')
+  const { error } = await db.from('restaurants')
+    .update({ order_receive_method: _currentORM })
+    .eq('id', state.restaurant.id)
+  if (error) {
+    msgEl.textContent = '❌ خطأ في الحفظ — تأكد إن عمود order_receive_method موجود في جدول restaurants'
+    msgEl.className = 'text-center text-xs mt-2 text-red-500'
+  } else {
+    state.restaurant.order_receive_method = _currentORM
+    // toggle realtime based on new method
+    if (_currentORM === 'app') {
+      startRealtimeOrders()
+    } else {
+      if (_realtimeChannel) { db.removeChannel(_realtimeChannel); _realtimeChannel = null }
+    }
+    msgEl.textContent = '✅ تم الحفظ'
+    msgEl.className = 'text-center text-xs mt-2 text-green-500'
+  }
+  msgEl.classList.remove('hidden')
+  setTimeout(() => msgEl.classList.add('hidden'), 3000)
+}
+
+function initORMUI() {
+  const method = state.restaurant.order_receive_method || 'whatsapp'
+  _currentORM = method
+  selectOrderMethod(method)
+}
+
+// ══════════════════════════════════════════════════════════
+// ── ALARM SOUND (Web Audio API) ──
+// ══════════════════════════════════════════════════════════
+let _audioCtx = null
+
+function playAlarm() {
+  try {
+    if (!_audioCtx) _audioCtx = new (window.AudioContext || window.webkitAudioContext)()
+    const ctx = _audioCtx
+    const master = ctx.createGain()
+    master.gain.value = 1.0
+    master.connect(ctx.destination)
+
+    // نمط رنة تلفون: موجة مربعة + تكرار
+    const pattern = [
+      { f:880, t:0,    d:0.18 },
+      { f:880, t:0.22, d:0.18 },
+      { f:880, t:0.44, d:0.18 },
+      { f:660, t:0.72, d:0.28 },
+      { f:880, t:1.1,  d:0.18 },
+      { f:880, t:1.32, d:0.18 },
+      { f:880, t:1.54, d:0.18 },
+      { f:660, t:1.82, d:0.35 },
+    ]
+    pattern.forEach(({ f, t, d }) => {
+      const osc  = ctx.createOscillator()
+      const gain = ctx.createGain()
+      osc.type = 'square'
+      osc.frequency.value = f
+      gain.gain.setValueAtTime(0,   ctx.currentTime + t)
+      gain.gain.linearRampToValueAtTime(0.9, ctx.currentTime + t + 0.01)
+      gain.gain.linearRampToValueAtTime(0,   ctx.currentTime + t + d)
+      osc.connect(gain); gain.connect(master)
+      osc.start(ctx.currentTime + t)
+      osc.stop(ctx.currentTime  + t + d + 0.05)
+    })
+  } catch(e) { console.warn('Audio error:', e) }
+}
+
+// ══════════════════════════════════════════════════════════
+// ── REALTIME ORDERS ──
+// ══════════════════════════════════════════════════════════
+let _realtimeChannel  = null
+let _pendingOrderData = null
+
+function startRealtimeOrders() {
+  if (_realtimeChannel) return
+  _realtimeChannel = db
+    .channel('new-orders-' + state.restaurant.id)
+    .on('postgres_changes', {
+      event:  'INSERT',
+      schema: 'public',
+      table:  'orders',
+      filter: `restaurant_id=eq.${state.restaurant.id}`
+    }, payload => handleIncomingOrder(payload.new))
+    .subscribe()
+}
+
+function handleIncomingOrder(order) {
+  _pendingOrderData = order
+  playAlarm()
+  showNewOrderPopup(order)
+  updateOrdersBadge([...state.orders, order])
+}
+
+function showNewOrderPopup(order) {
+  document.getElementById('nop-order-num').textContent = order.order_number
+
+  const items = order.items || []
+  document.getElementById('nop-items').innerHTML = items.map(i =>
+    `<div class="flex justify-between text-sm">
+      <span class="text-gray-600 font-bold">${i.name} × ${i.qty}</span>
+      <span class="font-extrabold text-gray-800">${Number(i.subtotal).toFixed(2)} ج.م</span>
+    </div>`
+  ).join('')
+
+  document.getElementById('nop-total').textContent = Number(order.total).toFixed(2) + ' ج.م'
+
+  const meta = []
+  if (order.table_number)      meta.push(`🪑 طاولة: ${order.table_number}`)
+  if (order.customer_name)     meta.push(`👤 ${order.customer_name}`)
+  if (order.customer_phone)    meta.push(`📞 ${order.customer_phone}`)
+  if (order.customer_address)  meta.push(`🏠 ${order.customer_address}`)
+  if (order.customer_location) meta.push(`📍 <a href="${order.customer_location}" target="_blank" class="text-orange-500 underline font-bold">عرض الموقع</a>`)
+  if (order.note)              meta.push(`📝 ${order.note}`)
+  document.getElementById('nop-meta').innerHTML = meta.map(m => `<p>${m}</p>`).join('')
+
+  document.getElementById('new-order-popup').classList.remove('hidden')
+}
+
+async function confirmNewOrder() {
+  if (!_pendingOrderData) return
+  await db.from('orders').update({ status:'confirmed' }).eq('id', _pendingOrderData.id)
+  showToast('✅ تم قبول الطلب ' + _pendingOrderData.order_number)
+  dismissNewOrderPopup()
+  loadOrders()
+}
+
+async function rejectNewOrder() {
+  if (!_pendingOrderData) return
+  await db.from('orders').update({ status:'cancelled' }).eq('id', _pendingOrderData.id)
+  showToast('❌ تم رفض الطلب')
+  dismissNewOrderPopup()
+  loadOrders()
+}
+
+function dismissNewOrderPopup() {
+  document.getElementById('new-order-popup').classList.add('hidden')
+  _pendingOrderData = null
+}
+
+// ══════════════════════════════════════════════════════════
+// ── WHATSAPP SHARE FROM ORDER ──
+// ══════════════════════════════════════════════════════════
+function openWhatsappShare() {
+  if (!_pendingOrderData) return
+  const o = _pendingOrderData
+
+  const opts = []
+  opts.push({ key:'order',   label:'🧾 ملخص الطلب والأسعار', checked:true, disabled:true })
+  if (o.customer_name)     opts.push({ key:'name',     label:`👤 الاسم: ${o.customer_name}`,         checked:true })
+  if (o.customer_phone)    opts.push({ key:'phone',    label:`📞 رقم التواصل: ${o.customer_phone}`,  checked:true })
+  if (o.customer_address)  opts.push({ key:'address',  label:`🏠 العنوان: ${o.customer_address}`,    checked:true })
+  if (o.customer_location) opts.push({ key:'location', label:'📍 رابط الموقع على الخريطة',           checked:true })
+  if (o.table_number)      opts.push({ key:'table',    label:`🪑 طاولة: ${o.table_number}`,          checked:true })
+  if (o.note)              opts.push({ key:'note',     label:`📝 ملاحظة: ${o.note}`,                checked:true })
+
+  document.getElementById('wa-share-options').innerHTML = opts.map(opt => `
+    <label class="flex items-center gap-3 bg-gray-50 rounded-xl px-4 py-3 cursor-pointer">
+      <input type="checkbox" data-key="${opt.key}" ${opt.checked ? 'checked' : ''} ${opt.disabled ? 'disabled' : ''}
+             class="w-5 h-5 accent-orange-500 flex-shrink-0 rounded" />
+      <span class="text-sm font-bold text-gray-700 ${opt.disabled ? 'opacity-50' : ''}">${opt.label}</span>
+    </label>`
+  ).join('')
+
+  document.getElementById('wa-share-modal').classList.remove('hidden')
+}
+
+function closeWhatsappShare() {
+  document.getElementById('wa-share-modal').classList.add('hidden')
+}
+
+function sendWhatsappShare() {
+  if (!_pendingOrderData) return
+  const o = _pendingOrderData
+  const checked = new Set(
+    [...document.querySelectorAll('#wa-share-options input[type=checkbox]:checked')]
+      .map(el => el.dataset.key)
+  )
+
+  const fmtMoney = v => Number(v).toFixed(2)
+  const lines = []
+
+  if (checked.has('order')) {
+    lines.push(`🧾 *طلب ${o.order_number}*`)
+    lines.push(`─────────────────`)
+    ;(o.items||[]).forEach(i => lines.push(`• ${i.name} × ${i.qty}  ←  ${fmtMoney(i.subtotal)} ج.م`))
+    lines.push(`─────────────────`)
+    lines.push(`💰 *الإجمالي: ${fmtMoney(o.total)} ج.م*`)
+  }
+  if (checked.has('name'))     lines.push(`👤 ${o.customer_name}`)
+  if (checked.has('phone'))    lines.push(`📞 ${o.customer_phone}`)
+  if (checked.has('address'))  lines.push(`🏠 ${o.customer_address}`)
+  if (checked.has('location')) lines.push(`📍 ${o.customer_location}`)
+  if (checked.has('table'))    lines.push(`🪑 طاولة: ${o.table_number}`)
+  if (checked.has('note'))     lines.push(`📝 ${o.note}`)
+
+  const wa = state.restaurant.whatsapp
+  window.open(`https://wa.me/${wa}?text=${encodeURIComponent(lines.join('\n'))}`, '_blank')
+  closeWhatsappShare()
 }
 
 boot()
