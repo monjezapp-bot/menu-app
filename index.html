@@ -386,7 +386,7 @@
 
     /* ── Suggested ── */
     .suggest-scroll { display:flex; gap:8px; overflow-x:auto; padding:4px 16px 12px; }
-    .suggest-card { flex-shrink:0; width:86px; background:#fff; border-radius:12px; overflow:hidden; border:1.5px solid #efefef; cursor:pointer; }
+    .suggest-card { flex-shrink:0; width:86px; background:#fff; border-radius:12px; overflow:hidden; border:1.5px solid #efefef; cursor:pointer; transition:border-color 0.2s, background 0.2s; }
     .suggest-card img { width:100%; height:58px; object-fit:cover; }
     .suggest-card .no-img { width:100%; height:58px; background:#f8f8f8; display:flex; align-items:center; justify-content:center; font-size:20px; }
     .suggest-card .sc-info { padding:5px 7px 7px; }
@@ -1096,7 +1096,7 @@ function openModal(pid) {
     <div style="padding:10px 0 0;border-top:1px solid #f5f5f5">
       <p style="font-size:12px;font-weight:800;color:#aaa;padding:0 16px 8px">تطلب معها أيضاً 🤩</p>
       <div class="suggest-scroll no-scroll">
-        ${suggested.map(s => `<div class="suggest-card" onclick="addBothAndClose('${pid}','${s.id}')">
+        ${suggested.map(s => `<div class="suggest-card" onclick="addSuggestedToCart('${pid}','${s.id}',this)">
           ${s.image_url ? `<img src="${s.image_url}" />` : `<div class="no-img">🍽️</div>`}
           <div class="sc-info"><p>${s.name}</p><span>${fmt(s.discount_price && Number(s.discount_price)<Number(s.price) ? s.discount_price : s.price)}</span></div>
         </div>`).join('')}
@@ -1168,13 +1168,13 @@ function addFromModal(pid) {
 }
 function closeModal() { document.getElementById('product-modal').classList.add('hidden'); document.body.style.overflow = '' }
 
-// يضيف المنتج الحالي + المقترح للسلة ويقفل الـ modal
-function addBothAndClose(currentPid, nextPid) {
+// يضيف المنتج المقترح للسلة مع المنتج الأصلي ويفضل الـ modal مفتوح
+function addSuggestedToCart(currentPid, suggestedPid, el) {
   const modal = document.getElementById('product-modal')
   const price = parseFloat(modal.dataset.price)
   const p = S.products.find(x => x.id === currentPid); if (!p) return
 
-  // قراءة الكمية من العنصر المرئي
+  // قراءة كمية المنتج الأصلي
   const qtyInput = document.getElementById('m-qty-input')
   const qtySpan  = document.getElementById('m-qty')
   let qty = 1
@@ -1182,22 +1182,31 @@ function addBothAndClose(currentPid, nextPid) {
   else if (qtySpan) qty = parseInt(qtySpan.textContent) || 1
   else qty = parseInt(modal.dataset.qty) || 1
 
-  // إضافة المنتج الأصلي
+  // إضافة المنتج الأصلي للسلة
   const unit = p.unit || 'قطعة'
   const ci = S.cart.find(c => c.id === currentPid && c.type === 'product')
   if (ci) { ci.qty = qty; ci.unit = unit }
   else { S.cart.push({ id:currentPid, type:'product', name:p.name, price, image_url:p.image_url, qty, unit }) }
 
-  // إضافة المنتج المقترح (كمية 1 دايماً)
-  const s = S.products.find(x => x.id === nextPid); if (s) {
-    const sPrice = s.discount_price && Number(s.discount_price) < Number(s.price) ? Number(s.discount_price) : Number(s.price)
-    const si = S.cart.find(c => c.id === nextPid && c.type === 'product')
-    if (si) { si.qty += 1 }
-    else { S.cart.push({ id:nextPid, type:'product', name:s.name, price:sPrice, image_url:s.image_url, qty:1, unit:s.unit||'قطعة' }) }
-  }
+  // إضافة المنتج المقترح
+  const s = S.products.find(x => x.id === suggestedPid); if (!s) return
+  const sPrice = s.discount_price && Number(s.discount_price) < Number(s.price) ? Number(s.discount_price) : Number(s.price)
+  const si = S.cart.find(c => c.id === suggestedPid && c.type === 'product')
+  if (si) { si.qty += 1 }
+  else { S.cart.push({ id:suggestedPid, type:'product', name:s.name, price:sPrice, image_url:s.image_url, qty:1, unit:s.unit||'قطعة' }) }
 
   saveCart(); updateCartUI(); renderAllSections()
-  closeModal()
+
+  // إظهار ✓ على الكارد بدون إغلاق الـ modal
+  if (el) {
+    el.style.borderColor = 'var(--brand)'
+    el.style.background  = '#fff8f3'
+    const check = document.createElement('div')
+    check.textContent = '✓'
+    check.style.cssText = 'position:absolute;top:4px;left:4px;background:var(--brand);color:#fff;font-size:10px;font-weight:900;width:18px;height:18px;border-radius:50%;display:flex;align-items:center;justify-content:center;z-index:2'
+    el.style.position = 'relative'
+    if (!el.querySelector('.suggest-check')) { check.classList.add('suggest-check'); el.appendChild(check) }
+  }
 }
 
 // ── BUNDLE MODAL ─────────────────────────────────────────────────────
