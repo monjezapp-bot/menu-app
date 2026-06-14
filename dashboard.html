@@ -246,6 +246,23 @@
       </select></div>
     <div><label class="text-xs font-bold text-gray-500 mb-1 block">بادج العرض (اختياري)</label>
       <input id="pm-badge" type="text" placeholder="مثال: عرض خاص، جديد، الأكثر طلباً" class="w-full border border-gray-200 rounded-xl px-4 py-3 text-sm focus:outline-none focus:ring-2 focus:ring-orange-400" /></div>
+    <div>
+      <label class="text-xs font-bold text-gray-500 mb-1 block">وحدة الكمية</label>
+      <div class="flex gap-2">
+        <select id="pm-unit-select" onchange="handleUnitSelect()" class="flex-1 border border-gray-200 rounded-xl px-4 py-3 text-sm focus:outline-none focus:ring-2 focus:ring-orange-400 bg-white">
+          <option value="قطعة">قطعة</option>
+          <option value="كيلو">كيلو</option>
+          <option value="جرام">جرام</option>
+          <option value="لتر">لتر</option>
+          <option value="متر">متر</option>
+          <option value="علبة">علبة</option>
+          <option value="custom">✏️ أخرى...</option>
+        </select>
+        <input id="pm-unit-custom" type="text" placeholder="اكتب الوحدة..." class="hidden flex-1 border border-gray-200 rounded-xl px-4 py-3 text-sm focus:outline-none focus:ring-2 focus:ring-orange-400" />
+      </div>
+      <input type="hidden" id="pm-unit" value="قطعة" />
+      <p class="text-xs text-gray-400 mt-1">💡 تظهر للعميل عند الطلب — مثال: "الكمية بالكيلو"</p>
+    </div>
     <p id="pm-error" class="text-red-500 text-xs hidden"></p>
     <div class="flex gap-3 pt-2">
       <button onclick="saveProduct()" class="flex-1 bg-orange-500 text-white font-bold rounded-xl py-3 hover:bg-orange-600 transition-colors">حفظ</button>
@@ -428,7 +445,7 @@ async function loadDashboard() {
 
   state.restaurant = restaurant
   document.getElementById('dash-restaurant-name').textContent = restaurant.name
-  document.getElementById('preview-link').href = MENU_BASE_URL + '?r=' + restaurant.slug
+  document.getElementById('preview-link').href = MENU_BASE_URL + '?r=' + restaurant.slug + '&preview=1'
 
   await Promise.all([loadCategories(), loadProducts(), loadOrders(), loadBanners()])
 
@@ -743,6 +760,31 @@ function renderProducts() {
       </div>`:''}
     </div>`}).join('')
 }
+function handleUnitSelect() {
+  const sel = document.getElementById('pm-unit-select').value
+  const custom = document.getElementById('pm-unit-custom')
+  if (sel === 'custom') {
+    custom.classList.remove('hidden'); custom.focus()
+    document.getElementById('pm-unit').value = ''
+    custom.oninput = () => document.getElementById('pm-unit').value = custom.value.trim()
+  } else {
+    custom.classList.add('hidden')
+    document.getElementById('pm-unit').value = sel
+  }
+}
+function setUnitField(unit) {
+  const sel = document.getElementById('pm-unit-select')
+  const opts = [...sel.options].map(o => o.value)
+  if (opts.includes(unit)) {
+    sel.value = unit
+    document.getElementById('pm-unit-custom').classList.add('hidden')
+  } else {
+    sel.value = 'custom'
+    document.getElementById('pm-unit-custom').classList.remove('hidden')
+    document.getElementById('pm-unit-custom').value = unit
+  }
+  document.getElementById('pm-unit').value = unit
+}
 function openProductModal(id=null) {
   document.getElementById('pm-id').value=id||''; document.getElementById('pm-error').classList.add('hidden'); updateCategorySelect()
   if (id) {
@@ -752,12 +794,14 @@ function openProductModal(id=null) {
     document.getElementById('pm-category').value=p.category_id||''; document.getElementById('pm-image').value=p.image_url||''
     document.getElementById('pm-availability').value=p.availability||'available'; document.getElementById('pm-badge').value=p.offer_badge||''
     document.getElementById('pm-available').checked=p.is_available; document.getElementById('product-modal-title').textContent='تعديل منتج'
+    setUnitField(p.unit || 'قطعة')
     updateDiscountPreview()
   } else {
     ['pm-name','pm-desc','pm-price','pm-discount','pm-image','pm-badge'].forEach(id=>document.getElementById(id).value='')
     document.getElementById('pm-category').value=''; document.getElementById('pm-availability').value='available'
     document.getElementById('pm-available').checked=true; document.getElementById('discount-preview').classList.add('hidden')
     document.getElementById('product-modal-title').textContent='إضافة منتج'
+    setUnitField('قطعة')
   }
   document.getElementById('modal-product').classList.remove('hidden')
 }
@@ -770,7 +814,8 @@ async function saveProduct() {
   if (isNaN(price)) { errEl.textContent='السعر غير صحيح'; errEl.classList.remove('hidden'); return }
   if (!isNaN(discount)&&discount>=price) { errEl.textContent='سعر الخصم يجب أن يكون أقل من السعر الأصلي'; errEl.classList.remove('hidden'); return }
   errEl.classList.add('hidden')
-  const payload = { name, description:document.getElementById('pm-desc').value.trim()||null, price, discount_price:!isNaN(discount)&&discount>0?discount:null, category_id:document.getElementById('pm-category').value||null, image_url:document.getElementById('pm-image').value.trim()||null, is_available:document.getElementById('pm-available').checked, availability:document.getElementById('pm-availability').value, offer_badge:document.getElementById('pm-badge').value.trim()||null }
+  const unit = document.getElementById('pm-unit').value.trim() || 'قطعة'
+  const payload = { name, description:document.getElementById('pm-desc').value.trim()||null, price, discount_price:!isNaN(discount)&&discount>0?discount:null, category_id:document.getElementById('pm-category').value||null, image_url:document.getElementById('pm-image').value.trim()||null, is_available:document.getElementById('pm-available').checked, availability:document.getElementById('pm-availability').value, offer_badge:document.getElementById('pm-badge').value.trim()||null, unit }
   if (id) { await db.from('products').update(payload).eq('id',id) }
   else    { await db.from('products').insert({...payload,restaurant_id:state.restaurant.id,sort_order:state.products.length}) }
   closeProductModal(); await loadProducts(); showToast(id?'تم تعديل المنتج':'تم إضافة المنتج ✅')
@@ -926,23 +971,58 @@ function undoSettings() {
 
 // ── ANALYTICS ──
 async function loadAnalytics() {
-  const restId=state.restaurant.id
-  const{data:orders}=await db.from('orders').select('total,items,created_at').eq('restaurant_id',restId).neq('status','cancelled')
-  const total=(orders||[]).reduce((s,o)=>s+Number(o.total),0)
-  const today=new Date().toDateString()
-  const todayOrders=(orders||[]).filter(o=>new Date(o.created_at).toDateString()===today).length
-  document.getElementById('stat-total-orders').textContent=orders?.length||0
-  document.getElementById('stat-total-revenue').textContent=total.toFixed(2)
-  document.getElementById('stat-today-orders').textContent=todayOrders
-  document.getElementById('stat-products-count').textContent=state.products.length
-  const counter={}
-  ;(orders||[]).forEach(o=>{;(o.items||[]).forEach(item=>{counter[item.name]=(counter[item.name]||0)+(item.qty||1)})})
-  const sorted=Object.entries(counter).sort((a,b)=>b[1]-a[1]).slice(0,5)
-  const bsEl=document.getElementById('best-sellers-list')
-  bsEl.innerHTML=sorted.length?sorted.map(([name,qty],i)=>`<div class="flex items-center justify-between py-2 border-b border-gray-50 last:border-0"><div class="flex items-center gap-2"><span class="text-lg">${['🥇','🥈','🥉','4️⃣','5️⃣'][i]}</span><span class="text-sm text-gray-700 font-bold">${name}</span></div><span class="text-xs bg-orange-50 text-orange-500 font-bold px-2 py-1 rounded-full">${qty} طلب</span></div>`).join(''):`<p class="text-center text-gray-400 text-sm py-4">لا توجد طلبات بعد</p>`
-  const recent=[...state.products].sort((a,b)=>new Date(b.created_at||0)-new Date(a.created_at||0)).slice(0,5)
-  const rpEl=document.getElementById('recent-products-list')
-  rpEl.innerHTML=recent.length?recent.map(p=>`<div class="flex items-center justify-between py-2 border-b border-gray-50 last:border-0"><span class="text-sm text-gray-700 font-bold">${p.name}</span><span class="text-xs text-gray-400">${Number(p.price).toFixed(2)} ج.م</span></div>`).join(''):`<p class="text-center text-gray-400 text-sm py-4">لا توجد منتجات</p>`
+  const restId = state.restaurant.id
+  const todayStart = new Date(); todayStart.setHours(0,0,0,0)
+
+  // 3 queries متوازية — كل واحدة تجلب فقط ما تحتاجه
+  const [
+    { count: totalOrders },
+    { count: todayOrders },
+    { data: revenueRows },
+    { data: topItemsRows }
+  ] = await Promise.all([
+    // عدد كل الطلبات (count فقط، بدون بيانات)
+    db.from('orders').select('*', { count:'exact', head:true })
+      .eq('restaurant_id', restId).neq('status','cancelled'),
+
+    // عدد طلبات اليوم فقط
+    db.from('orders').select('*', { count:'exact', head:true })
+      .eq('restaurant_id', restId).neq('status','cancelled')
+      .gte('created_at', todayStart.toISOString()),
+
+    // الإجمالي المالي — total فقط
+    db.from('orders').select('total')
+      .eq('restaurant_id', restId).neq('status','cancelled'),
+
+    // آخر 200 طلب للأكثر طلباً (items فقط)
+    db.from('orders').select('items')
+      .eq('restaurant_id', restId).neq('status','cancelled')
+      .order('created_at', { ascending:false }).limit(200)
+  ])
+
+  const revenue = (revenueRows||[]).reduce((s,o) => s + Number(o.total), 0)
+  document.getElementById('stat-total-orders').textContent  = totalOrders || 0
+  document.getElementById('stat-total-revenue').textContent = revenue.toFixed(2)
+  document.getElementById('stat-today-orders').textContent  = todayOrders || 0
+  document.getElementById('stat-products-count').textContent = state.products.length
+
+  // أكثر المنتجات طلباً
+  const counter = {}
+  ;(topItemsRows||[]).forEach(o => {
+    ;(o.items||[]).forEach(item => { counter[item.name] = (counter[item.name]||0) + (item.qty||1) })
+  })
+  const sorted = Object.entries(counter).sort((a,b) => b[1]-a[1]).slice(0,5)
+  const bsEl = document.getElementById('best-sellers-list')
+  bsEl.innerHTML = sorted.length
+    ? sorted.map(([name,qty],i) => `<div class="flex items-center justify-between py-2 border-b border-gray-50 last:border-0"><div class="flex items-center gap-2"><span class="text-lg">${['🥇','🥈','🥉','4️⃣','5️⃣'][i]}</span><span class="text-sm text-gray-700 font-bold">${name}</span></div><span class="text-xs bg-orange-50 text-orange-500 font-bold px-2 py-1 rounded-full">${qty} طلب</span></div>`).join('')
+    : `<p class="text-center text-gray-400 text-sm py-4">لا توجد طلبات بعد</p>`
+
+  // أحدث المنتجات
+  const recent = [...state.products].sort((a,b) => new Date(b.created_at||0)-new Date(a.created_at||0)).slice(0,5)
+  const rpEl = document.getElementById('recent-products-list')
+  rpEl.innerHTML = recent.length
+    ? recent.map(p => `<div class="flex items-center justify-between py-2 border-b border-gray-50 last:border-0"><span class="text-sm text-gray-700 font-bold">${p.name}</span><span class="text-xs text-gray-400">${Number(p.price).toFixed(2)} ج.م</span></div>`).join('')
+    : `<p class="text-center text-gray-400 text-sm py-4">لا توجد منتجات</p>`
 }
 
 // ── UPLOAD HELPERS ──
