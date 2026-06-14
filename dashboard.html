@@ -48,11 +48,13 @@
     #confirm-dialog {
       position: fixed; inset: 0; z-index: 70;
       background: rgba(0,0,0,0.5); backdrop-filter: blur(4px);
-      display: flex; align-items: flex-end; justify-content: center;
+      align-items: flex-end; justify-content: center;
     }
+    #confirm-dialog.hidden { display: none !important; }
+    #confirm-dialog:not(.hidden) { display: flex; }
     #confirm-dialog-inner {
       background: #fff; border-radius: 24px 24px 0 0;
-      width: 100%; max-width: 480px; padding: 24px 20px;
+      width: 100%; max-width: 480px; padding: 20px 20px 24px;
       animation: slideUp .28s cubic-bezier(0.34,1.1,0.64,1) both;
     }
     @keyframes slideUp { from{transform:translateY(100%)} to{transform:translateY(0)} }
@@ -494,11 +496,13 @@
 <!-- CONFIRM DIALOG -->
 <div id="confirm-dialog" class="hidden">
   <div id="confirm-dialog-inner">
-    <p id="confirm-msg" class="text-base font-bold text-gray-800 text-center mb-6"></p>
+    <div style="width:40px;height:4px;background:#e8e8e8;border-radius:4px;margin:0 auto 20px"></div>
+    <p id="confirm-msg" style="font-size:15px;font-weight:700;color:#1a1a1a;text-align:center;margin-bottom:24px;line-height:1.6;min-height:24px"></p>
     <div class="flex gap-3">
-      <button id="confirm-yes-btn" class="flex-1 bg-red-500 text-white font-bold rounded-xl py-3">تأكيد الحذف</button>
-      <button onclick="closeConfirm()" class="flex-1 bg-gray-100 text-gray-600 font-bold rounded-xl py-3">إلغاء</button>
+      <button onclick="closeConfirm()" style="flex:1;background:#f5f5f5;color:#666;font-weight:700;border-radius:14px;padding:14px;font-size:14px;font-family:'Rubik',sans-serif">إلغاء</button>
+      <button id="confirm-yes-btn" style="flex:1;background:#ef4444;color:#fff;font-weight:700;border-radius:14px;padding:14px;font-size:14px;font-family:'Rubik',sans-serif">تأكيد الحذف</button>
     </div>
+    <div style="height:env(safe-area-inset-bottom)"></div>
   </div>
 </div>
 
@@ -748,7 +752,7 @@ async function toggleBanner(id, current) {
 }
 
 async function deleteBanner(id) {
-  const ok = await showConfirm('هل تريد حذف هذا البنر؟')
+  const ok = await showConfirm('هل تريد حذف هذا البنر؟', 'حذف البنر')
   if (!ok) return
   await db.from('banners').delete().eq('id', id)
   await loadBanners()
@@ -808,7 +812,7 @@ async function saveCat() {
   closeCatModal(); await loadCategories(); showToast(id?'تم تعديل التصنيف':'تم إضافة التصنيف')
 }
 async function deleteCat(id) {
-  const ok = await showConfirm('هل تريد حذف هذا التصنيف؟ المنتجات المرتبطة به ستفقد تصنيفها.')
+  const ok = await showConfirm('هل تريد حذف هذا التصنيف؟ المنتجات المرتبطة به ستفقد تصنيفها.', 'حذف التصنيف')
   if (!ok) return
   await db.from('categories').delete().eq('id',id); await loadCategories(); showToast('تم حذف التصنيف')
 }
@@ -932,7 +936,7 @@ async function saveProduct() {
   closeProductModal(); await loadProducts(); showToast(id?'تم تعديل المنتج':'تم إضافة المنتج ✅')
 }
 async function deleteProduct(id) {
-  const ok = await showConfirm('هل تريد حذف هذا المنتج؟ لن تتمكن من استرجاعه بعد 5 ثواني.')
+  const ok = await showConfirm('هل تريد حذف هذا المنتج؟', 'حذف المنتج')
   if (!ok) return
   productSnapshot=state.products.find(p=>p.id===id)
   await db.from('products').delete().eq('id',id); await loadProducts(); showToastWithUndo('تم حذف المنتج', restoreProduct)
@@ -1017,7 +1021,7 @@ async function saveBundle() {
 }
 async function toggleBundle(id,current) { await db.from('bundles').update({is_active:!current}).eq('id',id); await loadBundles(); showToast(!current?'تم تفعيل العرض':'تم إيقاف العرض') }
 async function deleteBundle(id) { 
-  const ok = await showConfirm('هل تريد حذف هذا العرض؟')
+  const ok = await showConfirm('هل تريد حذف هذا العرض؟', 'حذف العرض')
   if (!ok) return
   await db.from('bundles').delete().eq('id',id); await loadBundles(); showToast('تم حذف العرض') 
 }
@@ -1183,10 +1187,11 @@ function hideMoreMenu() { document.getElementById('more-menu').classList.add('hi
 
 // ── CONFIRM DIALOG (بدل alert confirm) ──
 let _confirmResolve = null
-function showConfirm(msg) {
+function showConfirm(msg, btnLabel = 'حذف') {
   return new Promise(resolve => {
     _confirmResolve = resolve
     document.getElementById('confirm-msg').textContent = msg
+    document.getElementById('confirm-yes-btn').textContent = btnLabel
     document.getElementById('confirm-yes-btn').onclick = () => { closeConfirm(); resolve(true) }
     document.getElementById('confirm-dialog').classList.remove('hidden')
   })
