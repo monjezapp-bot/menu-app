@@ -6,6 +6,8 @@
   <title>المنيو</title>
   <script src="https://cdn.tailwindcss.com"></script>
   <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
+  <link rel="stylesheet" href="https://unpkg.com/leaflet@1.9.4/dist/leaflet.css" />
+  <script src="https://unpkg.com/leaflet@1.9.4/dist/leaflet.js"></script>
   <link rel="preconnect" href="https://fonts.googleapis.com" />
   <link href="https://fonts.googleapis.com/css2?family=Rubik:wght@400;500;600;700;800;900&display=swap" rel="stylesheet" />
 
@@ -513,18 +515,66 @@
       <button onclick="closeCartSheet()" style="width:36px;height:36px;border-radius:50%;background:#f5f5f5;color:#888;font-size:20px;font-weight:700;display:flex;align-items:center;justify-content:center">&times;</button>
     </div>
     <div id="cart-items-list" style="flex:1;overflow-y:auto;padding:14px 16px"></div>
-    <div style="padding:14px 16px 24px;border-top:1px solid #f0f0f0;background:#fff">
+    <div style="padding:14px 16px 8px;border-top:1px solid #f0f0f0;background:#fff">
+      <!-- رقم الطاولة -->
       <input id="table-number-input" type="text" placeholder="رقم الطاولة (اختياري)"
-             style="width:100%;border:1.5px solid #eee;border-radius:14px;padding:12px 14px;font-size:13px;color:#444;outline:none;font-family:'Rubik',sans-serif;margin-bottom:12px" />
-      <div style="display:flex;align-items:center;justify-content:space-between;margin-bottom:14px;padding:0 2px">
+             style="width:100%;border:1.5px solid #eee;border-radius:14px;padding:12px 14px;font-size:13px;color:#444;outline:none;font-family:'Rubik',sans-serif;margin-bottom:10px" />
+      <!-- بيانات العميل -->
+      <div style="background:#f9f9f9;border-radius:16px;padding:12px 14px;margin-bottom:10px">
+        <p style="font-size:12px;font-weight:800;color:#888;margin-bottom:8px">بيانات التوصيل (اختياري)</p>
+        <input id="order-name" type="text" placeholder="اسمك"
+               style="width:100%;border:1.5px solid #eee;border-radius:12px;padding:10px 12px;font-size:13px;color:#444;outline:none;font-family:'Rubik',sans-serif;margin-bottom:7px;background:#fff" />
+        <input id="order-phone" type="tel" placeholder="رقم التواصل"
+               style="width:100%;border:1.5px solid #eee;border-radius:12px;padding:10px 12px;font-size:13px;color:#444;outline:none;font-family:'Rubik',sans-serif;margin-bottom:7px;background:#fff" />
+        <input id="order-address" type="text" placeholder="العنوان"
+               style="width:100%;border:1.5px solid #eee;border-radius:12px;padding:10px 12px;font-size:13px;color:#444;outline:none;font-family:'Rubik',sans-serif;margin-bottom:7px;background:#fff" />
+        <!-- زر تحديد الموقع -->
+        <input type="hidden" id="order-location" />
+        <button onclick="openMapPicker()"
+                id="map-pick-btn"
+                style="width:100%;border:1.5px solid #eee;border-radius:12px;padding:10px 12px;font-size:13px;color:#888;font-family:'Rubik',sans-serif;background:#fff;text-align:right;cursor:pointer;display:flex;align-items:center;gap:8px">
+          <span style="font-size:16px">📍</span>
+          <span id="map-pick-label">تحديد موقع التوصيل (اختياري)</span>
+        </button>
+      </div>
+      <!-- ملاحظة -->
+      <textarea id="order-note" rows="2" placeholder="ملاحظة على الطلب (اختياري)"
+                style="width:100%;border:1.5px solid #eee;border-radius:14px;padding:12px 14px;font-size:13px;color:#444;outline:none;font-family:'Rubik',sans-serif;resize:none;margin-bottom:10px"></textarea>
+      <!-- الإجمالي + تنبيه -->
+      <div style="display:flex;align-items:center;justify-content:space-between;margin-bottom:6px;padding:0 2px">
         <span style="font-size:14px;font-weight:600;color:#999">الإجمالي</span>
         <span id="cart-grand-total" style="font-size:24px;font-weight:900;color:var(--brand)">0 ج.م</span>
       </div>
+      <p style="font-size:11px;color:#bbb;text-align:center;margin-bottom:10px">⚠️ السعر لا يشمل رسوم التوصيل</p>
       <button id="send-order-btn" onclick="sendOrder()"
-              style="width:100%;background:var(--brand);color:#fff;font-size:15px;font-weight:900;border-radius:18px;padding:16px;display:flex;align-items:center;justify-content:center;gap:10px">
+              style="width:100%;background:var(--brand);color:#fff;font-size:15px;font-weight:900;border-radius:18px;padding:16px;display:flex;align-items:center;justify-content:center;gap:10px;margin-bottom:8px">
         <span>إرسال الطلب عبر واتساب</span><span style="font-size:20px">📲</span>
       </button>
     </div>
+  </div>
+</div>
+
+<!-- MAP PICKER MODAL -->
+<div id="map-modal" class="hidden fixed inset-0 z-50 flex flex-col" style="background:#fff">
+  <div style="display:flex;align-items:center;justify-content:space-between;padding:14px 16px;border-bottom:1px solid #f0f0f0;flex-shrink:0">
+    <p style="font-size:16px;font-weight:900;color:#1a1a1a">📍 حدد موقعك</p>
+    <button onclick="closeMapPicker()" style="width:36px;height:36px;border-radius:50%;background:#f5f5f5;color:#555;font-size:20px;font-weight:700;display:flex;align-items:center;justify-content:center">&times;</button>
+  </div>
+  <div style="padding:10px 16px;background:#fff8f3;border-bottom:1px solid #ffe0c8;flex-shrink:0">
+    <p style="font-size:12px;color:#7a3c00;font-weight:600">اسحب الخريطة أو اضغط على موقعك بالضبط — ثم اضغط "تأكيد"</p>
+  </div>
+  <div id="leaflet-map" style="flex:1;width:100%;min-height:0"></div>
+  <!-- زر موقعي الحالي -->
+  <button onclick="useMyLocation()"
+          style="position:absolute;bottom:90px;left:16px;z-index:1000;background:#fff;border:none;border-radius:12px;padding:10px 14px;font-size:13px;font-weight:800;color:#1a1a1a;box-shadow:0 2px 12px rgba(0,0,0,0.15);display:flex;align-items:center;gap:6px;font-family:'Rubik',sans-serif;cursor:pointer">
+    🎯 موقعي الحالي
+  </button>
+  <div style="padding:12px 16px;border-top:1px solid #f0f0f0;background:#fff;flex-shrink:0">
+    <p id="map-coords-label" style="font-size:12px;color:#aaa;text-align:center;margin-bottom:10px">لم يتم تحديد موقع بعد</p>
+    <button onclick="confirmLocation()"
+            style="width:100%;background:var(--brand);color:#fff;font-size:15px;font-weight:900;border-radius:16px;padding:14px;font-family:'Rubik',sans-serif">
+      ✅ تأكيد الموقع
+    </button>
   </div>
 </div>
 
@@ -551,6 +601,17 @@ const S = {
   cart: [], activeCat: null, search: '', currentBanner: 0
 }
 
+// ── CART PERSISTENCE ─────────────────────────────────────────────
+function cartKey() { return 'cart_' + (new URLSearchParams(location.search).get('r') || 'default') }
+function saveCart() { try { localStorage.setItem(cartKey(), JSON.stringify(S.cart)) } catch(e){} }
+function loadCart() {
+  try {
+    const raw = localStorage.getItem(cartKey())
+    if (raw) S.cart = JSON.parse(raw)
+  } catch(e) { S.cart = [] }
+}
+function clearCart() { S.cart = []; try { localStorage.removeItem(cartKey()) } catch(e){} }
+
 // ── BOOT ──────────────────────────────────────────────────────────
 async function boot() {
   const slug = new URLSearchParams(location.search).get('r')
@@ -562,7 +623,9 @@ async function boot() {
     renderCatGrid()
     renderAnnouncement()
     renderAdBanners()
+    loadCart()
     renderAllSections()
+    updateCartUI()
     showState('app')
     initScrollBehavior()
     initScrollSpy()
@@ -960,12 +1023,16 @@ function openModal(pid) {
        </div>`
     : `<span style="font-size:19px;font-weight:900;color:var(--brand)">${fmt(p.price)}</span>`
 
-  const suggested = S.products.filter(x => x.category_id === p.category_id && x.id !== p.id).slice(0,6)
+  // اقتراحات من تصنيفات مختلفة أولاً، وإذا لم تكفِ نكمل من نفس التصنيف
+  const otherCat = S.products.filter(x => x.category_id !== p.category_id && x.id !== pid && x.is_available !== false && x.availability !== 'hidden')
+  const sameCat  = S.products.filter(x => x.category_id === p.category_id  && x.id !== pid && x.is_available !== false && x.availability !== 'hidden')
+  const suggested = [...otherCat, ...sameCat].slice(0, 6)
+
   const suggestedHTML = suggested.length ? `
     <div style="padding:14px 0 0;border-top:1px solid #f5f5f5">
       <p style="font-size:14px;font-weight:900;color:#1a1a1a;padding:0 16px 10px">تطلب معها أيضاً 🤩</p>
       <div class="suggest-scroll no-scroll">
-        ${suggested.map(s => `<div class="suggest-card" onclick="closeModal(); openModal('${s.id}')">
+        ${suggested.map(s => `<div class="suggest-card" onclick="addFromModalThenOpen('${pid}','${s.id}')">
           ${s.image_url ? `<img src="${s.image_url}" />` : `<div class="no-img">🍽️</div>`}
           <div class="sc-info"><p>${s.name}</p><span>${fmt(s.discount_price && Number(s.discount_price)<Number(s.price) ? s.discount_price : s.price)}</span></div>
         </div>`).join('')}
@@ -987,14 +1054,19 @@ function openModal(pid) {
       ${p.description ? `<p style="font-size:13px;color:#888;line-height:1.75;margin-top:6px">${p.description}</p>` : ''}
     </div>
     ${suggestedHTML}
-    <div style="padding:14px 16px 24px;display:flex;align-items:center;gap:10px">
-      <div style="display:flex;align-items:center;gap:8px;background:#f5f5f5;border-radius:14px;padding:8px 12px;flex-shrink:0">
-        <button onclick="mQty(-1)" style="width:32px;height:32px;border-radius:10px;background:#fff;box-shadow:0 1px 4px rgba(0,0,0,0.1);color:#333;font-size:18px;font-weight:900;display:flex;align-items:center;justify-content:center">−</button>
-        <span id="m-qty" style="font-size:16px;font-weight:900;min-width:24px;text-align:center">${qty}</span>
-        <button onclick="mQty(1)" style="width:32px;height:32px;border-radius:10px;background:var(--brand);color:#fff;font-size:18px;font-weight:900;display:flex;align-items:center;justify-content:center">+</button>
-      </div>
+    <div style="padding:14px 16px 24px">
+      ${p.unit && p.unit !== 'قطعة'
+        ? `<label style="font-size:12px;font-weight:800;color:#888;display:block;margin-bottom:6px">الكمية بالـ ${p.unit}</label>
+           <input id="m-qty-input" type="number" min="0.1" step="0.1" value="${qty}"
+                  oninput="mQtyInput()"
+                  style="width:100%;border:1.5px solid #eee;border-radius:12px;padding:11px 14px;font-size:16px;font-weight:700;color:#1a1a1a;outline:none;font-family:'Rubik',sans-serif;text-align:center;margin-bottom:10px" />`
+        : `<div style="display:flex;align-items:center;gap:8px;background:#f5f5f5;border-radius:14px;padding:8px 12px;margin-bottom:10px;width:fit-content">
+             <button onclick="mQty(-1)" style="width:32px;height:32px;border-radius:10px;background:#fff;box-shadow:0 1px 4px rgba(0,0,0,0.1);color:#333;font-size:18px;font-weight:900;display:flex;align-items:center;justify-content:center">−</button>
+             <span id="m-qty" style="font-size:16px;font-weight:900;min-width:24px;text-align:center">${qty}</span>
+             <button onclick="mQty(1)" style="width:32px;height:32px;border-radius:10px;background:var(--brand);color:#fff;font-size:18px;font-weight:900;display:flex;align-items:center;justify-content:center">+</button>
+           </div>`}
       <button onclick="addFromModal('${pid}')"
-              style="flex:1;background:var(--brand);color:#fff;font-size:14px;font-weight:900;border-radius:14px;padding:14px 16px;display:flex;align-items:center;justify-content:space-between;gap:8px">
+              style="width:100%;background:var(--brand);color:#fff;font-size:14px;font-weight:900;border-radius:14px;padding:14px 16px;display:flex;align-items:center;justify-content:space-between;gap:8px">
         <span>أضف للسلة</span>
         <span id="m-total">${fmt(displayPrice * qty)}</span>
       </button>
@@ -1012,15 +1084,37 @@ function mQty(d) {
   document.getElementById('m-qty').textContent   = qty
   document.getElementById('m-total').textContent = fmt(parseFloat(modal.dataset.price) * qty)
 }
+function mQtyInput() {
+  const modal = document.getElementById('product-modal')
+  const val = parseFloat(document.getElementById('m-qty-input').value) || 0.1
+  modal.dataset.qty = val
+  document.getElementById('m-total').textContent = fmt(parseFloat(modal.dataset.price) * val)
+}
 function addFromModal(pid) {
   const modal = document.getElementById('product-modal')
-  const qty = parseInt(modal.dataset.qty), price = parseFloat(modal.dataset.price)
+  const price = parseFloat(modal.dataset.price)
   const p = S.products.find(x => x.id === pid); if (!p) return
+  // الكمية — إما input نصي (وحدة) أو عداد
+  const qtyInput = document.getElementById('m-qty-input')
+  const qty = qtyInput ? (parseFloat(qtyInput.value) || 0.1) : parseInt(modal.dataset.qty)
+  const unit = p.unit || 'قطعة'
   const ci = S.cart.find(c => c.id === pid && c.type === 'product')
-  if (ci) { ci.qty = qty } else { S.cart.push({ id:pid, type:'product', name:p.name, price, image_url:p.image_url, qty }) }
+  if (ci) { ci.qty = qty; ci.unit = unit } else { S.cart.push({ id:pid, type:'product', name:p.name, price, image_url:p.image_url, qty, unit }) }
   closeModal(); updateCartUI(); renderAllSections()
 }
 function closeModal() { document.getElementById('product-modal').classList.add('hidden'); document.body.style.overflow = '' }
+
+// يضيف المنتج الحالي للسلة ثم يفتح المقترح — بدون فقدان الاختيار
+function addFromModalThenOpen(currentPid, nextPid) {
+  const modal = document.getElementById('product-modal')
+  const qty   = parseInt(modal.dataset.qty)
+  const price = parseFloat(modal.dataset.price)
+  const p     = S.products.find(x => x.id === currentPid); if (!p) return
+  const ci    = S.cart.find(c => c.id === currentPid && c.type === 'product')
+  if (ci) { ci.qty = qty } else { S.cart.push({ id:currentPid, type:'product', name:p.name, price, image_url:p.image_url, qty }) }
+  updateCartUI(); renderAllSections()
+  openModal(nextPid)
+}
 
 // ── BUNDLE MODAL ─────────────────────────────────────────────────────
 function openBundleModal(bid) {
@@ -1062,8 +1156,11 @@ function closeBundleModal() { document.getElementById('bundle-modal').classList.
 function quickAdd(pid) {
   const p = S.products.find(x => x.id === pid); if (!p) return
   const price = isDiscountActive(p) ? Number(p.discount_price) : Number(p.price)
+  const unit = p.unit || 'قطعة'
+  // إذا وحدة غير قطعة — لا quickAdd، افتح modal
+  if (unit !== 'قطعة') { openModal(pid); return }
   const ci = S.cart.find(c => c.id === pid && c.type === 'product')
-  if (ci) { ci.qty += 1 } else { S.cart.push({ id:pid, type:'product', name:p.name, price, image_url:p.image_url, qty:1 }) }
+  if (ci) { ci.qty += 1 } else { S.cart.push({ id:pid, type:'product', name:p.name, price, image_url:p.image_url, qty:1, unit }) }
   updateCartUI(); renderAllSections()
 }
 function addBundleToCart(bid) {
@@ -1081,6 +1178,7 @@ function cQty(id, type, d) {
 }
 function cartTotal() { return S.cart.reduce((s,c) => s + c.price*c.qty, 0) }
 function updateCartUI() {
+  saveCart()
   const n   = S.cart.reduce((s,c) => s+c.qty, 0)
   const bar = document.getElementById('cart-bar')
   document.getElementById('cart-count-badge').textContent = n
@@ -1110,7 +1208,8 @@ function renderCartItems() {
       <div style="flex:1;min-width:0">
         <p style="font-size:13px;font-weight:800;color:#1a1a1a;white-space:nowrap;overflow:hidden;text-overflow:ellipsis">${c.name}</p>
         ${c.type==='bundle'?`<span style="font-size:10px;background:#FFF3EB;color:var(--brand);padding:2px 7px;border-radius:6px;font-weight:700">باقة</span>`:''}
-        <p style="font-size:13px;font-weight:900;color:var(--brand);margin-top:3px">${fmt(c.price*c.qty)}</p>
+        <p style="font-size:12px;color:#aaa;margin-top:2px">${c.qty} ${c.unit||'قطعة'}</p>
+        <p style="font-size:13px;font-weight:900;color:var(--brand);margin-top:2px">${fmt(c.price*c.qty)}</p>
       </div>
       <div style="display:flex;align-items:center;gap:6px;flex-shrink:0">
         <button onclick="cQty('${c.id}','${c.type}',-1)" style="width:30px;height:30px;border-radius:9px;background:#fff;border:1.5px solid #eee;color:#555;font-size:16px;font-weight:900;display:flex;align-items:center;justify-content:center">−</button>
@@ -1125,29 +1224,135 @@ function renderCartItems() {
 async function sendOrder() {
   if (!S.cart.length) return
   const btn = document.getElementById('send-order-btn')
+  const resetBtn = () => { btn.style.opacity = '1'; btn.innerHTML = '<span>إرسال الطلب عبر واتساب</span><span style="font-size:20px">📲</span>' }
   btn.style.opacity = '0.6'; btn.innerHTML = '<span>جاري الإرسال...</span>'
-  const table = document.getElementById('table-number-input').value.trim()
-  const items = S.cart.map(c => ({ id:c.id, type:c.type, name:c.name, price:c.price, qty:c.qty, subtotal:Number((c.price*c.qty).toFixed(2)) }))
+
+  const table    = document.getElementById('table-number-input').value.trim()
+  const custName = document.getElementById('order-name').value.trim()
+  const custPhone= document.getElementById('order-phone').value.trim()
+  const custAddr = document.getElementById('order-address').value.trim()
+  const custLoc  = document.getElementById('order-location').value.trim()
+  const note     = document.getElementById('order-note').value.trim()
+  const items = S.cart.map(c => ({ id:c.id, type:c.type, name:c.name, price:c.price, qty:c.qty, unit:c.unit||'قطعة', subtotal:Number((c.price*c.qty).toFixed(2)) }))
   const total = cartTotal()
-  let orderNumber = 'TMP-' + Date.now()
+
+  // 1) احفظ في DB أولاً — إذا فشل، أوقف العملية
+  let orderNumber
   try {
     const { data:rpc, error:re } = await db.rpc('generate_order_number')
-    if (!re && rpc) {
-      const { data:od } = await db.from('orders').insert({ restaurant_id:S.restaurant.id, order_number:rpc, items, total, table_number:table||null }).select('order_number').single()
-      if (od?.order_number) orderNumber = od.order_number
-    }
-  } catch(e) { console.warn(e) }
+    if (re || !rpc) throw new Error(re?.message || 'generate_order_number failed')
+    const { data:od, error:ie } = await db.from('orders')
+      .insert({ restaurant_id:S.restaurant.id, order_number:rpc, items, total, table_number:table||null,
+                customer_name:custName||null, customer_phone:custPhone||null,
+                customer_address:custAddr||null, customer_location:custLoc||null, note:note||null })
+      .select('order_number').single()
+    if (ie || !od?.order_number) throw new Error(ie?.message || 'insert failed')
+    orderNumber = od.order_number
+  } catch(e) {
+    console.error('Order save failed:', e)
+    btn.style.opacity = '1'
+    btn.innerHTML = '<span>⚠️ فشل الحفظ — اضغط مجدداً</span>'
+    setTimeout(resetBtn, 3000)
+    return
+  }
+
+  // 2) نجح الحفظ — افتح واتساب
   const now  = new Date().toLocaleTimeString('ar-EG', { hour:'2-digit', minute:'2-digit' })
-  const text = [`🧾 *طلب جديد ${orderNumber}*`, `─────────────────`,
-    ...items.map(i => `• ${i.name}${i.type==='bundle'?' 🎁':''} × ${i.qty}  —  ${fmt(i.subtotal)}`),
-    `─────────────────`, `💰 *الإجمالي: ${fmt(total)}*`,
-    table ? `📍 الطاولة: ${table}` : '', `⏰ ${now}`].filter(Boolean).join('\n')
+  const text = [
+    `🧾 *طلب جديد ${orderNumber}*`, `─────────────────`,
+    ...items.map(i => `• ${i.name}${i.type==='bundle'?' 🎁':''} — ${i.qty} ${i.unit}  —  ${fmt(i.subtotal)}`),
+    `─────────────────`,
+    `💰 *الإجمالي: ${fmt(total)}*`,
+    `⚠️ السعر لا يشمل رسوم التوصيل`,
+    table     ? `📍 الطاولة: ${table}` : '',
+    custName  ? `👤 الاسم: ${custName}` : '',
+    custPhone ? `📞 التواصل: ${custPhone}` : '',
+    custAddr  ? `🏠 العنوان: ${custAddr}` : '',
+    custLoc   ? `📌 الموقع: ${custLoc}` : '',
+    note      ? `📝 ملاحظة: ${note}` : '',
+    `⏰ ${now}`
+  ].filter(Boolean).join('\n')
   window.open(`https://wa.me/${S.restaurant.whatsapp}?text=${encodeURIComponent(text)}`, '_blank')
-  S.cart = []; updateCartUI(); closeCartSheet()
-  btn.style.opacity = '1'; btn.innerHTML = '<span>إرسال الطلب عبر واتساب</span><span style="font-size:20px">📲</span>'
+  clearCart(); updateCartUI(); closeCartSheet()
+  ;['order-name','order-phone','order-address','order-location','order-note','table-number-input'].forEach(id=>{const el=document.getElementById(id);if(el)el.value=''})
+  resetBtn()
 }
 
-if (document.referrer.includes('dashboard')) document.getElementById('back-to-dash').classList.remove('hidden')
+if (new URLSearchParams(location.search).get('preview') === '1') document.getElementById('back-to-dash').classList.remove('hidden')
+
+// ── MAP PICKER ────────────────────────────────────────────────────
+let _map = null, _marker = null, _pickedLat = null, _pickedLng = null
+
+function openMapPicker() {
+  document.getElementById('map-modal').classList.remove('hidden')
+  document.body.style.overflow = 'hidden'
+
+  // تهيئة الخريطة مرة واحدة فقط
+  if (!_map) {
+    // نقطة بداية افتراضية: مصر
+    const defaultLat = 30.0444, defaultLng = 31.2357
+    _map = L.map('leaflet-map', { zoomControl: true }).setView([defaultLat, defaultLng], 13)
+    L.tileLayer('https://{s}.tile.openstreetmap.org/{z}/{x}/{y}.png', {
+      attribution: '© OpenStreetMap',
+      maxZoom: 19
+    }).addTo(_map)
+
+    // marker قابل للسحب
+    _marker = L.marker([defaultLat, defaultLng], { draggable: true }).addTo(_map)
+    _pickedLat = defaultLat; _pickedLng = defaultLng
+    updateCoordsLabel()
+
+    // تحديث عند سحب الـ marker
+    _marker.on('dragend', e => {
+      const pos = e.target.getLatLng()
+      _pickedLat = pos.lat; _pickedLng = pos.lng
+      updateCoordsLabel()
+    })
+
+    // تحديث عند الضغط على الخريطة
+    _map.on('click', e => {
+      _pickedLat = e.latlng.lat; _pickedLng = e.latlng.lng
+      _marker.setLatLng([_pickedLat, _pickedLng])
+      updateCoordsLabel()
+    })
+  }
+
+  // إصلاح حجم الخريطة بعد ظهور الـ modal
+  setTimeout(() => _map.invalidateSize(), 150)
+}
+
+function closeMapPicker() {
+  document.getElementById('map-modal').classList.add('hidden')
+  document.body.style.overflow = ''
+}
+
+function updateCoordsLabel() {
+  if (_pickedLat === null) return
+  document.getElementById('map-coords-label').textContent =
+    `📍 ${_pickedLat.toFixed(5)}, ${_pickedLng.toFixed(5)}`
+}
+
+function useMyLocation() {
+  if (!navigator.geolocation) { alert('متصفحك لا يدعم تحديد الموقع'); return }
+  navigator.geolocation.getCurrentPosition(pos => {
+    _pickedLat = pos.coords.latitude; _pickedLng = pos.coords.longitude
+    _map.setView([_pickedLat, _pickedLng], 16)
+    _marker.setLatLng([_pickedLat, _pickedLng])
+    updateCoordsLabel()
+  }, () => alert('تعذّر تحديد موقعك — تأكد من إذن الموقع'))
+}
+
+function confirmLocation() {
+  if (_pickedLat === null) { closeMapPicker(); return }
+  const url = `https://www.google.com/maps?q=${_pickedLat},${_pickedLng}`
+  document.getElementById('order-location').value = url
+  document.getElementById('map-pick-label').textContent =
+    `✅ تم تحديد الموقع (${_pickedLat.toFixed(4)}, ${_pickedLng.toFixed(4)})`
+  document.getElementById('map-pick-btn').style.borderColor = 'var(--brand)'
+  document.getElementById('map-pick-btn').style.color = 'var(--brand)'
+  closeMapPicker()
+}
+
 boot()
 </script>
 </body>
