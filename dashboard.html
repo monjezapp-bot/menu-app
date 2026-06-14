@@ -8,35 +8,19 @@
   <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
   <link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/@simonwep/pickr/dist/themes/nano.min.css"/>
   <script src="https://cdn.jsdelivr.net/npm/@simonwep/pickr/dist/pickr.min.js"></script>
-  <link href="https://fonts.googleapis.com/css2?family=Tajawal:wght@400;500;700;800&display=swap" rel="stylesheet" />
+  <link href="https://fonts.googleapis.com/css2?family=Rubik:wght@400;500;600;700;800;900&display=swap" rel="stylesheet" />
   <style>
-    * { font-family: 'Tajawal', sans-serif; }
+    * { font-family: 'Rubik', sans-serif; }
     .tab-active { border-bottom: 3px solid #FF6B00; color: #FF6B00; }
-    .input-base {
-      @apply w-full border border-gray-200 rounded-xl px-4 py-3 text-sm
-             focus:outline-none focus:ring-2 focus:ring-orange-400;
-    }
-    @keyframes fadeUp {
-      from { opacity:0; transform:translateY(12px); }
-      to   { opacity:1; transform:translateY(0); }
-    }
+    @keyframes fadeUp { from{opacity:0;transform:translateY(12px);}to{opacity:1;transform:translateY(0);} }
     .fade-up { animation: fadeUp .3s ease both; }
-    .spinner {
-      border: 3px solid #f3f3f3;
-      border-top: 3px solid #FF6B00;
-      border-radius: 50%;
-      width: 22px; height: 22px;
-      animation: spin .7s linear infinite;
-      display: inline-block;
-    }
-    @keyframes spin { to { transform: rotate(360deg); } }
+    .spinner { border:3px solid #f3f3f3; border-top:3px solid #FF6B00; border-radius:50%; width:22px;height:22px; animation:spin .7s linear infinite; display:inline-block; }
+    @keyframes spin { to{transform:rotate(360deg);} }
   </style>
 </head>
 <body class="bg-gray-50 min-h-screen">
 
-<!-- ════════════════════════════════
-     LOGIN SCREEN
-════════════════════════════════ -->
+<!-- LOGIN -->
 <div id="screen-login" class="min-h-screen flex items-center justify-center p-6">
   <div class="bg-white rounded-3xl shadow-xl w-full max-w-sm p-8 fade-up">
     <div class="text-center mb-8">
@@ -46,24 +30,19 @@
     </div>
     <div class="space-y-4">
       <input id="login-email" type="email" placeholder="البريد الإلكتروني"
-             class="w-full border border-gray-200 rounded-xl px-4 py-3 text-sm
-                    focus:outline-none focus:ring-2 focus:ring-orange-400" />
+             class="w-full border border-gray-200 rounded-xl px-4 py-3 text-sm focus:outline-none focus:ring-2 focus:ring-orange-400" />
       <input id="login-pass" type="password" placeholder="كلمة المرور"
-             class="w-full border border-gray-200 rounded-xl px-4 py-3 text-sm
-                    focus:outline-none focus:ring-2 focus:ring-orange-400" />
+             class="w-full border border-gray-200 rounded-xl px-4 py-3 text-sm focus:outline-none focus:ring-2 focus:ring-orange-400" />
       <p id="login-error" class="text-red-500 text-xs text-center hidden"></p>
       <button onclick="doLogin()"
-              class="w-full bg-orange-500 hover:bg-orange-600 text-white font-bold
-                     rounded-xl py-3 transition-colors flex items-center justify-center gap-2">
+              class="w-full bg-orange-500 hover:bg-orange-600 text-white font-bold rounded-xl py-3 transition-colors flex items-center justify-center gap-2">
         <span id="login-btn-text">دخول</span>
       </button>
     </div>
   </div>
 </div>
 
-<!-- ════════════════════════════════
-     DASHBOARD SCREEN
-════════════════════════════════ -->
+<!-- DASHBOARD -->
 <div id="screen-dashboard" class="hidden min-h-screen">
 
   <!-- Top Bar -->
@@ -74,163 +53,123 @@
     </div>
     <div class="flex items-center gap-3">
       <a id="preview-link" href="#" target="_blank"
-         class="text-xs bg-orange-50 text-orange-500 font-bold px-3 py-2 rounded-xl">
-        👁️ معاينة
-      </a>
+         class="text-xs bg-orange-50 text-orange-500 font-bold px-3 py-2 rounded-xl">👁️ معاينة</a>
       <button onclick="doLogout()"
-              class="text-xs text-gray-400 hover:text-red-500 font-bold px-3 py-2 rounded-xl
-                     border border-gray-200 transition-colors">
-        خروج
-      </button>
+              class="text-xs text-gray-400 hover:text-red-500 font-bold px-3 py-2 rounded-xl border border-gray-200 transition-colors">خروج</button>
     </div>
   </header>
 
   <!-- Tabs -->
   <div class="bg-white border-b border-gray-100 px-2 flex gap-1 sticky top-[69px] z-20 overflow-x-auto">
-    <button onclick="showTab('products')" id="tab-products"
-            class="tab-btn flex-shrink-0 py-3 px-3 text-sm font-bold text-gray-400 transition-colors tab-active">
-      المنتجات
-    </button>
-    <button onclick="showTab('categories')" id="tab-categories"
-            class="tab-btn flex-shrink-0 py-3 px-3 text-sm font-bold text-gray-400 transition-colors">
-      التصنيفات
-    </button>
-    <button onclick="showTab('bundles')" id="tab-bundles"
-            class="tab-btn flex-shrink-0 py-3 px-3 text-sm font-bold text-gray-400 transition-colors">
-      العروض
-    </button>
-    <button onclick="showTab('orders')" id="tab-orders"
-            class="tab-btn flex-shrink-0 py-3 px-3 text-sm font-bold text-gray-400 transition-colors">
-      الطلبات
-    </button>
-    <button onclick="showTab('analytics')" id="tab-analytics"
-            class="tab-btn flex-shrink-0 py-3 px-3 text-sm font-bold text-gray-400 transition-colors">
-      📊 إحصائيات
-    </button>
-    <button onclick="showTab('settings')" id="tab-settings"
-            class="tab-btn flex-shrink-0 py-3 px-3 text-sm font-bold text-gray-400 transition-colors">
-      الإعدادات
-    </button>
+    <button onclick="showTab('products')"   id="tab-products"   class="tab-btn flex-shrink-0 py-3 px-3 text-sm font-bold text-gray-400 transition-colors tab-active">المنتجات</button>
+    <button onclick="showTab('categories')" id="tab-categories" class="tab-btn flex-shrink-0 py-3 px-3 text-sm font-bold text-gray-400 transition-colors">التصنيفات</button>
+    <button onclick="showTab('bundles')"    id="tab-bundles"    class="tab-btn flex-shrink-0 py-3 px-3 text-sm font-bold text-gray-400 transition-colors">العروض</button>
+    <button onclick="showTab('banners')"    id="tab-banners"    class="tab-btn flex-shrink-0 py-3 px-3 text-sm font-bold text-gray-400 transition-colors">📢 البنرات</button>
+    <button onclick="showTab('orders')"     id="tab-orders"     class="tab-btn flex-shrink-0 py-3 px-3 text-sm font-bold text-gray-400 transition-colors">الطلبات</button>
+    <button onclick="showTab('analytics')"  id="tab-analytics"  class="tab-btn flex-shrink-0 py-3 px-3 text-sm font-bold text-gray-400 transition-colors">📊 إحصائيات</button>
+    <button onclick="showTab('settings')"   id="tab-settings"   class="tab-btn flex-shrink-0 py-3 px-3 text-sm font-bold text-gray-400 transition-colors">الإعدادات</button>
   </div>
 
-  <!-- Tab Content -->
   <main class="p-4 max-w-2xl mx-auto">
 
-    <!-- ── PRODUCTS TAB ── -->
+    <!-- PRODUCTS TAB -->
     <div id="tab-content-products" class="fade-up">
       <div class="flex items-center justify-between mb-4">
         <h2 class="font-extrabold text-gray-800">المنتجات</h2>
-        <button onclick="openProductModal()"
-                class="bg-orange-500 text-white text-sm font-bold px-4 py-2 rounded-xl">
-          + إضافة منتج
-        </button>
+        <button onclick="openProductModal()" class="bg-orange-500 text-white text-sm font-bold px-4 py-2 rounded-xl">+ إضافة منتج</button>
       </div>
-      <!-- فلتر التصنيفات -->
-      <div id="product-filter-tabs"
-           class="flex gap-2 overflow-x-auto pb-2 mb-3 -mx-4 px-4"
-           style="-ms-overflow-style:none;scrollbar-width:none;">
-      </div>
-      <div id="products-list" class="space-y-3">
-        <div class="spinner mx-auto mt-8"></div>
-      </div>
+      <div id="product-filter-tabs" class="flex gap-2 overflow-x-auto pb-2 mb-3 -mx-4 px-4" style="-ms-overflow-style:none;scrollbar-width:none;"></div>
+      <div id="products-list" class="space-y-3"><div class="spinner mx-auto mt-8"></div></div>
     </div>
 
-    <!-- ── BUNDLES TAB ── -->
-    <div id="tab-content-bundles" class="hidden fade-up">
-      <div class="flex items-center justify-between mb-4">
-        <h2 class="font-extrabold text-gray-800">العروض المجمعة</h2>
-        <button onclick="openBundleModal()"
-                class="bg-orange-500 text-white text-sm font-bold px-4 py-2 rounded-xl">
-          + عرض جديد
-        </button>
-      </div>
-      <div id="bundles-list" class="space-y-3"></div>
-    </div>
-
-    <!-- ── ANALYTICS TAB ── -->
-    <div id="tab-content-analytics" class="hidden fade-up">
-      <h2 class="font-extrabold text-gray-800 mb-4">📊 إحصائيات المبيعات</h2>
-      <!-- Best Sellers -->
-      <div class="bg-white rounded-2xl p-4 shadow-sm mb-4">
-        <h3 class="font-bold text-gray-700 mb-3 flex items-center gap-2">
-          🔥 أكثر 5 منتجات طلباً
-        </h3>
-        <div id="best-sellers-list" class="space-y-2"></div>
-      </div>
-      <!-- Recent Products -->
-      <div class="bg-white rounded-2xl p-4 shadow-sm mb-4">
-        <h3 class="font-bold text-gray-700 mb-3 flex items-center gap-2">
-          🆕 آخر 5 منتجات أُضيفت
-        </h3>
-        <div id="recent-products-list" class="space-y-2"></div>
-      </div>
-      <!-- Orders Summary -->
-      <div class="grid grid-cols-2 gap-3">
-        <div class="bg-orange-50 rounded-2xl p-4 text-center">
-          <p class="text-3xl font-extrabold text-orange-500" id="stat-total-orders">—</p>
-          <p class="text-xs text-gray-500 mt-1">إجمالي الطلبات</p>
-        </div>
-        <div class="bg-green-50 rounded-2xl p-4 text-center">
-          <p class="text-3xl font-extrabold text-green-500" id="stat-total-revenue">—</p>
-          <p class="text-xs text-gray-500 mt-1">إجمالي الإيرادات (ج.م)</p>
-        </div>
-        <div class="bg-blue-50 rounded-2xl p-4 text-center">
-          <p class="text-3xl font-extrabold text-blue-500" id="stat-today-orders">—</p>
-          <p class="text-xs text-gray-500 mt-1">طلبات اليوم</p>
-        </div>
-        <div class="bg-purple-50 rounded-2xl p-4 text-center">
-          <p class="text-3xl font-extrabold text-purple-500" id="stat-products-count">—</p>
-          <p class="text-xs text-gray-500 mt-1">عدد المنتجات</p>
-        </div>
-      </div>
-    </div>
+    <!-- CATEGORIES TAB -->
     <div id="tab-content-categories" class="hidden fade-up">
       <div class="flex items-center justify-between mb-4">
         <h2 class="font-extrabold text-gray-800">التصنيفات</h2>
-        <button onclick="openCatModal()"
-                class="bg-orange-500 text-white text-sm font-bold px-4 py-2 rounded-xl">
-          + إضافة تصنيف
-        </button>
+        <button onclick="openCatModal()" class="bg-orange-500 text-white text-sm font-bold px-4 py-2 rounded-xl">+ إضافة تصنيف</button>
       </div>
       <div id="categories-list" class="space-y-3"></div>
     </div>
 
-    <!-- ── ORDERS TAB ── -->
+    <!-- BUNDLES TAB -->
+    <div id="tab-content-bundles" class="hidden fade-up">
+      <div class="flex items-center justify-between mb-4">
+        <h2 class="font-extrabold text-gray-800">العروض المجمعة</h2>
+        <button onclick="openBundleModal()" class="bg-orange-500 text-white text-sm font-bold px-4 py-2 rounded-xl">+ عرض جديد</button>
+      </div>
+      <div id="bundles-list" class="space-y-3"></div>
+    </div>
+
+    <!-- BANNERS TAB -->
+    <div id="tab-content-banners" class="hidden fade-up">
+      <div class="flex items-center justify-between mb-4">
+        <h2 class="font-extrabold text-gray-800">📢 البنرات والإعلانات</h2>
+        <button onclick="openBannerModal()" class="bg-orange-500 text-white text-sm font-bold px-4 py-2 rounded-xl">+ بنر جديد</button>
+      </div>
+
+      <!-- Announcement Section -->
+      <div class="bg-white rounded-2xl p-5 shadow-sm mb-4">
+        <div class="flex items-center justify-between mb-3">
+          <h3 class="font-bold text-gray-700 flex items-center gap-2">📣 رسالة للعملاء</h3>
+          <label class="relative inline-flex items-center cursor-pointer">
+            <input type="checkbox" id="ann-active-toggle" class="sr-only peer" onchange="saveAnnouncement()">
+            <div class="w-11 h-6 bg-gray-200 rounded-full peer peer-checked:bg-orange-500 after:content-[''] after:absolute after:top-0.5 after:right-0.5 after:bg-white after:rounded-full after:h-5 after:w-5 after:transition-all peer-checked:after:translate-x-[-20px]"></div>
+          </label>
+        </div>
+        <textarea id="ann-text" rows="3" placeholder="مثال: كل سنة وانتم طيبين 🎉 — اطلب دلوقتي واستمتع بخصم 10% على كل الأطباق"
+                  class="w-full border border-gray-200 rounded-xl px-4 py-3 text-sm focus:outline-none focus:ring-2 focus:ring-orange-400 resize-none"
+                  oninput="saveAnnouncement()"></textarea>
+        <p class="text-xs text-gray-400 mt-2">💡 تظهر للعميل كبانر ملون فوق المنتجات</p>
+      </div>
+
+      <!-- Ad Banners List -->
+      <div id="banners-list" class="space-y-3"></div>
+    </div>
+
+    <!-- ORDERS TAB -->
     <div id="tab-content-orders" class="hidden fade-up">
       <h2 class="font-extrabold text-gray-800 mb-4">الطلبات الواردة</h2>
       <div id="orders-list" class="space-y-4"></div>
     </div>
 
-    <!-- ── SETTINGS TAB ── -->
+    <!-- ANALYTICS TAB -->
+    <div id="tab-content-analytics" class="hidden fade-up">
+      <h2 class="font-extrabold text-gray-800 mb-4">📊 إحصائيات المبيعات</h2>
+      <div class="bg-white rounded-2xl p-4 shadow-sm mb-4">
+        <h3 class="font-bold text-gray-700 mb-3">🔥 أكثر 5 منتجات طلباً</h3>
+        <div id="best-sellers-list" class="space-y-2"></div>
+      </div>
+      <div class="bg-white rounded-2xl p-4 shadow-sm mb-4">
+        <h3 class="font-bold text-gray-700 mb-3">🆕 آخر 5 منتجات أُضيفت</h3>
+        <div id="recent-products-list" class="space-y-2"></div>
+      </div>
+      <div class="grid grid-cols-2 gap-3">
+        <div class="bg-orange-50 rounded-2xl p-4 text-center"><p class="text-3xl font-extrabold text-orange-500" id="stat-total-orders">—</p><p class="text-xs text-gray-500 mt-1">إجمالي الطلبات</p></div>
+        <div class="bg-green-50 rounded-2xl p-4 text-center"><p class="text-3xl font-extrabold text-green-500" id="stat-total-revenue">—</p><p class="text-xs text-gray-500 mt-1">إجمالي الإيرادات (ج.م)</p></div>
+        <div class="bg-blue-50 rounded-2xl p-4 text-center"><p class="text-3xl font-extrabold text-blue-500" id="stat-today-orders">—</p><p class="text-xs text-gray-500 mt-1">طلبات اليوم</p></div>
+        <div class="bg-purple-50 rounded-2xl p-4 text-center"><p class="text-3xl font-extrabold text-purple-500" id="stat-products-count">—</p><p class="text-xs text-gray-500 mt-1">عدد المنتجات</p></div>
+      </div>
+    </div>
+
+    <!-- SETTINGS TAB -->
     <div id="tab-content-settings" class="hidden fade-up">
       <h2 class="font-extrabold text-gray-800 mb-4">إعدادات المطعم</h2>
       <div class="bg-white rounded-2xl p-5 shadow-sm space-y-4">
         <div>
           <label class="text-xs font-bold text-gray-500 mb-1 block">اسم المطعم</label>
-          <input id="set-name" type="text"
-                 class="w-full border border-gray-200 rounded-xl px-4 py-3 text-sm
-                        focus:outline-none focus:ring-2 focus:ring-orange-400" />
+          <input id="set-name" type="text" class="w-full border border-gray-200 rounded-xl px-4 py-3 text-sm focus:outline-none focus:ring-2 focus:ring-orange-400" />
         </div>
         <div>
           <label class="text-xs font-bold text-gray-500 mb-1 block">رقم الواتساب (مع كود الدولة)</label>
-          <input id="set-whatsapp" type="text" placeholder="966XXXXXXXXX"
-                 class="w-full border border-gray-200 rounded-xl px-4 py-3 text-sm
-                        focus:outline-none focus:ring-2 focus:ring-orange-400" />
+          <input id="set-whatsapp" type="text" placeholder="966XXXXXXXXX" class="w-full border border-gray-200 rounded-xl px-4 py-3 text-sm focus:outline-none focus:ring-2 focus:ring-orange-400" />
         </div>
         <div>
           <label class="text-xs font-bold text-gray-500 mb-1 block">اللون الرئيسي</label>
           <div class="flex items-center gap-3">
-            <!-- Pickr يتوضع هنا -->
             <div id="pickr-container"></div>
-            <input id="set-color-hex" type="text" value="#FF6B00" maxlength="7"
-                   placeholder="#FF6B00"
-                   class="w-32 border border-gray-200 rounded-xl px-3 py-2 text-sm
-                          font-mono focus:outline-none focus:ring-2 focus:ring-orange-400" />
-            <button onclick="resetColor()"
-                    class="text-xs bg-gray-100 text-gray-500 font-bold px-3 py-2 rounded-xl
-                           hover:bg-gray-200 transition-colors whitespace-nowrap">
-              🔄 الافتراضي
-            </button>
+            <input id="set-color-hex" type="text" value="#FF6B00" maxlength="7" placeholder="#FF6B00"
+                   class="w-32 border border-gray-200 rounded-xl px-3 py-2 text-sm font-mono focus:outline-none focus:ring-2 focus:ring-orange-400" />
+            <button onclick="resetColor()" class="text-xs bg-gray-100 text-gray-500 font-bold px-3 py-2 rounded-xl hover:bg-gray-200 transition-colors whitespace-nowrap">🔄 الافتراضي</button>
           </div>
           <input type="hidden" id="set-color" value="#FF6B00" />
         </div>
@@ -238,57 +177,27 @@
           <label class="text-xs font-bold text-gray-500 mb-1 block">اللوجو</label>
           <div class="flex gap-2 mb-2">
             <button onclick="document.getElementById('logo-file-input').click()"
-                    class="flex-1 border-2 border-dashed border-gray-200 rounded-xl py-3
-                           text-sm text-gray-400 font-bold hover:border-orange-300
-                           hover:text-orange-400 transition-colors">
-              📁 رفع صورة
-            </button>
-            <input id="logo-file-input" type="file" accept="image/*" class="hidden"
-                   onchange="uploadLogoFile(this)" />
+                    class="flex-1 border-2 border-dashed border-gray-200 rounded-xl py-3 text-sm text-gray-400 font-bold hover:border-orange-300 hover:text-orange-400 transition-colors">📁 رفع صورة</button>
+            <input id="logo-file-input" type="file" accept="image/*" class="hidden" onchange="uploadLogoFile(this)" />
           </div>
-          <input id="set-logo" type="text" placeholder="أو ضع رابط الصورة https://..."
-                 class="w-full border border-gray-200 rounded-xl px-4 py-3 text-sm
-                        focus:outline-none focus:ring-2 focus:ring-orange-400" />
-          <div id="logo-preview-wrap" class="mt-2 hidden">
-            <img id="logo-preview" src="" class="w-16 h-16 rounded-xl object-cover border border-gray-200" />
-          </div>
+          <input id="set-logo" type="text" placeholder="أو ضع رابط الصورة https://..." class="w-full border border-gray-200 rounded-xl px-4 py-3 text-sm focus:outline-none focus:ring-2 focus:ring-orange-400" />
+          <div id="logo-preview-wrap" class="mt-2 hidden"><img id="logo-preview" src="" class="w-16 h-16 rounded-xl object-cover border border-gray-200" /></div>
           <p id="logo-upload-msg" class="text-xs text-gray-400 mt-1 hidden"></p>
         </div>
-
-        <!-- صورة الغلاف -->
         <div>
           <label class="text-xs font-bold text-gray-500 mb-1 block">صورة الغلاف (Cover)</label>
           <div class="flex gap-2 mb-2">
             <button onclick="document.getElementById('cover-file-input').click()"
-                    class="flex-1 border-2 border-dashed border-gray-200 rounded-xl py-3
-                           text-sm text-gray-400 font-bold hover:border-orange-300
-                           hover:text-orange-400 transition-colors">
-              🖼️ رفع صورة غلاف
-            </button>
-            <input id="cover-file-input" type="file" accept="image/*" class="hidden"
-                   onchange="uploadCoverFile(this)" />
+                    class="flex-1 border-2 border-dashed border-gray-200 rounded-xl py-3 text-sm text-gray-400 font-bold hover:border-orange-300 hover:text-orange-400 transition-colors">🖼️ رفع صورة غلاف</button>
+            <input id="cover-file-input" type="file" accept="image/*" class="hidden" onchange="uploadCoverFile(this)" />
           </div>
-          <input id="set-cover" type="text" placeholder="أو ضع رابط صورة الغلاف https://..."
-                 class="w-full border border-gray-200 rounded-xl px-4 py-3 text-sm
-                        focus:outline-none focus:ring-2 focus:ring-orange-400" />
-          <div id="cover-preview-wrap" class="mt-2 hidden">
-            <img id="cover-preview" src="" class="w-full h-24 rounded-xl object-cover border border-gray-200" />
-          </div>
+          <input id="set-cover" type="text" placeholder="أو ضع رابط صورة الغلاف https://..." class="w-full border border-gray-200 rounded-xl px-4 py-3 text-sm focus:outline-none focus:ring-2 focus:ring-orange-400" />
+          <div id="cover-preview-wrap" class="mt-2 hidden"><img id="cover-preview" src="" class="w-full h-24 rounded-xl object-cover border border-gray-200" /></div>
           <p id="cover-upload-msg" class="text-xs text-gray-400 mt-1 hidden"></p>
         </div>
-        <!-- أزرار الحفظ والتراجع -->
         <div class="flex gap-3">
-          <button onclick="saveSettings()"
-                  class="flex-1 bg-orange-500 text-white font-bold rounded-xl py-3
-                         hover:bg-orange-600 transition-colors">
-            حفظ الإعدادات
-          </button>
-          <button onclick="undoSettings()"
-                  id="undo-settings-btn"
-                  class="flex-1 bg-gray-100 text-gray-600 font-bold rounded-xl py-3
-                         hover:bg-gray-200 transition-colors hidden">
-            ↩ تراجع
-          </button>
+          <button onclick="saveSettings()" class="flex-1 bg-orange-500 text-white font-bold rounded-xl py-3 hover:bg-orange-600 transition-colors">حفظ الإعدادات</button>
+          <button onclick="undoSettings()" id="undo-settings-btn" class="flex-1 bg-gray-100 text-gray-600 font-bold rounded-xl py-3 hover:bg-gray-200 transition-colors hidden">↩ تراجع</button>
         </div>
         <p id="settings-msg" class="text-center text-sm hidden"></p>
       </div>
@@ -297,346 +206,247 @@
   </main>
 </div>
 
-<!-- ════════════════════════════════
-     PRODUCT MODAL
-════════════════════════════════ -->
+<!-- PRODUCT MODAL -->
 <div id="modal-product" class="hidden fixed inset-0 z-50 flex items-end justify-center">
   <div class="absolute inset-0 bg-black/50" onclick="closeProductModal()"></div>
   <div class="relative bg-white rounded-t-3xl w-full max-w-lg p-6 space-y-4 max-h-[90vh] overflow-y-auto">
     <h3 id="product-modal-title" class="text-lg font-extrabold text-gray-800">إضافة منتج</h3>
-
     <input type="hidden" id="pm-id" />
-    <div>
-      <label class="text-xs font-bold text-gray-500 mb-1 block">اسم المنتج *</label>
-      <input id="pm-name" type="text"
-             class="w-full border border-gray-200 rounded-xl px-4 py-3 text-sm
-                    focus:outline-none focus:ring-2 focus:ring-orange-400" />
-    </div>
-    <div>
-      <label class="text-xs font-bold text-gray-500 mb-1 block">الوصف</label>
-      <textarea id="pm-desc" rows="2"
-                class="w-full border border-gray-200 rounded-xl px-4 py-3 text-sm
-                       focus:outline-none focus:ring-2 focus:ring-orange-400 resize-none"></textarea>
-    </div>
+    <div><label class="text-xs font-bold text-gray-500 mb-1 block">اسم المنتج *</label>
+      <input id="pm-name" type="text" class="w-full border border-gray-200 rounded-xl px-4 py-3 text-sm focus:outline-none focus:ring-2 focus:ring-orange-400" /></div>
+    <div><label class="text-xs font-bold text-gray-500 mb-1 block">الوصف</label>
+      <textarea id="pm-desc" rows="2" class="w-full border border-gray-200 rounded-xl px-4 py-3 text-sm focus:outline-none focus:ring-2 focus:ring-orange-400 resize-none"></textarea></div>
     <div class="flex gap-3">
-      <div class="flex-1">
-        <label class="text-xs font-bold text-gray-500 mb-1 block">السعر الأصلي *</label>
-        <input id="pm-price" type="number" step="0.01" min="0"
-               oninput="updateDiscountPreview()"
-               class="w-full border border-gray-200 rounded-xl px-4 py-3 text-sm
-                      focus:outline-none focus:ring-2 focus:ring-orange-400" />
-      </div>
-      <div class="flex-1">
-        <label class="text-xs font-bold text-gray-500 mb-1 block">سعر الخصم</label>
-        <input id="pm-discount" type="number" step="0.01" min="0"
-               oninput="updateDiscountPreview()"
-               placeholder="اتركه فارغاً إن لم يكن هناك خصم"
-               class="w-full border border-gray-200 rounded-xl px-4 py-3 text-sm
-                      focus:outline-none focus:ring-2 focus:ring-orange-400" />
-      </div>
+      <div class="flex-1"><label class="text-xs font-bold text-gray-500 mb-1 block">السعر الأصلي *</label>
+        <input id="pm-price" type="number" step="0.01" min="0" oninput="updateDiscountPreview()" class="w-full border border-gray-200 rounded-xl px-4 py-3 text-sm focus:outline-none focus:ring-2 focus:ring-orange-400" /></div>
+      <div class="flex-1"><label class="text-xs font-bold text-gray-500 mb-1 block">سعر الخصم</label>
+        <input id="pm-discount" type="number" step="0.01" min="0" oninput="updateDiscountPreview()" placeholder="اتركه فارغاً إن لم يكن هناك خصم" class="w-full border border-gray-200 rounded-xl px-4 py-3 text-sm focus:outline-none focus:ring-2 focus:ring-orange-400" /></div>
     </div>
-    <!-- معاينة الخصم -->
     <div id="discount-preview" class="hidden bg-orange-50 rounded-xl px-4 py-2 text-sm flex items-center gap-2">
       <span class="text-gray-400 line-through" id="dp-original"></span>
       <span class="text-orange-500 font-extrabold" id="dp-discounted"></span>
       <span class="bg-orange-500 text-white text-xs font-bold px-2 py-0.5 rounded-full" id="dp-percent"></span>
     </div>
-    <div>
-      <label class="text-xs font-bold text-gray-500 mb-1 block">التصنيف</label>
-      <select id="pm-category"
-              class="w-full border border-gray-200 rounded-xl px-4 py-3 text-sm
-                     focus:outline-none focus:ring-2 focus:ring-orange-400 bg-white">
-        <option value="">بدون تصنيف</option>
-      </select>
-    </div>
+    <div><label class="text-xs font-bold text-gray-500 mb-1 block">التصنيف</label>
+      <select id="pm-category" class="w-full border border-gray-200 rounded-xl px-4 py-3 text-sm focus:outline-none focus:ring-2 focus:ring-orange-400 bg-white"><option value="">بدون تصنيف</option></select></div>
     <div>
       <label class="text-xs font-bold text-gray-500 mb-1 block">صورة المنتج</label>
-      <button onclick="document.getElementById('product-file-input').click()"
-              class="w-full border-2 border-dashed border-gray-200 rounded-xl py-3
-                     text-sm text-gray-400 font-bold hover:border-orange-300
-                     hover:text-orange-400 transition-colors mb-2">
-        📁 رفع صورة
-      </button>
-      <input id="product-file-input" type="file" accept="image/*" class="hidden"
-             onchange="uploadProductImage(this)" />
-      <input id="pm-image" type="text" placeholder="أو رابط الصورة https://..."
-             class="w-full border border-gray-200 rounded-xl px-4 py-3 text-sm
-                    focus:outline-none focus:ring-2 focus:ring-orange-400" />
-      <div id="pm-image-preview-wrap" class="mt-2 hidden">
-        <img id="pm-image-preview" src="" class="w-20 h-20 rounded-xl object-cover border border-gray-200" />
-      </div>
+      <button onclick="document.getElementById('product-file-input').click()" class="w-full border-2 border-dashed border-gray-200 rounded-xl py-3 text-sm text-gray-400 font-bold hover:border-orange-300 hover:text-orange-400 transition-colors mb-2">📁 رفع صورة</button>
+      <input id="product-file-input" type="file" accept="image/*" class="hidden" onchange="uploadProductImage(this)" />
+      <input id="pm-image" type="text" placeholder="أو رابط الصورة https://..." class="w-full border border-gray-200 rounded-xl px-4 py-3 text-sm focus:outline-none focus:ring-2 focus:ring-orange-400" />
+      <div id="pm-image-preview-wrap" class="mt-2 hidden"><img id="pm-image-preview" src="" class="w-20 h-20 rounded-xl object-cover border border-gray-200" /></div>
       <p id="product-upload-msg" class="text-xs text-gray-400 mt-1 hidden"></p>
     </div>
-    <div class="flex items-center gap-3">
-      <input id="pm-available" type="checkbox" checked
-             class="w-5 h-5 accent-orange-500 rounded" />
-      <label class="text-sm font-bold text-gray-700">متاح للطلب</label>
-    </div>
-    <div>
-      <label class="text-xs font-bold text-gray-500 mb-1 block">حالة المنتج</label>
-      <select id="pm-availability"
-              class="w-full border border-gray-200 rounded-xl px-4 py-3 text-sm
-                     focus:outline-none focus:ring-2 focus:ring-orange-400 bg-white">
+    <div class="flex items-center gap-3"><input id="pm-available" type="checkbox" checked class="w-5 h-5 accent-orange-500 rounded" /><label class="text-sm font-bold text-gray-700">متاح للطلب</label></div>
+    <div><label class="text-xs font-bold text-gray-500 mb-1 block">حالة المنتج</label>
+      <select id="pm-availability" class="w-full border border-gray-200 rounded-xl px-4 py-3 text-sm focus:outline-none focus:ring-2 focus:ring-orange-400 bg-white">
         <option value="available">✅ متاح</option>
         <option value="unavailable">🚫 غير متوفر (يظهر للعميل)</option>
         <option value="hidden">👁️ مخفي (لا يظهر)</option>
-      </select>
-    </div>
-    <div>
-      <label class="text-xs font-bold text-gray-500 mb-1 block">بادج العرض (اختياري)</label>
-      <input id="pm-badge" type="text" placeholder="مثال: عرض خاص، جديد، الأكثر طلباً"
-             class="w-full border border-gray-200 rounded-xl px-4 py-3 text-sm
-                    focus:outline-none focus:ring-2 focus:ring-orange-400" />
-    </div>
+      </select></div>
+    <div><label class="text-xs font-bold text-gray-500 mb-1 block">بادج العرض (اختياري)</label>
+      <input id="pm-badge" type="text" placeholder="مثال: عرض خاص، جديد، الأكثر طلباً" class="w-full border border-gray-200 rounded-xl px-4 py-3 text-sm focus:outline-none focus:ring-2 focus:ring-orange-400" /></div>
     <p id="pm-error" class="text-red-500 text-xs hidden"></p>
     <div class="flex gap-3 pt-2">
-      <button onclick="saveProduct()"
-              class="flex-1 bg-orange-500 text-white font-bold rounded-xl py-3
-                     hover:bg-orange-600 transition-colors">
-        حفظ
-      </button>
-      <button onclick="closeProductModal()"
-              class="flex-1 bg-gray-100 text-gray-600 font-bold rounded-xl py-3">
-        إلغاء
-      </button>
+      <button onclick="saveProduct()" class="flex-1 bg-orange-500 text-white font-bold rounded-xl py-3 hover:bg-orange-600 transition-colors">حفظ</button>
+      <button onclick="closeProductModal()" class="flex-1 bg-gray-100 text-gray-600 font-bold rounded-xl py-3">إلغاء</button>
     </div>
   </div>
 </div>
 
-<!-- ════════════════════════════════
-     CATEGORY MODAL
-════════════════════════════════ -->
+<!-- CATEGORY MODAL -->
 <div id="modal-category" class="hidden fixed inset-0 z-50 flex items-end justify-center">
   <div class="absolute inset-0 bg-black/50" onclick="closeCatModal()"></div>
   <div class="relative bg-white rounded-t-3xl w-full max-w-lg p-6 space-y-4">
     <h3 id="cat-modal-title" class="text-lg font-extrabold text-gray-800">إضافة تصنيف</h3>
     <input type="hidden" id="cm-id" />
-    <div>
-      <label class="text-xs font-bold text-gray-500 mb-1 block">اسم التصنيف *</label>
-      <input id="cm-name" type="text"
-             class="w-full border border-gray-200 rounded-xl px-4 py-3 text-sm
-                    focus:outline-none focus:ring-2 focus:ring-orange-400" />
-    </div>
-    <div>
-      <label class="text-xs font-bold text-gray-500 mb-1 block">أيقونة التصنيف (إيموجي أو رابط صورة)</label>
-      <input id="cm-icon" type="text" placeholder="مثال: 🍔 أو https://..."
-             class="w-full border border-gray-200 rounded-xl px-4 py-3 text-sm
-                    focus:outline-none focus:ring-2 focus:ring-orange-400" />
-    </div>
+    <div><label class="text-xs font-bold text-gray-500 mb-1 block">اسم التصنيف *</label>
+      <input id="cm-name" type="text" class="w-full border border-gray-200 rounded-xl px-4 py-3 text-sm focus:outline-none focus:ring-2 focus:ring-orange-400" /></div>
+    <div><label class="text-xs font-bold text-gray-500 mb-1 block">أيقونة التصنيف (إيموجي أو رابط صورة)</label>
+      <input id="cm-icon" type="text" placeholder="مثال: 🍔 أو https://..." class="w-full border border-gray-200 rounded-xl px-4 py-3 text-sm focus:outline-none focus:ring-2 focus:ring-orange-400" /></div>
     <p id="cm-error" class="text-red-500 text-xs hidden"></p>
     <div class="flex gap-3 pt-2">
-      <button onclick="saveCat()"
-              class="flex-1 bg-orange-500 text-white font-bold rounded-xl py-3">حفظ</button>
-      <button onclick="closeCatModal()"
-              class="flex-1 bg-gray-100 text-gray-600 font-bold rounded-xl py-3">إلغاء</button>
+      <button onclick="saveCat()" class="flex-1 bg-orange-500 text-white font-bold rounded-xl py-3">حفظ</button>
+      <button onclick="closeCatModal()" class="flex-1 bg-gray-100 text-gray-600 font-bold rounded-xl py-3">إلغاء</button>
     </div>
   </div>
 </div>
 
-<!-- ════════════════════════════════
-     BUNDLE MODAL
-════════════════════════════════ -->
+<!-- BUNDLE MODAL -->
 <div id="modal-bundle" class="hidden fixed inset-0 z-50 flex items-end justify-center">
   <div class="absolute inset-0 bg-black/50" onclick="closeBundleModal()"></div>
   <div class="relative bg-white rounded-t-3xl w-full max-w-lg p-6 space-y-4 max-h-[90vh] overflow-y-auto">
     <h3 id="bundle-modal-title" class="text-lg font-extrabold text-gray-800">عرض مجمع جديد</h3>
     <input type="hidden" id="bm-id" />
-    <div>
-      <label class="text-xs font-bold text-gray-500 mb-1 block">اسم العرض *</label>
-      <input id="bm-name" type="text" placeholder="مثال: وجبة العائلة"
-             class="w-full border border-gray-200 rounded-xl px-4 py-3 text-sm
-                    focus:outline-none focus:ring-2 focus:ring-orange-400" />
-    </div>
-    <div>
-      <label class="text-xs font-bold text-gray-500 mb-1 block">الوصف</label>
-      <textarea id="bm-desc" rows="2"
-                class="w-full border border-gray-200 rounded-xl px-4 py-3 text-sm
-                       focus:outline-none focus:ring-2 focus:ring-orange-400 resize-none"></textarea>
-    </div>
-    <div>
-      <label class="text-xs font-bold text-gray-500 mb-1 block">سعر العرض (ج.م) *</label>
-      <input id="bm-price" type="number" step="0.01" min="0"
-             class="w-full border border-gray-200 rounded-xl px-4 py-3 text-sm
-                    focus:outline-none focus:ring-2 focus:ring-orange-400" />
-    </div>
+    <div><label class="text-xs font-bold text-gray-500 mb-1 block">اسم العرض *</label>
+      <input id="bm-name" type="text" placeholder="مثال: وجبة العائلة" class="w-full border border-gray-200 rounded-xl px-4 py-3 text-sm focus:outline-none focus:ring-2 focus:ring-orange-400" /></div>
+    <div><label class="text-xs font-bold text-gray-500 mb-1 block">الوصف</label>
+      <textarea id="bm-desc" rows="2" class="w-full border border-gray-200 rounded-xl px-4 py-3 text-sm focus:outline-none focus:ring-2 focus:ring-orange-400 resize-none"></textarea></div>
+    <div><label class="text-xs font-bold text-gray-500 mb-1 block">سعر العرض (ج.م) *</label>
+      <input id="bm-price" type="number" step="0.01" min="0" class="w-full border border-gray-200 rounded-xl px-4 py-3 text-sm focus:outline-none focus:ring-2 focus:ring-orange-400" /></div>
     <div>
       <label class="text-xs font-bold text-gray-500 mb-1 block">صورة العرض (اختياري)</label>
       <div class="flex gap-2 mb-2">
-        <button onclick="document.getElementById('bundle-file-input').click()"
-                class="flex-1 border-2 border-dashed border-gray-200 rounded-xl py-3
-                       text-sm text-gray-400 font-bold hover:border-orange-300
-                       hover:text-orange-400 transition-colors">
-          📁 رفع صورة
-        </button>
-        <input id="bundle-file-input" type="file" accept="image/*" class="hidden"
-               onchange="uploadBundleImage(this)" />
+        <button onclick="document.getElementById('bundle-file-input').click()" class="flex-1 border-2 border-dashed border-gray-200 rounded-xl py-3 text-sm text-gray-400 font-bold hover:border-orange-300 hover:text-orange-400 transition-colors">📁 رفع صورة</button>
+        <input id="bundle-file-input" type="file" accept="image/*" class="hidden" onchange="uploadBundleImage(this)" />
       </div>
-      <input id="bm-image" type="text" placeholder="أو رابط الصورة https://..."
-             class="w-full border border-gray-200 rounded-xl px-4 py-3 text-sm
-                    focus:outline-none focus:ring-2 focus:ring-orange-400" />
-      <div id="bm-image-preview-wrap" class="mt-2 hidden">
-        <img id="bm-image-preview" src="" class="w-full h-28 rounded-xl object-cover border border-gray-200" />
-      </div>
+      <input id="bm-image" type="text" placeholder="أو رابط الصورة https://..." class="w-full border border-gray-200 rounded-xl px-4 py-3 text-sm focus:outline-none focus:ring-2 focus:ring-orange-400" />
+      <div id="bm-image-preview-wrap" class="mt-2 hidden"><img id="bm-image-preview" src="" class="w-full h-28 rounded-xl object-cover border border-gray-200" /></div>
       <p id="bundle-upload-msg" class="text-xs text-gray-400 mt-1 hidden"></p>
     </div>
-    <div>
-      <label class="text-xs font-bold text-gray-500 mb-1 block">المنتجات المضمنة في العرض</label>
-      <div id="bm-products-checkboxes" class="space-y-2 max-h-48 overflow-y-auto border border-gray-100 rounded-xl p-3">
-      </div>
-    </div>
-    <div class="flex items-center gap-3">
-      <input id="bm-active" type="checkbox" checked class="w-5 h-5 accent-orange-500 rounded" />
-      <label class="text-sm font-bold text-gray-700">العرض نشط</label>
-    </div>
+    <div><label class="text-xs font-bold text-gray-500 mb-1 block">المنتجات المضمنة في العرض</label>
+      <div id="bm-products-checkboxes" class="space-y-2 max-h-48 overflow-y-auto border border-gray-100 rounded-xl p-3"></div></div>
+    <div class="flex items-center gap-3"><input id="bm-active" type="checkbox" checked class="w-5 h-5 accent-orange-500 rounded" /><label class="text-sm font-bold text-gray-700">العرض نشط</label></div>
     <p id="bm-error" class="text-red-500 text-xs hidden"></p>
     <div class="flex gap-3 pt-2">
-      <button onclick="saveBundle()"
-              class="flex-1 bg-orange-500 text-white font-bold rounded-xl py-3">حفظ</button>
-      <button onclick="closeBundleModal()"
-              class="flex-1 bg-gray-100 text-gray-600 font-bold rounded-xl py-3">إلغاء</button>
+      <button onclick="saveBundle()" class="flex-1 bg-orange-500 text-white font-bold rounded-xl py-3">حفظ</button>
+      <button onclick="closeBundleModal()" class="flex-1 bg-gray-100 text-gray-600 font-bold rounded-xl py-3">إلغاء</button>
     </div>
   </div>
 </div>
 
-<!-- ════════════════════════════════
-     TOAST
-════════════════════════════════ -->
-<div id="toast"
-     class="hidden fixed top-6 left-1/2 -translate-x-1/2 z-[60]
-            bg-gray-800 text-white text-sm font-bold px-5 py-3 rounded-2xl shadow-xl">
+<!-- BANNER MODAL -->
+<div id="modal-banner" class="hidden fixed inset-0 z-50 flex items-end justify-center">
+  <div class="absolute inset-0 bg-black/50" onclick="closeBannerModal()"></div>
+  <div class="relative bg-white rounded-t-3xl w-full max-w-lg p-6 space-y-4 max-h-[90vh] overflow-y-auto">
+    <h3 id="banner-modal-title" class="text-lg font-extrabold text-gray-800">بنر إعلاني جديد</h3>
+    <input type="hidden" id="bnm-id" />
+
+    <div>
+      <label class="text-xs font-bold text-gray-500 mb-1 block">صورة البنر *</label>
+      <div class="flex gap-2 mb-2">
+        <button onclick="document.getElementById('banner-file-input').click()"
+                class="flex-1 border-2 border-dashed border-gray-200 rounded-xl py-3 text-sm text-gray-400 font-bold hover:border-orange-300 hover:text-orange-400 transition-colors">🖼️ رفع صورة</button>
+        <input id="banner-file-input" type="file" accept="image/*" class="hidden" onchange="uploadBannerImage(this)" />
+      </div>
+      <input id="bnm-image" type="text" placeholder="أو رابط الصورة https://..."
+             class="w-full border border-gray-200 rounded-xl px-4 py-3 text-sm focus:outline-none focus:ring-2 focus:ring-orange-400" />
+      <div id="bnm-image-preview-wrap" class="mt-2 hidden">
+        <img id="bnm-image-preview" src="" class="w-full h-28 rounded-xl object-cover border border-gray-200" />
+      </div>
+      <p id="banner-upload-msg" class="text-xs text-gray-400 mt-1 hidden"></p>
+    </div>
+
+    <div>
+      <label class="text-xs font-bold text-gray-500 mb-1 block">نوع الرابط عند الضغط</label>
+      <select id="bnm-link-type" onchange="updateBannerLinkUI()"
+              class="w-full border border-gray-200 rounded-xl px-4 py-3 text-sm focus:outline-none focus:ring-2 focus:ring-orange-400 bg-white">
+        <option value="none">بدون رابط</option>
+        <option value="external">رابط خارجي (URL)</option>
+        <option value="product">منتج داخلي</option>
+        <option value="category">تصنيف داخلي</option>
+      </select>
+    </div>
+
+    <div id="bnm-external-wrap" class="hidden">
+      <label class="text-xs font-bold text-gray-500 mb-1 block">الرابط الخارجي</label>
+      <input id="bnm-link-external" type="text" placeholder="https://..."
+             class="w-full border border-gray-200 rounded-xl px-4 py-3 text-sm focus:outline-none focus:ring-2 focus:ring-orange-400" />
+    </div>
+
+    <div id="bnm-product-wrap" class="hidden">
+      <label class="text-xs font-bold text-gray-500 mb-1 block">اختر منتج</label>
+      <select id="bnm-link-product"
+              class="w-full border border-gray-200 rounded-xl px-4 py-3 text-sm focus:outline-none focus:ring-2 focus:ring-orange-400 bg-white"></select>
+    </div>
+
+    <div id="bnm-category-wrap" class="hidden">
+      <label class="text-xs font-bold text-gray-500 mb-1 block">اختر تصنيف</label>
+      <select id="bnm-link-category"
+              class="w-full border border-gray-200 rounded-xl px-4 py-3 text-sm focus:outline-none focus:ring-2 focus:ring-orange-400 bg-white"></select>
+    </div>
+
+    <div class="flex gap-3">
+      <div class="flex-1">
+        <label class="text-xs font-bold text-gray-500 mb-1 block">تاريخ البداية (اختياري)</label>
+        <input id="bnm-starts" type="datetime-local"
+               class="w-full border border-gray-200 rounded-xl px-4 py-3 text-sm focus:outline-none focus:ring-2 focus:ring-orange-400" />
+      </div>
+      <div class="flex-1">
+        <label class="text-xs font-bold text-gray-500 mb-1 block">تاريخ الانتهاء (اختياري)</label>
+        <input id="bnm-ends" type="datetime-local"
+               class="w-full border border-gray-200 rounded-xl px-4 py-3 text-sm focus:outline-none focus:ring-2 focus:ring-orange-400" />
+      </div>
+    </div>
+
+    <div class="flex items-center gap-3">
+      <input id="bnm-active" type="checkbox" checked class="w-5 h-5 accent-orange-500 rounded" />
+      <label class="text-sm font-bold text-gray-700">البنر نشط</label>
+    </div>
+
+    <p id="bnm-error" class="text-red-500 text-xs hidden"></p>
+    <div class="flex gap-3 pt-2">
+      <button onclick="saveBanner()" class="flex-1 bg-orange-500 text-white font-bold rounded-xl py-3">حفظ</button>
+      <button onclick="closeBannerModal()" class="flex-1 bg-gray-100 text-gray-600 font-bold rounded-xl py-3">إلغاء</button>
+    </div>
+  </div>
 </div>
 
-<!-- ════════════════════════════════
-     JAVASCRIPT
-════════════════════════════════ -->
+<!-- TOAST -->
+<div id="toast" class="hidden fixed top-6 left-1/2 -translate-x-1/2 z-[60] bg-gray-800 text-white text-sm font-bold px-5 py-3 rounded-2xl shadow-xl"></div>
+
 <script>
-// ─── CONFIG ───────────────────────────────
 const SUPABASE_URL  = 'https://pcmyugeqveyjnappulng.supabase.co'
 const SUPABASE_ANON = 'eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6InBjbXl1Z2VxdmV5am5hcHB1bG5nIiwicm9sZSI6ImFub24iLCJpYXQiOjE3ODExNjU0NDAsImV4cCI6MjA5Njc0MTQ0MH0.uwn0X4CvNRW38FGh_0rYD9KjBRM19CydXucfBsCDYeo'
 const MENU_BASE_URL = 'https://monjezapp-bot.github.io/menu-app/'
-
 const { createClient } = supabase
 const db = createClient(SUPABASE_URL, SUPABASE_ANON)
 
-// ─── STATE ────────────────────────────────
-const state = {
-  restaurant: null,
-  categories: [],
-  products:   [],
-  orders:     []
-}
+const state = { restaurant:null, categories:[], products:[], orders:[], banners:[] }
+let pickrInstance = null, settingsSnapshot = null, productSnapshot = null, state_bundles = []
+let annSaveTimeout = null
 
-// ─── BOOT ────────────────────────────────
+// ── BOOT ──
 async function boot() {
   const { data: { session } } = await db.auth.getSession()
-  if (session) {
-    await loadDashboard()
-  } else {
-    showScreen('login')
-  }
-
-  // مستمع لتغيير الجلسة
+  if (session) await loadDashboard()
+  else showScreen('login')
   db.auth.onAuthStateChange(async (event, session) => {
-    if (event === 'SIGNED_IN')  await loadDashboard()
-    if (event === 'SIGNED_OUT') showScreen('login')
+    if (event==='SIGNED_IN')  await loadDashboard()
+    if (event==='SIGNED_OUT') showScreen('login')
   })
 }
 
-// ─── AUTH ─────────────────────────────────
+// ── AUTH ──
 async function doLogin() {
   const email = document.getElementById('login-email').value.trim()
   const pass  = document.getElementById('login-pass').value
   const errEl = document.getElementById('login-error')
   const btn   = document.getElementById('login-btn-text')
-
-  errEl.classList.add('hidden')
-  btn.innerHTML = '<span class="spinner"></span>'
-
+  errEl.classList.add('hidden'); btn.innerHTML = '<span class="spinner"></span>'
   const { error } = await db.auth.signInWithPassword({ email, password: pass })
-
-  if (error) {
-    errEl.textContent = 'بيانات الدخول غير صحيحة'
-    errEl.classList.remove('hidden')
-    btn.textContent = 'دخول'
-  }
+  if (error) { errEl.textContent='بيانات الدخول غير صحيحة'; errEl.classList.remove('hidden'); btn.textContent='دخول' }
 }
+async function doLogout() { await db.auth.signOut() }
 
-async function doLogout() {
-  await db.auth.signOut()
-}
-
-// ─── LOAD DASHBOARD ───────────────────────
+// ── LOAD DASHBOARD ──
 async function loadDashboard() {
   showScreen('dashboard')
-
   const { data: { user } } = await db.auth.getUser()
-
-  // جلب بيانات المطعم
-  const { data: restaurant } = await db
-    .from('restaurants')
-    .select('*')
-    .eq('owner_id', user.id)
-    .single()
-
-  if (!restaurant) {
-    showToast('لم يتم العثور على مطعم مرتبط بهذا الحساب')
-    return
-  }
+  const { data: restaurant } = await db.from('restaurants').select('*').eq('owner_id', user.id).single()
+  if (!restaurant) { showToast('لم يتم العثور على مطعم مرتبط بهذا الحساب'); return }
 
   state.restaurant = restaurant
-
-  // هيدر
   document.getElementById('dash-restaurant-name').textContent = restaurant.name
   document.getElementById('preview-link').href = MENU_BASE_URL + '?r=' + restaurant.slug
 
-  // تحميل البيانات
-  await Promise.all([loadCategories(), loadProducts(), loadOrders()])
+  await Promise.all([loadCategories(), loadProducts(), loadOrders(), loadBanners()])
 
-  // إعدادات
-  document.getElementById('set-name').value      = restaurant.name
-  document.getElementById('set-whatsapp').value  = restaurant.whatsapp
-  document.getElementById('set-logo').value      = restaurant.logo_url || ''
-  document.getElementById('set-cover').value     = restaurant.cover_url || ''
+  // settings
+  document.getElementById('set-name').value     = restaurant.name
+  document.getElementById('set-whatsapp').value = restaurant.whatsapp
+  document.getElementById('set-logo').value     = restaurant.logo_url || ''
+  document.getElementById('set-cover').value    = restaurant.cover_url || ''
   const primary = restaurant.theme?.primary || '#FF6B00'
   document.getElementById('set-color').value     = primary
   document.getElementById('set-color-hex').value = primary
 
-  // تهيئة Pickr بعد تحميل الصفحة
+  // announcement
+  document.getElementById('ann-text').value = restaurant.announcement_text || ''
+  document.getElementById('ann-active-toggle').checked = restaurant.announcement_active || false
+
   setTimeout(() => initPickr(primary), 100)
 
-  // ── Pickr Color Picker ───────────────────
-  const DEFAULT_COLOR = '#FF6B00'
-  let pickrInstance = null
-
-  function initPickr(initialColor) {
-    if (pickrInstance) { pickrInstance.destroyAndRemove(); pickrInstance = null }
-
-    pickrInstance = Pickr.create({
-      el: '#pickr-container',
-      theme: 'nano',
-      default: initialColor || DEFAULT_COLOR,
-      components: {
-        preview: true, opacity: false, hue: true,
-        interaction: { hex: true, input: true, save: true }
-      },
-      i18n: { 'btn:save': 'اختيار' }
-    })
-
-    pickrInstance.on('save', color => {
-      const hex = color.toHEXA().toString().slice(0,7)
-      document.getElementById('set-color').value     = hex
-      document.getElementById('set-color-hex').value = hex
-      pickrInstance.hide()
-    })
-
-    pickrInstance.on('change', color => {
-      const hex = color.toHEXA().toString().slice(0,7)
-      document.getElementById('set-color').value     = hex
-      document.getElementById('set-color-hex').value = hex
-    })
-  }
-
-  // مزامنة HEX input → Pickr
   document.getElementById('set-color-hex').addEventListener('input', e => {
     const val = e.target.value
     if (/^#[0-9A-Fa-f]{6}$/.test(val)) {
@@ -645,837 +455,555 @@ async function loadDashboard() {
     }
   })
 
-  // إظهار preview اللوجو لو في رابط
   document.getElementById('set-logo').addEventListener('input', e => {
-    const url  = e.target.value.trim()
+    const url = e.target.value.trim()
     const wrap = document.getElementById('logo-preview-wrap')
     const img  = document.getElementById('logo-preview')
-    if (url) { img.src = url; wrap.classList.remove('hidden') }
-    else      { wrap.classList.add('hidden') }
+    if (url) { img.src=url; wrap.classList.remove('hidden') } else { wrap.classList.add('hidden') }
   })
 }
 
-// ─── CATEGORIES ───────────────────────────
-async function loadCategories() {
-  const { data } = await db
-    .from('categories')
-    .select('*')
-    .eq('restaurant_id', state.restaurant.id)
-    .order('sort_order')
-
-  state.categories = data || []
-  renderCategories()
-  updateCategorySelect()
+function initPickr(initialColor) {
+  if (pickrInstance) { pickrInstance.destroyAndRemove(); pickrInstance = null }
+  pickrInstance = Pickr.create({
+    el: '#pickr-container', theme:'nano', default: initialColor || '#FF6B00',
+    components: { preview:true, opacity:false, hue:true, interaction:{hex:true,input:true,save:true} },
+    i18n: { 'btn:save': 'اختيار' }
+  })
+  pickrInstance.on('save', color => {
+    const hex = color.toHEXA().toString().slice(0,7)
+    document.getElementById('set-color').value     = hex
+    document.getElementById('set-color-hex').value = hex
+    pickrInstance.hide()
+  })
+  pickrInstance.on('change', color => {
+    const hex = color.toHEXA().toString().slice(0,7)
+    document.getElementById('set-color').value     = hex
+    document.getElementById('set-color-hex').value = hex
+  })
 }
 
-function renderCategories() {
-  const el = document.getElementById('categories-list')
-  if (!state.categories.length) {
-    el.innerHTML = `<p class="text-center text-gray-400 text-sm py-8">لا توجد تصنيفات بعد</p>`
+// ── ANNOUNCEMENT ──
+async function saveAnnouncement() {
+  clearTimeout(annSaveTimeout)
+  annSaveTimeout = setTimeout(async () => {
+    const text   = document.getElementById('ann-text').value.trim()
+    const active = document.getElementById('ann-active-toggle').checked
+    await db.from('restaurants').update({ announcement_text: text||null, announcement_active: active }).eq('id', state.restaurant.id)
+    state.restaurant.announcement_text   = text
+    state.restaurant.announcement_active = active
+    showToast(active ? '📣 الرسالة نشطة' : 'تم الحفظ')
+  }, 800)
+}
+
+// ── BANNERS ──
+async function loadBanners() {
+  const { data } = await db.from('banners').select('*').eq('restaurant_id', state.restaurant.id).order('sort_order')
+  state.banners = data || []
+  renderBanners()
+}
+
+function renderBanners() {
+  const el = document.getElementById('banners-list')
+  if (!state.banners.length) {
+    el.innerHTML = `<p class="text-center text-gray-400 text-sm py-6">لا توجد بنرات بعد — أضف أول بنر إعلاني</p>`
     return
   }
+  el.innerHTML = state.banners.map(b => {
+    const now = new Date()
+    const started  = !b.starts_at || new Date(b.starts_at) <= now
+    const notEnded = !b.ends_at   || new Date(b.ends_at)   >= now
+    const isLive   = b.is_active && started && notEnded
+    return `
+    <div class="bg-white rounded-2xl shadow-sm border border-gray-100 overflow-hidden">
+      ${b.image_url ? `<img src="${b.image_url}" class="w-full h-28 object-cover" />` : `<div class="w-full h-28 bg-gray-100 flex items-center justify-center text-3xl">🖼️</div>`}
+      <div class="p-3">
+        <div class="flex items-center justify-between mb-2">
+          <span class="text-xs font-bold px-2 py-1 rounded-full ${isLive ? 'bg-green-50 text-green-600' : 'bg-gray-100 text-gray-400'}">
+            ${isLive ? '🟢 يعرض الآن' : '⚫ متوقف'}
+          </span>
+          <span class="text-xs text-gray-400">${linkTypeLabel(b.link_type)}</span>
+        </div>
+        ${b.ends_at ? `<p class="text-xs text-gray-400 mb-2">⏰ ينتهي: ${new Date(b.ends_at).toLocaleDateString('ar-EG')}</p>` : ''}
+        <div class="flex gap-2">
+          <button onclick="toggleBanner('${b.id}', ${b.is_active})" class="flex-1 text-xs font-bold px-3 py-2 rounded-xl ${b.is_active ? 'bg-gray-100 text-gray-600' : 'bg-green-500 text-white'}">${b.is_active ? 'إيقاف' : 'تفعيل'}</button>
+          <button onclick="openBannerModal('${b.id}')" class="flex-1 text-xs bg-gray-100 text-gray-600 font-bold px-3 py-2 rounded-xl">تعديل</button>
+          <button onclick="deleteBanner('${b.id}')" class="text-xs bg-red-50 text-red-500 font-bold px-3 py-2 rounded-xl">حذف</button>
+        </div>
+      </div>
+    </div>`
+  }).join('')
+}
+
+function linkTypeLabel(t) {
+  return { external:'🔗 رابط خارجي', product:'📦 منتج داخلي', category:'📂 تصنيف', none:'بدون رابط' }[t] || ''
+}
+
+function openBannerModal(id = null) {
+  document.getElementById('bnm-id').value = id || ''
+  document.getElementById('bnm-error').classList.add('hidden')
+  document.getElementById('bnm-image-preview-wrap').classList.add('hidden')
+
+  // populate product/category selects
+  document.getElementById('bnm-link-product').innerHTML =
+    state.products.map(p => `<option value="${p.id}">${p.name}</option>`).join('')
+  document.getElementById('bnm-link-category').innerHTML =
+    state.categories.map(c => `<option value="${c.id}">${c.name}</option>`).join('')
+
+  if (id) {
+    const b = state.banners.find(x => x.id === id)
+    document.getElementById('bnm-image').value   = b.image_url || ''
+    document.getElementById('bnm-link-type').value = b.link_type || 'none'
+    document.getElementById('bnm-active').checked = b.is_active
+    document.getElementById('bnm-starts').value  = b.starts_at ? b.starts_at.slice(0,16) : ''
+    document.getElementById('bnm-ends').value    = b.ends_at   ? b.ends_at.slice(0,16)   : ''
+    if (b.image_url) { document.getElementById('bnm-image-preview').src=b.image_url; document.getElementById('bnm-image-preview-wrap').classList.remove('hidden') }
+    // set link value
+    if (b.link_type==='external') document.getElementById('bnm-link-external').value = b.link_value||''
+    if (b.link_type==='product')  document.getElementById('bnm-link-product').value  = b.link_value||''
+    if (b.link_type==='category') document.getElementById('bnm-link-category').value = b.link_value||''
+    document.getElementById('banner-modal-title').textContent = 'تعديل البنر'
+  } else {
+    document.getElementById('bnm-image').value = ''
+    document.getElementById('bnm-link-type').value = 'none'
+    document.getElementById('bnm-active').checked = true
+    document.getElementById('bnm-starts').value = ''
+    document.getElementById('bnm-ends').value   = ''
+    document.getElementById('bnm-link-external').value = ''
+    document.getElementById('banner-modal-title').textContent = 'بنر إعلاني جديد'
+  }
+  updateBannerLinkUI()
+  document.getElementById('modal-banner').classList.remove('hidden')
+}
+
+function closeBannerModal() { document.getElementById('modal-banner').classList.add('hidden') }
+
+function updateBannerLinkUI() {
+  const t = document.getElementById('bnm-link-type').value
+  document.getElementById('bnm-external-wrap').classList.toggle('hidden', t !== 'external')
+  document.getElementById('bnm-product-wrap').classList.toggle('hidden',  t !== 'product')
+  document.getElementById('bnm-category-wrap').classList.toggle('hidden', t !== 'category')
+}
+
+async function saveBanner() {
+  const id       = document.getElementById('bnm-id').value
+  const image    = document.getElementById('bnm-image').value.trim()
+  const linkType = document.getElementById('bnm-link-type').value
+  const errEl    = document.getElementById('bnm-error')
+
+  if (!image) { errEl.textContent='صورة البنر مطلوبة'; errEl.classList.remove('hidden'); return }
+  errEl.classList.add('hidden')
+
+  let linkValue = null
+  if (linkType==='external') linkValue = document.getElementById('bnm-link-external').value.trim() || null
+  if (linkType==='product')  linkValue = document.getElementById('bnm-link-product').value  || null
+  if (linkType==='category') linkValue = document.getElementById('bnm-link-category').value || null
+
+  const startsRaw = document.getElementById('bnm-starts').value
+  const endsRaw   = document.getElementById('bnm-ends').value
+
+  const payload = {
+    image_url:  image,
+    link_type:  linkType === 'none' ? 'external' : linkType,
+    link_value: linkValue,
+    is_active:  document.getElementById('bnm-active').checked,
+    starts_at:  startsRaw ? new Date(startsRaw).toISOString() : null,
+    ends_at:    endsRaw   ? new Date(endsRaw).toISOString()   : null,
+    restaurant_id: state.restaurant.id,
+    sort_order: id ? undefined : state.banners.length
+  }
+
+  if (id) { await db.from('banners').update(payload).eq('id', id) }
+  else     { await db.from('banners').insert(payload) }
+
+  closeBannerModal()
+  await loadBanners()
+  showToast(id ? 'تم تعديل البنر ✅' : 'تم إضافة البنر ✅')
+}
+
+async function toggleBanner(id, current) {
+  await db.from('banners').update({ is_active: !current }).eq('id', id)
+  await loadBanners()
+  showToast(!current ? '🟢 البنر نشط الآن' : 'تم إيقاف البنر')
+}
+
+async function deleteBanner(id) {
+  if (!confirm('هل تريد حذف هذا البنر؟')) return
+  await db.from('banners').delete().eq('id', id)
+  await loadBanners()
+  showToast('تم حذف البنر')
+}
+
+async function uploadBannerImage(input) {
+  const file = input.files[0]; if (!file) return
+  const msgEl = document.getElementById('banner-upload-msg')
+  msgEl.textContent='جاري الرفع...'; msgEl.classList.remove('hidden')
+  try {
+    const path = `banners/${state.restaurant.id}-${Date.now()}.${file.name.split('.').pop()}`
+    const url  = await uploadToSupabase(file, 'restaurant-images', path)
+    document.getElementById('bnm-image').value = url
+    document.getElementById('bnm-image-preview').src = url
+    document.getElementById('bnm-image-preview-wrap').classList.remove('hidden')
+    msgEl.textContent = 'تم الرفع بنجاح ✅'
+  } catch(e) { msgEl.textContent = 'فشل الرفع — جرب رابط URL' }
+}
+
+// ── CATEGORIES ──
+async function loadCategories() {
+  const { data } = await db.from('categories').select('*').eq('restaurant_id', state.restaurant.id).order('sort_order')
+  state.categories = data || []; renderCategories(); updateCategorySelect()
+}
+function renderCategories() {
+  const el = document.getElementById('categories-list')
+  if (!state.categories.length) { el.innerHTML=`<p class="text-center text-gray-400 text-sm py-8">لا توجد تصنيفات بعد</p>`; return }
   el.innerHTML = state.categories.map(cat => `
     <div class="bg-white rounded-2xl p-4 shadow-sm flex items-center justify-between">
       <span class="font-bold text-gray-800">${cat.name}</span>
       <div class="flex gap-2">
-        <button onclick="openCatModal('${cat.id}')"
-                class="text-xs bg-gray-100 text-gray-600 font-bold px-3 py-2 rounded-xl">تعديل</button>
-        <button onclick="deleteCat('${cat.id}')"
-                class="text-xs bg-red-50 text-red-500 font-bold px-3 py-2 rounded-xl">حذف</button>
+        <button onclick="openCatModal('${cat.id}')" class="text-xs bg-gray-100 text-gray-600 font-bold px-3 py-2 rounded-xl">تعديل</button>
+        <button onclick="deleteCat('${cat.id}')" class="text-xs bg-red-50 text-red-500 font-bold px-3 py-2 rounded-xl">حذف</button>
       </div>
-    </div>
-  `).join('')
+    </div>`).join('')
 }
-
 function updateCategorySelect() {
   const sel = document.getElementById('pm-category')
-  sel.innerHTML = '<option value="">بدون تصنيف</option>' +
-    state.categories.map(c => `<option value="${c.id}">${c.name}</option>`).join('')
+  sel.innerHTML = '<option value="">بدون تصنيف</option>' + state.categories.map(c => `<option value="${c.id}">${c.name}</option>`).join('')
 }
-
-function openCatModal(id = null) {
-  document.getElementById('cm-id').value   = id || ''
-  document.getElementById('cm-error').classList.add('hidden')
-  if (id) {
-    const cat = state.categories.find(c => c.id === id)
-    document.getElementById('cm-name').value = cat.name
-    document.getElementById('cm-icon').value = cat.icon_url || ''
-    document.getElementById('cat-modal-title').textContent = 'تعديل تصنيف'
-  } else {
-    document.getElementById('cm-name').value = ''
-    document.getElementById('cm-icon').value = ''
-    document.getElementById('cat-modal-title').textContent = 'إضافة تصنيف'
-  }
+function openCatModal(id=null) {
+  document.getElementById('cm-id').value = id||''; document.getElementById('cm-error').classList.add('hidden')
+  if (id) { const cat=state.categories.find(c=>c.id===id); document.getElementById('cm-name').value=cat.name; document.getElementById('cm-icon').value=cat.icon_url||''; document.getElementById('cat-modal-title').textContent='تعديل تصنيف' }
+  else    { document.getElementById('cm-name').value=''; document.getElementById('cm-icon').value=''; document.getElementById('cat-modal-title').textContent='إضافة تصنيف' }
   document.getElementById('modal-category').classList.remove('hidden')
 }
-
-function closeCatModal() {
-  document.getElementById('modal-category').classList.add('hidden')
-}
-
+function closeCatModal() { document.getElementById('modal-category').classList.add('hidden') }
 async function saveCat() {
-  const id   = document.getElementById('cm-id').value
-  const name = document.getElementById('cm-name').value.trim()
-  const errEl = document.getElementById('cm-error')
-
-  if (!name) { errEl.textContent = 'اسم التصنيف مطلوب'; errEl.classList.remove('hidden'); return }
+  const id=document.getElementById('cm-id').value, name=document.getElementById('cm-name').value.trim()
+  const errEl=document.getElementById('cm-error')
+  if (!name) { errEl.textContent='اسم التصنيف مطلوب'; errEl.classList.remove('hidden'); return }
   errEl.classList.add('hidden')
-
-  if (id) {
-    await db.from('categories').update({
-      name,
-      icon_url: document.getElementById('cm-icon').value.trim() || null
-    }).eq('id', id)
-  } else {
-    await db.from('categories').insert({
-      restaurant_id: state.restaurant.id,
-      name,
-      icon_url: document.getElementById('cm-icon').value.trim() || null,
-      sort_order: state.categories.length
-    })
-  }
-
-  closeCatModal()
-  await loadCategories()
-  showToast(id ? 'تم تعديل التصنيف' : 'تم إضافة التصنيف')
+  if (id) { await db.from('categories').update({ name, icon_url:document.getElementById('cm-icon').value.trim()||null }).eq('id',id) }
+  else    { await db.from('categories').insert({ restaurant_id:state.restaurant.id, name, icon_url:document.getElementById('cm-icon').value.trim()||null, sort_order:state.categories.length }) }
+  closeCatModal(); await loadCategories(); showToast(id?'تم تعديل التصنيف':'تم إضافة التصنيف')
 }
-
 async function deleteCat(id) {
   if (!confirm('هل تريد حذف هذا التصنيف؟')) return
-  await db.from('categories').delete().eq('id', id)
-  await loadCategories()
-  showToast('تم حذف التصنيف')
+  await db.from('categories').delete().eq('id',id); await loadCategories(); showToast('تم حذف التصنيف')
 }
 
-// ─── PRODUCTS ─────────────────────────────
+// ── PRODUCTS ──
 let activeProductFilter = 'all'
-let productSnapshot = null  // للتراجع عن آخر حذف
-
 async function loadProducts() {
-  const { data } = await db
-    .from('products')
-    .select('*')
-    .eq('restaurant_id', state.restaurant.id)
-    .order('sort_order')
-
-  state.products = data || []
-  renderProductFilterTabs()
-  renderProducts()
+  const { data } = await db.from('products').select('*').eq('restaurant_id',state.restaurant.id).order('sort_order')
+  state.products = data||[]; renderProductFilterTabs(); renderProducts()
 }
-
 function renderProductFilterTabs() {
-  const el = document.getElementById('product-filter-tabs')
-  if (!el) return
-
-  const tabs = [{ id: 'all', name: 'الكل' }, ...state.categories]
-  el.innerHTML = tabs.map(t => `
-    <button onclick="filterProducts('${t.id}')"
-            data-filter="${t.id}"
-            class="filter-tab flex-shrink-0 px-4 py-1.5 rounded-full text-sm font-bold
-                   border-2 transition-all
-                   ${t.id === activeProductFilter
-                     ? 'bg-orange-500 text-white border-transparent'
-                     : 'bg-white text-gray-500 border-gray-200'}">
-      ${t.name}
-    </button>
-  `).join('')
+  const el=document.getElementById('product-filter-tabs'); if (!el) return
+  const tabs=[{id:'all',name:'الكل'},...state.categories]
+  el.innerHTML=tabs.map(t=>`
+    <button onclick="filterProducts('${t.id}')" data-filter="${t.id}"
+            class="filter-tab flex-shrink-0 px-4 py-1.5 rounded-full text-sm font-bold border-2 transition-all
+                   ${t.id===activeProductFilter?'bg-orange-500 text-white border-transparent':'bg-white text-gray-500 border-gray-200'}">
+      ${t.name}</button>`).join('')
 }
-
-function filterProducts(catId) {
-  activeProductFilter = catId
-  renderProductFilterTabs()
-  renderProducts()
-}
-
+function filterProducts(catId) { activeProductFilter=catId; renderProductFilterTabs(); renderProducts() }
 function renderProducts() {
-  const el = document.getElementById('products-list')
-  let filtered = state.products
-  if (activeProductFilter !== 'all') {
-    filtered = state.products.filter(p => p.category_id === activeProductFilter)
-  }
-
-  if (!filtered.length) {
-    el.innerHTML = `<p class="text-center text-gray-400 text-sm py-8">لا توجد منتجات في هذا التصنيف</p>`
-    return
-  }
-  el.innerHTML = filtered.map(p => {
-    const cat        = state.categories.find(c => c.id === p.category_id)
-    const hasDiscount = p.discount_price && p.discount_price > 0
-    const discountOn  = p.discount_active
-    return `
-    <div class="bg-white rounded-2xl p-4 shadow-sm border ${!p.is_available ? 'border-red-100 opacity-70' : 'border-gray-100'}">
+  const el=document.getElementById('products-list')
+  let filtered=state.products
+  if (activeProductFilter!=='all') filtered=state.products.filter(p=>p.category_id===activeProductFilter)
+  if (!filtered.length) { el.innerHTML=`<p class="text-center text-gray-400 text-sm py-8">لا توجد منتجات في هذا التصنيف</p>`; return }
+  el.innerHTML=filtered.map(p=>{
+    const cat=state.categories.find(c=>c.id===p.category_id)
+    const hasDiscount=p.discount_price&&p.discount_price>0, discountOn=p.discount_active
+    return `<div class="bg-white rounded-2xl p-4 shadow-sm border ${!p.is_available?'border-red-100 opacity-70':'border-gray-100'}">
       <div class="flex items-center gap-3">
-        ${p.image_url
-          ? `<img src="${p.image_url}" class="w-16 h-16 rounded-xl object-cover flex-shrink-0" />`
-          : `<div class="w-16 h-16 rounded-xl bg-gray-100 flex items-center justify-center text-2xl flex-shrink-0">🍽️</div>`
-        }
+        ${p.image_url?`<img src="${p.image_url}" class="w-16 h-16 rounded-xl object-cover flex-shrink-0" />`:`<div class="w-16 h-16 rounded-xl bg-gray-100 flex items-center justify-center text-2xl flex-shrink-0">🍽️</div>`}
         <div class="flex-1 min-w-0">
           <div class="flex items-center gap-2 flex-wrap">
             <p class="font-bold text-gray-800 truncate">${p.name}</p>
-            ${!p.is_available ? `<span class="text-xs bg-red-50 text-red-400 px-2 py-0.5 rounded-full">نفذ المخزون</span>` : ''}
-            ${discountOn ? `<span class="text-xs bg-orange-100 text-orange-500 px-2 py-0.5 rounded-full">خصم نشط</span>` : ''}
+            ${!p.is_available?`<span class="text-xs bg-red-50 text-red-400 px-2 py-0.5 rounded-full">نفذ المخزون</span>`:''}
+            ${discountOn?`<span class="text-xs bg-orange-100 text-orange-500 px-2 py-0.5 rounded-full">خصم نشط</span>`:''}
           </div>
-          ${cat ? `<p class="text-xs text-orange-500 font-bold">${cat.name}</p>` : ''}
+          ${cat?`<p class="text-xs text-orange-500 font-bold">${cat.name}</p>`:''}
           <p class="text-sm font-extrabold text-gray-700 mt-1">
-            ${hasDiscount && discountOn
-              ? `<span class="line-through text-gray-400 text-xs ml-1">${Number(p.price).toFixed(2)}</span>
-                 <span class="text-orange-500">${Number(p.discount_price).toFixed(2)} ج.م</span>
-                 <span class="bg-orange-100 text-orange-500 text-xs px-1.5 rounded-full">
-                   ${Math.round((1-p.discount_price/p.price)*100)}%
-                 </span>`
-              : `${Number(p.price).toFixed(2)} ج.م`
-            }
+            ${hasDiscount&&discountOn
+              ?`<span class="line-through text-gray-400 text-xs ml-1">${Number(p.price).toFixed(2)}</span><span class="text-orange-500">${Number(p.discount_price).toFixed(2)} ج.م</span><span class="bg-orange-100 text-orange-500 text-xs px-1.5 rounded-full">${Math.round((1-p.discount_price/p.price)*100)}%</span>`
+              :`${Number(p.price).toFixed(2)} ج.م`}
           </p>
         </div>
       </div>
       <div class="flex gap-2 mt-3 flex-wrap">
-        ${hasDiscount ? `
-        <button onclick="toggleDiscount('${p.id}', ${discountOn})"
-                class="flex-1 text-xs font-bold px-3 py-2 rounded-xl transition-colors
-                       ${discountOn ? 'bg-orange-500 text-white' : 'bg-orange-50 text-orange-500 border border-orange-200'}">
-          ${discountOn ? '🏷️ إلغاء الخصم' : '🏷️ تفعيل الخصم'}
-        </button>` : ''}
-        <button onclick="toggleAvailability('${p.id}', ${p.is_available})"
-                class="flex-1 text-xs font-bold px-3 py-2 rounded-xl transition-colors
-                       ${p.is_available ? 'bg-gray-100 text-gray-600' : 'bg-red-500 text-white'}">
-          ${p.is_available ? '👁️ إخفاء' : '✅ إظهار'}
-        </button>
-        <button onclick="openProductModal('${p.id}')"
-                class="text-xs bg-gray-100 text-gray-600 font-bold px-3 py-2 rounded-xl">تعديل</button>
-        <button onclick="deleteProduct('${p.id}')"
-                class="text-xs bg-red-50 text-red-500 font-bold px-3 py-2 rounded-xl">حذف</button>
+        ${hasDiscount?`<button onclick="toggleDiscount('${p.id}',${discountOn})" class="flex-1 text-xs font-bold px-3 py-2 rounded-xl transition-colors ${discountOn?'bg-orange-500 text-white':'bg-orange-50 text-orange-500 border border-orange-200'}">${discountOn?'🏷️ إلغاء الخصم':'🏷️ تفعيل الخصم'}</button>`:''}
+        <button onclick="toggleAvailability('${p.id}',${p.is_available})" class="flex-1 text-xs font-bold px-3 py-2 rounded-xl transition-colors ${p.is_available?'bg-gray-100 text-gray-600':'bg-red-500 text-white'}">${p.is_available?'👁️ إخفاء':'✅ إظهار'}</button>
+        <button onclick="openProductModal('${p.id}')" class="text-xs bg-gray-100 text-gray-600 font-bold px-3 py-2 rounded-xl">تعديل</button>
+        <button onclick="deleteProduct('${p.id}')" class="text-xs bg-red-50 text-red-500 font-bold px-3 py-2 rounded-xl">حذف</button>
       </div>
-      ${p.discount_starts_at || p.discount_ends_at ? `
-      <div class="mt-2 text-xs text-gray-400 border-t border-gray-50 pt-2">
-        ${p.discount_starts_at ? `⏰ يبدأ: ${new Date(p.discount_starts_at).toLocaleString('ar-EG')}` : ''}
-        ${p.discount_ends_at   ? ` — ينتهي: ${new Date(p.discount_ends_at).toLocaleString('ar-EG')}` : ''}
-      </div>` : ''}
-    </div>`
-  }).join('')
+      ${p.discount_starts_at||p.discount_ends_at?`<div class="mt-2 text-xs text-gray-400 border-t border-gray-50 pt-2">
+        ${p.discount_starts_at?`⏰ يبدأ: ${new Date(p.discount_starts_at).toLocaleString('ar-EG')}`:''}
+        ${p.discount_ends_at?` — ينتهي: ${new Date(p.discount_ends_at).toLocaleString('ar-EG')}`:''}
+      </div>`:''}
+    </div>`}).join('')
 }
-
-function openProductModal(id = null) {
-  document.getElementById('pm-id').value        = id || ''
-  document.getElementById('pm-error').classList.add('hidden')
-  updateCategorySelect()
-
+function openProductModal(id=null) {
+  document.getElementById('pm-id').value=id||''; document.getElementById('pm-error').classList.add('hidden'); updateCategorySelect()
   if (id) {
-    const p = state.products.find(x => x.id === id)
-    document.getElementById('pm-name').value           = p.name
-    document.getElementById('pm-desc').value           = p.description || ''
-    document.getElementById('pm-price').value          = p.price
-    document.getElementById('pm-discount').value       = p.discount_price || ''
-    document.getElementById('pm-category').value       = p.category_id || ''
-    document.getElementById('pm-image').value          = p.image_url || ''
-    document.getElementById('pm-availability').value   = p.availability || 'available'
-    document.getElementById('pm-badge').value          = p.offer_badge || ''
-    document.getElementById('pm-available').checked    = p.is_available
-    document.getElementById('product-modal-title').textContent = 'تعديل منتج'
+    const p=state.products.find(x=>x.id===id)
+    document.getElementById('pm-name').value=p.name; document.getElementById('pm-desc').value=p.description||''
+    document.getElementById('pm-price').value=p.price; document.getElementById('pm-discount').value=p.discount_price||''
+    document.getElementById('pm-category').value=p.category_id||''; document.getElementById('pm-image').value=p.image_url||''
+    document.getElementById('pm-availability').value=p.availability||'available'; document.getElementById('pm-badge').value=p.offer_badge||''
+    document.getElementById('pm-available').checked=p.is_available; document.getElementById('product-modal-title').textContent='تعديل منتج'
     updateDiscountPreview()
   } else {
-    document.getElementById('pm-name').value          = ''
-    document.getElementById('pm-desc').value          = ''
-    document.getElementById('pm-price').value         = ''
-    document.getElementById('pm-discount').value      = ''
-    document.getElementById('pm-category').value      = ''
-    document.getElementById('pm-image').value         = ''
-    document.getElementById('pm-availability').value  = 'available'
-    document.getElementById('pm-badge').value         = ''
-    document.getElementById('pm-available').checked   = true
-    document.getElementById('discount-preview').classList.add('hidden')
-    document.getElementById('product-modal-title').textContent = 'إضافة منتج'
+    ['pm-name','pm-desc','pm-price','pm-discount','pm-image','pm-badge'].forEach(id=>document.getElementById(id).value='')
+    document.getElementById('pm-category').value=''; document.getElementById('pm-availability').value='available'
+    document.getElementById('pm-available').checked=true; document.getElementById('discount-preview').classList.add('hidden')
+    document.getElementById('product-modal-title').textContent='إضافة منتج'
   }
   document.getElementById('modal-product').classList.remove('hidden')
 }
-
-function closeProductModal() {
-  document.getElementById('modal-product').classList.add('hidden')
-}
-
+function closeProductModal() { document.getElementById('modal-product').classList.add('hidden') }
 async function saveProduct() {
-  const id    = document.getElementById('pm-id').value
-  const name  = document.getElementById('pm-name').value.trim()
-  const price = parseFloat(document.getElementById('pm-price').value)
-  const errEl = document.getElementById('pm-error')
-
-  const discount = parseFloat(document.getElementById('pm-discount').value)
-
-  if (!name)         { errEl.textContent = 'اسم المنتج مطلوب';  errEl.classList.remove('hidden'); return }
-  if (isNaN(price))  { errEl.textContent = 'السعر غير صحيح';    errEl.classList.remove('hidden'); return }
-  if (!isNaN(discount) && discount >= price) {
-    errEl.textContent = 'سعر الخصم يجب أن يكون أقل من السعر الأصلي'
-    errEl.classList.remove('hidden'); return
-  }
+  const id=document.getElementById('pm-id').value, name=document.getElementById('pm-name').value.trim()
+  const price=parseFloat(document.getElementById('pm-price').value), discount=parseFloat(document.getElementById('pm-discount').value)
+  const errEl=document.getElementById('pm-error')
+  if (!name) { errEl.textContent='اسم المنتج مطلوب'; errEl.classList.remove('hidden'); return }
+  if (isNaN(price)) { errEl.textContent='السعر غير صحيح'; errEl.classList.remove('hidden'); return }
+  if (!isNaN(discount)&&discount>=price) { errEl.textContent='سعر الخصم يجب أن يكون أقل من السعر الأصلي'; errEl.classList.remove('hidden'); return }
   errEl.classList.add('hidden')
-
-  const payload = {
-    name,
-    description:    document.getElementById('pm-desc').value.trim() || null,
-    price,
-    discount_price: !isNaN(discount) && discount > 0 ? discount : null,
-    category_id:    document.getElementById('pm-category').value || null,
-    image_url:      document.getElementById('pm-image').value.trim() || null,
-    is_available:   document.getElementById('pm-available').checked,
-    availability:   document.getElementById('pm-availability').value,
-    offer_badge:    document.getElementById('pm-badge').value.trim() || null
-  }
-
-  if (id) {
-    await db.from('products').update(payload).eq('id', id)
-  } else {
-    await db.from('products').insert({
-      ...payload,
-      restaurant_id: state.restaurant.id,
-      sort_order: state.products.length
-    })
-  }
-
-  closeProductModal()
-  await loadProducts()
-  showToast(id ? 'تم تعديل المنتج' : 'تم إضافة المنتج ✅')
+  const payload = { name, description:document.getElementById('pm-desc').value.trim()||null, price, discount_price:!isNaN(discount)&&discount>0?discount:null, category_id:document.getElementById('pm-category').value||null, image_url:document.getElementById('pm-image').value.trim()||null, is_available:document.getElementById('pm-available').checked, availability:document.getElementById('pm-availability').value, offer_badge:document.getElementById('pm-badge').value.trim()||null }
+  if (id) { await db.from('products').update(payload).eq('id',id) }
+  else    { await db.from('products').insert({...payload,restaurant_id:state.restaurant.id,sort_order:state.products.length}) }
+  closeProductModal(); await loadProducts(); showToast(id?'تم تعديل المنتج':'تم إضافة المنتج ✅')
 }
-
 async function deleteProduct(id) {
   if (!confirm('هل تريد حذف هذا المنتج؟')) return
-  // حفظ نسخة للتراجع
-  productSnapshot = state.products.find(p => p.id === id)
-  await db.from('products').delete().eq('id', id)
-  await loadProducts()
-  showToastWithUndo('تم حذف المنتج', restoreProduct)
+  productSnapshot=state.products.find(p=>p.id===id)
+  await db.from('products').delete().eq('id',id); await loadProducts(); showToastWithUndo('تم حذف المنتج', restoreProduct)
 }
-
 async function restoreProduct() {
   if (!productSnapshot) return
-  const { id, ...rest } = productSnapshot
-  await db.from('products').insert(rest)
-  productSnapshot = null
-  await loadProducts()
-  showToast('تم استعادة المنتج ✅')
+  const {id,...rest}=productSnapshot; await db.from('products').insert(rest); productSnapshot=null; await loadProducts(); showToast('تم استعادة المنتج ✅')
 }
-
-// ─── ORDERS ───────────────────────────────
-async function loadOrders() {
-  const { data } = await db
-    .from('orders')
-    .select('*')
-    .eq('restaurant_id', state.restaurant.id)
-    .order('created_at', { ascending: false })
-    .limit(50)
-
-  state.orders = data || []
-  renderOrders()
-}
-
-function renderOrders() {
-  const el = document.getElementById('orders-list')
-  if (!state.orders.length) {
-    el.innerHTML = `<p class="text-center text-gray-400 text-sm py-8">لا توجد طلبات بعد</p>`
-    return
-  }
-
-  const statusLabel = { pending: 'جديد', confirmed: 'مؤكد', done: 'منتهي', cancelled: 'ملغي' }
-  const statusColor = { pending: 'bg-yellow-50 text-yellow-600', confirmed: 'bg-blue-50 text-blue-600',
-                        done: 'bg-green-50 text-green-600', cancelled: 'bg-red-50 text-red-500' }
-
-  el.innerHTML = state.orders.map(o => `
-    <div class="bg-white rounded-2xl p-4 shadow-sm">
-      <div class="flex items-center justify-between mb-3">
-        <div>
-          <p class="font-extrabold text-gray-800">${o.order_number}</p>
-          ${o.table_number ? `<p class="text-xs text-gray-400">طاولة ${o.table_number}</p>` : ''}
-        </div>
-        <div class="flex items-center gap-2">
-          <span class="text-xs font-bold px-3 py-1 rounded-full ${statusColor[o.status]}">
-            ${statusLabel[o.status]}
-          </span>
-          <select onchange="updateOrderStatus('${o.id}', this.value)"
-                  class="text-xs border border-gray-200 rounded-xl px-2 py-1 bg-white focus:outline-none">
-            <option value="pending"   ${o.status==='pending'   ? 'selected':''}>جديد</option>
-            <option value="confirmed" ${o.status==='confirmed' ? 'selected':''}>مؤكد</option>
-            <option value="done"      ${o.status==='done'      ? 'selected':''}>منتهي</option>
-            <option value="cancelled" ${o.status==='cancelled' ? 'selected':''}>ملغي</option>
-          </select>
-        </div>
-      </div>
-      <div class="space-y-1 border-t border-gray-50 pt-3">
-        ${o.items.map(i => `
-          <div class="flex justify-between text-sm">
-            <span class="text-gray-600">${i.name} × ${i.qty}</span>
-            <span class="font-bold text-gray-800">${i.subtotal.toFixed(2)} ر.س</span>
-          </div>
-        `).join('')}
-        <div class="flex justify-between text-sm font-extrabold pt-2 border-t border-gray-100">
-          <span>الإجمالي</span>
-          <span class="text-orange-500">${Number(o.total).toFixed(2)} ر.س</span>
-        </div>
-      </div>
-      <p class="text-xs text-gray-300 mt-2">
-        ${new Date(o.created_at).toLocaleString('ar-EG')}
-      </p>
-    </div>
-  `).join('')
-}
-
-async function updateOrderStatus(id, status) {
-  await db.from('orders').update({ status }).eq('id', id)
-  await loadOrders()
-  showToast('تم تحديث حالة الطلب')
-}
-
-function resetColor() {
-  const DEFAULT_COLOR = '#FF6B00'
-  document.getElementById('set-color').value     = DEFAULT_COLOR
-  document.getElementById('set-color-hex').value = DEFAULT_COLOR
-  if (pickrInstance) pickrInstance.setColor(DEFAULT_COLOR)
-  showToast('تم إعادة اللون للافتراضي')
-}
-
-// ─── SETTINGS ─────────────────────────────
-// نسخة احتياطية للتراجع
-let settingsSnapshot = null
-
-async function saveSettings() {
-  const name      = document.getElementById('set-name').value.trim()
-  const whatsapp  = document.getElementById('set-whatsapp').value.trim()
-  const logo_url  = document.getElementById('set-logo').value.trim() || null
-  const cover_url = document.getElementById('set-cover').value.trim() || null
-  const primary   = document.getElementById('set-color').value
-  const msgEl     = document.getElementById('settings-msg')
-
-  if (!name || !whatsapp) {
-    msgEl.textContent = 'الاسم والواتساب مطلوبان'
-    msgEl.className = 'text-center text-sm text-red-500'
-    msgEl.classList.remove('hidden')
-    return
-  }
-
-  // حفظ snapshot قبل التعديل
-  settingsSnapshot = {
-    name:     document.getElementById('set-name').dataset.original || name,
-    whatsapp: document.getElementById('set-whatsapp').dataset.original || whatsapp,
-    logo_url: document.getElementById('set-logo').dataset.original || logo_url,
-    primary:  document.getElementById('set-color').dataset.original || primary
-  }
-
-  const { error } = await db.from('restaurants').update({
-    name, whatsapp, logo_url, cover_url,
-    theme: { primary, secondary: '#1A1A1A' }
-  }).eq('id', state.restaurant.id)
-
-  if (error) {
-    msgEl.textContent = 'حدث خطأ أثناء الحفظ'
-    msgEl.className = 'text-center text-sm text-red-500'
-  } else {
-    // حفظ القيم الأصلية للتراجع
-    document.getElementById('set-name').dataset.original     = name
-    document.getElementById('set-whatsapp').dataset.original = whatsapp
-    document.getElementById('set-logo').dataset.original     = logo_url || ''
-    document.getElementById('set-color').dataset.original    = primary
-
-    state.restaurant.name = name
-    document.getElementById('dash-restaurant-name').textContent = name
-    document.getElementById('undo-settings-btn').classList.remove('hidden')
-    msgEl.textContent = 'تم الحفظ بنجاح ✅'
-    msgEl.className = 'text-center text-sm text-green-500'
-    showToast('تم حفظ الإعدادات ✅')
-  }
-  msgEl.classList.remove('hidden')
-  setTimeout(() => msgEl.classList.add('hidden'), 3000)
-}
-
-function undoSettings() {
-  if (!settingsSnapshot) return
-  document.getElementById('set-name').value     = settingsSnapshot.name
-  document.getElementById('set-whatsapp').value = settingsSnapshot.whatsapp
-  document.getElementById('set-logo').value     = settingsSnapshot.logo_url || ''
-  document.getElementById('set-color').value    = settingsSnapshot.primary
-  document.getElementById('set-color-hex').value = settingsSnapshot.primary
-  document.getElementById('undo-settings-btn').classList.add('hidden')
-  settingsSnapshot = null
-  showToast('تم التراجع عن التعديلات')
-}
-
-// ─── DISCOUNT PREVIEW ─────────────────────
 function updateDiscountPreview() {
-  const price    = parseFloat(document.getElementById('pm-price').value)
-  const discount = parseFloat(document.getElementById('pm-discount').value)
-  const preview  = document.getElementById('discount-preview')
-
-  if (!isNaN(price) && !isNaN(discount) && discount > 0 && discount < price) {
-    const percent = Math.round((1 - discount / price) * 100)
-    document.getElementById('dp-original').textContent   = price.toFixed(2) + ' ر.س'
-    document.getElementById('dp-discounted').textContent = discount.toFixed(2) + ' ر.س'
-    document.getElementById('dp-percent').textContent    = 'خصم ' + percent + '%'
+  const price=parseFloat(document.getElementById('pm-price').value), discount=parseFloat(document.getElementById('pm-discount').value)
+  const preview=document.getElementById('discount-preview')
+  if (!isNaN(price)&&!isNaN(discount)&&discount>0&&discount<price) {
+    const percent=Math.round((1-discount/price)*100)
+    document.getElementById('dp-original').textContent=price.toFixed(2)+' ج.م'
+    document.getElementById('dp-discounted').textContent=discount.toFixed(2)+' ج.م'
+    document.getElementById('dp-percent').textContent='خصم '+percent+'%'
     preview.classList.remove('hidden')
-  } else {
-    preview.classList.add('hidden')
-  }
+  } else { preview.classList.add('hidden') }
 }
-async function uploadToSupabase(file, bucket, path) {
-  const { data, error } = await db.storage
-    .from(bucket)
-    .upload(path, file, { upsert: true, contentType: file.type })
+async function toggleDiscount(id,current) { await db.from('products').update({discount_active:!current}).eq('id',id); await loadProducts(); showToast(!current?'🏷️ تم تفعيل الخصم':'تم إلغاء الخصم') }
+async function toggleAvailability(id,current) { await db.from('products').update({is_available:!current}).eq('id',id); await loadProducts(); showToast(!current?'✅ المنتج متاح الآن':'🚫 تم إخفاء المنتج') }
 
-  if (error) throw error
-
-  const { data: urlData } = db.storage.from(bucket).getPublicUrl(path)
-  return urlData.publicUrl
-}
-
-async function uploadLogoFile(input) {
-  const file = input.files[0]
-  if (!file) return
-  const msgEl = document.getElementById('logo-upload-msg')
-  msgEl.textContent = 'جاري الرفع...'
-  msgEl.classList.remove('hidden')
-
-  try {
-    const path = `logos/${state.restaurant.id}-${Date.now()}.${file.name.split('.').pop()}`
-    const url  = await uploadToSupabase(file, 'restaurant-images', path)
-    document.getElementById('set-logo').value = url
-    const preview = document.getElementById('logo-preview')
-    const wrap    = document.getElementById('logo-preview-wrap')
-    preview.src   = url
-    wrap.classList.remove('hidden')
-    msgEl.textContent = 'تم الرفع بنجاح ✅'
-  } catch (e) {
-    msgEl.textContent = 'فشل الرفع — جرب رابط URL بدلاً منه'
-  }
-}
-
-async function uploadCoverFile(input) {
-  const file = input.files[0]
-  if (!file) return
-  const msgEl = document.getElementById('cover-upload-msg')
-  msgEl.textContent = 'جاري الرفع...'
-  msgEl.classList.remove('hidden')
-  try {
-    const path = `covers/${state.restaurant.id}-${Date.now()}.${file.name.split('.').pop()}`
-    const url  = await uploadToSupabase(file, 'restaurant-images', path)
-    document.getElementById('set-cover').value = url
-    const preview = document.getElementById('cover-preview')
-    const wrap    = document.getElementById('cover-preview-wrap')
-    preview.src   = url
-    wrap.classList.remove('hidden')
-    msgEl.textContent = 'تم الرفع بنجاح ✅'
-  } catch (e) {
-    msgEl.textContent = 'فشل الرفع — جرب رابط URL بدلاً منه'
-  }
-}
-
-async function uploadBundleImage(input) {
-  const file = input.files[0]
-  if (!file) return
-  const msgEl = document.getElementById('bundle-upload-msg')
-  msgEl.textContent = 'جاري الرفع...'
-  msgEl.classList.remove('hidden')
-  try {
-    const path = `bundles/${state.restaurant.id}-${Date.now()}.${file.name.split('.').pop()}`
-    const url  = await uploadToSupabase(file, 'restaurant-images', path)
-    document.getElementById('bm-image').value = url
-    const preview = document.getElementById('bm-image-preview')
-    const wrap    = document.getElementById('bm-image-preview-wrap')
-    preview.src   = url
-    wrap.classList.remove('hidden')
-    msgEl.textContent = 'تم الرفع بنجاح ✅'
-  } catch (e) {
-    msgEl.textContent = 'فشل الرفع — جرب رابط URL بدلاً منه'
-  }
-}
-
-async function uploadProductImage(input) {
-  const file = input.files[0]
-  if (!file) return
-  const msgEl = document.getElementById('product-upload-msg')
-  msgEl.textContent = 'جاري الرفع...'
-  msgEl.classList.remove('hidden')
-
-  try {
-    const path = `products/${state.restaurant.id}-${Date.now()}.${file.name.split('.').pop()}`
-    const url  = await uploadToSupabase(file, 'restaurant-images', path)
-    document.getElementById('pm-image').value = url
-    const preview = document.getElementById('pm-image-preview')
-    const wrap    = document.getElementById('pm-image-preview-wrap')
-    preview.src   = url
-    wrap.classList.remove('hidden')
-    msgEl.textContent = 'تم الرفع بنجاح ✅'
-  } catch (e) {
-    msgEl.textContent = 'فشل الرفع — جرب رابط URL بدلاً منه'
-  }
-}
-
-// ─── UI HELPERS ───────────────────────────
-function showScreen(name) {
-  document.getElementById('screen-login').classList.add('hidden')
-  document.getElementById('screen-dashboard').classList.add('hidden')
-  document.getElementById('screen-' + name).classList.remove('hidden')
-}
-
-function showTab(name) {
-  const tabs = ['products','categories','bundles','orders','analytics','settings']
-  tabs.forEach(t => {
-    document.getElementById('tab-content-' + t).classList.add('hidden')
-    document.getElementById('tab-' + t).classList.remove('tab-active')
-    document.getElementById('tab-' + t).classList.add('text-gray-400')
-  })
-  document.getElementById('tab-content-' + name).classList.remove('hidden')
-  document.getElementById('tab-' + name).classList.add('tab-active')
-  document.getElementById('tab-' + name).classList.remove('text-gray-400')
-
-  if (name === 'orders')    loadOrders()
-  if (name === 'bundles')   loadBundles()
-  if (name === 'analytics') loadAnalytics()
-}
-
-function showToast(msg) {
-  const t = document.getElementById('toast')
-  t.innerHTML = msg
-  t.classList.remove('hidden')
-  setTimeout(() => t.classList.add('hidden'), 2500)
-}
-
-function showToastWithUndo(msg, undoFn) {
-  const t = document.getElementById('toast')
-  t.innerHTML = `${msg} &nbsp;
-    <button onclick="(${undoFn.toString()})()"
-            class="underline font-extrabold text-orange-300 mr-2">تراجع</button>`
-  t.classList.remove('hidden')
-  setTimeout(() => t.classList.add('hidden'), 5000)
-}
-
-// ─── TOGGLE DISCOUNT ──────────────────────
-async function toggleDiscount(id, currentState) {
-  await db.from('products')
-    .update({ discount_active: !currentState })
-    .eq('id', id)
-  await loadProducts()
-  showToast(!currentState ? '🏷️ تم تفعيل الخصم' : 'تم إلغاء الخصم')
-}
-
-// ─── TOGGLE AVAILABILITY ──────────────────
-async function toggleAvailability(id, currentState) {
-  await db.from('products')
-    .update({ is_available: !currentState })
-    .eq('id', id)
-  await loadProducts()
-  showToast(!currentState ? '✅ المنتج متاح الآن' : '🚫 تم إخفاء المنتج')
-}
-
-// ─── BUNDLES ──────────────────────────────
-let state_bundles = []
-
+// ── BUNDLES ──
 async function loadBundles() {
-  const { data } = await db
-    .from('bundles')
-    .select('*')
-    .eq('restaurant_id', state.restaurant.id)
-    .order('created_at', { ascending: false })
-  state_bundles = data || []
-  renderBundles()
+  const { data }=await db.from('bundles').select('*').eq('restaurant_id',state.restaurant.id).order('created_at',{ascending:false})
+  state_bundles=data||[]; renderBundles()
 }
-
 function renderBundles() {
-  const el = document.getElementById('bundles-list')
-  if (!state_bundles.length) {
-    el.innerHTML = `<p class="text-center text-gray-400 text-sm py-8">لا توجد عروض مجمعة بعد</p>`
-    return
-  }
-  el.innerHTML = state_bundles.map(b => {
-    const items = (b.items || []).map(i => `${i.name} × ${i.quantity}`).join(' + ')
-    return `
-    <div class="bg-white rounded-2xl p-4 shadow-sm border border-gray-100">
+  const el=document.getElementById('bundles-list')
+  if (!state_bundles.length) { el.innerHTML=`<p class="text-center text-gray-400 text-sm py-8">لا توجد عروض مجمعة بعد</p>`; return }
+  el.innerHTML=state_bundles.map(b=>{
+    const items=(b.items||[]).map(i=>`${i.name}×${i.quantity}`).join(' + ')
+    return `<div class="bg-white rounded-2xl p-4 shadow-sm border border-gray-100">
       <div class="flex items-start justify-between">
         <div class="flex-1">
-          <div class="flex items-center gap-2">
-            <p class="font-bold text-gray-800">🎁 ${b.name}</p>
-            <span class="text-xs px-2 py-0.5 rounded-full ${b.is_active ? 'bg-green-50 text-green-500' : 'bg-gray-100 text-gray-400'}">
-              ${b.is_active ? 'نشط' : 'متوقف'}
-            </span>
-          </div>
-          ${b.description ? `<p class="text-xs text-gray-400 mt-1">${b.description}</p>` : ''}
-          ${items ? `<p class="text-xs text-orange-500 mt-1">${items}</p>` : ''}
+          <div class="flex items-center gap-2"><p class="font-bold text-gray-800">🎁 ${b.name}</p><span class="text-xs px-2 py-0.5 rounded-full ${b.is_active?'bg-green-50 text-green-500':'bg-gray-100 text-gray-400'}">${b.is_active?'نشط':'متوقف'}</span></div>
+          ${b.description?`<p class="text-xs text-gray-400 mt-1">${b.description}</p>`:''}
+          ${items?`<p class="text-xs text-orange-500 mt-1">${items}</p>`:''}
           <p class="font-extrabold text-orange-500 mt-2">${Number(b.price).toFixed(2)} ج.م</p>
         </div>
       </div>
       <div class="flex gap-2 mt-3">
-        <button onclick="toggleBundle('${b.id}', ${b.is_active})"
-                class="flex-1 text-xs font-bold px-3 py-2 rounded-xl
-                       ${b.is_active ? 'bg-gray-100 text-gray-600' : 'bg-green-500 text-white'}">
-          ${b.is_active ? 'إيقاف' : 'تفعيل'}
-        </button>
-        <button onclick="openBundleModal('${b.id}')"
-                class="flex-1 text-xs bg-gray-100 text-gray-600 font-bold px-3 py-2 rounded-xl">تعديل</button>
-        <button onclick="deleteBundle('${b.id}')"
-                class="text-xs bg-red-50 text-red-500 font-bold px-3 py-2 rounded-xl">حذف</button>
+        <button onclick="toggleBundle('${b.id}',${b.is_active})" class="flex-1 text-xs font-bold px-3 py-2 rounded-xl ${b.is_active?'bg-gray-100 text-gray-600':'bg-green-500 text-white'}">${b.is_active?'إيقاف':'تفعيل'}</button>
+        <button onclick="openBundleModal('${b.id}')" class="flex-1 text-xs bg-gray-100 text-gray-600 font-bold px-3 py-2 rounded-xl">تعديل</button>
+        <button onclick="deleteBundle('${b.id}')" class="text-xs bg-red-50 text-red-500 font-bold px-3 py-2 rounded-xl">حذف</button>
       </div>
-    </div>`
-  }).join('')
+    </div>`}).join('')
 }
-
-function openBundleModal(id = null) {
-  document.getElementById('bm-id').value = id || ''
-  document.getElementById('bm-error').classList.add('hidden')
-
-  // تعبئة قائمة المنتجات كـ checkboxes
-  const container = document.getElementById('bm-products-checkboxes')
-  container.innerHTML = state.products.map(p => `
-    <label class="flex items-center gap-3 py-1 cursor-pointer">
-      <input type="checkbox" value="${p.id}" class="bundle-product-check w-4 h-4 accent-orange-500"
-             data-price="${p.price}" />
-      <span class="text-sm text-gray-700">${p.name}</span>
-      <span class="text-xs text-gray-400 mr-auto">${Number(p.price).toFixed(2)} ج.م</span>
-    </label>
-  `).join('')
-
+function openBundleModal(id=null) {
+  document.getElementById('bm-id').value=id||''; document.getElementById('bm-error').classList.add('hidden')
+  const container=document.getElementById('bm-products-checkboxes')
+  container.innerHTML=state.products.map(p=>`<label class="flex items-center gap-3 py-1 cursor-pointer"><input type="checkbox" value="${p.id}" class="bundle-product-check w-4 h-4 accent-orange-500" /><span class="text-sm text-gray-700">${p.name}</span><span class="text-xs text-gray-400 mr-auto">${Number(p.price).toFixed(2)} ج.م</span></label>`).join('')
   if (id) {
-    const b = state_bundles.find(x => x.id === id)
-    document.getElementById('bm-name').value  = b.name
-    document.getElementById('bm-desc').value  = b.description || ''
-    document.getElementById('bm-price').value = b.price
-    document.getElementById('bm-image').value = b.image_url || ''
-    document.getElementById('bm-active').checked = b.is_active
-    document.getElementById('bundle-modal-title').textContent = 'تعديل العرض'
-    if (b.image_url) {
-      document.getElementById('bm-image-preview').src = b.image_url
-      document.getElementById('bm-image-preview-wrap').classList.remove('hidden')
-    }
-    // تحديد المنتجات المضمنة
-    const selectedIds = (b.items || []).map(i => i.product_id)
-    container.querySelectorAll('.bundle-product-check').forEach(cb => {
-      if (selectedIds.includes(cb.value)) cb.checked = true
-    })
+    const b=state_bundles.find(x=>x.id===id)
+    document.getElementById('bm-name').value=b.name; document.getElementById('bm-desc').value=b.description||''
+    document.getElementById('bm-price').value=b.price; document.getElementById('bm-image').value=b.image_url||''
+    document.getElementById('bm-active').checked=b.is_active; document.getElementById('bundle-modal-title').textContent='تعديل العرض'
+    if (b.image_url) { document.getElementById('bm-image-preview').src=b.image_url; document.getElementById('bm-image-preview-wrap').classList.remove('hidden') }
+    const selectedIds=(b.items||[]).map(i=>i.product_id)
+    container.querySelectorAll('.bundle-product-check').forEach(cb=>{ if (selectedIds.includes(cb.value)) cb.checked=true })
   } else {
-    document.getElementById('bm-name').value  = ''
-    document.getElementById('bm-desc').value  = ''
-    document.getElementById('bm-price').value = ''
-    document.getElementById('bm-image').value = ''
-    document.getElementById('bm-image-preview-wrap').classList.add('hidden')
-    document.getElementById('bm-active').checked = true
-    document.getElementById('bundle-modal-title').textContent = 'عرض مجمع جديد'
+    ['bm-name','bm-desc','bm-price','bm-image'].forEach(id=>document.getElementById(id).value='')
+    document.getElementById('bm-image-preview-wrap').classList.add('hidden'); document.getElementById('bm-active').checked=true; document.getElementById('bundle-modal-title').textContent='عرض مجمع جديد'
   }
   document.getElementById('modal-bundle').classList.remove('hidden')
 }
-
-function closeBundleModal() {
-  document.getElementById('modal-bundle').classList.add('hidden')
-}
-
+function closeBundleModal() { document.getElementById('modal-bundle').classList.add('hidden') }
 async function saveBundle() {
-  const id    = document.getElementById('bm-id').value
-  const name  = document.getElementById('bm-name').value.trim()
-  const price = parseFloat(document.getElementById('bm-price').value)
-  const errEl = document.getElementById('bm-error')
-
-  const selectedProducts = [...document.querySelectorAll('.bundle-product-check:checked')]
-    .map(cb => cb.value)
-
-  if (!name)              { errEl.textContent = 'اسم العرض مطلوب';         errEl.classList.remove('hidden'); return }
-  if (isNaN(price))       { errEl.textContent = 'السعر غير صحيح';          errEl.classList.remove('hidden'); return }
-  if (!selectedProducts.length) { errEl.textContent = 'اختر منتجاً واحداً على الأقل'; errEl.classList.remove('hidden'); return }
+  const id=document.getElementById('bm-id').value, name=document.getElementById('bm-name').value.trim()
+  const price=parseFloat(document.getElementById('bm-price').value)
+  const selectedProducts=[...document.querySelectorAll('.bundle-product-check:checked')].map(cb=>cb.value)
+  const errEl=document.getElementById('bm-error')
+  if (!name) { errEl.textContent='اسم العرض مطلوب'; errEl.classList.remove('hidden'); return }
+  if (isNaN(price)) { errEl.textContent='السعر غير صحيح'; errEl.classList.remove('hidden'); return }
+  if (!selectedProducts.length) { errEl.textContent='اختر منتجاً واحداً على الأقل'; errEl.classList.remove('hidden'); return }
   errEl.classList.add('hidden')
-
-  const items = selectedProducts.map(pid => {
-    const prod = state.products.find(p => p.id === pid)
-    return { product_id: pid, name: prod?.name || '', price: prod?.price || 0, quantity: 1 }
-  })
-
-  const payload = {
-    name,
-    description:   document.getElementById('bm-desc').value.trim() || null,
-    price,
-    items,
-    image_url:     document.getElementById('bm-image').value.trim() || null,
-    is_active:     document.getElementById('bm-active').checked,
-    restaurant_id: state.restaurant.id
-  }
-
-  if (id) {
-    const { error } = await db.from('bundles').update(payload).eq('id', id)
-    if (error) { errEl.textContent = 'خطأ: ' + error.message; errEl.classList.remove('hidden'); return }
-  } else {
-    const { error } = await db.from('bundles').insert(payload)
-    if (error) { errEl.textContent = 'خطأ: ' + error.message; errEl.classList.remove('hidden'); return }
-  }
-
-  closeBundleModal()
-  await loadBundles()
-  showToast(id ? 'تم تعديل العرض ✅' : 'تم إضافة العرض ✅')
+  const items=selectedProducts.map(pid=>{ const prod=state.products.find(p=>p.id===pid); return {product_id:pid,name:prod?.name||'',price:prod?.price||0,quantity:1} })
+  const payload={name,description:document.getElementById('bm-desc').value.trim()||null,price,items,image_url:document.getElementById('bm-image').value.trim()||null,is_active:document.getElementById('bm-active').checked,restaurant_id:state.restaurant.id}
+  if (id) { const{error}=await db.from('bundles').update(payload).eq('id',id); if(error){errEl.textContent='خطأ: '+error.message;errEl.classList.remove('hidden');return} }
+  else    { const{error}=await db.from('bundles').insert(payload); if(error){errEl.textContent='خطأ: '+error.message;errEl.classList.remove('hidden');return} }
+  closeBundleModal(); await loadBundles(); showToast(id?'تم تعديل العرض ✅':'تم إضافة العرض ✅')
 }
+async function toggleBundle(id,current) { await db.from('bundles').update({is_active:!current}).eq('id',id); await loadBundles(); showToast(!current?'تم تفعيل العرض':'تم إيقاف العرض') }
+async function deleteBundle(id) { if (!confirm('هل تريد حذف هذا العرض؟')) return; await db.from('bundles').delete().eq('id',id); await loadBundles(); showToast('تم حذف العرض') }
 
-async function toggleBundle(id, currentState) {
-  await db.from('bundles').update({ is_active: !currentState }).eq('id', id)
-  await loadBundles()
-  showToast(!currentState ? 'تم تفعيل العرض' : 'تم إيقاف العرض')
+// ── ORDERS ──
+async function loadOrders() {
+  const{data}=await db.from('orders').select('*').eq('restaurant_id',state.restaurant.id).order('created_at',{ascending:false}).limit(50)
+  state.orders=data||[]; renderOrders()
 }
-
-async function deleteBundle(id) {
-  if (!confirm('هل تريد حذف هذا العرض؟')) return
-  await db.from('bundles').delete().eq('id', id)
-  await loadBundles()
-  showToast('تم حذف العرض')
-}
-
-// ─── ANALYTICS ────────────────────────────
-async function loadAnalytics() {
-  const restId = state.restaurant.id
-
-  // إجمالي الطلبات والإيرادات
-  const { data: orders } = await db
-    .from('orders')
-    .select('total, items, created_at')
-    .eq('restaurant_id', restId)
-    .neq('status', 'cancelled')
-
-  const total   = (orders || []).reduce((s, o) => s + Number(o.total), 0)
-  const today   = new Date().toDateString()
-  const todayOrders = (orders || []).filter(o =>
-    new Date(o.created_at).toDateString() === today
-  ).length
-
-  document.getElementById('stat-total-orders').textContent   = orders?.length || 0
-  document.getElementById('stat-total-revenue').textContent  = total.toFixed(2)
-  document.getElementById('stat-today-orders').textContent   = todayOrders
-  document.getElementById('stat-products-count').textContent = state.products.length
-
-  // Best Sellers — نحسب من الـ items JSONB
-  const counter = {}
-  ;(orders || []).forEach(o => {
-    ;(o.items || []).forEach(item => {
-      counter[item.name] = (counter[item.name] || 0) + (item.qty || 1)
-    })
-  })
-  const sorted = Object.entries(counter)
-    .sort((a, b) => b[1] - a[1])
-    .slice(0, 5)
-
-  const bsEl = document.getElementById('best-sellers-list')
-  bsEl.innerHTML = sorted.length
-    ? sorted.map(([name, qty], i) => `
-      <div class="flex items-center justify-between py-2 border-b border-gray-50 last:border-0">
+function renderOrders() {
+  const el=document.getElementById('orders-list')
+  if (!state.orders.length) { el.innerHTML=`<p class="text-center text-gray-400 text-sm py-8">لا توجد طلبات بعد</p>`; return }
+  const statusLabel={pending:'جديد',confirmed:'مؤكد',done:'منتهي',cancelled:'ملغي'}
+  const statusColor={pending:'bg-yellow-50 text-yellow-600',confirmed:'bg-blue-50 text-blue-600',done:'bg-green-50 text-green-600',cancelled:'bg-red-50 text-red-500'}
+  el.innerHTML=state.orders.map(o=>`
+    <div class="bg-white rounded-2xl p-4 shadow-sm">
+      <div class="flex items-center justify-between mb-3">
+        <div><p class="font-extrabold text-gray-800">${o.order_number}</p>${o.table_number?`<p class="text-xs text-gray-400">طاولة ${o.table_number}</p>`:''}</div>
         <div class="flex items-center gap-2">
-          <span class="text-lg">${['🥇','🥈','🥉','4️⃣','5️⃣'][i]}</span>
-          <span class="text-sm text-gray-700 font-bold">${name}</span>
+          <span class="text-xs font-bold px-3 py-1 rounded-full ${statusColor[o.status]}">${statusLabel[o.status]}</span>
+          <select onchange="updateOrderStatus('${o.id}',this.value)" class="text-xs border border-gray-200 rounded-xl px-2 py-1 bg-white focus:outline-none">
+            <option value="pending" ${o.status==='pending'?'selected':''}>جديد</option>
+            <option value="confirmed" ${o.status==='confirmed'?'selected':''}>مؤكد</option>
+            <option value="done" ${o.status==='done'?'selected':''}>منتهي</option>
+            <option value="cancelled" ${o.status==='cancelled'?'selected':''}>ملغي</option>
+          </select>
         </div>
-        <span class="text-xs bg-orange-50 text-orange-500 font-bold px-2 py-1 rounded-full">${qty} طلب</span>
-      </div>`).join('')
-    : `<p class="text-center text-gray-400 text-sm py-4">لا توجد طلبات بعد</p>`
+      </div>
+      <div class="space-y-1 border-t border-gray-50 pt-3">
+        ${o.items.map(i=>`<div class="flex justify-between text-sm"><span class="text-gray-600">${i.name} × ${i.qty}</span><span class="font-bold text-gray-800">${i.subtotal.toFixed(2)} ج.م</span></div>`).join('')}
+        <div class="flex justify-between text-sm font-extrabold pt-2 border-t border-gray-100"><span>الإجمالي</span><span class="text-orange-500">${Number(o.total).toFixed(2)} ج.م</span></div>
+      </div>
+      <p class="text-xs text-gray-300 mt-2">${new Date(o.created_at).toLocaleString('ar-EG')}</p>
+    </div>`).join('')
+}
+async function updateOrderStatus(id,status) { await db.from('orders').update({status}).eq('id',id); await loadOrders(); showToast('تم تحديث حالة الطلب') }
 
-  // آخر 5 منتجات
-  const recent = [...state.products]
-    .sort((a, b) => new Date(b.created_at||0) - new Date(a.created_at||0))
-    .slice(0, 5)
-
-  const rpEl = document.getElementById('recent-products-list')
-  rpEl.innerHTML = recent.length
-    ? recent.map(p => `
-      <div class="flex items-center justify-between py-2 border-b border-gray-50 last:border-0">
-        <span class="text-sm text-gray-700 font-bold">${p.name}</span>
-        <span class="text-xs text-gray-400">${Number(p.price).toFixed(2)} ج.م</span>
-      </div>`).join('')
-    : `<p class="text-center text-gray-400 text-sm py-4">لا توجد منتجات</p>`
+// ── SETTINGS ──
+function resetColor() {
+  const D='#FF6B00'; document.getElementById('set-color').value=D; document.getElementById('set-color-hex').value=D
+  if (pickrInstance) pickrInstance.setColor(D); showToast('تم إعادة اللون للافتراضي')
+}
+async function saveSettings() {
+  const name=document.getElementById('set-name').value.trim(), whatsapp=document.getElementById('set-whatsapp').value.trim()
+  const logo_url=document.getElementById('set-logo').value.trim()||null, cover_url=document.getElementById('set-cover').value.trim()||null
+  const primary=document.getElementById('set-color').value, msgEl=document.getElementById('settings-msg')
+  if (!name||!whatsapp) { msgEl.textContent='الاسم والواتساب مطلوبان'; msgEl.className='text-center text-sm text-red-500'; msgEl.classList.remove('hidden'); return }
+  settingsSnapshot={name:document.getElementById('set-name').dataset.original||name,whatsapp:document.getElementById('set-whatsapp').dataset.original||whatsapp,logo_url:document.getElementById('set-logo').dataset.original||logo_url,primary:document.getElementById('set-color').dataset.original||primary}
+  const{error}=await db.from('restaurants').update({name,whatsapp,logo_url,cover_url,theme:{primary,secondary:'#1A1A1A'}}).eq('id',state.restaurant.id)
+  if (error) { msgEl.textContent='حدث خطأ أثناء الحفظ'; msgEl.className='text-center text-sm text-red-500' }
+  else {
+    document.getElementById('set-name').dataset.original=name; document.getElementById('set-whatsapp').dataset.original=whatsapp
+    document.getElementById('set-logo').dataset.original=logo_url||''; document.getElementById('set-color').dataset.original=primary
+    state.restaurant.name=name; document.getElementById('dash-restaurant-name').textContent=name
+    document.getElementById('undo-settings-btn').classList.remove('hidden')
+    msgEl.textContent='تم الحفظ بنجاح ✅'; msgEl.className='text-center text-sm text-green-500'; showToast('تم حفظ الإعدادات ✅')
+  }
+  msgEl.classList.remove('hidden'); setTimeout(()=>msgEl.classList.add('hidden'),3000)
+}
+function undoSettings() {
+  if (!settingsSnapshot) return
+  document.getElementById('set-name').value=settingsSnapshot.name; document.getElementById('set-whatsapp').value=settingsSnapshot.whatsapp
+  document.getElementById('set-logo').value=settingsSnapshot.logo_url||''; document.getElementById('set-color').value=settingsSnapshot.primary
+  document.getElementById('set-color-hex').value=settingsSnapshot.primary; document.getElementById('undo-settings-btn').classList.add('hidden')
+  settingsSnapshot=null; showToast('تم التراجع عن التعديلات')
 }
 
-// ─── START ────────────────────────────────
+// ── ANALYTICS ──
+async function loadAnalytics() {
+  const restId=state.restaurant.id
+  const{data:orders}=await db.from('orders').select('total,items,created_at').eq('restaurant_id',restId).neq('status','cancelled')
+  const total=(orders||[]).reduce((s,o)=>s+Number(o.total),0)
+  const today=new Date().toDateString()
+  const todayOrders=(orders||[]).filter(o=>new Date(o.created_at).toDateString()===today).length
+  document.getElementById('stat-total-orders').textContent=orders?.length||0
+  document.getElementById('stat-total-revenue').textContent=total.toFixed(2)
+  document.getElementById('stat-today-orders').textContent=todayOrders
+  document.getElementById('stat-products-count').textContent=state.products.length
+  const counter={}
+  ;(orders||[]).forEach(o=>{;(o.items||[]).forEach(item=>{counter[item.name]=(counter[item.name]||0)+(item.qty||1)})})
+  const sorted=Object.entries(counter).sort((a,b)=>b[1]-a[1]).slice(0,5)
+  const bsEl=document.getElementById('best-sellers-list')
+  bsEl.innerHTML=sorted.length?sorted.map(([name,qty],i)=>`<div class="flex items-center justify-between py-2 border-b border-gray-50 last:border-0"><div class="flex items-center gap-2"><span class="text-lg">${['🥇','🥈','🥉','4️⃣','5️⃣'][i]}</span><span class="text-sm text-gray-700 font-bold">${name}</span></div><span class="text-xs bg-orange-50 text-orange-500 font-bold px-2 py-1 rounded-full">${qty} طلب</span></div>`).join(''):`<p class="text-center text-gray-400 text-sm py-4">لا توجد طلبات بعد</p>`
+  const recent=[...state.products].sort((a,b)=>new Date(b.created_at||0)-new Date(a.created_at||0)).slice(0,5)
+  const rpEl=document.getElementById('recent-products-list')
+  rpEl.innerHTML=recent.length?recent.map(p=>`<div class="flex items-center justify-between py-2 border-b border-gray-50 last:border-0"><span class="text-sm text-gray-700 font-bold">${p.name}</span><span class="text-xs text-gray-400">${Number(p.price).toFixed(2)} ج.م</span></div>`).join(''):`<p class="text-center text-gray-400 text-sm py-4">لا توجد منتجات</p>`
+}
+
+// ── UPLOAD HELPERS ──
+async function uploadToSupabase(file,bucket,path) {
+  const{data,error}=await db.storage.from(bucket).upload(path,file,{upsert:true,contentType:file.type})
+  if (error) throw error
+  const{data:urlData}=db.storage.from(bucket).getPublicUrl(path)
+  return urlData.publicUrl
+}
+async function uploadLogoFile(input) {
+  const file=input.files[0]; if (!file) return
+  const msgEl=document.getElementById('logo-upload-msg'); msgEl.textContent='جاري الرفع...'; msgEl.classList.remove('hidden')
+  try { const path=`logos/${state.restaurant.id}-${Date.now()}.${file.name.split('.').pop()}`; const url=await uploadToSupabase(file,'restaurant-images',path); document.getElementById('set-logo').value=url; document.getElementById('logo-preview').src=url; document.getElementById('logo-preview-wrap').classList.remove('hidden'); msgEl.textContent='تم الرفع بنجاح ✅' }
+  catch(e) { msgEl.textContent='فشل الرفع — جرب رابط URL' }
+}
+async function uploadCoverFile(input) {
+  const file=input.files[0]; if (!file) return
+  const msgEl=document.getElementById('cover-upload-msg'); msgEl.textContent='جاري الرفع...'; msgEl.classList.remove('hidden')
+  try { const path=`covers/${state.restaurant.id}-${Date.now()}.${file.name.split('.').pop()}`; const url=await uploadToSupabase(file,'restaurant-images',path); document.getElementById('set-cover').value=url; document.getElementById('cover-preview').src=url; document.getElementById('cover-preview-wrap').classList.remove('hidden'); msgEl.textContent='تم الرفع بنجاح ✅' }
+  catch(e) { msgEl.textContent='فشل الرفع — جرب رابط URL' }
+}
+async function uploadBundleImage(input) {
+  const file=input.files[0]; if (!file) return
+  const msgEl=document.getElementById('bundle-upload-msg'); msgEl.textContent='جاري الرفع...'; msgEl.classList.remove('hidden')
+  try { const path=`bundles/${state.restaurant.id}-${Date.now()}.${file.name.split('.').pop()}`; const url=await uploadToSupabase(file,'restaurant-images',path); document.getElementById('bm-image').value=url; document.getElementById('bm-image-preview').src=url; document.getElementById('bm-image-preview-wrap').classList.remove('hidden'); msgEl.textContent='تم الرفع بنجاح ✅' }
+  catch(e) { msgEl.textContent='فشل الرفع — جرب رابط URL' }
+}
+async function uploadProductImage(input) {
+  const file=input.files[0]; if (!file) return
+  const msgEl=document.getElementById('product-upload-msg'); msgEl.textContent='جاري الرفع...'; msgEl.classList.remove('hidden')
+  try { const path=`products/${state.restaurant.id}-${Date.now()}.${file.name.split('.').pop()}`; const url=await uploadToSupabase(file,'restaurant-images',path); document.getElementById('pm-image').value=url; document.getElementById('pm-image-preview').src=url; document.getElementById('pm-image-preview-wrap').classList.remove('hidden'); msgEl.textContent='تم الرفع بنجاح ✅' }
+  catch(e) { msgEl.textContent='فشل الرفع — جرب رابط URL' }
+}
+
+// ── UI HELPERS ──
+function showScreen(name) {
+  document.getElementById('screen-login').classList.add('hidden'); document.getElementById('screen-dashboard').classList.add('hidden')
+  document.getElementById('screen-'+name).classList.remove('hidden')
+}
+function showTab(name) {
+  const tabs=['products','categories','bundles','banners','orders','analytics','settings']
+  tabs.forEach(t=>{
+    document.getElementById('tab-content-'+t).classList.add('hidden')
+    document.getElementById('tab-'+t).classList.remove('tab-active'); document.getElementById('tab-'+t).classList.add('text-gray-400')
+  })
+  document.getElementById('tab-content-'+name).classList.remove('hidden')
+  document.getElementById('tab-'+name).classList.add('tab-active'); document.getElementById('tab-'+name).classList.remove('text-gray-400')
+  if (name==='orders')    loadOrders()
+  if (name==='bundles')   loadBundles()
+  if (name==='analytics') loadAnalytics()
+  if (name==='banners')   loadBanners()
+}
+function showToast(msg) {
+  const t=document.getElementById('toast'); t.innerHTML=msg; t.classList.remove('hidden'); setTimeout(()=>t.classList.add('hidden'),2500)
+}
+function showToastWithUndo(msg,undoFn) {
+  const t=document.getElementById('toast')
+  t.innerHTML=`${msg} &nbsp;<button onclick="(${undoFn.toString()})()" class="underline font-extrabold text-orange-300 mr-2">تراجع</button>`
+  t.classList.remove('hidden'); setTimeout(()=>t.classList.add('hidden'),5000)
+}
+
 boot()
 </script>
 </body>
