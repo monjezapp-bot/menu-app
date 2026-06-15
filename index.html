@@ -37,66 +37,12 @@
     @keyframes slideUp { from { transform:translateY(100%); } to { transform:translateY(0); } }
     .sheet { animation: slideUp 0.32s cubic-bezier(0.34,1.1,0.64,1) both; }
 
-    @keyframes pageIn { from { transform:translateX(60px); opacity:0; } to { transform:translateX(0); opacity:1; } }
-    .page-in { animation: pageIn 0.25s cubic-bezier(0.25,0.46,0.45,0.94) both; }
-
     @keyframes modalIn { from { transform:translateY(60px); opacity:0; } to { transform:translateY(0); opacity:1; } }
     .modal-in { animation: modalIn 0.28s ease both; }
 
     @keyframes cartBounce { 0%,100% { transform:scale(1); } 40% { transform:scale(1.04); } }
+
     @keyframes fadeIn { from { opacity:0; } to { opacity:1; } }
-
-    /* ── Product Page ── */
-    .prod-page { max-width:480px; margin:0 auto; padding-bottom:90px; animation: pageIn 0.25s ease both; }
-    .prod-hero { position:relative; height:280px; background:#f0f0f0; overflow:hidden; }
-    .prod-hero img { width:100%; height:100%; object-fit:cover; }
-    .prod-hero-placeholder { width:100%; height:100%; display:flex; align-items:center; justify-content:center; font-size:80px; background:linear-gradient(135deg,#f5f5f5,#eee); }
-    .prod-hero-overlay { position:absolute; inset:0; background:linear-gradient(to top, rgba(0,0,0,0.45) 0%, transparent 55%); }
-    .prod-back-btn { position:absolute; top:16px; right:16px; width:38px; height:38px; border-radius:50%; background:rgba(0,0,0,0.35); backdrop-filter:blur(8px); border:none; color:#fff; font-size:22px; display:flex; align-items:center; justify-content:center; cursor:pointer; font-family:'Rubik',sans-serif; }
-    .prod-badge { position:absolute; bottom:16px; right:16px; background:var(--brand); color:#fff; font-size:11px; font-weight:900; padding:4px 12px; border-radius:20px; }
-
-    .prod-body { padding:18px 18px 0; }
-    .prod-name { font-size:21px; font-weight:900; color:#1a1a1a; line-height:1.3; margin-bottom:6px; }
-    .prod-price { font-size:19px; font-weight:900; color:var(--brand); margin-bottom:4px; }
-    .prod-price .old-price { font-size:13px; font-weight:500; color:#bbb; text-decoration:line-through; margin-right:8px; }
-    .prod-desc { font-size:13px; color:#888; line-height:1.8; margin-top:6px; }
-
-    .prod-divider { height:1px; background:#f0f0f0; margin:18px 0; }
-
-    /* خيارات */
-    .opt-group { margin-bottom:20px; }
-    .opt-group-header { display:flex; align-items:center; justify-content:space-between; margin-bottom:10px; }
-    .opt-group-name { font-size:14px; font-weight:900; color:#1a1a1a; }
-    .opt-required { font-size:10px; font-weight:700; color:#fff; background:var(--brand); padding:3px 10px; border-radius:20px; }
-    .opt-optional { font-size:10px; font-weight:700; color:#aaa; background:#f5f5f5; padding:3px 10px; border-radius:20px; }
-    .chips-wrap { display:flex; flex-wrap:wrap; gap:8px; }
-    .chip-btn { padding:9px 14px; border-radius:12px; border:1.5px solid #e8e8e8; background:#fff; font-size:12px; font-weight:700; color:#555; font-family:'Rubik',sans-serif; cursor:pointer; transition:all 0.15s; display:flex; flex-direction:column; align-items:center; gap:2px; }
-    .chip-btn .chip-extra { font-size:10px; color:#aaa; font-weight:500; }
-    .chip-btn.selected { background:var(--brand); border-color:var(--brand); color:#fff; }
-    .chip-btn.selected .chip-extra { color:rgba(255,255,255,0.75); }
-
-    /* تطلب معها */
-    .also-title { font-size:14px; font-weight:900; color:#1a1a1a; margin-bottom:10px; }
-    .also-scroll { display:flex; gap:10px; overflow-x:auto; margin:0 -18px; padding:0 18px 6px; }
-    .also-scroll::-webkit-scrollbar { display:none; }
-    .also-card { flex-shrink:0; width:108px; border-radius:14px; overflow:hidden; border:1.5px solid #f0f0f0; background:#fff; cursor:pointer; position:relative; transition:border-color 0.15s; }
-    .also-card img { width:100%; height:70px; object-fit:cover; }
-    .also-card .also-no-img { width:100%; height:70px; background:#f8f8f8; display:flex; align-items:center; justify-content:center; font-size:26px; }
-    .also-card .also-info { padding:6px 8px 8px; }
-    .also-card .also-name { font-size:11px; font-weight:700; color:#1a1a1a; line-height:1.35; margin-bottom:2px; }
-    .also-card .also-price { font-size:11px; font-weight:900; color:var(--brand); }
-    .also-card.also-selected { border-color:var(--brand); background:#fff8f3; }
-    .also-check { position:absolute; top:5px; left:5px; width:20px; height:20px; border-radius:50%; background:var(--brand); color:#fff; font-size:11px; font-weight:900; display:flex; align-items:center; justify-content:center; }
-
-    /* شريط الإضافة */
-    .prod-add-bar { position:fixed; bottom:0; left:0; right:0; background:#fff; padding:12px 18px 20px; border-top:1px solid #f0f0f0; display:flex; align-items:center; gap:10px; z-index:60; max-width:480px; margin:0 auto; }
-    .prod-qty { display:flex; align-items:center; gap:6px; background:#f5f5f5; border-radius:12px; padding:6px 10px; }
-    .prod-qty-btn { width:28px; height:28px; border-radius:8px; border:none; font-size:18px; font-weight:900; cursor:pointer; display:flex; align-items:center; justify-content:center; font-family:'Rubik',sans-serif; }
-    .prod-qty-minus { background:#fff; color:#333; box-shadow:0 1px 4px rgba(0,0,0,0.1); }
-    .prod-qty-plus  { background:var(--brand); color:#fff; }
-    .prod-qty-num { font-size:15px; font-weight:900; min-width:22px; text-align:center; color:#1a1a1a; }
-    .prod-add-btn { flex:1; background:var(--brand); color:#fff; border:none; border-radius:14px; padding:14px 16px; font-size:14px; font-weight:900; font-family:'Rubik',sans-serif; cursor:pointer; display:flex; align-items:center; justify-content:space-between; gap:8px; transition:background 0.15s; }
-    .prod-add-btn:active { background:var(--brand2); }
 
     .no-scroll::-webkit-scrollbar { display:none; }
     .no-scroll { -ms-overflow-style:none; scrollbar-width:none; }
@@ -446,6 +392,50 @@
     .suggest-card .sc-info { padding:5px 7px 7px; }
     .suggest-card .sc-info p    { font-size:10px; font-weight:700; color:#1a1a1a; line-height:1.3; }
     .suggest-card .sc-info span { font-size:10px; font-weight:900; color:var(--brand); }
+
+    /* ── Product Page (full screen) ── */
+    #product-modal { overflow-y:auto; }
+    .prod-page { max-width:480px; margin:0 auto; padding-bottom:90px; }
+    .prod-hero { position:relative; height:280px; background:#f0f0f0; overflow:hidden; }
+    .prod-hero img { width:100%; height:100%; object-fit:cover; }
+    .prod-hero-placeholder { width:100%; height:100%; display:flex; align-items:center; justify-content:center; font-size:80px; background:linear-gradient(135deg,#f5f5f5,#eee); }
+    .prod-hero-overlay { position:absolute; inset:0; background:linear-gradient(to top, rgba(0,0,0,0.4) 0%, transparent 55%); }
+    .prod-back-btn { position:absolute; top:16px; right:16px; width:38px; height:38px; border-radius:50%; background:rgba(0,0,0,0.35); backdrop-filter:blur(8px); border:none; color:#fff; font-size:22px; display:flex; align-items:center; justify-content:center; cursor:pointer; font-family:'Rubik',sans-serif; }
+    .prod-badge { position:absolute; bottom:16px; right:16px; background:var(--brand); color:#fff; font-size:11px; font-weight:900; padding:4px 12px; border-radius:20px; }
+    .prod-body { padding:18px 18px 0; }
+    .prod-name { font-size:21px; font-weight:900; color:#1a1a1a; line-height:1.3; margin-bottom:6px; }
+    .prod-price { font-size:19px; font-weight:900; color:var(--brand); margin-bottom:4px; transition:all 0.2s; }
+    .prod-price .old-price { font-size:13px; font-weight:500; color:#bbb; text-decoration:line-through; margin-left:8px; }
+    .prod-desc { font-size:13px; color:#888; line-height:1.8; margin-top:6px; }
+    .prod-divider { height:1px; background:#f0f0f0; margin:18px 0; }
+    .opt-group { margin-bottom:20px; }
+    .opt-group-header { display:flex; align-items:center; justify-content:space-between; margin-bottom:10px; }
+    .opt-group-name { font-size:14px; font-weight:900; color:#1a1a1a; }
+    .opt-required { font-size:10px; font-weight:700; color:#fff; background:var(--brand); padding:3px 10px; border-radius:20px; }
+    .opt-optional { font-size:10px; font-weight:700; color:#aaa; background:#f5f5f5; padding:3px 10px; border-radius:20px; }
+    .chips-wrap { display:flex; flex-wrap:wrap; gap:8px; }
+    .chip-btn { padding:9px 14px; border-radius:12px; border:1.5px solid #e8e8e8; background:#fff; font-size:12px; font-weight:700; color:#555; font-family:'Rubik',sans-serif; cursor:pointer; transition:all 0.15s; display:flex; flex-direction:column; align-items:center; gap:2px; }
+    .chip-extra { font-size:10px; color:#aaa; font-weight:500; }
+    .chip-btn.selected { background:var(--brand); border-color:var(--brand); color:#fff; }
+    .chip-btn.selected .chip-extra { color:rgba(255,255,255,0.75); }
+    .also-title { font-size:14px; font-weight:900; color:#1a1a1a; margin-bottom:10px; }
+    .also-scroll { display:flex; gap:10px; overflow-x:auto; margin:0 -18px; padding:0 18px 6px; }
+    .also-scroll::-webkit-scrollbar { display:none; }
+    .also-card { flex-shrink:0; width:108px; border-radius:14px; overflow:hidden; border:1.5px solid #f0f0f0; background:#fff; cursor:pointer; position:relative; transition:border-color 0.15s; }
+    .also-card img { width:100%; height:70px; object-fit:cover; }
+    .also-no-img { width:100%; height:70px; background:#f8f8f8; display:flex; align-items:center; justify-content:center; font-size:26px; }
+    .also-info { padding:6px 8px 8px; }
+    .also-name { font-size:11px; font-weight:700; color:#1a1a1a; line-height:1.35; margin-bottom:2px; }
+    .also-price { font-size:11px; font-weight:900; color:var(--brand); }
+    .also-card.also-selected { border-color:var(--brand); background:#fff8f3; }
+    .also-check { position:absolute; top:5px; left:5px; width:20px; height:20px; border-radius:50%; background:var(--brand); color:#fff; font-size:11px; font-weight:900; display:flex; align-items:center; justify-content:center; }
+    .prod-add-bar { position:fixed; bottom:0; left:50%; transform:translateX(-50%); width:100%; max-width:480px; background:#fff; padding:12px 18px 24px; border-top:1px solid #f0f0f0; display:flex; align-items:center; gap:10px; z-index:60; }
+    .prod-qty { display:flex; align-items:center; gap:6px; background:#f5f5f5; border-radius:12px; padding:6px 10px; }
+    .prod-qty-btn { width:30px; height:30px; border-radius:8px; border:none; font-size:18px; font-weight:900; cursor:pointer; display:flex; align-items:center; justify-content:center; font-family:'Rubik',sans-serif; }
+    .prod-qty-minus { background:#fff; color:#333; box-shadow:0 1px 4px rgba(0,0,0,0.1); }
+    .prod-qty-plus  { background:var(--brand); color:#fff; }
+    .prod-qty-num { font-size:15px; font-weight:900; min-width:22px; text-align:center; color:#1a1a1a; }
+    .prod-add-btn { flex:1; background:var(--brand); color:#fff; border:none; border-radius:14px; padding:14px 16px; font-size:14px; font-weight:900; font-family:'Rubik',sans-serif; cursor:pointer; display:flex; align-items:center; justify-content:space-between; gap:8px; transition:background 0.2s; }
   </style>
 </head>
 <body>
@@ -705,10 +695,6 @@
 <script>
 const SUPABASE_URL  = 'https://pcmyugeqveyjnappulng.supabase.co'
 const SUPABASE_ANON = 'eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6InBjbXl1Z2VxdmV5am5hcHB1bG5nIiwicm9sZSI6ImFub24iLCJpYXQiOjE3ODExNjU0NDAsImV4cCI6MjA5Njc0MTQ0MH0.uwn0X4CvNRW38FGh_0rYD9KjBRM19CydXucfBsCDYeo'
-/* ── Supabase Migration (شغّلها مرة واحدة في SQL Editor) ─────────────────
-   ALTER TABLE products ADD COLUMN IF NOT EXISTS product_options JSONB DEFAULT NULL;
-   ALTER TABLE products ADD COLUMN IF NOT EXISTS also_with       JSONB DEFAULT NULL;
-   ─────────────────────────────────────────────────────────────────────── */
 const { createClient } = supabase
 const db = createClient(SUPABASE_URL, SUPABASE_ANON)
 
@@ -764,7 +750,7 @@ async function loadData(slug) {
 
   const [catRes, prodRes, bundleRes, bannerRes] = await Promise.all([
     db.from('categories').select('id,name,sort_order,icon_url').eq('restaurant_id', r.id).order('sort_order'),
-    db.from('products').select('id,category_id,name,description,price,discount_price,offer_badge,discount_active,discount_starts_at,discount_ends_at,image_url,sort_order,is_available,status,availability,unit,product_options,also_with').eq('restaurant_id', r.id).neq('status','hidden').order('sort_order'),
+    db.from('products').select('id,category_id,name,description,price,discount_price,offer_badge,discount_active,discount_starts_at,discount_ends_at,image_url,sort_order,is_available,status,availability').eq('restaurant_id', r.id).neq('status','hidden').order('sort_order'),
     db.from('bundles').select('id,name,description,price,image_url,items,sort_order').eq('restaurant_id', r.id).eq('is_active', true).order('sort_order'),
     db.from('banners').select('id,image_url,link_type,link_value,sort_order').eq('restaurant_id', r.id).order('sort_order')
   ])
@@ -1129,19 +1115,16 @@ function hideSuggestions() {
   setTimeout(() => { const el = document.getElementById('search-suggestions'); if (el) el.classList.add('hidden') }, 150)
 }
 
-// ── PRODUCT PAGE ─────────────────────────────────────────────────────
-
+// ── PRODUCT MODAL ────────────────────────────────────────────────────
 function openModal(pid) {
   const p = S.products.find(x => x.id === pid); if (!p) return
   const hasDiscount  = p.discount_price && Number(p.discount_price) < Number(p.price)
-  const displayPrice = hasDiscount ? Number(p.discount_price) : Number(p.price)
-
-  const priceHTML = hasDiscount
-    ? `<div class="prod-price"><span class="old-price">${fmt(p.price)}</span>${fmt(p.discount_price)}</div>`
-    : `<div class="prod-price">${fmt(p.price)}</div>`
+  const basePrice    = hasDiscount ? Number(p.discount_price) : Number(p.price)
+  const opts         = p.product_options || []
+  const alsoIds      = Array.isArray(p.also_with) ? p.also_with : []
+  const alsoProducts = alsoIds.map(id => S.products.find(x => x.id === id)).filter(x => x && x.is_available !== false && x.availability !== 'hidden')
 
   // خيارات التخصيص
-  const opts = p.product_options || []
   const optionsHTML = opts.map((g, gi) => `
     <div class="opt-group">
       <div class="opt-group-header">
@@ -1151,16 +1134,15 @@ function openModal(pid) {
       <div class="chips-wrap">
         ${g.options.map((o, oi) => `
           <button class="chip-btn" id="chip-${gi}-${oi}"
-            onclick="${g.required ? `selectChip(${gi},${oi})` : `toggleChip(${gi},${oi})`}">
+            data-gi="${gi}" data-oi="${oi}" data-price="${o.price||0}" data-radio="${g.required?1:0}"
+            onclick="onChipClick(this)">
             <span>${o.name}</span>
             ${o.price > 0 ? `<span class="chip-extra">+${fmt(o.price)}</span>` : ''}
           </button>`).join('')}
       </div>
     </div>`).join('')
 
-  // تطلب معها أيضاً — يحددها التاجر
-  const alsoIds = Array.isArray(p.also_with) ? p.also_with : []
-  const alsoProducts = alsoIds.map(id => S.products.find(x => x.id === id)).filter(x => x && x.is_available !== false && x.availability !== 'hidden')
+  // تطلب معها أيضاً
   const alsoHTML = alsoProducts.length ? `
     <div class="prod-divider"></div>
     <p class="also-title">تطلب معها أيضاً 🤩</p>
@@ -1176,6 +1158,29 @@ function openModal(pid) {
         </div>`}).join('')}
     </div>` : ''
 
+  // الـ suggest القديم (لو مفيش also_with)
+  const suggestHTML = !alsoProducts.length ? (() => {
+    const otherCat = S.products.filter(x => x.category_id !== p.category_id && x.id !== pid && x.is_available !== false && x.availability !== 'hidden')
+    const sameCat  = S.products.filter(x => x.category_id === p.category_id  && x.id !== pid && x.is_available !== false && x.availability !== 'hidden')
+    const suggested = [...otherCat, ...sameCat].slice(0, 6)
+    return suggested.length ? `
+      <div class="prod-divider"></div>
+      <p class="also-title">تطلب معها أيضاً 🤩</p>
+      <div class="also-scroll">
+        ${suggested.map(s => {
+          const sp = s.discount_price && Number(s.discount_price)<Number(s.price) ? Number(s.discount_price) : Number(s.price)
+          return `<div class="also-card" id="also-${s.id}" onclick="toggleAlso('${s.id}',${sp},this)">
+            ${s.image_url ? `<img src="${s.image_url}"/>` : `<div class="also-no-img">🍽️</div>`}
+            <div class="also-info"><p class="also-name">${s.name}</p><span class="also-price">${fmt(sp)}</span></div>
+          </div>`}).join('')}
+      </div>` : ''
+  })() : ''
+
+  const modal = document.getElementById('product-modal')
+  modal.dataset.pid   = pid
+  modal.dataset.base  = basePrice
+  modal.dataset.qty   = 1
+
   document.getElementById('modal-inner').innerHTML = `
     <div class="prod-page">
       <div class="prod-hero">
@@ -1186,10 +1191,13 @@ function openModal(pid) {
       </div>
       <div class="prod-body">
         <p class="prod-name">${p.name}</p>
-        ${priceHTML}
+        <div class="prod-price" id="m-price-display">
+          ${hasDiscount ? `<span class="old-price">${fmt(p.price)}</span>` : ''}
+          ${fmt(basePrice)}
+        </div>
         ${p.description ? `<p class="prod-desc">${p.description}</p>` : ''}
         ${opts.length ? `<div class="prod-divider"></div>${optionsHTML}` : ''}
-        ${alsoHTML}
+        ${alsoHTML || suggestHTML}
       </div>
     </div>
     <div class="prod-add-bar">
@@ -1198,33 +1206,89 @@ function openModal(pid) {
         <span class="prod-qty-num" id="m-qty">1</span>
         <button class="prod-qty-btn prod-qty-plus" onclick="mQty(1)">+</button>
       </div>
-      <button class="prod-add-btn" onclick="addFromModal('${pid}')">
+      <button class="prod-add-btn" id="m-add-btn" onclick="addFromModal('${pid}')">
         <span>أضف للسلة</span>
-        <span id="m-total">${fmt(displayPrice)}</span>
+        <span id="m-total">${fmt(basePrice)}</span>
       </button>
     </div>`
 
-  const modal = document.getElementById('product-modal')
-  modal.dataset.pid  = pid
-  modal.dataset.base = displayPrice
-  modal.dataset.qty  = 1
   modal.scrollTop = 0
   modal.classList.remove('hidden')
   document.body.style.overflow = 'hidden'
 
-  // تحديد أول خيار تلقائياً في كل مجموعة مطلوبة
-  opts.forEach((g, gi) => { if (g.required && g.options.length) selectChip(gi, 0) })
-}
-
-function selectChip(gi, oi) {
-  document.querySelectorAll(`[id^="chip-${gi}-"]`).forEach(b => b.classList.remove('selected'))
-  document.getElementById(`chip-${gi}-${oi}`)?.classList.add('selected')
+  // تحديد أول خيار تلقائياً في المجموعات المطلوبة فقط
+  opts.forEach((g, gi) => {
+    if (g.required && g.options.length) {
+      document.getElementById(`chip-${gi}-0`)?.classList.add('selected')
+    }
+  })
   recalcModalTotal()
 }
 
-function toggleChip(gi, oi) {
-  document.getElementById(`chip-${gi}-${oi}`)?.classList.toggle('selected')
+function onChipClick(btn) {
+  const gi    = btn.dataset.gi
+  const radio = btn.dataset.radio === '1'
+  if (radio) {
+    // radio — يلغي الباقين في نفس المجموعة
+    document.querySelectorAll(`[id^="chip-${gi}-"]`).forEach(b => b.classList.remove('selected'))
+    btn.classList.add('selected')
+  } else {
+    // checkbox — toggle
+    btn.classList.toggle('selected')
+  }
   recalcModalTotal()
+}
+
+function recalcModalTotal() {
+  const modal = document.getElementById('product-modal')
+  const pid   = modal.dataset.pid
+  const p     = S.products.find(x => x.id === pid); if (!p) return
+  const hasDiscount = p.discount_price && Number(p.discount_price) < Number(p.price)
+  const base  = hasDiscount ? Number(p.discount_price) : Number(p.price)
+  const qty   = parseInt(modal.dataset.qty) || 1
+  const opts  = p.product_options || []
+
+  // السعر الحالي: أول نشوف لو في مجموعة radio مختار فيها خيار له سعر بديل (مش إضافة)
+  // القاعدة: لو المجموعة required → سعر الخيار هو السعر البديل (يحل محل الـ base)
+  //           لو المجموعة optional  → سعر الخيار يُضاف على الـ base
+  let currentBase = base
+  let addonsTotal = 0
+
+  opts.forEach((g, gi) => {
+    const sel = document.querySelector(`[id^="chip-${gi}-"].selected`)
+    if (!sel) return
+    const oi    = parseInt(sel.id.split('-')[2])
+    const price = g.options[oi]?.price ?? 0
+
+    if (g.required) {
+      // أول مجموعة required بسعر بديل → هي اللي بتحدد الـ base
+      // لو السعر 0 معناه نفس الـ base، لو > 0 معناه سعر بديل
+      if (gi === opts.findIndex(x => x.required)) {
+        currentBase = base + price  // الـ base + فرق الحجم
+      } else {
+        addonsTotal += price
+      }
+    } else {
+      addonsTotal += price
+    }
+  })
+
+  // also/suggest
+  const alsoExtra = S.cart.filter(c => c._also).reduce((s, c) => s + c.price, 0)
+
+  const total = (currentBase + addonsTotal) * qty + alsoExtra
+  const totalEl = document.getElementById('m-total')
+  if (totalEl) totalEl.textContent = fmt(total)
+
+  // تحديث عرض السعر الرئيسي في الصفحة
+  const priceEl = document.getElementById('m-price-display')
+  if (priceEl) {
+    priceEl.innerHTML = hasDiscount
+      ? `<span class="old-price">${fmt(p.price)}</span>${fmt(currentBase + addonsTotal)}`
+      : fmt(currentBase + addonsTotal)
+  }
+
+  modal.dataset.currentPrice = currentBase + addonsTotal
 }
 
 function toggleAlso(sid, price, el) {
@@ -1245,26 +1309,6 @@ function toggleAlso(sid, price, el) {
   recalcModalTotal()
 }
 
-function recalcModalTotal() {
-  const modal = document.getElementById('product-modal')
-  const base  = parseFloat(modal.dataset.base) || 0
-  const qty   = parseInt(modal.dataset.qty) || 1
-  const pid   = modal.dataset.pid
-  const p     = S.products.find(x => x.id === pid)
-
-  let optsExtra = 0
-  document.querySelectorAll('.chip-btn.selected').forEach(btn => {
-    const m = btn.id.match(/^chip-(\d+)-(\d+)$/)
-    if (!m) return
-    const opt = p?.product_options?.[parseInt(m[1])]?.options?.[parseInt(m[2])]
-    if (opt) optsExtra += opt.price || 0
-  })
-
-  const alsoExtra = S.cart.filter(c => c._also).reduce((s, c) => s + c.price, 0)
-  const totalEl = document.getElementById('m-total')
-  if (totalEl) totalEl.textContent = fmt((base + optsExtra) * qty + alsoExtra)
-}
-
 function mQty(d) {
   const modal = document.getElementById('product-modal')
   let qty = Math.max(1, parseInt(modal.dataset.qty) + d)
@@ -1273,42 +1317,64 @@ function mQty(d) {
   recalcModalTotal()
 }
 
+function mQtyInput() {
+  const modal = document.getElementById('product-modal')
+  const val = parseFloat(document.getElementById('m-qty-input').value) || 0.1
+  modal.dataset.qty = val
+  recalcModalTotal()
+}
+
 function addFromModal(pid) {
   const modal = document.getElementById('product-modal')
-  const base  = parseFloat(modal.dataset.base)
-  const qty   = parseInt(modal.dataset.qty) || 1
   const p     = S.products.find(x => x.id === pid); if (!p) return
+  const qty   = parseInt(modal.dataset.qty) || 1
+  const opts  = p.product_options || []
 
   // التحقق من الخيارات المطلوبة
-  const opts = p.product_options || []
   for (let gi = 0; gi < opts.length; gi++) {
     if (opts[gi].required && !document.querySelector(`[id^="chip-${gi}-"].selected`)) {
       showToast(`اختر ${opts[gi].name} أولاً ⚠️`); return
     }
   }
 
-  let optsExtra = 0
+  const finalPrice = parseFloat(modal.dataset.currentPrice) || parseFloat(modal.dataset.base)
+  const unit = p.unit || 'قطعة'
+
+  // اسم الخيارات المختارة
   const selectedOpts = []
   opts.forEach((g, gi) => {
     const sel = document.querySelector(`[id^="chip-${gi}-"].selected`)
-    if (sel) {
-      const oi = parseInt(sel.id.split('-')[2])
-      const opt = g.options[oi]
-      if (opt) { optsExtra += opt.price || 0; selectedOpts.push(opt.name) }
-    }
+    if (sel) { const oi = parseInt(sel.id.split('-')[2]); selectedOpts.push(g.options[oi]?.name) }
   })
 
-  const finalPrice = base + optsExtra
-  const unit = p.unit || 'قطعة'
-  const ci = S.cart.find(c => c.id === pid && c.type === 'product' && !c._also)
-  const item = { id:pid, type:'product', name:p.name, price:finalPrice, image_url:p.image_url, qty, unit,
-    options: selectedOpts.join('، ') || null }
-  if (ci) Object.assign(ci, item); else S.cart.push(item)
+  // نضيف المنتج للسلة — مش نمسح القديم (عشان ممكن يضيف نفس المنتج بحجم تاني)
+  S.cart.push({ id:pid, type:'product', name:p.name, price:finalPrice, image_url:p.image_url, qty, unit,
+    options: selectedOpts.filter(Boolean).join('، ') || null })
 
-  // تثبيت الـ also items
+  // نثبّت الـ also
   S.cart.forEach(c => { if (c._also) delete c._also })
 
-  saveCart(); closeModal(); updateCartUI(); renderAllSections()
+  saveCart(); updateCartUI(); renderAllSections()
+
+  // تأكيد بصري — نغير الزر لثانيتين ونعمل reset للاختيارات
+  const btn = document.getElementById('m-add-btn')
+  if (btn) {
+    btn.style.background = '#2ecc71'
+    btn.innerHTML = '<span>✓ تمت الإضافة!</span><span></span>'
+    setTimeout(() => {
+      btn.style.background = ''
+      btn.innerHTML = `<span>أضف للسلة</span><span id="m-total">${fmt(finalPrice)}</span>`
+      // reset الكمية لـ 1
+      modal.dataset.qty = 1
+      document.getElementById('m-qty').textContent = '1'
+      // reset الـ also
+      document.querySelectorAll('.also-card.also-selected').forEach(el => {
+        el.classList.remove('also-selected'); el.querySelector('.also-check')?.remove()
+      })
+      S.cart = S.cart.filter(c => !c._also)
+      recalcModalTotal()
+    }, 1800)
+  }
 }
 
 function closeModal() {
@@ -1317,7 +1383,7 @@ function closeModal() {
   S.cart = S.cart.filter(c => !c._also)
 }
 
-
+// ── BUNDLE MODAL ─────────────────────────────────────────────────────
 function openBundleModal(bid) {
   const b = S.bundles.find(x => x.id === bid); if (!b) return
   const itemsHTML = b.items && Array.isArray(b.items) && b.items.length
@@ -1419,7 +1485,6 @@ function renderCartItems() {
       <div style="flex:1;min-width:0">
         <p style="font-size:13px;font-weight:800;color:#1a1a1a;white-space:nowrap;overflow:hidden;text-overflow:ellipsis">${c.name}</p>
         ${c.type==='bundle'?`<span style="font-size:10px;background:#FFF3EB;color:var(--brand);padding:2px 7px;border-radius:6px;font-weight:700">باقة</span>`:''}
-        ${c.options ? `<p style="font-size:11px;color:var(--brand);font-weight:600;margin-top:1px">${c.options}</p>` : ''}
         <p style="font-size:12px;color:#aaa;margin-top:2px">${c.qty} ${c.unit||'قطعة'}</p>
         <p style="font-size:13px;font-weight:900;color:var(--brand);margin-top:2px">${fmt(c.price*c.qty)}</p>
       </div>
@@ -1449,7 +1514,7 @@ async function sendOrder() {
   const custAddr = document.getElementById('order-address').value.trim()
   const custLoc  = document.getElementById('order-location').value.trim()
   const note     = document.getElementById('order-note').value.trim()
-  const items = S.cart.map(c => ({ id:c.id, type:c.type, name:c.name, price:c.price, qty:c.qty, unit:c.unit||'قطعة', options:c.options||null, subtotal:Number((c.price*c.qty).toFixed(2)) }))
+  const items = S.cart.map(c => ({ id:c.id, type:c.type, name:c.name, price:c.price, qty:c.qty, unit:c.unit||'قطعة', subtotal:Number((c.price*c.qty).toFixed(2)) }))
   const total = cartTotal()
 
   // 1) احفظ في DB أولاً
@@ -1477,7 +1542,7 @@ async function sendOrder() {
     const now  = new Date().toLocaleTimeString('ar-EG', { hour:'2-digit', minute:'2-digit' })
     const text = [
       `🧾 *طلب جديد ${orderNumber}*`, `─────────────────`,
-      ...items.map(i => `• ${i.name}${i.type==='bundle'?' 🎁':''}${i.options?` (${i.options})`:''} — ${i.qty} ${i.unit}  —  ${fmt(i.subtotal)}`),
+      ...items.map(i => `• ${i.name}${i.type==='bundle'?' 🎁':''} — ${i.qty} ${i.unit}  —  ${fmt(i.subtotal)}`),
       `─────────────────`,
       `💰 *الإجمالي: ${fmt(total)}*`,
       `⚠️ السعر لا يشمل رسوم التوصيل`,
