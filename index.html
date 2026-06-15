@@ -1103,6 +1103,26 @@ function openModal(pid) {
       </div>
     </div>` : ''
 
+  // خيارات التخصيص
+  const opts = p.product_options || []
+  const optionsHTML = opts.length ? `
+    <div style="padding:14px 16px 0">
+      ${opts.map((g, gi) => `
+        <div style="margin-bottom:14px">
+          <div style="display:flex;align-items:center;justify-content:space-between;margin-bottom:8px">
+            <p style="font-size:13px;font-weight:900;color:#1a1a1a">${g.name}</p>
+            ${g.required ? `<span style="font-size:10px;font-weight:700;color:#fff;background:var(--brand);padding:2px 8px;border-radius:20px">مطلوب</span>` : `<span style="font-size:10px;font-weight:700;color:#aaa">اختياري</span>`}
+          </div>
+          <div style="display:flex;flex-wrap:wrap;gap:8px">
+            ${g.options.map((o, oi) => `
+              <button onclick="selectOption(${gi},${oi},${o.price},'${o.name}')" id="opt-btn-${gi}-${oi}"
+                style="padding:8px 14px;border-radius:12px;border:1.5px solid #e5e5e5;background:#fff;font-size:12px;font-weight:700;color:#444;font-family:'Rubik',sans-serif;cursor:pointer;transition:all 0.15s">
+                ${o.name}${o.price > 0 ? ` <span style="color:var(--brand)">+${fmt(o.price)}</span>` : ''}
+              </button>`).join('')}
+          </div>
+        </div>`).join('')}
+    </div>` : ''
+
   document.getElementById('modal-inner').innerHTML = `
     <div style="position:relative">
       ${p.image_url ? `<img src="${p.image_url}" alt="${p.name}" style="width:100%;height:230px;object-fit:cover" />`
@@ -1117,6 +1137,7 @@ function openModal(pid) {
       </div>
       ${p.description ? `<p style="font-size:13px;color:#888;line-height:1.75;margin-top:6px">${p.description}</p>` : ''}
     </div>
+    ${optionsHTML}
     ${suggestedHTML}
     <div style="padding:14px 16px 24px">
       ${p.unit && p.unit !== 'قطعة'
@@ -1138,7 +1159,53 @@ function openModal(pid) {
 
   const modal = document.getElementById('product-modal')
   modal.dataset.pid = pid; modal.dataset.price = displayPrice; modal.dataset.qty = qty
+  modal.dataset.optionsExtra = '0'
   modal.classList.remove('hidden'); document.body.style.overflow = 'hidden'
+}
+
+function selectOption(gi, oi, price, name) {
+  const modal = document.getElementById('product-modal')
+  // إلغاء تحديد باقي خيارات نفس المجموعة
+  document.querySelectorAll(`[id^="opt-btn-${gi}-"]`).forEach(btn => {
+    btn.style.background   = '#fff'
+    btn.style.borderColor  = '#e5e5e5'
+    btn.style.color        = '#444'
+    btn.removeAttribute('data-selected')
+  })
+  const btn = document.getElementById(`opt-btn-${gi}-${oi}`)
+  btn.style.background  = 'var(--brand)'
+  btn.style.borderColor = 'var(--brand)'
+  btn.style.color       = '#fff'
+  btn.dataset.selected  = '1'
+  btn.dataset.price     = price
+  btn.dataset.name      = name
+  btn.dataset.group     = gi
+
+  // إعادة حساب إجمالي الخيارات
+  recalcTotal()
+}
+
+function getSelectedOptions() {
+  const selected = []
+  document.querySelectorAll('[id^="opt-btn-"][data-selected="1"]').forEach(btn => {
+    selected.push({ group: parseInt(btn.dataset.group), name: btn.dataset.name, price: parseFloat(btn.dataset.price)||0 })
+  })
+  return selected
+}
+
+function recalcTotal() {
+  const modal   = document.getElementById('product-modal')
+  const base    = parseFloat(modal.dataset.price)
+  const qtySpan = document.getElementById('m-qty')
+  const qtyInput= document.getElementById('m-qty-input')
+  const qty     = qtyInput ? (parseFloat(qtyInput.value)||1) : (parseInt(qtySpan?.textContent)||1)
+  const optsExtra = getSelectedOptions().reduce((s,o) => s + o.price, 0)
+  const extrasTotal = [...document.querySelectorAll('.suggest-card.suggest-selected')].reduce((s, card) => {
+    const sp = S.products.find(x => x.id === card.getAttribute('data-sid'))
+    return s + (sp ? (sp.discount_price && Number(sp.discount_price)<Number(sp.price) ? Number(sp.discount_price) : Number(sp.price)) : 0)
+  }, 0)
+  const totalEl = document.getElementById('m-total')
+  if (totalEl) totalEl.textContent = fmt((base + optsExtra) * qty + extrasTotal)
 }
 
 function mQty(d) {
@@ -1146,33 +1213,42 @@ function mQty(d) {
   let qty = Math.max(1, parseInt(modal.dataset.qty) + d)
   modal.dataset.qty = qty
   document.getElementById('m-qty').textContent = qty
-
-  const selectedExtras = [...document.querySelectorAll('.suggest-card.suggest-selected')]
-  let extrasTotal = 0
-  selectedExtras.forEach(card => {
-    const sid = card.getAttribute('data-sid')
-    const sp  = S.products.find(x => x.id === sid)
-    if (sp) extrasTotal += sp.discount_price && Number(sp.discount_price) < Number(sp.price)
-      ? Number(sp.discount_price) : Number(sp.price)
-  })
-  document.getElementById('m-total').textContent = fmt(parseFloat(modal.dataset.price) * qty + extrasTotal)
+  recalcTotal()
 }
 function mQtyInput() {
   const modal = document.getElementById('product-modal')
   const val = parseFloat(document.getElementById('m-qty-input').value) || 0.1
   modal.dataset.qty = val
-  document.getElementById('m-total').textContent = fmt(parseFloat(modal.dataset.price) * val)
+  recalcTotal()
 }
 function addFromModal(pid) {
   const modal = document.getElementById('product-modal')
-  const price = parseFloat(modal.dataset.price)
-  const p = S.products.find(x => x.id === pid); if (!p) return
+  const base  = parseFloat(modal.dataset.price)
+  const p     = S.products.find(x => x.id === pid); if (!p) return
+
+  // التحقق من الخيارات المطلوبة
+  const opts = p.product_options || []
+  const selectedOpts = getSelectedOptions()
+  for (const g of opts) {
+    if (g.required && !selectedOpts.find(o => o.group === opts.indexOf(g))) {
+      showToast(`⚠️ اختر ${g.name} أولاً`)
+      document.querySelectorAll(`[id^="opt-btn-${opts.indexOf(g)}-"]`)[0]
+        ?.scrollIntoView({behavior:'smooth', block:'center'})
+      return
+    }
+  }
+
+  const optsExtra = selectedOpts.reduce((s,o) => s + o.price, 0)
+  const finalPrice = base + optsExtra
   const qtyInput = document.getElementById('m-qty-input')
-  const qty = qtyInput ? (parseFloat(qtyInput.value) || 0.1) : parseInt(modal.dataset.qty)
+  const qty = qtyInput ? (parseFloat(qtyInput.value)||0.1) : parseInt(modal.dataset.qty)
   const unit = p.unit || 'قطعة'
+
   const ci = S.cart.find(c => c.id === pid && c.type === 'product')
-  if (ci) { ci.qty = qty; ci.unit = unit } else { S.cart.push({ id:pid, type:'product', name:p.name, price, image_url:p.image_url, qty, unit }) }
-  // المقترحات المختارة موجودة بالفعل في S.cart من addSuggestedToCart
+  const cartItem = { id:pid, type:'product', name:p.name, price:finalPrice, image_url:p.image_url, qty, unit,
+    options: selectedOpts.length ? selectedOpts.map(o=>o.name).join('، ') : null }
+  if (ci) { Object.assign(ci, cartItem) } else { S.cart.push(cartItem) }
+
   saveCart(); closeModal(); updateCartUI(); renderAllSections()
 }
 function closeModal() { document.getElementById('product-modal').classList.add('hidden'); document.body.style.overflow = '' }
@@ -1218,23 +1294,8 @@ function addSuggestedToCart(currentPid, suggestedPid, el) {
     }
   }
 
-  // حساب الإجمالي = سعر المنتج الأصلي × كميته + كل المقترحات المختارة
-  const qtySpan  = document.getElementById('m-qty')
-  const qtyInput = document.getElementById('m-qty-input')
-  const mainQty  = qtyInput ? (parseFloat(qtyInput.value)||1) : (parseInt(qtySpan?.textContent)||1)
-
-  const selectedExtras = [...document.querySelectorAll('.suggest-card.suggest-selected')]
-  let extrasTotal = 0
-  selectedExtras.forEach(card => {
-    const sid = card.getAttribute('data-sid')
-    const sp  = S.products.find(x => x.id === sid)
-    if (sp) extrasTotal += sp.discount_price && Number(sp.discount_price) < Number(sp.price)
-      ? Number(sp.discount_price) : Number(sp.price)
-  })
-
-  const totalEl = document.getElementById('m-total')
-  if (totalEl) totalEl.textContent = fmt(mainPrice * mainQty + extrasTotal)
-
+  // حساب الإجمالي المرئي
+  recalcTotal()
   saveCart(); updateCartUI()
 }
 
