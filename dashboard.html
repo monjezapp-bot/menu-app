@@ -358,6 +358,27 @@
       <input type="hidden" id="pm-unit" value="قطعة" />
       <p class="text-xs text-gray-400 mt-1">💡 تظهر للعميل عند الطلب — مثال: "الكمية بالكيلو"</p>
     </div>
+
+    <!-- ── خيارات التخصيص ── -->
+    <div>
+      <div class="flex items-center justify-between mb-2">
+        <label class="text-xs font-bold text-gray-500">خيارات التخصيص</label>
+        <button type="button" onclick="addOptionGroup()" class="text-xs bg-orange-50 text-orange-500 font-bold px-3 py-1.5 rounded-xl hover:bg-orange-100 transition-colors">+ إضافة مجموعة</button>
+      </div>
+      <div id="pm-options-list" class="space-y-3"></div>
+      <p class="text-xs text-gray-400 mt-1">💡 مثال: "الحجم" ← صغير 15ج / وسط 20ج / كبير 25ج</p>
+    </div>
+
+    <!-- ── تطلب معها أيضاً ── -->
+    <div>
+      <label class="text-xs font-bold text-gray-500 mb-2 block">تطلب معها أيضاً 🤩</label>
+      <div id="pm-also-list" class="flex flex-wrap gap-2 mb-2"></div>
+      <select id="pm-also-select" onchange="addAlsoWith(this)" class="w-full border border-gray-200 rounded-xl px-4 py-3 text-sm focus:outline-none focus:ring-2 focus:ring-orange-400 bg-white">
+        <option value="">+ اختر منتجاً لإضافته...</option>
+      </select>
+      <p class="text-xs text-gray-400 mt-1">💡 المنتجات دي بتظهر للعميل في صفحة المنتج كاقتراحات</p>
+    </div>
+
     <p id="pm-error" class="text-red-500 text-xs hidden"></p>
     <div class="flex gap-3 pt-2">
       <button onclick="saveProduct()" class="flex-1 bg-orange-500 text-white font-bold rounded-xl py-3 hover:bg-orange-600 transition-colors">حفظ</button>
@@ -1008,21 +1029,145 @@ function openProductModal(id=null) {
     document.getElementById('pm-available').checked=p.is_available; document.getElementById('product-modal-title').textContent='تعديل منتج'
     setUnitField(p.unit || 'قطعة')
     updateDiscountPreview()
+    renderOptionsUI(p.product_options || [])
+    renderAlsoWith(p.also_with || [], id)
   } else {
     ['pm-name','pm-desc','pm-price','pm-discount','pm-image','pm-badge'].forEach(id=>document.getElementById(id).value='')
     document.getElementById('pm-category').value=''; document.getElementById('pm-availability').value='available'
     document.getElementById('pm-available').checked=true; document.getElementById('discount-preview').classList.add('hidden')
     document.getElementById('product-modal-title').textContent='إضافة منتج'
     setUnitField('قطعة')
+    renderOptionsUI([])
+    renderAlsoWith([], null)
   }
   document.getElementById('modal-product').classList.remove('hidden')
   setTimeout(() => document.getElementById('pm-name').focus(), 100)
-  // تحذير إذا لا توجد تصنيفات
-  if (!state.categories.length && !id) {
-    showToast('💡 أضف تصنيفاً أولاً لتنظيم منتجاتك')
-  }
+  if (!state.categories.length && !id) showToast('💡 أضف تصنيفاً أولاً لتنظيم منتجاتك')
 }
+
 function closeProductModal() { document.getElementById('modal-product').classList.add('hidden') }
+
+// ── خيارات التخصيص ──
+function renderOptionsUI(groups) {
+  const list = document.getElementById('pm-options-list')
+  list.innerHTML = ''
+  groups.forEach((g, gi) => {
+    const div = document.createElement('div')
+    div.className = 'border border-gray-200 rounded-2xl p-3 space-y-2 bg-gray-50'
+    div.innerHTML = `
+      <div class="flex items-center gap-2">
+        <input type="text" placeholder="اسم المجموعة (مثال: الحجم)" value="${g.name||''}"
+          class="opt-group-name flex-1 border border-gray-200 rounded-xl px-3 py-2 text-sm focus:outline-none focus:ring-2 focus:ring-orange-400 bg-white" />
+        <label class="flex items-center gap-1 text-xs font-bold text-gray-500 whitespace-nowrap cursor-pointer">
+          <input type="checkbox" ${g.required?'checked':''} class="opt-required accent-orange-500" /> مطلوب
+        </label>
+        <button onclick="removeOptGroup(${gi})" class="text-red-400 hover:text-red-600 font-bold text-xl leading-none">×</button>
+      </div>
+      <div class="opt-items space-y-1.5">
+        ${(g.options||[]).map((o,oi) => optRowHTML(gi,oi,o)).join('')}
+      </div>
+      <button onclick="addOptItem(${gi})" class="text-xs text-orange-500 font-bold hover:underline">+ خيار جديد</button>`
+    list.appendChild(div)
+  })
+}
+
+function optRowHTML(gi, oi, o) {
+  return `<div class="flex gap-2 items-center opt-row">
+    <input type="text" placeholder="الاسم" value="${o.name||''}" class="opt-item-name flex-1 border border-gray-200 rounded-xl px-3 py-2 text-sm focus:outline-none focus:ring-2 focus:ring-orange-400 bg-white" />
+    <input type="number" placeholder="السعر" value="${o.price!=null?o.price:''}" min="0" step="0.5" class="opt-item-price w-24 border border-gray-200 rounded-xl px-3 py-2 text-sm focus:outline-none focus:ring-2 focus:ring-orange-400 bg-white" />
+    <button onclick="this.closest('.opt-row').remove()" class="text-red-400 hover:text-red-600 font-bold text-xl leading-none">×</button>
+  </div>`
+}
+
+function addOptionGroup() {
+  const list = document.getElementById('pm-options-list')
+  const gi = list.children.length
+  const div = document.createElement('div')
+  div.className = 'border border-gray-200 rounded-2xl p-3 space-y-2 bg-gray-50'
+  div.innerHTML = `
+    <div class="flex items-center gap-2">
+      <input type="text" placeholder="اسم المجموعة (مثال: الحجم)"
+        class="opt-group-name flex-1 border border-gray-200 rounded-xl px-3 py-2 text-sm focus:outline-none focus:ring-2 focus:ring-orange-400 bg-white" />
+      <label class="flex items-center gap-1 text-xs font-bold text-gray-500 whitespace-nowrap cursor-pointer">
+        <input type="checkbox" checked class="opt-required accent-orange-500" /> مطلوب
+      </label>
+      <button onclick="this.closest('.border').remove()" class="text-red-400 hover:text-red-600 font-bold text-xl leading-none">×</button>
+    </div>
+    <div class="opt-items space-y-1.5">
+      ${optRowHTML(gi,0,{name:'',price:0})}
+    </div>
+    <button onclick="addOptItemDirect(this)" class="text-xs text-orange-500 font-bold hover:underline">+ خيار جديد</button>`
+  list.appendChild(div)
+}
+
+function removeOptGroup(gi) { renderOptionsUI(getOptionsData()); document.getElementById('pm-options-list').children[gi]?.remove() }
+
+function addOptItem(gi) {
+  const group = document.getElementById('pm-options-list').children[gi]
+  if (!group) return
+  const items = group.querySelector('.opt-items')
+  const oi = items.children.length
+  items.insertAdjacentHTML('beforeend', optRowHTML(gi, oi, {name:'', price:0}))
+}
+
+function addOptItemDirect(btn) {
+  const group = btn.closest('.border')
+  const items = group.querySelector('.opt-items')
+  const oi = items.children.length
+  items.insertAdjacentHTML('beforeend', optRowHTML(0, oi, {name:'', price:0}))
+}
+
+function getOptionsData() {
+  const groups = []
+  document.querySelectorAll('#pm-options-list > div').forEach(div => {
+    const name    = div.querySelector('.opt-group-name')?.value?.trim()
+    const required = div.querySelector('.opt-required')?.checked || false
+    const options = []
+    div.querySelectorAll('.opt-row').forEach(row => {
+      const n = row.querySelector('.opt-item-name')?.value?.trim()
+      const pr = parseFloat(row.querySelector('.opt-item-price')?.value) || 0
+      if (n) options.push({ name:n, price:pr })
+    })
+    if (name) groups.push({ name, required, options })
+  })
+  return groups
+}
+
+// ── تطلب معها أيضاً ──
+let _alsoWith = []
+function renderAlsoWith(ids, currentId) {
+  _alsoWith = [...ids]
+  const list = document.getElementById('pm-also-list')
+  list.innerHTML = ''
+  ids.forEach(id => {
+    const p = state.products.find(x => x.id === id); if (!p) return
+    const tag = document.createElement('div')
+    tag.className = 'flex items-center gap-1 bg-orange-50 border border-orange-200 rounded-xl px-3 py-1.5 text-xs font-bold text-orange-700'
+    tag.innerHTML = `${p.name} <button onclick="removeAlso('${id}')" class="text-orange-400 hover:text-red-500 font-black text-base leading-none mr-1">×</button>`
+    list.appendChild(tag)
+  })
+  // تحديث القائمة المنسدلة — استبعد المنتج الحالي والمضافين
+  const sel = document.getElementById('pm-also-select')
+  sel.innerHTML = '<option value="">+ اختر منتجاً لإضافته...</option>'
+  state.products.filter(p => p.id !== currentId && !_alsoWith.includes(p.id)).forEach(p => {
+    const opt = document.createElement('option'); opt.value = p.id; opt.textContent = p.name; sel.appendChild(opt)
+  })
+}
+
+function addAlsoWith(sel) {
+  const id = sel.value; if (!id) return
+  _alsoWith.push(id)
+  const currentId = document.getElementById('pm-id').value || null
+  renderAlsoWith(_alsoWith, currentId)
+  sel.value = ''
+}
+
+function removeAlso(id) {
+  _alsoWith = _alsoWith.filter(x => x !== id)
+  const currentId = document.getElementById('pm-id').value || null
+  renderAlsoWith(_alsoWith, currentId)
+}
+
 async function saveProduct() {
   const id=document.getElementById('pm-id').value, name=document.getElementById('pm-name').value.trim()
   const price=parseFloat(document.getElementById('pm-price').value), discount=parseFloat(document.getElementById('pm-discount').value)
@@ -1032,10 +1177,23 @@ async function saveProduct() {
   if (!isNaN(discount)&&discount>=price) { errEl.textContent='سعر الخصم يجب أن يكون أقل من السعر الأصلي'; errEl.classList.remove('hidden'); return }
   errEl.classList.add('hidden')
   const unit = document.getElementById('pm-unit').value.trim() || 'قطعة'
-  const payload = { name, description:document.getElementById('pm-desc').value.trim()||null, price, discount_price:!isNaN(discount)&&discount>0?discount:null, category_id:document.getElementById('pm-category').value||null, image_url:document.getElementById('pm-image').value.trim()||null, is_available:document.getElementById('pm-available').checked, availability:document.getElementById('pm-availability').value, offer_badge:document.getElementById('pm-badge').value.trim()||null, unit }
+  const product_options = getOptionsData()
+  const also_with = [..._alsoWith]
+  const payload = {
+    name, description:document.getElementById('pm-desc').value.trim()||null,
+    price, discount_price:!isNaN(discount)&&discount>0?discount:null,
+    category_id:document.getElementById('pm-category').value||null,
+    image_url:document.getElementById('pm-image').value.trim()||null,
+    is_available:document.getElementById('pm-available').checked,
+    availability:document.getElementById('pm-availability').value,
+    offer_badge:document.getElementById('pm-badge').value.trim()||null,
+    unit,
+    product_options: product_options.length ? product_options : null,
+    also_with: also_with.length ? also_with : null
+  }
   if (id) { await db.from('products').update(payload).eq('id',id) }
   else    { await db.from('products').insert({...payload,restaurant_id:state.restaurant.id,sort_order:state.products.length}) }
-  closeProductModal(); await loadProducts(); showToast(id?'تم تعديل المنتج':'تم إضافة المنتج ✅')
+  closeProductModal(); await loadProducts(); showToast(id?'تم تعديل المنتج ✅':'تم إضافة المنتج ✅')
 }
 async function deleteProduct(id) {
   const ok = await showConfirm('هل تريد حذف هذا المنتج؟', 'حذف المنتج')
@@ -1153,7 +1311,7 @@ function renderOrders() {
         </div>
       </div>
       <div class="space-y-1 border-t border-gray-50 pt-3">
-        ${o.items.map(i=>`<div class="flex justify-between text-sm"><span class="text-gray-600">${i.name} × ${i.qty}</span><span class="font-bold text-gray-800">${i.subtotal.toFixed(2)} ج.م</span></div>`).join('')}
+        ${o.items.map(i=>`<div class="flex justify-between text-sm"><span class="text-gray-600">${i.name}${i.options?` <span class="text-orange-400">(${i.options})</span>`:''} × ${i.qty}</span><span class="font-bold text-gray-800">${i.subtotal.toFixed(2)} ج.م</span></div>`).join('')}
         <div class="flex justify-between text-sm font-extrabold pt-2 border-t border-gray-100"><span>الإجمالي</span><span class="text-orange-500">${Number(o.total).toFixed(2)} ج.م</span></div>
       </div>
       <p class="text-xs text-gray-300 mt-2">${new Date(o.created_at).toLocaleString('ar-EG')}</p>
@@ -1467,7 +1625,7 @@ function showNewOrderPopup(order) {
   const items = order.items || []
   document.getElementById('nop-items').innerHTML = items.map(i =>
     `<div class="flex justify-between text-sm">
-      <span class="text-gray-600 font-bold">${i.name} × ${i.qty}</span>
+      <span class="text-gray-600 font-bold">${i.name}${i.options?` <span class="text-orange-400 font-normal">(${i.options})</span>`:''} × ${i.qty}</span>
       <span class="font-extrabold text-gray-800">${Number(i.subtotal).toFixed(2)} ج.م</span>
     </div>`
   ).join('')
@@ -1552,7 +1710,7 @@ function sendWhatsappShare() {
   if (checked.has('order')) {
     lines.push(`🧾 *طلب ${o.order_number}*`)
     lines.push(`─────────────────`)
-    ;(o.items||[]).forEach(i => lines.push(`• ${i.name} × ${i.qty}  ←  ${fmtMoney(i.subtotal)} ج.م`))
+    ;(o.items||[]).forEach(i => lines.push(`• ${i.name}${i.options?` (${i.options})`:''} × ${i.qty}  ←  ${fmtMoney(i.subtotal)} ج.م`))
     lines.push(`─────────────────`)
     lines.push(`💰 *الإجمالي: ${fmtMoney(o.total)} ج.م*`)
   }
