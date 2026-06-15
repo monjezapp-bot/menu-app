@@ -358,18 +358,41 @@
       <input type="hidden" id="pm-unit" value="قطعة" />
       <p class="text-xs text-gray-400 mt-1">💡 تظهر للعميل عند الطلب — مثال: "الكمية بالكيلو"</p>
     </div>
-    <p id="pm-error" class="text-red-500 text-xs hidden"></p>
 
-    <!-- ── خيارات التخصيص ── -->
-    <div>
-      <div class="flex items-center justify-between mb-2">
-        <label class="text-xs font-bold text-gray-500">خيارات التخصيص (حجم، حرارة، إلخ)</label>
-        <button type="button" onclick="addOptionGroup()" class="text-xs bg-orange-50 text-orange-500 font-bold px-3 py-1.5 rounded-xl hover:bg-orange-100 transition-colors">+ إضافة مجموعة</button>
+    <!-- ══ الأحجام ══ -->
+    <div class="border border-gray-100 rounded-2xl p-4 bg-gray-50">
+      <div class="flex items-center justify-between mb-3">
+        <div>
+          <p class="text-sm font-extrabold text-gray-700">الأحجام</p>
+          <p class="text-xs text-gray-400 mt-0.5">مثال: صغير / وسط / كبير مع سعر إضافي</p>
+        </div>
+        <button onclick="pmAddSize()" class="text-xs bg-orange-500 text-white font-bold px-3 py-1.5 rounded-xl">+ حجم</button>
       </div>
-      <div id="pm-options-list" class="space-y-3"></div>
-      <p class="text-xs text-gray-400 mt-1">💡 مثال: مجموعة "الحجم" تحتوي على (صغير 15ج، وسط 20ج، كبير 25ج)</p>
+      <div id="pm-sizes-list" class="space-y-2"></div>
     </div>
 
+    <!-- ══ الإضافات ══ -->
+    <div class="border border-gray-100 rounded-2xl p-4 bg-gray-50">
+      <div class="flex items-center justify-between mb-3">
+        <div>
+          <p class="text-sm font-extrabold text-gray-700">الإضافات</p>
+          <p class="text-xs text-gray-400 mt-0.5">مثال: بيض مقلي +5 ج.م — بدون بصل مجاناً</p>
+        </div>
+        <button onclick="pmAddAddon()" class="text-xs bg-orange-500 text-white font-bold px-3 py-1.5 rounded-xl">+ إضافة</button>
+      </div>
+      <div id="pm-addons-list" class="space-y-2"></div>
+    </div>
+
+    <!-- ══ تطلب معها أيضاً ══ -->
+    <div class="border border-gray-100 rounded-2xl p-4 bg-gray-50">
+      <div class="mb-3">
+        <p class="text-sm font-extrabold text-gray-700">تطلب معها أيضاً</p>
+        <p class="text-xs text-gray-400 mt-0.5">اختر منتجات تُقترح مع هذا المنتج</p>
+      </div>
+      <div id="pm-suggested-list" class="space-y-1 max-h-48 overflow-y-auto"></div>
+    </div>
+
+    <p id="pm-error" class="text-red-500 text-xs hidden"></p>
     <div class="flex gap-3 pt-2">
       <button onclick="saveProduct()" class="flex-1 bg-orange-500 text-white font-bold rounded-xl py-3 hover:bg-orange-600 transition-colors">حفظ</button>
       <button onclick="closeProductModal()" class="flex-1 bg-gray-100 text-gray-600 font-bold rounded-xl py-3">إلغاء</button>
@@ -617,10 +640,6 @@
 <script>
 const SUPABASE_URL  = 'https://pcmyugeqveyjnappulng.supabase.co'
 const SUPABASE_ANON = 'eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6InBjbXl1Z2VxdmV5am5hcHB1bG5nIiwicm9sZSI6ImFub24iLCJpYXQiOjE3ODExNjU0NDAsImV4cCI6MjA5Njc0MTQ0MH0.uwn0X4CvNRW38FGh_0rYD9KjBRM19CydXucfBsCDYeo'
-
-/* ── Supabase Migration (run once in SQL Editor) ──────────────────────────
-   ALTER TABLE products ADD COLUMN IF NOT EXISTS product_options JSONB DEFAULT NULL;
-   ──────────────────────────────────────────────────────────────────────── */
 const MENU_BASE_URL = 'https://monjezapp-bot.github.io/menu-app/'
 const { createClient } = supabase
 const db = createClient(SUPABASE_URL, SUPABASE_ANON)
@@ -1023,92 +1042,126 @@ function openProductModal(id=null) {
     document.getElementById('pm-available').checked=p.is_available; document.getElementById('product-modal-title').textContent='تعديل منتج'
     setUnitField(p.unit || 'قطعة')
     updateDiscountPreview()
-    renderOptionsUI(p.product_options || [])
+    pmLoadSizes(p.sizes||[])
+    pmLoadAddons(p.addons||[])
+    pmLoadSuggested(p.suggested_ids||[], p.id)
   } else {
     ['pm-name','pm-desc','pm-price','pm-discount','pm-image','pm-badge'].forEach(id=>document.getElementById(id).value='')
     document.getElementById('pm-category').value=''; document.getElementById('pm-availability').value='available'
     document.getElementById('pm-available').checked=true; document.getElementById('discount-preview').classList.add('hidden')
     document.getElementById('product-modal-title').textContent='إضافة منتج'
     setUnitField('قطعة')
-    renderOptionsUI([])
+    pmLoadSizes([])
+    pmLoadAddons([])
+    pmLoadSuggested([], null)
   }
   document.getElementById('modal-product').classList.remove('hidden')
   setTimeout(() => document.getElementById('pm-name').focus(), 100)
-  if (!state.categories.length && !id) { showToast('💡 أضف تصنيفاً أولاً لتنظيم منتجاتك') }
+  if (!state.categories.length && !id) {
+    showToast('💡 أضف تصنيفاً أولاً لتنظيم منتجاتك')
+  }
 }
 
-function renderOptionsUI(groups) {
-  const list = document.getElementById('pm-options-list')
+// ══════════════════════════════════════════════════════
+// SIZES — الأحجام
+// ══════════════════════════════════════════════════════
+function pmLoadSizes(sizes) {
+  const list = document.getElementById('pm-sizes-list')
   list.innerHTML = ''
-  groups.forEach((g, gi) => {
-    const div = document.createElement('div')
-    div.className = 'border border-gray-200 rounded-2xl p-3 space-y-2 bg-gray-50'
-    div.innerHTML = `
-      <div class="flex items-center gap-2">
-        <input type="text" placeholder="اسم المجموعة (مثال: الحجم)" value="${g.name||''}"
-          oninput="updateGroupName(${gi}, this.value)"
-          class="flex-1 border border-gray-200 rounded-xl px-3 py-2 text-sm focus:outline-none focus:ring-2 focus:ring-orange-400 bg-white" />
-        <label class="flex items-center gap-1 text-xs font-bold text-gray-500 whitespace-nowrap">
-          <input type="checkbox" ${g.required?'checked':''} onchange="updateGroupRequired(${gi}, this.checked)" class="accent-orange-500" /> مطلوب
-        </label>
-        <button onclick="removeGroup(${gi})" class="text-red-400 hover:text-red-600 font-bold text-lg leading-none">×</button>
-      </div>
-      <div id="opts-${gi}" class="space-y-1.5">
-        ${(g.options||[]).map((o,oi) => optionRowHTML(gi,oi,o)).join('')}
-      </div>
-      <button onclick="addOption(${gi})" class="text-xs text-orange-500 font-bold hover:underline">+ إضافة خيار</button>`
-    list.appendChild(div)
+  sizes.forEach((s, i) => pmRenderSizeRow(i, s.name||'', s.extra||0))
+}
+function pmRenderSizeRow(idx, name='', extra=0) {
+  const list = document.getElementById('pm-sizes-list')
+  const row = document.createElement('div')
+  row.className = 'pm-size-row flex items-center gap-2'
+  row.innerHTML =
+    '<input type="text" placeholder="اسم الحجم (مثال: كبير)" value="' + name + '" ' +
+    'class="flex-1 border border-gray-200 rounded-xl px-3 py-2 text-sm focus:outline-none focus:ring-2 focus:ring-orange-300" />' +
+    '<input type="number" placeholder="سعر إضافي" value="' + (extra||'') + '" min="0" step="0.5" ' +
+    'class="w-28 border border-gray-200 rounded-xl px-3 py-2 text-sm focus:outline-none focus:ring-2 focus:ring-orange-300" />' +
+    '<span class="text-xs text-gray-400 whitespace-nowrap">ج.م+</span>' +
+    '<button onclick="this.closest('.pm-size-row').remove()" ' +
+    'class="text-red-400 hover:text-red-600 font-bold text-lg leading-none px-1">×</button>'
+  list.appendChild(row)
+}
+function pmAddSize() { pmRenderSizeRow(document.querySelectorAll('.pm-size-row').length) }
+function pmGetSizes() {
+  const rows = document.querySelectorAll('.pm-size-row')
+  const result = []
+  rows.forEach(row => {
+    const inputs = row.querySelectorAll('input')
+    const name = inputs[0].value.trim()
+    const extra = parseFloat(inputs[1].value) || 0
+    if (name) result.push({ name, extra })
   })
+  return result
 }
 
-function optionRowHTML(gi, oi, o) {
-  return `<div class="flex gap-2 items-center" id="opt-${gi}-${oi}">
-    <input type="text" placeholder="اسم الخيار" value="${o.name||''}"
-      oninput="updateOption(${gi},${oi},'name',this.value)"
-      class="flex-1 border border-gray-200 rounded-xl px-3 py-2 text-sm focus:outline-none focus:ring-2 focus:ring-orange-400 bg-white" />
-    <input type="number" placeholder="السعر" value="${o.price!=null?o.price:''}" min="0" step="0.5"
-      oninput="updateOption(${gi},${oi},'price',parseFloat(this.value)||0)"
-      class="w-24 border border-gray-200 rounded-xl px-3 py-2 text-sm focus:outline-none focus:ring-2 focus:ring-orange-400 bg-white" />
-    <button onclick="removeOption(${gi},${oi})" class="text-red-400 hover:text-red-600 font-bold text-lg leading-none">×</button>
-  </div>`
+// ══════════════════════════════════════════════════════
+// ADDONS — الإضافات
+// ══════════════════════════════════════════════════════
+function pmLoadAddons(addons) {
+  const list = document.getElementById('pm-addons-list')
+  list.innerHTML = ''
+  addons.forEach(a => pmRenderAddonRow(a.name||'', a.price||0))
 }
-
-function getOptionsData() {
-  const groups = []
-  document.querySelectorAll('#pm-options-list > div').forEach((div, gi) => {
-    const nameEl = div.querySelector('input[type="text"]')
-    const reqEl  = div.querySelector('input[type="checkbox"]')
-    const opts   = []
-    div.querySelectorAll(`#opts-${gi} > div`).forEach(row => {
-      const inputs = row.querySelectorAll('input')
-      const name = inputs[0]?.value?.trim()
-      const price = parseFloat(inputs[1]?.value)
-      if (name) opts.push({ name, price: isNaN(price) ? 0 : price })
-    })
-    if (nameEl?.value?.trim()) groups.push({ name: nameEl.value.trim(), required: reqEl?.checked||false, options: opts })
+function pmRenderAddonRow(name='', price=0) {
+  const list = document.getElementById('pm-addons-list')
+  const row = document.createElement('div')
+  row.className = 'pm-addon-row flex items-center gap-2'
+  row.innerHTML =
+    '<input type="text" placeholder="اسم الإضافة (مثال: بيض مقلي)" value="' + name + '" ' +
+    'class="flex-1 border border-gray-200 rounded-xl px-3 py-2 text-sm focus:outline-none focus:ring-2 focus:ring-orange-300" />' +
+    '<input type="number" placeholder="السعر" value="' + (price||'') + '" min="0" step="0.5" ' +
+    'class="w-24 border border-gray-200 rounded-xl px-3 py-2 text-sm focus:outline-none focus:ring-2 focus:ring-orange-300" />' +
+    '<span class="text-xs text-gray-400 whitespace-nowrap">ج.م</span>' +
+    '<button onclick="this.closest('.pm-addon-row').remove()" ' +
+    'class="text-red-400 hover:text-red-600 font-bold text-lg leading-none px-1">×</button>'
+  list.appendChild(row)
+}
+function pmAddAddon() { pmRenderAddonRow() }
+function pmGetAddons() {
+  const rows = document.querySelectorAll('.pm-addon-row')
+  const result = []
+  rows.forEach(row => {
+    const inputs = row.querySelectorAll('input')
+    const name = inputs[0].value.trim()
+    const price = parseFloat(inputs[1].value) || 0
+    if (name) result.push({ name, price })
   })
-  return groups
+  return result
 }
 
-// state مؤقت للـ options أثناء التحرير
-let _optGroups = []
-function addOptionGroup() {
-  _optGroups = getOptionsData()
-  _optGroups.push({ name:'', required:true, options:[{name:'',price:0}] })
-  renderOptionsUI(_optGroups)
+// ══════════════════════════════════════════════════════
+// SUGGESTED — تطلب معها أيضاً
+// ══════════════════════════════════════════════════════
+function pmLoadSuggested(selectedIds, currentProductId) {
+  const list = document.getElementById('pm-suggested-list')
+  const others = state.products.filter(p => p.id !== currentProductId)
+  if (!others.length) {
+    list.innerHTML = '<p class="text-xs text-gray-400 text-center py-2">لا توجد منتجات أخرى بعد</p>'
+    return
+  }
+  list.innerHTML = others.map(p => {
+    const checked = selectedIds.includes(p.id) ? 'checked' : ''
+    const price = p.discount_price && p.discount_price < p.price ? p.discount_price : p.price
+    return '<label class="flex items-center gap-3 py-2 px-2 rounded-xl hover:bg-white cursor-pointer transition-colors">' +
+      '<input type="checkbox" value="' + p.id + '" ' + checked + ' ' +
+      'class="w-4 h-4 accent-orange-500 rounded flex-shrink-0" />' +
+      (p.image_url
+        ? '<img src="' + p.image_url + '" class="w-9 h-9 rounded-xl object-cover flex-shrink-0 border border-gray-100" />'
+        : '<div class="w-9 h-9 rounded-xl bg-gray-100 flex items-center justify-center text-base flex-shrink-0">🍽️</div>') +
+      '<div class="flex-1 min-w-0">' +
+      '<p class="text-sm font-bold text-gray-700 truncate">' + p.name + '</p>' +
+      '<p class="text-xs text-orange-500 font-bold">' + Number(price).toFixed(0) + ' ج.م</p>' +
+      '</div></label>'
+  }).join('')
 }
-function removeGroup(gi) {
-  _optGroups = getOptionsData(); _optGroups.splice(gi,1); renderOptionsUI(_optGroups)
+function pmGetSuggested() {
+  return [...document.querySelectorAll('#pm-suggested-list input[type=checkbox]:checked')]
+    .map(cb => cb.value)
 }
-function addOption(gi) {
-  _optGroups = getOptionsData(); _optGroups[gi].options.push({name:'',price:0}); renderOptionsUI(_optGroups)
-}
-function removeOption(gi,oi) {
-  _optGroups = getOptionsData(); _optGroups[gi].options.splice(oi,1); renderOptionsUI(_optGroups)
-}
-function updateGroupName(gi,v)     { /* live — read on save */ }
-function updateGroupRequired(gi,v) { /* live — read on save */ }
-function updateOption(gi,oi,k,v)   { /* live — read on save */ }
+
 function closeProductModal() { document.getElementById('modal-product').classList.add('hidden') }
 async function saveProduct() {
   const id=document.getElementById('pm-id').value, name=document.getElementById('pm-name').value.trim()
@@ -1119,8 +1172,10 @@ async function saveProduct() {
   if (!isNaN(discount)&&discount>=price) { errEl.textContent='سعر الخصم يجب أن يكون أقل من السعر الأصلي'; errEl.classList.remove('hidden'); return }
   errEl.classList.add('hidden')
   const unit = document.getElementById('pm-unit').value.trim() || 'قطعة'
-  const product_options = getOptionsData().filter(g => g.name && g.options.length)
-  const payload = { name, description:document.getElementById('pm-desc').value.trim()||null, price, discount_price:!isNaN(discount)&&discount>0?discount:null, category_id:document.getElementById('pm-category').value||null, image_url:document.getElementById('pm-image').value.trim()||null, is_available:document.getElementById('pm-available').checked, availability:document.getElementById('pm-availability').value, offer_badge:document.getElementById('pm-badge').value.trim()||null, unit, product_options: product_options.length ? product_options : null }
+  const sizes = pmGetSizes()
+  const addons = pmGetAddons()
+  const suggested_ids = pmGetSuggested()
+  const payload = { name, description:document.getElementById('pm-desc').value.trim()||null, price, discount_price:!isNaN(discount)&&discount>0?discount:null, category_id:document.getElementById('pm-category').value||null, image_url:document.getElementById('pm-image').value.trim()||null, is_available:document.getElementById('pm-available').checked, availability:document.getElementById('pm-availability').value, offer_badge:document.getElementById('pm-badge').value.trim()||null, unit, sizes, addons, suggested_ids }
   if (id) { await db.from('products').update(payload).eq('id',id) }
   else    { await db.from('products').insert({...payload,restaurant_id:state.restaurant.id,sort_order:state.products.length}) }
   closeProductModal(); await loadProducts(); showToast(id?'تم تعديل المنتج':'تم إضافة المنتج ✅')
