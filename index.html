@@ -1473,22 +1473,28 @@ async function sendOrder() {
 
   // 2) تصرف حسب طريقة الاستلام
   if (method === 'whatsapp') {
-    const now  = new Date().toLocaleTimeString('ar-EG', { hour:'2-digit', minute:'2-digit' })
-    const text = [
-      `🧾 *طلب جديد ${orderNumber}*`, `─────────────────`,
-      ...items.map(i => `• ${i.name}${i.type==='bundle'?' 🎁':''}${i.options?` (${i.options})`:''} — ${i.qty} ${i.unit}  —  ${fmt(i.subtotal)}`),
-      `─────────────────`,
-      `💰 *الإجمالي: ${fmt(total)}*`,
-      `⚠️ السعر لا يشمل رسوم التوصيل`,
-      table     ? `📍 الطاولة: ${table}` : '',
-      custName  ? `👤 الاسم: ${custName}` : '',
-      custPhone ? `📞 التواصل: ${custPhone}` : '',
-      custAddr  ? `🏠 العنوان: ${custAddr}` : '',
-      custLoc   ? `📌 الموقع: ${custLoc}` : '',
-      note      ? `📝 ملاحظة: ${note}` : '',
-      `⏰ ${now}`
-    ].filter(Boolean).join('\n')
-    window.open(`https://wa.me/${S.restaurant.whatsapp}?text=${encodeURIComponent(text)}`, '_blank')
+    // تنظيف رقم الواتساب من أي رموز غير رقمية
+    const rawWa = (S.restaurant.whatsapp || '').replace(/[^0-9]/g, '').trim()
+    if (!rawWa) {
+      showToast('⚠️ رقم واتساب المطعم غير مضبوط — تواصل مع المطعم مباشرة')
+    } else {
+      const now  = new Date().toLocaleTimeString('ar-EG', { hour:'2-digit', minute:'2-digit' })
+      const text = [
+        `🧾 *طلب جديد ${orderNumber}*`, `─────────────────`,
+        ...items.map(i => `• ${i.name}${i.type==='bundle'?' 🎁':''}${i.options?` (${i.options})`:''} — ${i.qty} ${i.unit}  —  ${fmt(i.subtotal)}`),
+        `─────────────────`,
+        `💰 *الإجمالي: ${fmt(total)}*`,
+        `⚠️ السعر لا يشمل رسوم التوصيل`,
+        table     ? `📍 الطاولة: ${table}` : '',
+        custName  ? `👤 الاسم: ${custName}` : '',
+        custPhone ? `📞 التواصل: ${custPhone}` : '',
+        custAddr  ? `🏠 العنوان: ${custAddr}` : '',
+        custLoc   ? `📌 الموقع: ${custLoc}` : '',
+        note      ? `📝 ملاحظة: ${note}` : '',
+        `⏰ ${now}`
+      ].filter(Boolean).join('\n')
+      window.open(`https://wa.me/${rawWa}?text=${encodeURIComponent(text)}`, '_blank')
+    }
   }
   // لو method === 'app': الطلب اتحفظ في DB وخلاص — الـ realtime هيبعته للتاجر
 
