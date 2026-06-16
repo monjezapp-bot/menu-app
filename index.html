@@ -1452,25 +1452,22 @@ async function sendOrder() {
   const items = S.cart.map(c => ({ id:c.id, type:c.type, name:c.name, price:c.price, qty:c.qty, unit:c.unit||'قطعة', options:c.options||null, subtotal:Number((c.price*c.qty).toFixed(2)) }))
   const total = cartTotal()
 
-  // 1) احفظ في DB أولاً
-  let orderNumber
-  try {
-    const { data:rpc, error:re } = await db.rpc('generate_order_number')
-    if (re || !rpc) throw new Error(re?.message || 'generate_order_number failed')
-    const { data:od, error:ie } = await db.from('orders')
-      .insert({ restaurant_id:S.restaurant.id, order_number:rpc, items, total, table_number:table||null,
-                customer_name:custName||null, customer_phone:custPhone||null,
-                customer_address:custAddr||null, customer_location:custLoc||null, note:note||null })
-      .select('order_number').single()
-    if (ie || !od?.order_number) throw new Error(ie?.message || 'insert failed')
-    orderNumber = od.order_number
-  } catch(e) {
-    console.error('Order save failed:', e)
-    btn.style.opacity = '1'
-    btn.innerHTML = '<span>⚠️ فشل الحفظ — اضغط مجدداً</span>'
-    setTimeout(resetBtn, 3000)
-    return
-  }
+  // 1) اعمل رقم الطلب فوراً
+  const orderNumber = 'ORD-' + new Date().toLocaleDateString('en-GB').replace(/\//g,'').slice(0,6) + '-' + Math.floor(1000 + Math.random() * 9000)
+
+  // 2) احفظ في DB في الخلفية (من غير ما تنتظر)
+  db.rpc('generate_order_number').then(({ data:rpc }) => {
+    const num = rpc || orderNumber
+    db.from('orders').insert({ restaurant_id:S.restaurant.id, order_number:num, items, total, table_number:table||null,
+      customer_name:custName||null, customer_phone:custPhone||null,
+      customer_address:custAddr||null, customer_location:custLoc||null, note:note||null })
+    .then(({ error }) => { if (error) console.error('DB save error:', error) })
+  }).catch(e => {
+    db.from('orders').insert({ restaurant_id:S.restaurant.id, order_number:orderNumber, items, total, table_number:table||null,
+      customer_name:custName||null, customer_phone:custPhone||null,
+      customer_address:custAddr||null, customer_location:custLoc||null, note:note||null })
+    .then(({ error }) => { if (error) console.error('DB save error:', error) })
+  })
 
   // 2) تصرف حسب طريقة الاستلام
   if (method === 'whatsapp') {
@@ -1489,7 +1486,8 @@ async function sendOrder() {
       note      ? `📝 ملاحظة: ${note}` : '',
       `⏰ ${now}`
     ].filter(Boolean).join('\n')
-    window.open(`https://wa.me/${S.restaurant.whatsapp}?text=${encodeURIComponent(text)}`, '_blank')
+    const waNum = S.restaurant.whatsapp.replace(/[^0-9]/g, '')
+    window.open(`https://wa.me/${waNum}?text=${encodeURIComponent(text)}`, '_blank')
   }
   // لو method === 'app': الطلب اتحفظ في DB وخلاص — الـ realtime هيبعته للتاجر
 
