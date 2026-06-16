@@ -1721,7 +1721,7 @@ function sendWhatsappShare() {
   if (checked.has('table'))    lines.push(`🪑 طاولة: ${o.table_number}`)
   if (checked.has('note'))     lines.push(`📝 ${o.note}`)
 
-  const wa = state.restaurant.whatsapp.replace(/[^0-9]/g, '')
+  const wa = state.restaurant.whatsapp
   window.open(`https://wa.me/${wa}?text=${encodeURIComponent(lines.join('\n'))}`, '_blank')
   closeWhatsappShare()
 }
