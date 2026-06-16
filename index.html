@@ -1451,18 +1451,32 @@ async function sendOrder() {
   const note     = document.getElementById('order-note').value.trim()
   const items = S.cart.map(c => ({ id:c.id, type:c.type, name:c.name, price:c.price, qty:c.qty, unit:c.unit||'قطعة', options:c.options||null, subtotal:Number((c.price*c.qty).toFixed(2)) }))
   const total = cartTotal()
-  const now = new Date().toLocaleTimeString('ar-EG', { hour:'2-digit', minute:'2-digit' })
 
-  // ── واتساب: يفتح فوراً بدون انتظار DB ──
+  // 1) احفظ في DB أولاً
+  let orderNumber
+  try {
+    const { data:rpc, error:re } = await db.rpc('generate_order_number')
+    if (re || !rpc) throw new Error(re?.message || 'generate_order_number failed')
+    const { data:od, error:ie } = await db.from('orders')
+      .insert({ restaurant_id:S.restaurant.id, order_number:rpc, items, total, table_number:table||null,
+                customer_name:custName||null, customer_phone:custPhone||null,
+                customer_address:custAddr||null, customer_location:custLoc||null, note:note||null })
+      .select('order_number').single()
+    if (ie || !od?.order_number) throw new Error(ie?.message || 'insert failed')
+    orderNumber = od.order_number
+  } catch(e) {
+    console.error('Order save failed:', e)
+    btn.style.opacity = '1'
+    btn.innerHTML = '<span>⚠️ فشل الحفظ — اضغط مجدداً</span>'
+    setTimeout(resetBtn, 3000)
+    return
+  }
+
+  // 2) تصرف حسب طريقة الاستلام
   if (method === 'whatsapp') {
-    const rawWa = (S.restaurant.whatsapp || '').replace(/[^0-9]/g, '')
-    if (!rawWa) {
-      showToast('⚠️ رقم واتساب المطعم غير مضبوط')
-      resetBtn(); return
-    }
-    const orderNum = 'ORD-' + Date.now()
+    const now  = new Date().toLocaleTimeString('ar-EG', { hour:'2-digit', minute:'2-digit' })
     const text = [
-      `🧾 *طلب جديد*`, `─────────────────`,
+      `🧾 *طلب جديد ${orderNumber}*`, `─────────────────`,
       ...items.map(i => `• ${i.name}${i.type==='bundle'?' 🎁':''}${i.options?` (${i.options})`:''} — ${i.qty} ${i.unit}  —  ${fmt(i.subtotal)}`),
       `─────────────────`,
       `💰 *الإجمالي: ${fmt(total)}*`,
@@ -1475,45 +1489,16 @@ async function sendOrder() {
       note      ? `📝 ملاحظة: ${note}` : '',
       `⏰ ${now}`
     ].filter(Boolean).join('\n')
-    window.open(`https://wa.me/${rawWa}?text=${encodeURIComponent(text)}`, '_blank')
-
-    // احفظ في DB في الخلفية (مش بيأثر على تجربة العميل)
-    db.rpc('generate_order_number').then(({data:rpc}) => {
-      if (!rpc) return
-      db.from('orders').insert({
-        restaurant_id:S.restaurant.id, order_number:rpc, items, total,
-        table_number:table||null, customer_name:custName||null,
-        customer_phone:custPhone||null, customer_address:custAddr||null,
-        customer_location:custLoc||null, note:note||null
-      }).then(({error}) => { if(error) console.warn('DB save failed (silent):', error.message) })
-    })
-
-    clearCart(); updateCartUI(); closeCartSheet()
-    ;['order-name','order-phone','order-address','order-location','order-note','table-number-input'].forEach(id=>{const el=document.getElementById(id);if(el)el.value=''})
-    resetBtn()
-    showOrderSuccess(orderNum, 'whatsapp')
-    return
+    const waNum = S.restaurant.whatsapp.replace(/[^0-9]/g, '')
+    window.open(`https://wa.me/${waNum}?text=${encodeURIComponent(text)}`, '_blank')
   }
+  // لو method === 'app': الطلب اتحفظ في DB وخلاص — الـ realtime هيبعته للتاجر
 
-  // ── تطبيق: لازم يحفظ في DB ──
-  try {
-    const { data:rpc, error:re } = await db.rpc('generate_order_number')
-    if (re || !rpc) throw new Error(re?.message || 'generate_order_number failed')
-    const { error:ie } = await db.from('orders')
-      .insert({ restaurant_id:S.restaurant.id, order_number:rpc, items, total, table_number:table||null,
-                customer_name:custName||null, customer_phone:custPhone||null,
-                customer_address:custAddr||null, customer_location:custLoc||null, note:note||null })
-    if (ie) throw new Error(ie.message || 'insert failed')
-    clearCart(); updateCartUI(); closeCartSheet()
-    ;['order-name','order-phone','order-address','order-location','order-note','table-number-input'].forEach(id=>{const el=document.getElementById(id);if(el)el.value=''})
-    resetBtn()
-    showOrderSuccess(rpc, 'app')
-  } catch(e) {
-    console.error('Order save failed:', e)
-    btn.style.opacity = '1'
-    btn.innerHTML = '<span>⚠️ فشل الحفظ — اضغط مجدداً</span>'
-    setTimeout(resetBtn, 3000)
-  }
+  // 3) نظف السلة واعرض شاشة النجاح
+  clearCart(); updateCartUI(); closeCartSheet()
+  ;['order-name','order-phone','order-address','order-location','order-note','table-number-input'].forEach(id=>{const el=document.getElementById(id);if(el)el.value=''})
+  resetBtn()
+  showOrderSuccess(orderNumber, method)
 }
 
 function showOrderSuccess(orderNumber, method) {
