@@ -1457,13 +1457,12 @@ async function sendOrder() {
   try {
     const { data:rpc, error:re } = await db.rpc('generate_order_number')
     if (re || !rpc) throw new Error(re?.message || 'generate_order_number failed')
-    const { data:od, error:ie } = await db.from('orders')
-      .insert({ restaurant_id:S.restaurant.id, order_number:rpc, items, total, table_number:table||null,
+    orderNumber = rpc
+    const { error:ie } = await db.from('orders')
+      .insert({ restaurant_id:S.restaurant.id, order_number:orderNumber, items, total, table_number:table||null,
                 customer_name:custName||null, customer_phone:custPhone||null,
                 customer_address:custAddr||null, customer_location:custLoc||null, note:note||null })
-      .select('order_number').single()
-    if (ie || !od?.order_number) throw new Error(ie?.message || 'insert failed')
-    orderNumber = od.order_number
+    if (ie) throw new Error(ie.message || 'insert failed')
   } catch(e) {
     console.error('Order save failed:', e)
     btn.style.opacity = '1'
