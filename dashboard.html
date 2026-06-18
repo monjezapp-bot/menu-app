@@ -3,86 +3,49 @@
 <head>
   <meta charset="UTF-8" />
   <meta name="viewport" content="width=device-width, initial-scale=1.0" />
-  <title>لوحة التحكم</title>
+  <title>لوحة التحكم — منيو</title>
+  <link rel="manifest" href="./manifest.json" />
+  <meta name="theme-color" content="#FF6B00" />
+  <link rel="apple-touch-icon" href="./icon-192.png" />
+  <meta name="apple-mobile-web-app-capable" content="yes" />
+  <meta name="apple-mobile-web-app-status-bar-style" content="black-translucent" />
   <script src="https://cdn.tailwindcss.com"></script>
   <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
-  <link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/@simonwep/pickr/dist/themes/nano.min.css"/>
+  <link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/@simonwep/pickr/dist/themes/nano.min.css" />
   <script src="https://cdn.jsdelivr.net/npm/@simonwep/pickr/dist/pickr.min.js"></script>
   <link href="https://fonts.googleapis.com/css2?family=Rubik:wght@400;500;600;700;800;900&display=swap" rel="stylesheet" />
   <style>
     * { font-family: 'Rubik', sans-serif; }
-    .tab-active { border-bottom: 3px solid #FF6B00; color: #FF6B00; }
-    @keyframes fadeUp { from{opacity:0;transform:translateY(12px);}to{opacity:1;transform:translateY(0);} }
+    input[type="text"], input[type="email"], input[type="password"],
+    input[type="number"], input[type="tel"], textarea, select { font-size: 16px !important; }
+
+    @keyframes fadeUp  { from { opacity:0; transform:translateY(12px) } to { opacity:1; transform:translateY(0) } }
+    @keyframes slideUp { from { transform:translateY(100%) }            to { transform:translateY(0) } }
+    @keyframes spin    { to   { transform:rotate(360deg) } }
+    @keyframes popIn   { from { opacity:0; transform:scale(0.85) translateY(20px) } to { opacity:1; transform:scale(1) translateY(0) } }
+
     .fade-up { animation: fadeUp .3s ease both; }
-    .spinner { border:3px solid #f3f3f3; border-top:3px solid #FF6B00; border-radius:50%; width:22px;height:22px; animation:spin .7s linear infinite; display:inline-block; }
-    @keyframes spin { to{transform:rotate(360deg);} }
+    .spinner { border:3px solid #f3f3f3; border-top:3px solid #FF6B00; border-radius:50%; width:22px; height:22px; animation:spin .7s linear infinite; display:inline-block; }
 
     /* ── Bottom Nav ── */
-    .bottom-nav {
-      position: fixed; bottom: 0; left: 0; right: 0; z-index: 40;
-      background: #fff;
-      border-top: 1px solid #f0f0f0;
-      display: flex;
-      padding-bottom: env(safe-area-inset-bottom);
-      box-shadow: 0 -4px 20px rgba(0,0,0,0.06);
-    }
-    .bnav-btn {
-      flex: 1; display: flex; flex-direction: column; align-items: center;
-      gap: 3px; padding: 10px 4px 8px;
-      font-size: 10px; font-weight: 700; color: #aaa;
-      border: none; background: none; cursor: pointer;
-      transition: color 0.2s; position: relative;
-    }
-    .bnav-btn.active { color: #FF6B00; }
-    .bnav-btn svg { width: 22px; height: 22px; }
-    .bnav-orders-badge {
-      position: absolute; top: 6px; right: calc(50% - 18px);
-      background: #ff3b30; color: #fff;
-      font-size: 9px; font-weight: 900;
-      min-width: 16px; height: 16px;
-      border-radius: 50%; display: none; align-items: center; justify-content: center;
-      border: 2px solid #fff;
-    }
+    .bottom-nav { position:fixed; bottom:0; left:0; right:0; z-index:40; background:#fff; border-top:1px solid #f0f0f0; display:flex; padding-bottom:env(safe-area-inset-bottom); box-shadow:0 -4px 20px rgba(0,0,0,0.06); }
+    .bnav-btn   { flex:1; display:flex; flex-direction:column; align-items:center; gap:3px; padding:10px 4px 8px; font-size:10px; font-weight:700; color:#aaa; border:none; background:none; cursor:pointer; transition:color 0.2s; position:relative; }
+    .bnav-btn.active { color:#FF6B00; }
+    .bnav-btn svg    { width:22px; height:22px; }
+    .bnav-orders-badge { position:absolute; top:6px; right:calc(50% - 18px); background:#ff3b30; color:#fff; font-size:9px; font-weight:900; min-width:16px; height:16px; border-radius:50%; display:none; align-items:center; justify-content:center; border:2px solid #fff; }
 
     /* ── Confirm Dialog ── */
-    #confirm-dialog {
-      position: fixed; inset: 0; z-index: 70;
-      background: rgba(0,0,0,0.5); backdrop-filter: blur(4px);
-      align-items: flex-end; justify-content: center;
-    }
-    #confirm-dialog.hidden { display: none !important; }
-    #confirm-dialog:not(.hidden) { display: flex; }
-    #confirm-dialog-inner {
-      background: #fff; border-radius: 24px 24px 0 0;
-      width: 100%; max-width: 480px; padding: 20px 20px 24px;
-      animation: slideUp .28s cubic-bezier(0.34,1.1,0.64,1) both;
-    }
-    @keyframes slideUp { from{transform:translateY(100%)} to{transform:translateY(0)} }
+    #confirm-dialog { position:fixed; inset:0; z-index:70; background:rgba(0,0,0,0.5); backdrop-filter:blur(4px); align-items:flex-end; justify-content:center; }
+    #confirm-dialog.hidden { display:none !important; }
+    #confirm-dialog:not(.hidden) { display:flex; }
+    #confirm-dialog-inner { background:#fff; border-radius:24px 24px 0 0; width:100%; max-width:480px; padding:20px 20px 24px; animation:slideUp .28s cubic-bezier(0.34,1.1,0.64,1) both; }
 
-    /* ── Inputs 16px to prevent zoom on iOS ── */
-    input[type="text"], input[type="email"], input[type="password"],
-    input[type="number"], input[type="tel"], textarea, select {
-      font-size: 16px !important;
-    }
-
-    /* ── New Order Popup ── */
-    @keyframes popIn {
-      from { opacity:0; transform:scale(0.85) translateY(20px); }
-      to   { opacity:1; transform:scale(1)    translateY(0); }
-    }
-
-    /* ── ORM option selected state ── */
-    .orm-option-selected {
-      border-color: #FF6B00 !important;
-      background-color: #FFF7F2 !important;
-    }
-    .orm-check-active   { background-color: #FF6B00 !important; }
-    .orm-check-inactive { background-color: #e5e7eb !important; }
+    .tab-active { border-bottom:3px solid #FF6B00; color:#FF6B00; }
   </style>
 </head>
 <body class="bg-gray-50 min-h-screen">
 
-<!-- LOGIN -->
+<!-- ══ LOGIN ══ -->
 <div id="screen-login" class="min-h-screen flex items-center justify-center p-6">
   <div class="bg-white rounded-3xl shadow-xl w-full max-w-sm p-8 fade-up">
     <div class="text-center mb-8">
@@ -91,37 +54,40 @@
       <p class="text-gray-400 text-sm mt-1">سجّل دخولك لإدارة مطعمك</p>
     </div>
     <div class="space-y-4">
-      <input id="login-email" type="email" placeholder="البريد الإلكتروني"
-             class="w-full border border-gray-200 rounded-xl px-4 py-3 text-sm focus:outline-none focus:ring-2 focus:ring-orange-400" />
-      <input id="login-pass" type="password" placeholder="كلمة المرور"
-             class="w-full border border-gray-200 rounded-xl px-4 py-3 text-sm focus:outline-none focus:ring-2 focus:ring-orange-400" />
+      <input id="login-email" type="email" placeholder="البريد الإلكتروني" class="w-full border border-gray-200 rounded-xl px-4 py-3 text-sm focus:outline-none focus:ring-2 focus:ring-orange-400" />
+      <input id="login-pass"  type="password" placeholder="كلمة المرور"       class="w-full border border-gray-200 rounded-xl px-4 py-3 text-sm focus:outline-none focus:ring-2 focus:ring-orange-400" />
       <p id="login-error" class="text-red-500 text-xs text-center hidden"></p>
-      <button onclick="doLogin()"
-              class="w-full bg-orange-500 hover:bg-orange-600 text-white font-bold rounded-xl py-3 transition-colors flex items-center justify-center gap-2">
+      <button onclick="doLogin()" class="w-full bg-orange-500 hover:bg-orange-600 text-white font-bold rounded-xl py-3 transition-colors flex items-center justify-center gap-2">
         <span id="login-btn-text">دخول</span>
       </button>
     </div>
   </div>
 </div>
 
-<!-- DASHBOARD -->
+<!-- ══ DASHBOARD ══ -->
 <div id="screen-dashboard" class="hidden min-h-screen">
 
   <!-- Top Bar -->
+  <!-- بانر توجيه مستخدمي آيفون لإضافة الداشبورد للشاشة الرئيسية (شرط أساسي لعمل التنبيهات على آيفون) -->
+  <div id="ios-install-banner" class="hidden bg-blue-50 border-b border-blue-100 px-4 py-3 text-xs text-blue-700 font-bold flex items-center justify-between gap-2">
+    <span>📱 لتفعيل تنبيهات الطلبات: اضغط زر المشاركة <span style="font-size:15px">⬆️</span> ثم "إضافة إلى الشاشة الرئيسية"، وافتح اللوحة من الأيقونة الجديدة</span>
+    <button onclick="document.getElementById('ios-install-banner').classList.add('hidden')" class="text-blue-400 font-extrabold flex-shrink-0">✕</button>
+  </div>
+
   <header class="bg-white border-b border-gray-100 px-4 py-4 flex items-center justify-between sticky top-0 z-30">
     <div>
       <p class="text-xs text-gray-400">إدارة مطعم</p>
       <h1 id="dash-restaurant-name" class="text-lg font-extrabold text-gray-800"></h1>
     </div>
     <div class="flex items-center gap-3">
-      <a id="preview-link" href="#" target="_blank"
-         class="text-xs bg-orange-50 text-orange-500 font-bold px-3 py-2 rounded-xl">👁️ معاينة</a>
-      <button onclick="doLogout()"
-              class="text-xs text-gray-400 hover:text-red-500 font-bold px-3 py-2 rounded-xl border border-gray-200 transition-colors">خروج</button>
+      <button id="enable-push-btn" onclick="enablePushNotifications()" class="hidden text-xs bg-blue-50 text-blue-600 font-bold px-3 py-2 rounded-xl">🔔 تفعيل التنبيهات</button>
+      <a id="preview-link" href="#" target="_blank" class="text-xs bg-orange-50 text-orange-500 font-bold px-3 py-2 rounded-xl">👁️ معاينة</a>
+      <a id="support-link" href="#" target="_blank" onclick="openSupportChat(event)" class="text-xs bg-green-50 text-green-600 font-bold px-3 py-2 rounded-xl">💬 الدعم الفني</a>
+      <button onclick="doLogout()" class="text-xs text-gray-400 hover:text-red-500 font-bold px-3 py-2 rounded-xl border border-gray-200 transition-colors">خروج</button>
     </div>
   </header>
 
-  <!-- Tabs (hidden on mobile, replaced by bottom nav) -->
+  <!-- Desktop Tabs -->
   <div class="bg-white border-b border-gray-100 px-2 gap-1 sticky top-[69px] z-20 overflow-x-auto hidden md:flex">
     <button onclick="showTab('products')"   id="tab-products-top"   class="tab-btn flex-shrink-0 py-3 px-3 text-sm font-bold text-gray-400 transition-colors tab-active">المنتجات</button>
     <button onclick="showTab('categories')" id="tab-categories-top" class="tab-btn flex-shrink-0 py-3 px-3 text-sm font-bold text-gray-400 transition-colors">التصنيفات</button>
@@ -132,9 +98,10 @@
     <button onclick="showTab('settings')"   id="tab-settings-top"   class="tab-btn flex-shrink-0 py-3 px-3 text-sm font-bold text-gray-400 transition-colors">الإعدادات</button>
   </div>
 
+  <!-- Main Content -->
   <main class="p-4 max-w-2xl mx-auto pb-28">
 
-    <!-- PRODUCTS TAB -->
+    <!-- Products Tab -->
     <div id="tab-content-products" class="fade-up">
       <div class="flex items-center justify-between mb-4">
         <h2 class="font-extrabold text-gray-800">المنتجات</h2>
@@ -144,7 +111,7 @@
       <div id="products-list" class="space-y-3"><div class="spinner mx-auto mt-8"></div></div>
     </div>
 
-    <!-- CATEGORIES TAB -->
+    <!-- Categories Tab -->
     <div id="tab-content-categories" class="hidden fade-up">
       <div class="flex items-center justify-between mb-4">
         <h2 class="font-extrabold text-gray-800">التصنيفات</h2>
@@ -153,7 +120,7 @@
       <div id="categories-list" class="space-y-3"></div>
     </div>
 
-    <!-- BUNDLES TAB -->
+    <!-- Bundles Tab -->
     <div id="tab-content-bundles" class="hidden fade-up">
       <div class="flex items-center justify-between mb-4">
         <h2 class="font-extrabold text-gray-800">العروض المجمعة</h2>
@@ -162,146 +129,92 @@
       <div id="bundles-list" class="space-y-3"></div>
     </div>
 
-    <!-- BANNERS TAB -->
+    <!-- Banners Tab -->
     <div id="tab-content-banners" class="hidden fade-up">
       <div class="flex items-center justify-between mb-4">
-        <h2 class="font-extrabold text-gray-800">📢 البنرات والإعلانات</h2>
+        <h2 class="font-extrabold text-gray-800">📢 البنرات</h2>
         <button onclick="openBannerModal()" class="bg-orange-500 text-white text-sm font-bold px-4 py-2 rounded-xl">+ بنر جديد</button>
       </div>
-
-      <!-- Announcement Section -->
       <div class="bg-white rounded-2xl p-5 shadow-sm mb-4">
         <div class="flex items-center justify-between mb-3">
-          <h3 class="font-bold text-gray-700 flex items-center gap-2">📣 رسالة للعملاء</h3>
+          <h3 class="font-bold text-gray-700">📣 رسالة للعملاء</h3>
           <label class="relative inline-flex items-center cursor-pointer">
             <input type="checkbox" id="ann-active-toggle" class="sr-only peer" onchange="saveAnnouncement()">
             <div class="w-11 h-6 bg-gray-200 rounded-full peer peer-checked:bg-orange-500 after:content-[''] after:absolute after:top-0.5 after:right-0.5 after:bg-white after:rounded-full after:h-5 after:w-5 after:transition-all peer-checked:after:translate-x-[-20px]"></div>
           </label>
         </div>
-        <textarea id="ann-text" rows="3" placeholder="مثال: كل سنة وانتم طيبين 🎉 — اطلب دلوقتي واستمتع بخصم 10% على كل الأطباق"
-                  class="w-full border border-gray-200 rounded-xl px-4 py-3 text-sm focus:outline-none focus:ring-2 focus:ring-orange-400 resize-none"
-                  oninput="saveAnnouncement()"></textarea>
-        <p class="text-xs text-gray-400 mt-2">💡 تظهر للعميل كبانر ملون فوق المنتجات</p>
+        <textarea id="ann-text" rows="3" placeholder="مثال: كل سنة وانتم طيبين 🎉" class="w-full border border-gray-200 rounded-xl px-4 py-3 text-sm focus:outline-none focus:ring-2 focus:ring-orange-400 resize-none" oninput="saveAnnouncement()"></textarea>
       </div>
-
-      <!-- Ad Banners List -->
       <div id="banners-list" class="space-y-3"></div>
     </div>
 
-    <!-- ORDERS TAB -->
+    <!-- Orders Tab -->
     <div id="tab-content-orders" class="hidden fade-up">
       <h2 class="font-extrabold text-gray-800 mb-4">الطلبات الواردة</h2>
       <div id="orders-list" class="space-y-4"></div>
     </div>
 
-    <!-- ANALYTICS TAB -->
+    <!-- Analytics Tab -->
     <div id="tab-content-analytics" class="hidden fade-up">
-      <h2 class="font-extrabold text-gray-800 mb-4">📊 إحصائيات المبيعات</h2>
+      <h2 class="font-extrabold text-gray-800 mb-4">📊 إحصائيات</h2>
       <div class="bg-white rounded-2xl p-4 shadow-sm mb-4">
         <h3 class="font-bold text-gray-700 mb-3">🔥 أكثر 5 منتجات طلباً</h3>
         <div id="best-sellers-list" class="space-y-2"></div>
       </div>
-      <div class="bg-white rounded-2xl p-4 shadow-sm mb-4">
-        <h3 class="font-bold text-gray-700 mb-3">🆕 آخر 5 منتجات أُضيفت</h3>
-        <div id="recent-products-list" class="space-y-2"></div>
-      </div>
       <div class="grid grid-cols-2 gap-3">
         <div class="bg-orange-50 rounded-2xl p-4 text-center"><p class="text-3xl font-extrabold text-orange-500" id="stat-total-orders">—</p><p class="text-xs text-gray-500 mt-1">إجمالي الطلبات</p></div>
-        <div class="bg-green-50 rounded-2xl p-4 text-center"><p class="text-3xl font-extrabold text-green-500" id="stat-total-revenue">—</p><p class="text-xs text-gray-500 mt-1">إجمالي الإيرادات (ج.م)</p></div>
-        <div class="bg-blue-50 rounded-2xl p-4 text-center"><p class="text-3xl font-extrabold text-blue-500" id="stat-today-orders">—</p><p class="text-xs text-gray-500 mt-1">طلبات اليوم</p></div>
+        <div class="bg-green-50  rounded-2xl p-4 text-center"><p class="text-3xl font-extrabold text-green-500"  id="stat-total-revenue">—</p><p class="text-xs text-gray-500 mt-1">إجمالي الإيرادات (ج.م)</p></div>
+        <div class="bg-blue-50   rounded-2xl p-4 text-center"><p class="text-3xl font-extrabold text-blue-500"   id="stat-today-orders">—</p><p class="text-xs text-gray-500 mt-1">طلبات اليوم</p></div>
         <div class="bg-purple-50 rounded-2xl p-4 text-center"><p class="text-3xl font-extrabold text-purple-500" id="stat-products-count">—</p><p class="text-xs text-gray-500 mt-1">عدد المنتجات</p></div>
       </div>
     </div>
 
-    <!-- SETTINGS TAB -->
+    <!-- Settings Tab -->
     <div id="tab-content-settings" class="hidden fade-up">
       <h2 class="font-extrabold text-gray-800 mb-4">إعدادات المطعم</h2>
       <div class="bg-white rounded-2xl p-5 shadow-sm space-y-4">
-        <div>
-          <label class="text-xs font-bold text-gray-500 mb-1 block">اسم المطعم</label>
-          <input id="set-name" type="text" class="w-full border border-gray-200 rounded-xl px-4 py-3 text-sm focus:outline-none focus:ring-2 focus:ring-orange-400" />
-        </div>
-        <div>
-          <label class="text-xs font-bold text-gray-500 mb-1 block">رقم الواتساب (مع كود الدولة)</label>
-          <input id="set-whatsapp" type="text" placeholder="مثال: 201012345678 (كود الدولة + الرقم)" class="w-full border border-gray-200 rounded-xl px-4 py-3 text-sm focus:outline-none focus:ring-2 focus:ring-orange-400" />
-        </div>
+        <div><label class="text-xs font-bold text-gray-500 mb-1 block">اسم المطعم</label>
+          <input id="set-name" type="text" class="w-full border border-gray-200 rounded-xl px-4 py-3 text-sm focus:outline-none focus:ring-2 focus:ring-orange-400" /></div>
+        <div><label class="text-xs font-bold text-gray-500 mb-1 block">رقم تواصل المطعم (للعملاء)</label>
+          <input id="set-whatsapp" type="text" placeholder="01012345678 أو 201012345678" class="w-full border border-gray-200 rounded-xl px-4 py-3 text-sm focus:outline-none focus:ring-2 focus:ring-orange-400" />
+          <p class="text-[11px] text-gray-400 mt-1">هيظهر للعميل كرقم اتصال مباشر بالمطعم — اكتبه بأي صيغة وسيتم ضبطه تلقائياً</p></div>
         <div>
           <label class="text-xs font-bold text-gray-500 mb-1 block">اللون الرئيسي</label>
           <div class="flex items-center gap-3">
             <div id="pickr-container"></div>
-            <input id="set-color-hex" type="text" value="#FF6B00" maxlength="7" placeholder="#FF6B00"
-                   class="w-32 border border-gray-200 rounded-xl px-3 py-2 text-sm font-mono focus:outline-none focus:ring-2 focus:ring-orange-400" />
-            <button onclick="resetColor()" class="text-xs bg-gray-100 text-gray-500 font-bold px-3 py-2 rounded-xl hover:bg-gray-200 transition-colors whitespace-nowrap">🔄 الافتراضي</button>
+            <input id="set-color-hex" type="text" value="#FF6B00" maxlength="7" placeholder="#FF6B00" class="w-32 border border-gray-200 rounded-xl px-3 py-2 text-sm font-mono focus:outline-none focus:ring-2 focus:ring-orange-400" />
+            <button onclick="resetColor()" class="text-xs bg-gray-100 text-gray-500 font-bold px-3 py-2 rounded-xl">🔄 افتراضي</button>
           </div>
           <input type="hidden" id="set-color" value="#FF6B00" />
         </div>
         <div>
           <label class="text-xs font-bold text-gray-500 mb-1 block">اللوجو</label>
-          <div class="flex gap-2 mb-2">
-            <button onclick="document.getElementById('logo-file-input').click()"
-                    class="flex-1 border-2 border-dashed border-gray-200 rounded-xl py-3 text-sm text-gray-400 font-bold hover:border-orange-300 hover:text-orange-400 transition-colors">📁 رفع صورة</button>
-            <input id="logo-file-input" type="file" accept="image/*" class="hidden" onchange="uploadLogoFile(this)" />
-          </div>
-          <input id="set-logo" type="text" placeholder="أو ضع رابط الصورة https://..." class="w-full border border-gray-200 rounded-xl px-4 py-3 text-sm focus:outline-none focus:ring-2 focus:ring-orange-400" />
+          <button onclick="document.getElementById('logo-file-input').click()" class="w-full border-2 border-dashed border-gray-200 rounded-xl py-3 text-sm text-gray-400 font-bold hover:border-orange-300 mb-2">📁 رفع صورة</button>
+          <input id="logo-file-input" type="file" accept="image/*" class="hidden" onchange="uploadLogoFile(this)" />
+          <input id="set-logo" type="text" placeholder="أو رابط الصورة https://..." class="w-full border border-gray-200 rounded-xl px-4 py-3 text-sm focus:outline-none focus:ring-2 focus:ring-orange-400" />
           <div id="logo-preview-wrap" class="mt-2 hidden"><img id="logo-preview" src="" class="w-16 h-16 rounded-xl object-cover border border-gray-200" /></div>
           <p id="logo-upload-msg" class="text-xs text-gray-400 mt-1 hidden"></p>
         </div>
         <div>
-          <label class="text-xs font-bold text-gray-500 mb-1 block">صورة الغلاف (Cover)</label>
-          <div class="flex gap-2 mb-2">
-            <button onclick="document.getElementById('cover-file-input').click()"
-                    class="flex-1 border-2 border-dashed border-gray-200 rounded-xl py-3 text-sm text-gray-400 font-bold hover:border-orange-300 hover:text-orange-400 transition-colors">🖼️ رفع صورة غلاف</button>
-            <input id="cover-file-input" type="file" accept="image/*" class="hidden" onchange="uploadCoverFile(this)" />
-          </div>
-          <input id="set-cover" type="text" placeholder="أو ضع رابط صورة الغلاف https://..." class="w-full border border-gray-200 rounded-xl px-4 py-3 text-sm focus:outline-none focus:ring-2 focus:ring-orange-400" />
+          <label class="text-xs font-bold text-gray-500 mb-1 block">صورة الغلاف</label>
+          <button onclick="document.getElementById('cover-file-input').click()" class="w-full border-2 border-dashed border-gray-200 rounded-xl py-3 text-sm text-gray-400 font-bold hover:border-orange-300 mb-2">🖼️ رفع غلاف</button>
+          <input id="cover-file-input" type="file" accept="image/*" class="hidden" onchange="uploadCoverFile(this)" />
+          <input id="set-cover" type="text" placeholder="أو رابط الغلاف https://..." class="w-full border border-gray-200 rounded-xl px-4 py-3 text-sm focus:outline-none focus:ring-2 focus:ring-orange-400" />
           <div id="cover-preview-wrap" class="mt-2 hidden"><img id="cover-preview" src="" class="w-full h-24 rounded-xl object-cover border border-gray-200" /></div>
           <p id="cover-upload-msg" class="text-xs text-gray-400 mt-1 hidden"></p>
         </div>
         <div class="flex gap-3">
-          <button onclick="saveSettings()" class="flex-1 bg-orange-500 text-white font-bold rounded-xl py-3 hover:bg-orange-600 transition-colors">حفظ الإعدادات</button>
-          <button onclick="undoSettings()" id="undo-settings-btn" class="flex-1 bg-gray-100 text-gray-600 font-bold rounded-xl py-3 hover:bg-gray-200 transition-colors hidden">↩ تراجع</button>
+          <button onclick="saveSettings()" class="flex-1 bg-orange-500 text-white font-bold rounded-xl py-3">حفظ</button>
+          <button onclick="undoSettings()" id="undo-settings-btn" class="flex-1 bg-gray-100 text-gray-600 font-bold rounded-xl py-3 hidden">↩ تراجع</button>
         </div>
         <p id="settings-msg" class="text-center text-sm hidden"></p>
-      </div>
-
-      <!-- ORDER RECEIVE METHOD -->
-      <div class="bg-white rounded-2xl p-5 shadow-sm mt-4">
-        <h3 class="font-extrabold text-gray-800 mb-1">📲 طريقة استلام الطلبات</h3>
-        <p class="text-xs text-gray-400 mb-4">اختر إزاي عايز تستقبل الطلبات من العملاء</p>
-        <div class="space-y-3">
-          <label id="orm-opt-whatsapp" onclick="selectOrderMethod('whatsapp')"
-                 class="orm-option flex items-center gap-4 border-2 rounded-2xl p-4 cursor-pointer transition-all border-orange-400 bg-orange-50">
-            <div class="w-10 h-10 rounded-xl bg-green-100 flex items-center justify-center text-xl flex-shrink-0">💬</div>
-            <div class="flex-1">
-              <p class="font-extrabold text-gray-800 text-sm">واتساب فقط</p>
-              <p class="text-xs text-gray-400 mt-0.5">العميل يضغط "إرسال" وتوصّلك رسالة واتساب مباشرة</p>
-            </div>
-            <div id="orm-check-whatsapp" class="w-5 h-5 rounded-full bg-orange-500 flex items-center justify-center flex-shrink-0">
-              <svg class="w-3 h-3 text-white" fill="none" stroke="currentColor" stroke-width="3" viewBox="0 0 24 24"><path d="M5 13l4 4L19 7"/></svg>
-            </div>
-          </label>
-
-          <label id="orm-opt-app" onclick="selectOrderMethod('app')"
-                 class="orm-option flex items-center gap-4 border-2 rounded-2xl p-4 cursor-pointer transition-all border-gray-200 bg-white">
-            <div class="w-10 h-10 rounded-xl bg-orange-100 flex items-center justify-center text-xl flex-shrink-0">🔔</div>
-            <div class="flex-1">
-              <p class="font-extrabold text-gray-800 text-sm">التطبيق مباشرة</p>
-              <p class="text-xs text-gray-400 mt-0.5">الطلب يجيلك هنا في اللوحة مع صوت تنبيه — وتقدر تشارك تفاصيله على واتساب</p>
-            </div>
-            <div id="orm-check-app" class="w-5 h-5 rounded-full bg-gray-200 flex items-center justify-center flex-shrink-0">
-              <svg class="w-3 h-3 text-white" fill="none" stroke="currentColor" stroke-width="3" viewBox="0 0 24 24"><path d="M5 13l4 4L19 7"/></svg>
-            </div>
-          </label>
-        </div>
-        <button onclick="saveOrderMethod()" class="w-full mt-4 bg-orange-500 text-white font-bold rounded-xl py-3 hover:bg-orange-600 transition-colors">حفظ طريقة الاستلام</button>
-        <p id="orm-msg" class="text-center text-xs mt-2 hidden"></p>
       </div>
     </div>
 
   </main>
-</div>
+</div><!-- /screen-dashboard -->
 
-<!-- PRODUCT MODAL -->
+<!-- ══ PRODUCT MODAL ══ -->
 <div id="modal-product" class="hidden fixed inset-0 z-50 flex items-end justify-center">
   <div class="absolute inset-0 bg-black/50" onclick="closeProductModal()"></div>
   <div class="relative bg-white rounded-t-3xl w-full max-w-lg p-6 space-y-4 max-h-[90vh] overflow-y-auto">
@@ -315,7 +228,7 @@
       <div class="flex-1"><label class="text-xs font-bold text-gray-500 mb-1 block">السعر الأصلي *</label>
         <input id="pm-price" type="number" step="0.01" min="0" oninput="updateDiscountPreview()" class="w-full border border-gray-200 rounded-xl px-4 py-3 text-sm focus:outline-none focus:ring-2 focus:ring-orange-400" /></div>
       <div class="flex-1"><label class="text-xs font-bold text-gray-500 mb-1 block">سعر الخصم</label>
-        <input id="pm-discount" type="number" step="0.01" min="0" oninput="updateDiscountPreview()" placeholder="اتركه فارغاً إن لم يكن هناك خصم" class="w-full border border-gray-200 rounded-xl px-4 py-3 text-sm focus:outline-none focus:ring-2 focus:ring-orange-400" /></div>
+        <input id="pm-discount" type="number" step="0.01" min="0" oninput="updateDiscountPreview()" placeholder="اتركه فارغاً إن لا يوجد خصم" class="w-full border border-gray-200 rounded-xl px-4 py-3 text-sm focus:outline-none focus:ring-2 focus:ring-orange-400" /></div>
     </div>
     <div id="discount-preview" class="hidden bg-orange-50 rounded-xl px-4 py-2 text-sm flex items-center gap-2">
       <span class="text-gray-400 line-through" id="dp-original"></span>
@@ -326,18 +239,21 @@
       <select id="pm-category" class="w-full border border-gray-200 rounded-xl px-4 py-3 text-sm focus:outline-none focus:ring-2 focus:ring-orange-400 bg-white"><option value="">بدون تصنيف</option></select></div>
     <div>
       <label class="text-xs font-bold text-gray-500 mb-1 block">صورة المنتج</label>
-      <button onclick="document.getElementById('product-file-input').click()" class="w-full border-2 border-dashed border-gray-200 rounded-xl py-3 text-sm text-gray-400 font-bold hover:border-orange-300 hover:text-orange-400 transition-colors mb-2">📁 رفع صورة</button>
+      <button onclick="document.getElementById('product-file-input').click()" class="w-full border-2 border-dashed border-gray-200 rounded-xl py-3 text-sm text-gray-400 font-bold hover:border-orange-300 mb-2">📁 رفع صورة</button>
       <input id="product-file-input" type="file" accept="image/*" class="hidden" onchange="uploadProductImage(this)" />
       <input id="pm-image" type="text" placeholder="أو رابط الصورة https://..." class="w-full border border-gray-200 rounded-xl px-4 py-3 text-sm focus:outline-none focus:ring-2 focus:ring-orange-400" />
       <div id="pm-image-preview-wrap" class="mt-2 hidden"><img id="pm-image-preview" src="" class="w-20 h-20 rounded-xl object-cover border border-gray-200" /></div>
       <p id="product-upload-msg" class="text-xs text-gray-400 mt-1 hidden"></p>
     </div>
-    <div class="flex items-center gap-3"><input id="pm-available" type="checkbox" checked class="w-5 h-5 accent-orange-500 rounded" /><label class="text-sm font-bold text-gray-700">متاح للطلب</label></div>
+    <div class="flex items-center gap-3">
+      <input id="pm-available" type="checkbox" checked class="w-5 h-5 accent-orange-500 rounded" />
+      <label class="text-sm font-bold text-gray-700">متاح للطلب</label>
+    </div>
     <div><label class="text-xs font-bold text-gray-500 mb-1 block">حالة المنتج</label>
       <select id="pm-availability" class="w-full border border-gray-200 rounded-xl px-4 py-3 text-sm focus:outline-none focus:ring-2 focus:ring-orange-400 bg-white">
         <option value="available">✅ متاح</option>
         <option value="unavailable">🚫 غير متوفر (يظهر للعميل)</option>
-        <option value="hidden">👁️ مخفي (لا يظهر)</option>
+        <option value="hidden">👁️ مخفي</option>
       </select></div>
     <div><label class="text-xs font-bold text-gray-500 mb-1 block">بادج العرض (اختياري)</label>
       <input id="pm-badge" type="text" placeholder="مثال: عرض خاص، جديد، الأكثر طلباً" class="w-full border border-gray-200 rounded-xl px-4 py-3 text-sm focus:outline-none focus:ring-2 focus:ring-orange-400" /></div>
@@ -345,49 +261,40 @@
       <label class="text-xs font-bold text-gray-500 mb-1 block">وحدة الكمية</label>
       <div class="flex gap-2">
         <select id="pm-unit-select" onchange="handleUnitSelect()" class="flex-1 border border-gray-200 rounded-xl px-4 py-3 text-sm focus:outline-none focus:ring-2 focus:ring-orange-400 bg-white">
-          <option value="قطعة">قطعة</option>
-          <option value="كيلو">كيلو</option>
-          <option value="جرام">جرام</option>
-          <option value="لتر">لتر</option>
-          <option value="متر">متر</option>
-          <option value="علبة">علبة</option>
+          <option value="قطعة">قطعة</option><option value="كيلو">كيلو</option><option value="جرام">جرام</option>
+          <option value="لتر">لتر</option><option value="متر">متر</option><option value="علبة">علبة</option>
           <option value="custom">✏️ أخرى...</option>
         </select>
         <input id="pm-unit-custom" type="text" placeholder="اكتب الوحدة..." class="hidden flex-1 border border-gray-200 rounded-xl px-4 py-3 text-sm focus:outline-none focus:ring-2 focus:ring-orange-400" />
       </div>
       <input type="hidden" id="pm-unit" value="قطعة" />
-      <p class="text-xs text-gray-400 mt-1">💡 تظهر للعميل عند الطلب — مثال: "الكمية بالكيلو"</p>
     </div>
-
-    <!-- ── خيارات التخصيص ── -->
+    <!-- Options -->
     <div>
       <div class="flex items-center justify-between mb-2">
         <label class="text-xs font-bold text-gray-500">خيارات التخصيص</label>
-        <button type="button" onclick="addOptionGroup()" class="text-xs bg-orange-50 text-orange-500 font-bold px-3 py-1.5 rounded-xl hover:bg-orange-100 transition-colors">+ إضافة مجموعة</button>
+        <button type="button" onclick="addOptionGroup()" class="text-xs bg-orange-50 text-orange-500 font-bold px-3 py-1.5 rounded-xl">+ مجموعة جديدة</button>
       </div>
       <div id="pm-options-list" class="space-y-3"></div>
       <p class="text-xs text-gray-400 mt-1">💡 مثال: "الحجم" ← صغير 15ج / وسط 20ج / كبير 25ج</p>
     </div>
-
-    <!-- ── تطلب معها أيضاً ── -->
+    <!-- Also With -->
     <div>
       <label class="text-xs font-bold text-gray-500 mb-2 block">تطلب معها أيضاً 🤩</label>
       <div id="pm-also-list" class="flex flex-wrap gap-2 mb-2"></div>
       <select id="pm-also-select" onchange="addAlsoWith(this)" class="w-full border border-gray-200 rounded-xl px-4 py-3 text-sm focus:outline-none focus:ring-2 focus:ring-orange-400 bg-white">
-        <option value="">+ اختر منتجاً لإضافته...</option>
+        <option value="">+ اختر منتجاً...</option>
       </select>
-      <p class="text-xs text-gray-400 mt-1">💡 المنتجات دي بتظهر للعميل في صفحة المنتج كاقتراحات</p>
     </div>
-
     <p id="pm-error" class="text-red-500 text-xs hidden"></p>
     <div class="flex gap-3 pt-2">
-      <button onclick="saveProduct()" class="flex-1 bg-orange-500 text-white font-bold rounded-xl py-3 hover:bg-orange-600 transition-colors">حفظ</button>
+      <button onclick="saveProduct()"       class="flex-1 bg-orange-500 text-white font-bold rounded-xl py-3">حفظ</button>
       <button onclick="closeProductModal()" class="flex-1 bg-gray-100 text-gray-600 font-bold rounded-xl py-3">إلغاء</button>
     </div>
   </div>
 </div>
 
-<!-- CATEGORY MODAL -->
+<!-- ══ CATEGORY MODAL ══ -->
 <div id="modal-category" class="hidden fixed inset-0 z-50 flex items-end justify-center">
   <div class="absolute inset-0 bg-black/50" onclick="closeCatModal()"></div>
   <div class="relative bg-white rounded-t-3xl w-full max-w-lg p-6 space-y-4">
@@ -395,17 +302,17 @@
     <input type="hidden" id="cm-id" />
     <div><label class="text-xs font-bold text-gray-500 mb-1 block">اسم التصنيف *</label>
       <input id="cm-name" type="text" class="w-full border border-gray-200 rounded-xl px-4 py-3 text-sm focus:outline-none focus:ring-2 focus:ring-orange-400" /></div>
-    <div><label class="text-xs font-bold text-gray-500 mb-1 block">أيقونة التصنيف (إيموجي أو رابط صورة)</label>
+    <div><label class="text-xs font-bold text-gray-500 mb-1 block">أيقونة (إيموجي أو رابط)</label>
       <input id="cm-icon" type="text" placeholder="مثال: 🍔 أو https://..." class="w-full border border-gray-200 rounded-xl px-4 py-3 text-sm focus:outline-none focus:ring-2 focus:ring-orange-400" /></div>
     <p id="cm-error" class="text-red-500 text-xs hidden"></p>
     <div class="flex gap-3 pt-2">
-      <button onclick="saveCat()" class="flex-1 bg-orange-500 text-white font-bold rounded-xl py-3">حفظ</button>
+      <button onclick="saveCat()"       class="flex-1 bg-orange-500 text-white font-bold rounded-xl py-3">حفظ</button>
       <button onclick="closeCatModal()" class="flex-1 bg-gray-100 text-gray-600 font-bold rounded-xl py-3">إلغاء</button>
     </div>
   </div>
 </div>
 
-<!-- BUNDLE MODAL -->
+<!-- ══ BUNDLE MODAL ══ -->
 <div id="modal-bundle" class="hidden fixed inset-0 z-50 flex items-end justify-center">
   <div class="absolute inset-0 bg-black/50" onclick="closeBundleModal()"></div>
   <div class="relative bg-white rounded-t-3xl w-full max-w-lg p-6 space-y-4 max-h-[90vh] overflow-y-auto">
@@ -415,107 +322,73 @@
       <input id="bm-name" type="text" placeholder="مثال: وجبة العائلة" class="w-full border border-gray-200 rounded-xl px-4 py-3 text-sm focus:outline-none focus:ring-2 focus:ring-orange-400" /></div>
     <div><label class="text-xs font-bold text-gray-500 mb-1 block">الوصف</label>
       <textarea id="bm-desc" rows="2" class="w-full border border-gray-200 rounded-xl px-4 py-3 text-sm focus:outline-none focus:ring-2 focus:ring-orange-400 resize-none"></textarea></div>
-    <div><label class="text-xs font-bold text-gray-500 mb-1 block">سعر العرض (ج.م) *</label>
+    <div><label class="text-xs font-bold text-gray-500 mb-1 block">السعر (ج.م) *</label>
       <input id="bm-price" type="number" step="0.01" min="0" class="w-full border border-gray-200 rounded-xl px-4 py-3 text-sm focus:outline-none focus:ring-2 focus:ring-orange-400" /></div>
     <div>
-      <label class="text-xs font-bold text-gray-500 mb-1 block">صورة العرض (اختياري)</label>
-      <div class="flex gap-2 mb-2">
-        <button onclick="document.getElementById('bundle-file-input').click()" class="flex-1 border-2 border-dashed border-gray-200 rounded-xl py-3 text-sm text-gray-400 font-bold hover:border-orange-300 hover:text-orange-400 transition-colors">📁 رفع صورة</button>
-        <input id="bundle-file-input" type="file" accept="image/*" class="hidden" onchange="uploadBundleImage(this)" />
-      </div>
+      <label class="text-xs font-bold text-gray-500 mb-1 block">صورة العرض</label>
+      <button onclick="document.getElementById('bundle-file-input').click()" class="w-full border-2 border-dashed border-gray-200 rounded-xl py-3 text-sm text-gray-400 font-bold hover:border-orange-300 mb-2">📁 رفع صورة</button>
+      <input id="bundle-file-input" type="file" accept="image/*" class="hidden" onchange="uploadBundleImage(this)" />
       <input id="bm-image" type="text" placeholder="أو رابط الصورة https://..." class="w-full border border-gray-200 rounded-xl px-4 py-3 text-sm focus:outline-none focus:ring-2 focus:ring-orange-400" />
       <div id="bm-image-preview-wrap" class="mt-2 hidden"><img id="bm-image-preview" src="" class="w-full h-28 rounded-xl object-cover border border-gray-200" /></div>
       <p id="bundle-upload-msg" class="text-xs text-gray-400 mt-1 hidden"></p>
     </div>
-    <div><label class="text-xs font-bold text-gray-500 mb-1 block">المنتجات المضمنة في العرض</label>
-      <div id="bm-products-checkboxes" class="space-y-2 max-h-48 overflow-y-auto border border-gray-100 rounded-xl p-3"></div></div>
-    <div class="flex items-center gap-3"><input id="bm-active" type="checkbox" checked class="w-5 h-5 accent-orange-500 rounded" /><label class="text-sm font-bold text-gray-700">العرض نشط</label></div>
+    <div>
+      <label class="text-xs font-bold text-gray-500 mb-1 block">المنتجات المضمنة</label>
+      <div id="bm-products-checkboxes" class="space-y-2 max-h-48 overflow-y-auto border border-gray-100 rounded-xl p-3"></div>
+    </div>
+    <div class="flex items-center gap-3">
+      <input id="bm-active" type="checkbox" checked class="w-5 h-5 accent-orange-500 rounded" />
+      <label class="text-sm font-bold text-gray-700">العرض نشط</label>
+    </div>
     <p id="bm-error" class="text-red-500 text-xs hidden"></p>
     <div class="flex gap-3 pt-2">
-      <button onclick="saveBundle()" class="flex-1 bg-orange-500 text-white font-bold rounded-xl py-3">حفظ</button>
+      <button onclick="saveBundle()"       class="flex-1 bg-orange-500 text-white font-bold rounded-xl py-3">حفظ</button>
       <button onclick="closeBundleModal()" class="flex-1 bg-gray-100 text-gray-600 font-bold rounded-xl py-3">إلغاء</button>
     </div>
   </div>
 </div>
 
-<!-- BANNER MODAL -->
+<!-- ══ BANNER MODAL ══ -->
 <div id="modal-banner" class="hidden fixed inset-0 z-50 flex items-end justify-center">
   <div class="absolute inset-0 bg-black/50" onclick="closeBannerModal()"></div>
   <div class="relative bg-white rounded-t-3xl w-full max-w-lg p-6 space-y-4 max-h-[90vh] overflow-y-auto">
-    <h3 id="banner-modal-title" class="text-lg font-extrabold text-gray-800">بنر إعلاني جديد</h3>
+    <h3 id="banner-modal-title" class="text-lg font-extrabold text-gray-800">بنر جديد</h3>
     <input type="hidden" id="bnm-id" />
-
     <div>
       <label class="text-xs font-bold text-gray-500 mb-1 block">صورة البنر *</label>
-      <div class="flex gap-2 mb-2">
-        <button onclick="document.getElementById('banner-file-input').click()"
-                class="flex-1 border-2 border-dashed border-gray-200 rounded-xl py-3 text-sm text-gray-400 font-bold hover:border-orange-300 hover:text-orange-400 transition-colors">🖼️ رفع صورة</button>
-        <input id="banner-file-input" type="file" accept="image/*" class="hidden" onchange="uploadBannerImage(this)" />
-      </div>
-      <input id="bnm-image" type="text" placeholder="أو رابط الصورة https://..."
-             class="w-full border border-gray-200 rounded-xl px-4 py-3 text-sm focus:outline-none focus:ring-2 focus:ring-orange-400" />
-      <div id="bnm-image-preview-wrap" class="mt-2 hidden">
-        <img id="bnm-image-preview" src="" class="w-full h-28 rounded-xl object-cover border border-gray-200" />
-      </div>
+      <button onclick="document.getElementById('banner-file-input').click()" class="w-full border-2 border-dashed border-gray-200 rounded-xl py-3 text-sm text-gray-400 font-bold hover:border-orange-300 mb-2">🖼️ رفع صورة</button>
+      <input id="banner-file-input" type="file" accept="image/*" class="hidden" onchange="uploadBannerImage(this)" />
+      <input id="bnm-image" type="text" placeholder="أو رابط الصورة https://..." class="w-full border border-gray-200 rounded-xl px-4 py-3 text-sm focus:outline-none focus:ring-2 focus:ring-orange-400" />
+      <div id="bnm-image-preview-wrap" class="mt-2 hidden"><img id="bnm-image-preview" src="" class="w-full h-28 rounded-xl object-cover border border-gray-200" /></div>
       <p id="banner-upload-msg" class="text-xs text-gray-400 mt-1 hidden"></p>
     </div>
-
-    <div>
-      <label class="text-xs font-bold text-gray-500 mb-1 block">نوع الرابط عند الضغط</label>
-      <select id="bnm-link-type" onchange="updateBannerLinkUI()"
-              class="w-full border border-gray-200 rounded-xl px-4 py-3 text-sm focus:outline-none focus:ring-2 focus:ring-orange-400 bg-white">
-        <option value="none">بدون رابط</option>
-        <option value="external">رابط خارجي (URL)</option>
-        <option value="product">منتج داخلي</option>
-        <option value="category">تصنيف داخلي</option>
-      </select>
-    </div>
-
-    <div id="bnm-external-wrap" class="hidden">
-      <label class="text-xs font-bold text-gray-500 mb-1 block">الرابط الخارجي</label>
-      <input id="bnm-link-external" type="text" placeholder="https://..."
-             class="w-full border border-gray-200 rounded-xl px-4 py-3 text-sm focus:outline-none focus:ring-2 focus:ring-orange-400" />
-    </div>
-
-    <div id="bnm-product-wrap" class="hidden">
-      <label class="text-xs font-bold text-gray-500 mb-1 block">اختر منتج</label>
-      <select id="bnm-link-product"
-              class="w-full border border-gray-200 rounded-xl px-4 py-3 text-sm focus:outline-none focus:ring-2 focus:ring-orange-400 bg-white"></select>
-    </div>
-
-    <div id="bnm-category-wrap" class="hidden">
-      <label class="text-xs font-bold text-gray-500 mb-1 block">اختر تصنيف</label>
-      <select id="bnm-link-category"
-              class="w-full border border-gray-200 rounded-xl px-4 py-3 text-sm focus:outline-none focus:ring-2 focus:ring-orange-400 bg-white"></select>
-    </div>
-
+    <div><label class="text-xs font-bold text-gray-500 mb-1 block">نوع الرابط عند الضغط</label>
+      <select id="bnm-link-type" onchange="updateBannerLinkUI()" class="w-full border border-gray-200 rounded-xl px-4 py-3 text-sm focus:outline-none focus:ring-2 focus:ring-orange-400 bg-white">
+        <option value="none">بدون رابط</option><option value="external">رابط خارجي</option>
+        <option value="product">منتج داخلي</option><option value="category">تصنيف داخلي</option>
+      </select></div>
+    <div id="bnm-external-wrap" class="hidden"><input id="bnm-link-external" type="text" placeholder="https://..." class="w-full border border-gray-200 rounded-xl px-4 py-3 text-sm focus:outline-none focus:ring-2 focus:ring-orange-400" /></div>
+    <div id="bnm-product-wrap"  class="hidden"><select id="bnm-link-product"  class="w-full border border-gray-200 rounded-xl px-4 py-3 text-sm focus:outline-none focus:ring-2 focus:ring-orange-400 bg-white"></select></div>
+    <div id="bnm-category-wrap" class="hidden"><select id="bnm-link-category" class="w-full border border-gray-200 rounded-xl px-4 py-3 text-sm focus:outline-none focus:ring-2 focus:ring-orange-400 bg-white"></select></div>
     <div class="flex gap-3">
-      <div class="flex-1">
-        <label class="text-xs font-bold text-gray-500 mb-1 block">تاريخ البداية (اختياري)</label>
-        <input id="bnm-starts" type="datetime-local"
-               class="w-full border border-gray-200 rounded-xl px-4 py-3 text-sm focus:outline-none focus:ring-2 focus:ring-orange-400" />
-      </div>
-      <div class="flex-1">
-        <label class="text-xs font-bold text-gray-500 mb-1 block">تاريخ الانتهاء (اختياري)</label>
-        <input id="bnm-ends" type="datetime-local"
-               class="w-full border border-gray-200 rounded-xl px-4 py-3 text-sm focus:outline-none focus:ring-2 focus:ring-orange-400" />
-      </div>
+      <div class="flex-1"><label class="text-xs font-bold text-gray-500 mb-1 block">تاريخ البداية</label>
+        <input id="bnm-starts" type="datetime-local" class="w-full border border-gray-200 rounded-xl px-4 py-3 text-sm focus:outline-none focus:ring-2 focus:ring-orange-400" /></div>
+      <div class="flex-1"><label class="text-xs font-bold text-gray-500 mb-1 block">تاريخ الانتهاء</label>
+        <input id="bnm-ends" type="datetime-local" class="w-full border border-gray-200 rounded-xl px-4 py-3 text-sm focus:outline-none focus:ring-2 focus:ring-orange-400" /></div>
     </div>
-
     <div class="flex items-center gap-3">
       <input id="bnm-active" type="checkbox" checked class="w-5 h-5 accent-orange-500 rounded" />
       <label class="text-sm font-bold text-gray-700">البنر نشط</label>
     </div>
-
     <p id="bnm-error" class="text-red-500 text-xs hidden"></p>
     <div class="flex gap-3 pt-2">
-      <button onclick="saveBanner()" class="flex-1 bg-orange-500 text-white font-bold rounded-xl py-3">حفظ</button>
+      <button onclick="saveBanner()"       class="flex-1 bg-orange-500 text-white font-bold rounded-xl py-3">حفظ</button>
       <button onclick="closeBannerModal()" class="flex-1 bg-gray-100 text-gray-600 font-bold rounded-xl py-3">إلغاء</button>
     </div>
   </div>
 </div>
 
-<!-- BOTTOM NAV (mobile) -->
+<!-- ══ BOTTOM NAV (mobile) ══ -->
 <nav class="bottom-nav md:hidden" id="bottom-nav">
   <button class="bnav-btn active" id="bnav-products" onclick="showTab('products')">
     <svg fill="none" stroke="currentColor" stroke-width="2" viewBox="0 0 24 24"><path d="M4 6h16M4 10h16M4 14h16M4 18h16"/></svg>
@@ -536,58 +409,42 @@
   </button>
 </nav>
 
-<!-- MORE MENU (slide-up) -->
+<!-- ══ MORE MENU ══ -->
 <div id="more-menu" class="hidden fixed inset-0 z-50" onclick="hideMoreMenu()">
   <div class="absolute inset-0 bg-black/40"></div>
   <div class="absolute bottom-0 left-0 right-0 bg-white rounded-t-3xl p-4 pb-8" onclick="event.stopPropagation()">
     <div class="w-10 h-1 bg-gray-200 rounded mx-auto mb-4"></div>
     <div class="grid grid-cols-3 gap-3">
-      <button onclick="hideMoreMenu();showTab('categories')" class="flex flex-col items-center gap-2 bg-gray-50 rounded-2xl p-4">
-        <span class="text-2xl">📂</span><span class="text-xs font-bold text-gray-600">التصنيفات</span>
-      </button>
-      <button onclick="hideMoreMenu();showTab('bundles')" class="flex flex-col items-center gap-2 bg-gray-50 rounded-2xl p-4">
-        <span class="text-2xl">🎁</span><span class="text-xs font-bold text-gray-600">العروض</span>
-      </button>
-      <button onclick="hideMoreMenu();showTab('banners')" class="flex flex-col items-center gap-2 bg-gray-50 rounded-2xl p-4">
-        <span class="text-2xl">📢</span><span class="text-xs font-bold text-gray-600">البنرات</span>
-      </button>
-      <button onclick="hideMoreMenu();showTab('analytics')" class="flex flex-col items-center gap-2 bg-gray-50 rounded-2xl p-4">
-        <span class="text-2xl">📊</span><span class="text-xs font-bold text-gray-600">إحصائيات</span>
-      </button>
-      <button onclick="doLogout()" class="flex flex-col items-center gap-2 bg-red-50 rounded-2xl p-4 col-span-2">
-        <span class="text-2xl">🚪</span><span class="text-xs font-bold text-red-500">تسجيل الخروج</span>
-      </button>
+      <button onclick="hideMoreMenu();showTab('categories')" class="flex flex-col items-center gap-2 bg-gray-50 rounded-2xl p-4"><span class="text-2xl">📂</span><span class="text-xs font-bold text-gray-600">التصنيفات</span></button>
+      <button onclick="hideMoreMenu();showTab('bundles')"    class="flex flex-col items-center gap-2 bg-gray-50 rounded-2xl p-4"><span class="text-2xl">🎁</span><span class="text-xs font-bold text-gray-600">العروض</span></button>
+      <button onclick="hideMoreMenu();showTab('banners')"    class="flex flex-col items-center gap-2 bg-gray-50 rounded-2xl p-4"><span class="text-2xl">📢</span><span class="text-xs font-bold text-gray-600">البنرات</span></button>
+      <button onclick="hideMoreMenu();showTab('analytics')"  class="flex flex-col items-center gap-2 bg-gray-50 rounded-2xl p-4"><span class="text-2xl">📊</span><span class="text-xs font-bold text-gray-600">إحصائيات</span></button>
+      <button onclick="doLogout()" class="flex flex-col items-center gap-2 bg-red-50 rounded-2xl p-4 col-span-2"><span class="text-2xl">🚪</span><span class="text-xs font-bold text-red-500">تسجيل الخروج</span></button>
     </div>
   </div>
 </div>
 
-<!-- CONFIRM DIALOG -->
+<!-- ══ CONFIRM DIALOG ══ -->
 <div id="confirm-dialog" class="hidden">
   <div id="confirm-dialog-inner">
     <div style="width:40px;height:4px;background:#e8e8e8;border-radius:4px;margin:0 auto 20px"></div>
-    <p id="confirm-msg" style="font-size:15px;font-weight:700;color:#1a1a1a;text-align:center;margin-bottom:24px;line-height:1.6;min-height:24px"></p>
+    <p id="confirm-msg" style="font-size:15px;font-weight:700;color:#1a1a1a;text-align:center;margin-bottom:24px;line-height:1.6"></p>
     <div class="flex gap-3">
       <button onclick="closeConfirm()" style="flex:1;background:#f5f5f5;color:#666;font-weight:700;border-radius:14px;padding:14px;font-size:14px;font-family:'Rubik',sans-serif">إلغاء</button>
-      <button id="confirm-yes-btn" style="flex:1;background:#ef4444;color:#fff;font-weight:700;border-radius:14px;padding:14px;font-size:14px;font-family:'Rubik',sans-serif">تأكيد الحذف</button>
+      <button id="confirm-yes-btn"     style="flex:1;background:#ef4444;color:#fff;font-weight:700;border-radius:14px;padding:14px;font-size:14px;font-family:'Rubik',sans-serif">تأكيد الحذف</button>
     </div>
-    <div style="height:env(safe-area-inset-bottom)"></div>
   </div>
 </div>
 
-<!-- TOAST -->
+<!-- ══ TOAST ══ -->
 <div id="toast" class="hidden fixed top-6 left-1/2 -translate-x-1/2 z-[60] bg-gray-800 text-white text-sm font-bold px-5 py-3 rounded-2xl shadow-xl"></div>
 
-<!-- NEW ORDER POPUP -->
+<!-- ══ NEW ORDER POPUP ══ -->
 <div id="new-order-popup" class="hidden fixed inset-0 z-[80] flex items-center justify-center p-4" style="background:rgba(0,0,0,0.7);backdrop-filter:blur(6px)">
-  <div id="new-order-popup-inner" class="bg-white rounded-3xl w-full max-w-sm shadow-2xl overflow-hidden"
-       style="animation:popIn .35s cubic-bezier(0.34,1.2,0.64,1) both">
+  <div class="bg-white rounded-3xl w-full max-w-sm shadow-2xl overflow-hidden" style="animation:popIn .35s cubic-bezier(0.34,1.2,0.64,1) both">
     <div class="bg-gradient-to-l from-orange-500 to-orange-600 px-5 py-4 flex items-center gap-3">
       <div class="w-11 h-11 bg-white/20 rounded-2xl flex items-center justify-center text-2xl">🔔</div>
-      <div>
-        <p class="text-white font-extrabold text-base">طلب جديد!</p>
-        <p id="nop-order-num" class="text-orange-100 text-xs font-bold"></p>
-      </div>
-      <button onclick="dismissNewOrderPopup()" class="mr-auto text-white/70 hover:text-white text-xl font-bold leading-none">✕</button>
+      <div><p class="text-white font-extrabold text-base">طلب جديد!</p><p id="nop-order-num" class="text-orange-100 text-xs font-bold"></p></div>
     </div>
     <div class="px-5 py-4">
       <div id="nop-items" class="space-y-1.5 mb-3 max-h-48 overflow-y-auto"></div>
@@ -598,318 +455,252 @@
       <div id="nop-meta" class="text-xs text-gray-400 space-y-0.5 mt-1"></div>
     </div>
     <div class="px-5 pb-5 grid grid-cols-2 gap-3">
-      <button onclick="confirmNewOrder()" class="bg-green-500 hover:bg-green-600 text-white font-extrabold rounded-2xl py-3.5 transition-colors text-sm">✅ قبول</button>
-      <button onclick="rejectNewOrder()" class="bg-red-50 hover:bg-red-100 text-red-500 font-extrabold rounded-2xl py-3.5 transition-colors text-sm">❌ رفض</button>
-      <button onclick="openWhatsappShare()" class="col-span-2 bg-[#25D366] hover:bg-[#1da851] text-white font-extrabold rounded-2xl py-3.5 transition-colors text-sm flex items-center justify-center gap-2">
-        <svg class="w-5 h-5" fill="currentColor" viewBox="0 0 24 24"><path d="M17.472 14.382c-.297-.149-1.758-.867-2.03-.967-.273-.099-.471-.148-.67.15-.197.297-.767.966-.94 1.164-.173.199-.347.223-.644.075-.297-.15-1.255-.463-2.39-1.475-.883-.788-1.48-1.761-1.653-2.059-.173-.297-.018-.458.13-.606.134-.133.298-.347.446-.52.149-.174.198-.298.298-.497.099-.198.05-.371-.025-.52-.075-.149-.669-1.612-.916-2.207-.242-.579-.487-.5-.669-.51-.173-.008-.371-.01-.57-.01-.198 0-.52.074-.792.372-.272.297-1.04 1.016-1.04 2.479 0 1.462 1.065 2.875 1.213 3.074.149.198 2.096 3.2 5.077 4.487.709.306 1.262.489 1.694.625.712.227 1.36.195 1.871.118.571-.085 1.758-.719 2.006-1.413.248-.694.248-1.289.173-1.413-.074-.124-.272-.198-.57-.347m-5.421 7.403h-.004a9.87 9.87 0 01-5.031-1.378l-.361-.214-3.741.982.998-3.648-.235-.374a9.86 9.86 0 01-1.51-5.26c.001-5.45 4.436-9.884 9.888-9.884 2.64 0 5.122 1.03 6.988 2.898a9.825 9.825 0 012.893 6.994c-.003 5.45-4.437 9.884-9.885 9.884m8.413-18.297A11.815 11.815 0 0012.05 0C5.495 0 .16 5.335.157 11.892c0 2.096.547 4.142 1.588 5.945L.057 24l6.305-1.654a11.882 11.882 0 005.683 1.448h.005c6.554 0 11.89-5.335 11.893-11.893a11.821 11.821 0 00-3.48-8.413z"/></svg>
-        مشاركة تفاصيل الطلب
-      </button>
+      <button onclick="confirmNewOrder()" class="bg-green-500 text-white font-extrabold rounded-2xl py-3.5 text-sm">✅ قبول</button>
+      <button onclick="rejectNewOrder()"  class="bg-red-50 text-red-500 font-extrabold rounded-2xl py-3.5 text-sm">❌ رفض</button>
     </div>
   </div>
 </div>
 
-<!-- WHATSAPP SHARE MODAL -->
-<div id="wa-share-modal" class="hidden fixed inset-0 z-[90] flex items-end justify-center" style="background:rgba(0,0,0,0.6)">
-  <div class="bg-white rounded-t-3xl w-full max-w-lg p-5 space-y-3" style="animation:slideUp .28s cubic-bezier(0.34,1.1,0.64,1) both">
-    <div class="w-10 h-1 bg-gray-200 rounded mx-auto mb-2"></div>
-    <h3 class="font-extrabold text-gray-800 text-base">📤 مشاركة تفاصيل الطلب على واتساب</h3>
-    <p class="text-xs text-gray-400">اختار المعلومات اللي عايز ترسلها</p>
-    <div id="wa-share-options" class="space-y-2"></div>
-    <button onclick="sendWhatsappShare()" class="w-full bg-[#25D366] text-white font-extrabold rounded-2xl py-3.5 text-sm hover:bg-[#1da851] transition-colors mt-2 flex items-center justify-center gap-2">
-      <svg class="w-5 h-5" fill="currentColor" viewBox="0 0 24 24"><path d="M17.472 14.382c-.297-.149-1.758-.867-2.03-.967-.273-.099-.471-.148-.67.15-.197.297-.767.966-.94 1.164-.173.199-.347.223-.644.075-.297-.15-1.255-.463-2.39-1.475-.883-.788-1.48-1.761-1.653-2.059-.173-.297-.018-.458.13-.606.134-.133.298-.347.446-.52.149-.174.198-.298.298-.497.099-.198.05-.371-.025-.52-.075-.149-.669-1.612-.916-2.207-.242-.579-.487-.5-.669-.51-.173-.008-.371-.01-.57-.01-.198 0-.52.074-.792.372-.272.297-1.04 1.016-1.04 2.479 0 1.462 1.065 2.875 1.213 3.074.149.198 2.096 3.2 5.077 4.487.709.306 1.262.489 1.694.625.712.227 1.36.195 1.871.118.571-.085 1.758-.719 2.006-1.413.248-.694.248-1.289.173-1.413-.074-.124-.272-.198-.57-.347m-5.421 7.403h-.004a9.87 9.87 0 01-5.031-1.378l-.361-.214-3.741.982.998-3.648-.235-.374a9.86 9.86 0 01-1.51-5.26c.001-5.45 4.436-9.884 9.888-9.884 2.64 0 5.122 1.03 6.988 2.898a9.825 9.825 0 012.893 6.994c-.003 5.45-4.437 9.884-9.885 9.884m8.413-18.297A11.815 11.815 0 0012.05 0C5.495 0 .16 5.335.157 11.892c0 2.096.547 4.142 1.588 5.945L.057 24l6.305-1.654a11.882 11.882 0 005.683 1.448h.005c6.554 0 11.89-5.335 11.893-11.893a11.821 11.821 0 00-3.48-8.413z"/></svg>
-      إرسال على واتساب
-    </button>
-    <button onclick="closeWhatsappShare()" class="w-full bg-gray-100 text-gray-600 font-bold rounded-2xl py-3 text-sm">إلغاء</button>
-    <div style="height:env(safe-area-inset-bottom)"></div>
+<!-- Reject reason modal -->
+<div id="reject-reason-modal" class="hidden fixed inset-0 z-[90] flex items-center justify-center p-4" style="background:rgba(0,0,0,0.7);backdrop-filter:blur(6px)">
+  <div class="bg-white rounded-3xl w-full max-w-sm shadow-2xl overflow-hidden" style="animation:popIn .35s cubic-bezier(0.34,1.2,0.64,1) both">
+    <div class="px-5 py-4 border-b border-gray-100">
+      <p class="font-extrabold text-gray-800">سبب رفض الطلب</p>
+      <p class="text-xs text-gray-400 mt-0.5">هيظهر السبب للعميل فوراً</p>
+    </div>
+    <div class="px-5 py-4 space-y-2" id="reject-reason-list"></div>
+    <div class="px-5 pb-2">
+      <p class="text-xs font-bold text-gray-500 mb-1.5">أو اكتب سبب آخر</p>
+      <textarea id="reject-custom-reason" rows="2" placeholder="اكتب السبب هنا..." class="w-full border border-gray-200 rounded-xl px-3 py-2 text-sm focus:outline-none focus:ring-2 focus:ring-red-300"></textarea>
+    </div>
+    <div class="px-5 pb-5 pt-2 grid grid-cols-2 gap-3">
+      <button onclick="submitRejectCustomReason()" class="bg-red-500 text-white font-extrabold rounded-2xl py-3 text-sm">تأكيد الرفض</button>
+      <button onclick="closeRejectReasonModal()" class="bg-gray-100 text-gray-500 font-extrabold rounded-2xl py-3 text-sm">رجوع</button>
+    </div>
   </div>
 </div>
 
 <script>
+// ── CONFIG ────────────────────────────────────────────────────────────
 const SUPABASE_URL  = 'https://pcmyugeqveyjnappulng.supabase.co'
 const SUPABASE_ANON = 'eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6InBjbXl1Z2VxdmV5am5hcHB1bG5nIiwicm9sZSI6ImFub24iLCJpYXQiOjE3ODExNjU0NDAsImV4cCI6MjA5Njc0MTQ0MH0.uwn0X4CvNRW38FGh_0rYD9KjBRM19CydXucfBsCDYeo'
 const MENU_BASE_URL = 'https://monjezapp-bot.github.io/menu-app/'
+const SUPPORT_WHATSAPP = '20XXXXXXXXXX' // ⚠️ غيّر هذا الرقم لرقم واتساب الدعم الفني الفعلي (بصيغة دولية بدون + أو مسافات)
+// المفتاح العام لـ Web Push (VAPID) — آمن نشره في الكود، المفتاح الخاص يبقى سري في Edge Function فقط
+const VAPID_PUBLIC_KEY = 'BHpeyTZ57ZxBaWldVJ2qNWqrwWZMUSsLFIzOGvtl0suELxgRqoiZ8oLXNQNQEoTIv_4dYzelHMGG3llLWV_FMaE'
+
 const { createClient } = supabase
 const db = createClient(SUPABASE_URL, SUPABASE_ANON)
 
-const state = { restaurant:null, categories:[], products:[], orders:[], banners:[] }
-let pickrInstance = null, settingsSnapshot = null, productSnapshot = null, state_bundles = []
-let annSaveTimeout = null
+// ── STATE ─────────────────────────────────────────────────────────────
+const state = {
+  restaurant: null,
+  categories: [],
+  products:   [],
+  orders:     [],
+  banners:    [],
+  bundles:    []
+}
 
-// ── BOOT ──
+let pickrInstance    = null
+let settingsSnapshot = null
+let productSnapshot  = null
+let annSaveTimeout   = null
+let _realtimeChannel = null
+let _pendingOrder    = null
+let _audioCtx        = null
+let _alsoWith        = []
+let activeProductFilter = 'all'
+
+// ── BOOT ──────────────────────────────────────────────────────────────
 async function boot() {
   const { data: { session } } = await db.auth.getSession()
   if (session) await loadDashboard()
   else showScreen('login')
-  db.auth.onAuthStateChange(async (event, session) => {
-    if (event==='SIGNED_IN')  await loadDashboard()
-    if (event==='SIGNED_OUT') showScreen('login')
+
+  db.auth.onAuthStateChange(async (event) => {
+    if (event === 'SIGNED_IN')  await loadDashboard()
+    if (event === 'SIGNED_OUT') showScreen('login')
   })
 }
 
-// ── AUTH ──
+// ── AUTH ──────────────────────────────────────────────────────────────
 async function doLogin() {
   const email = document.getElementById('login-email').value.trim()
   const pass  = document.getElementById('login-pass').value
   const errEl = document.getElementById('login-error')
   const btn   = document.getElementById('login-btn-text')
-  errEl.classList.add('hidden'); btn.innerHTML = '<span class="spinner"></span>'
+  errEl.classList.add('hidden')
+  btn.innerHTML = '<span class="spinner"></span>'
   const { error } = await db.auth.signInWithPassword({ email, password: pass })
-  if (error) { errEl.textContent='بيانات الدخول غير صحيحة'; errEl.classList.remove('hidden'); btn.textContent='دخول' }
+  if (error) { errEl.textContent = 'بيانات الدخول غير صحيحة'; errEl.classList.remove('hidden'); btn.textContent = 'دخول' }
 }
 async function doLogout() { await db.auth.signOut() }
 
-// ── LOAD DASHBOARD ──
+// ── LOAD DASHBOARD ────────────────────────────────────────────────────
 async function loadDashboard() {
   showScreen('dashboard')
   const { data: { user } } = await db.auth.getUser()
-  const { data: restaurant } = await db.from('restaurants').select('*').eq('owner_id', user.id).single()
-  if (!restaurant) { showToast('لم يتم العثور على مطعم مرتبط بهذا الحساب'); return }
+  const { data: r }        = await db.from('restaurants').select('*').eq('owner_id', user.id).single()
+  if (!r) { showToast('لم يتم العثور على مطعم مرتبط بهذا الحساب'); return }
 
-  state.restaurant = restaurant
-  document.getElementById('dash-restaurant-name').textContent = restaurant.name
-  document.getElementById('preview-link').href = MENU_BASE_URL + '?r=' + restaurant.slug + '&preview=1'
+  state.restaurant = r
+  document.getElementById('dash-restaurant-name').textContent = r.name
+  document.getElementById('preview-link').href = MENU_BASE_URL + '?r=' + r.slug + '&preview=1'
+  initPushUI()
 
-  await Promise.all([loadCategories(), loadProducts(), loadOrders(), loadBanners()])
+  await Promise.all([loadCategories(), loadProducts(), loadOrders(), loadBanners(), loadBundles()])
 
-  // settings
-  document.getElementById('set-name').value     = restaurant.name
-  document.getElementById('set-whatsapp').value = restaurant.whatsapp
-  document.getElementById('set-logo').value     = restaurant.logo_url || ''
-  document.getElementById('set-cover').value    = restaurant.cover_url || ''
-  const primary = restaurant.theme?.primary || '#FF6B00'
+  // Populate settings
+  document.getElementById('set-name').value     = r.name
+  document.getElementById('set-whatsapp').value = r.whatsapp
+  document.getElementById('set-logo').value     = r.logo_url  || ''
+  document.getElementById('set-cover').value    = r.cover_url || ''
+  const primary = r.theme?.primary || '#FF6B00'
   document.getElementById('set-color').value     = primary
   document.getElementById('set-color-hex').value = primary
-
-  // announcement
-  document.getElementById('ann-text').value = restaurant.announcement_text || ''
-  document.getElementById('ann-active-toggle').checked = restaurant.announcement_active || false
+  document.getElementById('ann-text').value              = r.announcement_text   || ''
+  document.getElementById('ann-active-toggle').checked   = r.announcement_active || false
 
   setTimeout(() => initPickr(primary), 100)
+  startRealtimeOrders() // الطلبات تجي دايماً عبر التطبيق (واتساب أُزيل من تدفق الطلبات)
 
-  // ORM UI
-  initORMUI()
-
-  // Realtime — يشتغل بس لو طريقة الاستلام "app"
-  if ((state.restaurant.order_receive_method || 'whatsapp') === 'app') {
-    startRealtimeOrders()
-  }
-
+  // Live sync: color hex input
   document.getElementById('set-color-hex').addEventListener('input', e => {
     const val = e.target.value
-    if (/^#[0-9A-Fa-f]{6}$/.test(val)) {
-      document.getElementById('set-color').value = val
-      if (pickrInstance) pickrInstance.setColor(val)
-    }
+    if (/^#[0-9A-Fa-f]{6}$/.test(val)) { document.getElementById('set-color').value = val; if (pickrInstance) pickrInstance.setColor(val) }
   })
-
+  // Live preview: logo URL
   document.getElementById('set-logo').addEventListener('input', e => {
     const url = e.target.value.trim()
     const wrap = document.getElementById('logo-preview-wrap')
-    const img  = document.getElementById('logo-preview')
-    if (url) { img.src=url; wrap.classList.remove('hidden') } else { wrap.classList.add('hidden') }
+    if (url) { document.getElementById('logo-preview').src = url; wrap.classList.remove('hidden') }
+    else wrap.classList.add('hidden')
   })
 }
 
+// ── PICKR (Color Picker) ──────────────────────────────────────────────
 function initPickr(initialColor) {
   if (pickrInstance) { pickrInstance.destroyAndRemove(); pickrInstance = null }
   pickrInstance = Pickr.create({
-    el: '#pickr-container', theme:'nano', default: initialColor || '#FF6B00',
-    components: { preview:true, opacity:false, hue:true, interaction:{hex:true,input:true,save:true} },
+    el: '#pickr-container', theme: 'nano', default: initialColor || '#FF6B00',
+    components: { preview: true, opacity: false, hue: true, interaction: { hex: true, input: true, save: true } },
     i18n: { 'btn:save': 'اختيار' }
   })
-  pickrInstance.on('save', color => {
-    const hex = color.toHEXA().toString().slice(0,7)
-    document.getElementById('set-color').value     = hex
-    document.getElementById('set-color-hex').value = hex
-    pickrInstance.hide()
-  })
-  pickrInstance.on('change', color => {
-    const hex = color.toHEXA().toString().slice(0,7)
-    document.getElementById('set-color').value     = hex
-    document.getElementById('set-color-hex').value = hex
-  })
+  pickrInstance.on('save',   color => { const h = color.toHEXA().toString().slice(0,7); document.getElementById('set-color').value = h; document.getElementById('set-color-hex').value = h; pickrInstance.hide() })
+  pickrInstance.on('change', color => { const h = color.toHEXA().toString().slice(0,7); document.getElementById('set-color').value = h; document.getElementById('set-color-hex').value = h })
 }
 
-// ── ANNOUNCEMENT ──
-async function saveAnnouncement() {
+// ── ANNOUNCEMENT ──────────────────────────────────────────────────────
+function saveAnnouncement() {
   clearTimeout(annSaveTimeout)
   annSaveTimeout = setTimeout(async () => {
     const text   = document.getElementById('ann-text').value.trim()
     const active = document.getElementById('ann-active-toggle').checked
-    await db.from('restaurants').update({ announcement_text: text||null, announcement_active: active }).eq('id', state.restaurant.id)
-    state.restaurant.announcement_text   = text
-    state.restaurant.announcement_active = active
+    await db.from('restaurants').update({ announcement_text: text || null, announcement_active: active }).eq('id', state.restaurant.id)
     showToast(active ? '📣 الرسالة نشطة' : 'تم الحفظ')
   }, 800)
 }
 
-// ── BANNERS ──
+// ── BANNERS ───────────────────────────────────────────────────────────
 async function loadBanners() {
   const { data } = await db.from('banners').select('*').eq('restaurant_id', state.restaurant.id).order('sort_order')
   state.banners = data || []
   renderBanners()
 }
-
 function renderBanners() {
   const el = document.getElementById('banners-list')
-  if (!state.banners.length) {
-    el.innerHTML = `<p class="text-center text-gray-400 text-sm py-6">لا توجد بنرات بعد — أضف أول بنر إعلاني</p>`
-    return
-  }
+  if (!state.banners.length) { el.innerHTML = `<p class="text-center text-gray-400 text-sm py-6">لا توجد بنرات بعد</p>`; return }
+  const lbl = { external:'🔗 رابط خارجي', product:'📦 منتج', category:'📂 تصنيف', none:'بدون رابط' }
   el.innerHTML = state.banners.map(b => {
-    const now = new Date()
-    const started  = !b.starts_at || new Date(b.starts_at) <= now
-    const notEnded = !b.ends_at   || new Date(b.ends_at)   >= now
-    const isLive   = b.is_active && started && notEnded
-    return `
-    <div class="bg-white rounded-2xl shadow-sm border border-gray-100 overflow-hidden">
+    const now    = new Date()
+    const isLive = b.is_active && (!b.starts_at || new Date(b.starts_at) <= now) && (!b.ends_at || new Date(b.ends_at) >= now)
+    return `<div class="bg-white rounded-2xl shadow-sm border border-gray-100 overflow-hidden">
       ${b.image_url ? `<img src="${b.image_url}" class="w-full h-28 object-cover" />` : `<div class="w-full h-28 bg-gray-100 flex items-center justify-center text-3xl">🖼️</div>`}
       <div class="p-3">
         <div class="flex items-center justify-between mb-2">
-          <span class="text-xs font-bold px-2 py-1 rounded-full ${isLive ? 'bg-green-50 text-green-600' : 'bg-gray-100 text-gray-400'}">
-            ${isLive ? '🟢 يعرض الآن' : '⚫ متوقف'}
-          </span>
-          <span class="text-xs text-gray-400">${linkTypeLabel(b.link_type)}</span>
+          <span class="text-xs font-bold px-2 py-1 rounded-full ${isLive ? 'bg-green-50 text-green-600' : 'bg-gray-100 text-gray-400'}">${isLive ? '🟢 يعرض الآن' : '⚫ متوقف'}</span>
+          <span class="text-xs text-gray-400">${lbl[b.link_type] || ''}</span>
         </div>
-        ${b.ends_at ? `<p class="text-xs text-gray-400 mb-2">⏰ ينتهي: ${new Date(b.ends_at).toLocaleDateString('ar-EG')}</p>` : ''}
         <div class="flex gap-2">
-          <button onclick="toggleBanner('${b.id}', ${b.is_active})" class="flex-1 text-xs font-bold px-3 py-2 rounded-xl ${b.is_active ? 'bg-gray-100 text-gray-600' : 'bg-green-500 text-white'}">${b.is_active ? 'إيقاف' : 'تفعيل'}</button>
-          <button onclick="openBannerModal('${b.id}')" class="flex-1 text-xs bg-gray-100 text-gray-600 font-bold px-3 py-2 rounded-xl">تعديل</button>
-          <button onclick="deleteBanner('${b.id}')" class="text-xs bg-red-50 text-red-500 font-bold px-3 py-2 rounded-xl">حذف</button>
+          <button onclick="toggleBanner('${b.id}',${b.is_active})" class="flex-1 text-xs font-bold px-3 py-2 rounded-xl ${b.is_active ? 'bg-gray-100 text-gray-600' : 'bg-green-500 text-white'}">${b.is_active ? 'إيقاف' : 'تفعيل'}</button>
+          <button onclick="openBannerModal('${b.id}')"             class="flex-1 text-xs bg-gray-100 text-gray-600 font-bold px-3 py-2 rounded-xl">تعديل</button>
+          <button onclick="deleteBanner('${b.id}')"                class="text-xs bg-red-50 text-red-500 font-bold px-3 py-2 rounded-xl">حذف</button>
         </div>
       </div>
     </div>`
   }).join('')
 }
-
-function linkTypeLabel(t) {
-  return { external:'🔗 رابط خارجي', product:'📦 منتج داخلي', category:'📂 تصنيف', none:'بدون رابط' }[t] || ''
-}
-
 function openBannerModal(id = null) {
   document.getElementById('bnm-id').value = id || ''
   document.getElementById('bnm-error').classList.add('hidden')
   document.getElementById('bnm-image-preview-wrap').classList.add('hidden')
-
-  // populate product/category selects
-  document.getElementById('bnm-link-product').innerHTML =
-    state.products.map(p => `<option value="${p.id}">${p.name}</option>`).join('')
-  document.getElementById('bnm-link-category').innerHTML =
-    state.categories.map(c => `<option value="${c.id}">${c.name}</option>`).join('')
-
+  document.getElementById('bnm-link-product').innerHTML  = state.products.map(p  => `<option value="${p.id}">${p.name}</option>`).join('')
+  document.getElementById('bnm-link-category').innerHTML = state.categories.map(c => `<option value="${c.id}">${c.name}</option>`).join('')
   if (id) {
     const b = state.banners.find(x => x.id === id)
-    document.getElementById('bnm-image').value   = b.image_url || ''
-    document.getElementById('bnm-link-type').value = b.link_type || 'none'
-    document.getElementById('bnm-active').checked = b.is_active
-    document.getElementById('bnm-starts').value  = b.starts_at ? b.starts_at.slice(0,16) : ''
-    document.getElementById('bnm-ends').value    = b.ends_at   ? b.ends_at.slice(0,16)   : ''
-    if (b.image_url) { document.getElementById('bnm-image-preview').src=b.image_url; document.getElementById('bnm-image-preview-wrap').classList.remove('hidden') }
-    // set link value
-    if (b.link_type==='external') document.getElementById('bnm-link-external').value = b.link_value||''
-    if (b.link_type==='product')  document.getElementById('bnm-link-product').value  = b.link_value||''
-    if (b.link_type==='category') document.getElementById('bnm-link-category').value = b.link_value||''
+    document.getElementById('bnm-image').value            = b.image_url || ''
+    document.getElementById('bnm-link-type').value        = b.link_type || 'none'
+    document.getElementById('bnm-active').checked         = b.is_active
+    document.getElementById('bnm-starts').value           = b.starts_at ? b.starts_at.slice(0,16) : ''
+    document.getElementById('bnm-ends').value             = b.ends_at   ? b.ends_at.slice(0,16)   : ''
+    document.getElementById('bnm-link-external').value    = b.link_type === 'external' ? b.link_value || '' : ''
+    if (b.link_type === 'product')  document.getElementById('bnm-link-product').value  = b.link_value || ''
+    if (b.link_type === 'category') document.getElementById('bnm-link-category').value = b.link_value || ''
+    if (b.image_url) { document.getElementById('bnm-image-preview').src = b.image_url; document.getElementById('bnm-image-preview-wrap').classList.remove('hidden') }
     document.getElementById('banner-modal-title').textContent = 'تعديل البنر'
   } else {
-    document.getElementById('bnm-image').value = ''
-    document.getElementById('bnm-link-type').value = 'none'
-    document.getElementById('bnm-active').checked = true
-    document.getElementById('bnm-starts').value = ''
-    document.getElementById('bnm-ends').value   = ''
-    document.getElementById('bnm-link-external').value = ''
-    document.getElementById('banner-modal-title').textContent = 'بنر إعلاني جديد'
+    ;['bnm-image','bnm-link-external','bnm-starts','bnm-ends'].forEach(f => document.getElementById(f).value = '')
+    document.getElementById('bnm-link-type').value   = 'none'
+    document.getElementById('bnm-active').checked    = true
+    document.getElementById('banner-modal-title').textContent = 'بنر جديد'
   }
   updateBannerLinkUI()
   document.getElementById('modal-banner').classList.remove('hidden')
 }
-
 function closeBannerModal() { document.getElementById('modal-banner').classList.add('hidden') }
-
 function updateBannerLinkUI() {
   const t = document.getElementById('bnm-link-type').value
   document.getElementById('bnm-external-wrap').classList.toggle('hidden', t !== 'external')
   document.getElementById('bnm-product-wrap').classList.toggle('hidden',  t !== 'product')
   document.getElementById('bnm-category-wrap').classList.toggle('hidden', t !== 'category')
 }
-
 async function saveBanner() {
   const id       = document.getElementById('bnm-id').value
   const image    = document.getElementById('bnm-image').value.trim()
   const linkType = document.getElementById('bnm-link-type').value
   const errEl    = document.getElementById('bnm-error')
-
-  if (!image) { errEl.textContent='صورة البنر مطلوبة'; errEl.classList.remove('hidden'); return }
+  if (!image) { errEl.textContent = 'صورة البنر مطلوبة'; errEl.classList.remove('hidden'); return }
   errEl.classList.add('hidden')
-
   let linkValue = null
-  if (linkType==='external') linkValue = document.getElementById('bnm-link-external').value.trim() || null
-  if (linkType==='product')  linkValue = document.getElementById('bnm-link-product').value  || null
-  if (linkType==='category') linkValue = document.getElementById('bnm-link-category').value || null
-
+  if (linkType === 'external') linkValue = document.getElementById('bnm-link-external').value.trim() || null
+  if (linkType === 'product')  linkValue = document.getElementById('bnm-link-product').value         || null
+  if (linkType === 'category') linkValue = document.getElementById('bnm-link-category').value        || null
   const startsRaw = document.getElementById('bnm-starts').value
   const endsRaw   = document.getElementById('bnm-ends').value
-
-  const payload = {
-    image_url:  image,
-    link_type:  linkType === 'none' ? 'external' : linkType,
-    link_value: linkValue,
-    is_active:  document.getElementById('bnm-active').checked,
-    starts_at:  startsRaw ? new Date(startsRaw).toISOString() : null,
-    ends_at:    endsRaw   ? new Date(endsRaw).toISOString()   : null,
-    restaurant_id: state.restaurant.id,
-    sort_order: id ? undefined : state.banners.length
-  }
-
-  if (id) { await db.from('banners').update(payload).eq('id', id) }
-  else     { await db.from('banners').insert(payload) }
-
-  closeBannerModal()
-  await loadBanners()
-  showToast(id ? 'تم تعديل البنر ✅' : 'تم إضافة البنر ✅')
+  const payload   = { image_url: image, link_type: linkType === 'none' ? 'external' : linkType, link_value: linkValue, is_active: document.getElementById('bnm-active').checked, starts_at: startsRaw ? new Date(startsRaw).toISOString() : null, ends_at: endsRaw ? new Date(endsRaw).toISOString() : null, restaurant_id: state.restaurant.id, sort_order: id ? undefined : state.banners.length }
+  if (id) await db.from('banners').update(payload).eq('id', id)
+  else    await db.from('banners').insert(payload)
+  closeBannerModal(); await loadBanners(); showToast(id ? 'تم تعديل البنر ✅' : 'تم إضافة البنر ✅')
 }
+async function toggleBanner(id, current) { await db.from('banners').update({ is_active: !current }).eq('id', id); await loadBanners(); showToast(!current ? '🟢 البنر نشط' : 'تم إيقاف البنر') }
+async function deleteBanner(id) { const ok = await showConfirm('هل تريد حذف هذا البنر؟', 'حذف'); if (!ok) return; await db.from('banners').delete().eq('id', id); await loadBanners(); showToast('تم حذف البنر') }
 
-async function toggleBanner(id, current) {
-  await db.from('banners').update({ is_active: !current }).eq('id', id)
-  await loadBanners()
-  showToast(!current ? '🟢 البنر نشط الآن' : 'تم إيقاف البنر')
-}
-
-async function deleteBanner(id) {
-  const ok = await showConfirm('هل تريد حذف هذا البنر؟', 'حذف البنر')
-  if (!ok) return
-  await db.from('banners').delete().eq('id', id)
-  await loadBanners()
-  showToast('تم حذف البنر')
-}
-
-async function uploadBannerImage(input) {
-  const file = input.files[0]; if (!file) return
-  const msgEl = document.getElementById('banner-upload-msg')
-  msgEl.textContent='جاري الرفع...'; msgEl.classList.remove('hidden')
-  try {
-    const path = `banners/${state.restaurant.id}-${Date.now()}.${file.name.split('.').pop()}`
-    const url  = await uploadToSupabase(file, 'restaurant-images', path)
-    document.getElementById('bnm-image').value = url
-    document.getElementById('bnm-image-preview').src = url
-    document.getElementById('bnm-image-preview-wrap').classList.remove('hidden')
-    msgEl.textContent = 'تم الرفع بنجاح ✅'
-  } catch(e) { msgEl.textContent = 'فشل الرفع — جرب رابط URL' }
-}
-
-// ── CATEGORIES ──
+// ── CATEGORIES ────────────────────────────────────────────────────────
 async function loadCategories() {
   const { data } = await db.from('categories').select('*').eq('restaurant_id', state.restaurant.id).order('sort_order')
-  state.categories = data || []; renderCategories(); updateCategorySelect()
+  state.categories = data || []
+  renderCategories(); updateCategorySelect()
 }
 function renderCategories() {
   const el = document.getElementById('categories-list')
-  if (!state.categories.length) { el.innerHTML=`<p class="text-center text-gray-400 text-sm py-8">لا توجد تصنيفات بعد</p>`; return }
-  el.innerHTML = state.categories.map(cat => `
+  if (!state.categories.length) { el.innerHTML = `<p class="text-center text-gray-400 text-sm py-8">لا توجد تصنيفات بعد</p>`; return }
+  el.innerHTML = state.categories.map(c => `
     <div class="bg-white rounded-2xl p-4 shadow-sm flex items-center justify-between">
-      <span class="font-bold text-gray-800">${cat.name}</span>
+      <span class="font-bold text-gray-800">${c.name}</span>
       <div class="flex gap-2">
-        <button onclick="openCatModal('${cat.id}')" class="text-xs bg-gray-100 text-gray-600 font-bold px-3 py-2 rounded-xl">تعديل</button>
-        <button onclick="deleteCat('${cat.id}')" class="text-xs bg-red-50 text-red-500 font-bold px-3 py-2 rounded-xl">حذف</button>
+        <button onclick="openCatModal('${c.id}')" class="text-xs bg-gray-100 text-gray-600 font-bold px-3 py-2 rounded-xl">تعديل</button>
+        <button onclick="deleteCat('${c.id}')"    class="text-xs bg-red-50 text-red-500 font-bold px-3 py-2 rounded-xl">حذف</button>
       </div>
     </div>`).join('')
 }
@@ -917,228 +708,194 @@ function updateCategorySelect() {
   const sel = document.getElementById('pm-category')
   sel.innerHTML = '<option value="">بدون تصنيف</option>' + state.categories.map(c => `<option value="${c.id}">${c.name}</option>`).join('')
 }
-function openCatModal(id=null) {
-  document.getElementById('cm-id').value = id||''; document.getElementById('cm-error').classList.add('hidden')
-  if (id) { const cat=state.categories.find(c=>c.id===id); document.getElementById('cm-name').value=cat.name; document.getElementById('cm-icon').value=cat.icon_url||''; document.getElementById('cat-modal-title').textContent='تعديل تصنيف' }
-  else    { document.getElementById('cm-name').value=''; document.getElementById('cm-icon').value=''; document.getElementById('cat-modal-title').textContent='إضافة تصنيف' }
+function openCatModal(id = null) {
+  document.getElementById('cm-id').value = id || ''
+  document.getElementById('cm-error').classList.add('hidden')
+  if (id) { const c = state.categories.find(x => x.id === id); document.getElementById('cm-name').value = c.name; document.getElementById('cm-icon').value = c.icon_url || ''; document.getElementById('cat-modal-title').textContent = 'تعديل تصنيف' }
+  else    { document.getElementById('cm-name').value = ''; document.getElementById('cm-icon').value = ''; document.getElementById('cat-modal-title').textContent = 'إضافة تصنيف' }
   document.getElementById('modal-category').classList.remove('hidden')
   setTimeout(() => document.getElementById('cm-name').focus(), 100)
 }
 function closeCatModal() { document.getElementById('modal-category').classList.add('hidden') }
 async function saveCat() {
-  const id=document.getElementById('cm-id').value, name=document.getElementById('cm-name').value.trim()
-  const errEl=document.getElementById('cm-error')
-  if (!name) { errEl.textContent='اسم التصنيف مطلوب'; errEl.classList.remove('hidden'); return }
+  const id   = document.getElementById('cm-id').value
+  const name = document.getElementById('cm-name').value.trim()
+  const errEl = document.getElementById('cm-error')
+  if (!name) { errEl.textContent = 'اسم التصنيف مطلوب'; errEl.classList.remove('hidden'); return }
   errEl.classList.add('hidden')
-  if (id) { await db.from('categories').update({ name, icon_url:document.getElementById('cm-icon').value.trim()||null }).eq('id',id) }
-  else    { await db.from('categories').insert({ restaurant_id:state.restaurant.id, name, icon_url:document.getElementById('cm-icon').value.trim()||null, sort_order:state.categories.length }) }
-  closeCatModal(); await loadCategories(); showToast(id?'تم تعديل التصنيف':'تم إضافة التصنيف')
+  const icon = document.getElementById('cm-icon').value.trim() || null
+  if (id) await db.from('categories').update({ name, icon_url: icon }).eq('id', id)
+  else    await db.from('categories').insert({ restaurant_id: state.restaurant.id, name, icon_url: icon, sort_order: state.categories.length })
+  closeCatModal(); await loadCategories(); showToast(id ? 'تم تعديل التصنيف' : 'تم إضافة التصنيف')
 }
-async function deleteCat(id) {
-  const ok = await showConfirm('هل تريد حذف هذا التصنيف؟ المنتجات المرتبطة به ستفقد تصنيفها.', 'حذف التصنيف')
-  if (!ok) return
-  await db.from('categories').delete().eq('id',id); await loadCategories(); showToast('تم حذف التصنيف')
-}
+async function deleteCat(id) { const ok = await showConfirm('هل تريد حذف هذا التصنيف؟ المنتجات المرتبطة ستفقد تصنيفها.', 'حذف'); if (!ok) return; await db.from('categories').delete().eq('id', id); await loadCategories(); showToast('تم حذف التصنيف') }
 
-// ── PRODUCTS ──
-let activeProductFilter = 'all'
+// ── PRODUCTS ──────────────────────────────────────────────────────────
 async function loadProducts() {
-  const { data } = await db.from('products').select('*').eq('restaurant_id',state.restaurant.id).order('sort_order')
-  state.products = data||[]; renderProductFilterTabs(); renderProducts()
+  const { data } = await db.from('products').select('*').eq('restaurant_id', state.restaurant.id).order('sort_order')
+  state.products = data || []
+  renderProductFilterTabs(); renderProducts()
 }
 function renderProductFilterTabs() {
-  const el=document.getElementById('product-filter-tabs'); if (!el) return
-  const tabs=[{id:'all',name:'الكل'},...state.categories]
-  el.innerHTML=tabs.map(t=>`
-    <button onclick="filterProducts('${t.id}')" data-filter="${t.id}"
-            class="filter-tab flex-shrink-0 px-4 py-1.5 rounded-full text-sm font-bold border-2 transition-all
-                   ${t.id===activeProductFilter?'bg-orange-500 text-white border-transparent':'bg-white text-gray-500 border-gray-200'}">
-      ${t.name}</button>`).join('')
+  const el = document.getElementById('product-filter-tabs'); if (!el) return
+  const tabs = [{ id: 'all', name: 'الكل' }, ...state.categories]
+  el.innerHTML = tabs.map(t => `<button onclick="filterProducts('${t.id}')" class="flex-shrink-0 px-4 py-1.5 rounded-full text-sm font-bold border-2 transition-all ${t.id === activeProductFilter ? 'bg-orange-500 text-white border-transparent' : 'bg-white text-gray-500 border-gray-200'}">${t.name}</button>`).join('')
 }
-function filterProducts(catId) { activeProductFilter=catId; renderProductFilterTabs(); renderProducts() }
+function filterProducts(id) { activeProductFilter = id; renderProductFilterTabs(); renderProducts() }
 function renderProducts() {
-  const el=document.getElementById('products-list')
-  let filtered=state.products
-  if (activeProductFilter!=='all') filtered=state.products.filter(p=>p.category_id===activeProductFilter)
-  if (!filtered.length) { el.innerHTML=`<p class="text-center text-gray-400 text-sm py-8">لا توجد منتجات في هذا التصنيف</p>`; return }
-  el.innerHTML=filtered.map(p=>{
-    const cat=state.categories.find(c=>c.id===p.category_id)
-    const hasDiscount=p.discount_price&&p.discount_price>0, discountOn=p.discount_active
-    return `<div class="bg-white rounded-2xl p-4 shadow-sm border ${!p.is_available?'border-red-100 opacity-70':'border-gray-100'}">
+  const el       = document.getElementById('products-list')
+  const filtered = activeProductFilter === 'all' ? state.products : state.products.filter(p => p.category_id === activeProductFilter)
+  if (!filtered.length) { el.innerHTML = `<p class="text-center text-gray-400 text-sm py-8">لا توجد منتجات</p>`; return }
+  el.innerHTML = filtered.map(p => {
+    const cat        = state.categories.find(c => c.id === p.category_id)
+    const hasDis     = p.discount_price && p.discount_price > 0
+    const disOn      = p.discount_active
+    return `<div class="bg-white rounded-2xl p-4 shadow-sm border ${!p.is_available ? 'border-red-100 opacity-70' : 'border-gray-100'}">
       <div class="flex items-center gap-3">
-        ${p.image_url?`<img src="${p.image_url}" class="w-16 h-16 rounded-xl object-cover flex-shrink-0" />`:`<div class="w-16 h-16 rounded-xl bg-gray-100 flex items-center justify-center text-2xl flex-shrink-0">🍽️</div>`}
+        ${p.image_url ? `<img src="${p.image_url}" class="w-16 h-16 rounded-xl object-cover flex-shrink-0" />` : `<div class="w-16 h-16 rounded-xl bg-gray-100 flex items-center justify-center text-2xl flex-shrink-0">🍽️</div>`}
         <div class="flex-1 min-w-0">
           <div class="flex items-center gap-2 flex-wrap">
             <p class="font-bold text-gray-800 truncate">${p.name}</p>
-            ${!p.is_available?`<span class="text-xs bg-red-50 text-red-400 px-2 py-0.5 rounded-full">نفذ المخزون</span>`:''}
-            ${discountOn?`<span class="text-xs bg-orange-100 text-orange-500 px-2 py-0.5 rounded-full">خصم نشط</span>`:''}
+            ${!p.is_available ? `<span class="text-xs bg-red-50 text-red-400 px-2 py-0.5 rounded-full">نفذ</span>` : ''}
+            ${disOn ? `<span class="text-xs bg-orange-100 text-orange-500 px-2 py-0.5 rounded-full">خصم نشط</span>` : ''}
           </div>
-          ${cat?`<p class="text-xs text-orange-500 font-bold">${cat.name}</p>`:''}
+          ${cat ? `<p class="text-xs text-orange-500 font-bold">${cat.name}</p>` : ''}
           <p class="text-sm font-extrabold text-gray-700 mt-1">
-            ${hasDiscount&&discountOn
-              ?`<span class="line-through text-gray-400 text-xs ml-1">${Number(p.price).toFixed(2)}</span><span class="text-orange-500">${Number(p.discount_price).toFixed(2)} ج.م</span><span class="bg-orange-100 text-orange-500 text-xs px-1.5 rounded-full">${Math.round((1-p.discount_price/p.price)*100)}%</span>`
-              :`${Number(p.price).toFixed(2)} ج.م`}
+            ${hasDis && disOn ? `<span class="line-through text-gray-400 text-xs ml-1">${Number(p.price).toFixed(2)}</span><span class="text-orange-500">${Number(p.discount_price).toFixed(2)} ج.م</span>` : `${Number(p.price).toFixed(2)} ج.م`}
           </p>
         </div>
       </div>
       <div class="flex gap-2 mt-3 flex-wrap">
-        ${hasDiscount?`<button onclick="toggleDiscount('${p.id}',${discountOn})" class="flex-1 text-xs font-bold px-3 py-2 rounded-xl transition-colors ${discountOn?'bg-orange-500 text-white':'bg-orange-50 text-orange-500 border border-orange-200'}">${discountOn?'🏷️ إلغاء الخصم':'🏷️ تفعيل الخصم'}</button>`:''}
-        <button onclick="toggleAvailability('${p.id}',${p.is_available})" class="flex-1 text-xs font-bold px-3 py-2 rounded-xl transition-colors ${p.is_available?'bg-gray-100 text-gray-600':'bg-red-500 text-white'}">${p.is_available?'👁️ إخفاء':'✅ إظهار'}</button>
+        ${hasDis ? `<button onclick="toggleDiscount('${p.id}',${disOn})" class="flex-1 text-xs font-bold px-3 py-2 rounded-xl ${disOn ? 'bg-orange-500 text-white' : 'bg-orange-50 text-orange-500 border border-orange-200'}">${disOn ? '🏷️ إلغاء الخصم' : '🏷️ تفعيل الخصم'}</button>` : ''}
+        <button onclick="toggleAvailability('${p.id}',${p.is_available})" class="flex-1 text-xs font-bold px-3 py-2 rounded-xl ${p.is_available ? 'bg-gray-100 text-gray-600' : 'bg-red-500 text-white'}">${p.is_available ? '👁️ إخفاء' : '✅ إظهار'}</button>
         <button onclick="openProductModal('${p.id}')" class="text-xs bg-gray-100 text-gray-600 font-bold px-3 py-2 rounded-xl">تعديل</button>
-        <button onclick="deleteProduct('${p.id}')" class="text-xs bg-red-50 text-red-500 font-bold px-3 py-2 rounded-xl">حذف</button>
+        <button onclick="deleteProduct('${p.id}')"    class="text-xs bg-red-50 text-red-500 font-bold px-3 py-2 rounded-xl">حذف</button>
       </div>
-      ${p.discount_starts_at||p.discount_ends_at?`<div class="mt-2 text-xs text-gray-400 border-t border-gray-50 pt-2">
-        ${p.discount_starts_at?`⏰ يبدأ: ${new Date(p.discount_starts_at).toLocaleString('ar-EG')}`:''}
-        ${p.discount_ends_at?` — ينتهي: ${new Date(p.discount_ends_at).toLocaleString('ar-EG')}`:''}
-      </div>`:''}
-    </div>`}).join('')
+    </div>`
+  }).join('')
 }
+
+// ── UNIT SELECT ───────────────────────────────────────────────────────
 function handleUnitSelect() {
-  const sel = document.getElementById('pm-unit-select').value
+  const sel    = document.getElementById('pm-unit-select').value
   const custom = document.getElementById('pm-unit-custom')
-  if (sel === 'custom') {
-    custom.classList.remove('hidden'); custom.focus()
-    document.getElementById('pm-unit').value = ''
-    custom.oninput = () => document.getElementById('pm-unit').value = custom.value.trim()
-  } else {
-    custom.classList.add('hidden')
-    document.getElementById('pm-unit').value = sel
-  }
+  if (sel === 'custom') { custom.classList.remove('hidden'); custom.focus(); document.getElementById('pm-unit').value = ''; custom.oninput = () => document.getElementById('pm-unit').value = custom.value.trim() }
+  else                  { custom.classList.add('hidden'); document.getElementById('pm-unit').value = sel }
 }
 function setUnitField(unit) {
-  const sel = document.getElementById('pm-unit-select')
+  const sel  = document.getElementById('pm-unit-select')
   const opts = [...sel.options].map(o => o.value)
-  if (opts.includes(unit)) {
-    sel.value = unit
-    document.getElementById('pm-unit-custom').classList.add('hidden')
-  } else {
-    sel.value = 'custom'
-    document.getElementById('pm-unit-custom').classList.remove('hidden')
-    document.getElementById('pm-unit-custom').value = unit
-  }
+  if (opts.includes(unit)) { sel.value = unit; document.getElementById('pm-unit-custom').classList.add('hidden') }
+  else { sel.value = 'custom'; document.getElementById('pm-unit-custom').classList.remove('hidden'); document.getElementById('pm-unit-custom').value = unit }
   document.getElementById('pm-unit').value = unit
 }
-function openProductModal(id=null) {
-  document.getElementById('pm-id').value=id||''; document.getElementById('pm-error').classList.add('hidden'); updateCategorySelect()
+
+// ── PRODUCT MODAL ─────────────────────────────────────────────────────
+function openProductModal(id = null) {
+  document.getElementById('pm-id').value = id || ''
+  document.getElementById('pm-error').classList.add('hidden')
+  updateCategorySelect()
   if (id) {
-    const p=state.products.find(x=>x.id===id)
-    document.getElementById('pm-name').value=p.name; document.getElementById('pm-desc').value=p.description||''
-    document.getElementById('pm-price').value=p.price; document.getElementById('pm-discount').value=p.discount_price||''
-    document.getElementById('pm-category').value=p.category_id||''; document.getElementById('pm-image').value=p.image_url||''
-    document.getElementById('pm-availability').value=p.availability||'available'; document.getElementById('pm-badge').value=p.offer_badge||''
-    document.getElementById('pm-available').checked=p.is_available; document.getElementById('product-modal-title').textContent='تعديل منتج'
+    const p = state.products.find(x => x.id === id)
+    document.getElementById('pm-name').value         = p.name
+    document.getElementById('pm-desc').value         = p.description    || ''
+    document.getElementById('pm-price').value        = p.price
+    document.getElementById('pm-discount').value     = p.discount_price || ''
+    document.getElementById('pm-category').value     = p.category_id    || ''
+    document.getElementById('pm-image').value        = p.image_url      || ''
+    document.getElementById('pm-availability').value = p.availability   || 'available'
+    document.getElementById('pm-badge').value        = p.offer_badge    || ''
+    document.getElementById('pm-available').checked  = p.is_available
+    document.getElementById('product-modal-title').textContent = 'تعديل منتج'
     setUnitField(p.unit || 'قطعة')
     updateDiscountPreview()
     renderOptionsUI(p.product_options || [])
     renderAlsoWith(p.also_with || [], id)
+    if (p.image_url) { document.getElementById('pm-image-preview').src = p.image_url; document.getElementById('pm-image-preview-wrap').classList.remove('hidden') }
+    else              { document.getElementById('pm-image-preview-wrap').classList.add('hidden') }
   } else {
-    ['pm-name','pm-desc','pm-price','pm-discount','pm-image','pm-badge'].forEach(id=>document.getElementById(id).value='')
-    document.getElementById('pm-category').value=''; document.getElementById('pm-availability').value='available'
-    document.getElementById('pm-available').checked=true; document.getElementById('discount-preview').classList.add('hidden')
-    document.getElementById('product-modal-title').textContent='إضافة منتج'
-    setUnitField('قطعة')
-    renderOptionsUI([])
-    renderAlsoWith([], null)
+    ;['pm-name','pm-desc','pm-price','pm-discount','pm-image','pm-badge'].forEach(fid => document.getElementById(fid).value = '')
+    document.getElementById('pm-category').value     = ''
+    document.getElementById('pm-availability').value = 'available'
+    document.getElementById('pm-available').checked  = true
+    document.getElementById('pm-image-preview-wrap').classList.add('hidden')
+    document.getElementById('discount-preview').classList.add('hidden')
+    document.getElementById('product-modal-title').textContent = 'إضافة منتج'
+    setUnitField('قطعة'); renderOptionsUI([]); renderAlsoWith([], null)
   }
   document.getElementById('modal-product').classList.remove('hidden')
   setTimeout(() => document.getElementById('pm-name').focus(), 100)
-  if (!state.categories.length && !id) showToast('💡 أضف تصنيفاً أولاً لتنظيم منتجاتك')
+}
+function closeProductModal() { document.getElementById('modal-product').classList.add('hidden') }
+function updateDiscountPreview() {
+  const price = parseFloat(document.getElementById('pm-price').value)
+  const disc  = parseFloat(document.getElementById('pm-discount').value)
+  const prev  = document.getElementById('discount-preview')
+  if (!isNaN(price) && !isNaN(disc) && disc > 0 && disc < price) {
+    document.getElementById('dp-original').textContent   = price.toFixed(2)  + ' ج.م'
+    document.getElementById('dp-discounted').textContent = disc.toFixed(2)   + ' ج.م'
+    document.getElementById('dp-percent').textContent    = 'خصم ' + Math.round((1 - disc/price)*100) + '%'
+    prev.classList.remove('hidden')
+  } else prev.classList.add('hidden')
 }
 
-function closeProductModal() { document.getElementById('modal-product').classList.add('hidden') }
-
-// ── خيارات التخصيص ──
+// ── OPTIONS UI ────────────────────────────────────────────────────────
 function renderOptionsUI(groups) {
-  const list = document.getElementById('pm-options-list')
-  list.innerHTML = ''
+  const list = document.getElementById('pm-options-list'); list.innerHTML = ''
   groups.forEach((g, gi) => {
     const div = document.createElement('div')
     div.className = 'border border-gray-200 rounded-2xl p-3 space-y-2 bg-gray-50'
-    div.innerHTML = `
-      <div class="flex items-center gap-2">
-        <input type="text" placeholder="اسم المجموعة (مثال: الحجم)" value="${g.name||''}"
-          class="opt-group-name flex-1 border border-gray-200 rounded-xl px-3 py-2 text-sm focus:outline-none focus:ring-2 focus:ring-orange-400 bg-white" />
-        <label class="flex items-center gap-1 text-xs font-bold text-gray-500 whitespace-nowrap cursor-pointer">
-          <input type="checkbox" ${g.required?'checked':''} class="opt-required accent-orange-500" /> مطلوب
-        </label>
-        <button onclick="removeOptGroup(${gi})" class="text-red-400 hover:text-red-600 font-bold text-xl leading-none">×</button>
+    div.innerHTML = `<div class="flex items-center gap-2">
+        <input type="text" placeholder="اسم المجموعة" value="${g.name || ''}" class="opt-group-name flex-1 border border-gray-200 rounded-xl px-3 py-2 text-sm focus:outline-none focus:ring-2 focus:ring-orange-400 bg-white" />
+        <label class="flex items-center gap-1 text-xs font-bold text-gray-500 whitespace-nowrap cursor-pointer"><input type="checkbox" ${g.required ? 'checked' : ''} class="opt-required accent-orange-500" /> مطلوب</label>
+        <button onclick="this.closest('.border').remove()" class="text-red-400 font-bold text-xl leading-none">×</button>
       </div>
-      <div class="opt-items space-y-1.5">
-        ${(g.options||[]).map((o,oi) => optRowHTML(gi,oi,o)).join('')}
-      </div>
-      <button onclick="addOptItem(${gi})" class="text-xs text-orange-500 font-bold hover:underline">+ خيار جديد</button>`
+      <div class="opt-items space-y-1.5">${(g.options||[]).map(o => optRowHTML(o)).join('')}</div>
+      <button onclick="this.closest('.border').querySelector('.opt-items').insertAdjacentHTML('beforeend', '${optRowHTML({name:'',price:0}).replace(/'/g,"\\'")}') " class="text-xs text-orange-500 font-bold hover:underline">+ خيار جديد</button>`
     list.appendChild(div)
   })
 }
-
-function optRowHTML(gi, oi, o) {
+function optRowHTML(o) {
   return `<div class="flex gap-2 items-center opt-row">
-    <input type="text" placeholder="الاسم" value="${o.name||''}" class="opt-item-name flex-1 border border-gray-200 rounded-xl px-3 py-2 text-sm focus:outline-none focus:ring-2 focus:ring-orange-400 bg-white" />
+    <input type="text"   placeholder="الاسم"  value="${o.name||''}"               class="opt-item-name  flex-1 border border-gray-200 rounded-xl px-3 py-2 text-sm focus:outline-none focus:ring-2 focus:ring-orange-400 bg-white" />
     <input type="number" placeholder="السعر" value="${o.price!=null?o.price:''}" min="0" step="0.5" class="opt-item-price w-24 border border-gray-200 rounded-xl px-3 py-2 text-sm focus:outline-none focus:ring-2 focus:ring-orange-400 bg-white" />
-    <button onclick="this.closest('.opt-row').remove()" class="text-red-400 hover:text-red-600 font-bold text-xl leading-none">×</button>
+    <button onclick="this.closest('.opt-row').remove()" class="text-red-400 font-bold text-xl leading-none">×</button>
   </div>`
 }
-
 function addOptionGroup() {
   const list = document.getElementById('pm-options-list')
-  const gi = list.children.length
-  const div = document.createElement('div')
+  const div  = document.createElement('div')
   div.className = 'border border-gray-200 rounded-2xl p-3 space-y-2 bg-gray-50'
-  div.innerHTML = `
-    <div class="flex items-center gap-2">
-      <input type="text" placeholder="اسم المجموعة (مثال: الحجم)"
-        class="opt-group-name flex-1 border border-gray-200 rounded-xl px-3 py-2 text-sm focus:outline-none focus:ring-2 focus:ring-orange-400 bg-white" />
-      <label class="flex items-center gap-1 text-xs font-bold text-gray-500 whitespace-nowrap cursor-pointer">
-        <input type="checkbox" checked class="opt-required accent-orange-500" /> مطلوب
-      </label>
-      <button onclick="this.closest('.border').remove()" class="text-red-400 hover:text-red-600 font-bold text-xl leading-none">×</button>
+  div.innerHTML = `<div class="flex items-center gap-2">
+      <input type="text" placeholder="اسم المجموعة" class="opt-group-name flex-1 border border-gray-200 rounded-xl px-3 py-2 text-sm focus:outline-none focus:ring-2 focus:ring-orange-400 bg-white" />
+      <label class="flex items-center gap-1 text-xs font-bold text-gray-500 whitespace-nowrap cursor-pointer"><input type="checkbox" checked class="opt-required accent-orange-500" /> مطلوب</label>
+      <button onclick="this.closest('.border').remove()" class="text-red-400 font-bold text-xl leading-none">×</button>
     </div>
-    <div class="opt-items space-y-1.5">
-      ${optRowHTML(gi,0,{name:'',price:0})}
-    </div>
-    <button onclick="addOptItemDirect(this)" class="text-xs text-orange-500 font-bold hover:underline">+ خيار جديد</button>`
+    <div class="opt-items space-y-1.5">${optRowHTML({name:'',price:0})}</div>
+    <button onclick="this.closest('.border').querySelector('.opt-items').insertAdjacentHTML('beforeend', addOptRowStr())" class="text-xs text-orange-500 font-bold hover:underline">+ خيار جديد</button>`
   list.appendChild(div)
 }
-
-function removeOptGroup(gi) { renderOptionsUI(getOptionsData()); document.getElementById('pm-options-list').children[gi]?.remove() }
-
-function addOptItem(gi) {
-  const group = document.getElementById('pm-options-list').children[gi]
-  if (!group) return
-  const items = group.querySelector('.opt-items')
-  const oi = items.children.length
-  items.insertAdjacentHTML('beforeend', optRowHTML(gi, oi, {name:'', price:0}))
-}
-
-function addOptItemDirect(btn) {
-  const group = btn.closest('.border')
-  const items = group.querySelector('.opt-items')
-  const oi = items.children.length
-  items.insertAdjacentHTML('beforeend', optRowHTML(0, oi, {name:'', price:0}))
-}
-
+function addOptRowStr() { return optRowHTML({name:'',price:0}) }
 function getOptionsData() {
   const groups = []
   document.querySelectorAll('#pm-options-list > div').forEach(div => {
-    const name    = div.querySelector('.opt-group-name')?.value?.trim()
+    const name     = div.querySelector('.opt-group-name')?.value?.trim()
     const required = div.querySelector('.opt-required')?.checked || false
-    const options = []
+    const options  = []
     div.querySelectorAll('.opt-row').forEach(row => {
-      const n = row.querySelector('.opt-item-name')?.value?.trim()
+      const n  = row.querySelector('.opt-item-name')?.value?.trim()
       const pr = parseFloat(row.querySelector('.opt-item-price')?.value) || 0
-      if (n) options.push({ name:n, price:pr })
+      if (n) options.push({ name: n, price: pr })
     })
     if (name) groups.push({ name, required, options })
   })
   return groups
 }
 
-// ── تطلب معها أيضاً ──
-let _alsoWith = []
+// ── ALSO WITH ─────────────────────────────────────────────────────────
 function renderAlsoWith(ids, currentId) {
   _alsoWith = [...ids]
-  const list = document.getElementById('pm-also-list')
-  list.innerHTML = ''
+  const list = document.getElementById('pm-also-list'); list.innerHTML = ''
   ids.forEach(id => {
     const p = state.products.find(x => x.id === id); if (!p) return
     const tag = document.createElement('div')
@@ -1146,586 +903,451 @@ function renderAlsoWith(ids, currentId) {
     tag.innerHTML = `${p.name} <button onclick="removeAlso('${id}')" class="text-orange-400 hover:text-red-500 font-black text-base leading-none mr-1">×</button>`
     list.appendChild(tag)
   })
-  // تحديث القائمة المنسدلة — استبعد المنتج الحالي والمضافين
   const sel = document.getElementById('pm-also-select')
-  sel.innerHTML = '<option value="">+ اختر منتجاً لإضافته...</option>'
-  state.products.filter(p => p.id !== currentId && !_alsoWith.includes(p.id)).forEach(p => {
-    const opt = document.createElement('option'); opt.value = p.id; opt.textContent = p.name; sel.appendChild(opt)
-  })
+  sel.innerHTML = '<option value="">+ اختر منتجاً...</option>'
+  state.products.filter(p => p.id !== currentId && !_alsoWith.includes(p.id)).forEach(p => { const o = document.createElement('option'); o.value = p.id; o.textContent = p.name; sel.appendChild(o) })
 }
+function addAlsoWith(sel)  { const id = sel.value; if (!id) return; _alsoWith.push(id); renderAlsoWith(_alsoWith, document.getElementById('pm-id').value || null); sel.value = '' }
+function removeAlso(id)    { _alsoWith = _alsoWith.filter(x => x !== id); renderAlsoWith(_alsoWith, document.getElementById('pm-id').value || null) }
 
-function addAlsoWith(sel) {
-  const id = sel.value; if (!id) return
-  _alsoWith.push(id)
-  const currentId = document.getElementById('pm-id').value || null
-  renderAlsoWith(_alsoWith, currentId)
-  sel.value = ''
-}
-
-function removeAlso(id) {
-  _alsoWith = _alsoWith.filter(x => x !== id)
-  const currentId = document.getElementById('pm-id').value || null
-  renderAlsoWith(_alsoWith, currentId)
-}
-
+// ── SAVE / DELETE PRODUCT ─────────────────────────────────────────────
 async function saveProduct() {
-  const id=document.getElementById('pm-id').value, name=document.getElementById('pm-name').value.trim()
-  const price=parseFloat(document.getElementById('pm-price').value), discount=parseFloat(document.getElementById('pm-discount').value)
-  const errEl=document.getElementById('pm-error')
-  if (!name) { errEl.textContent='اسم المنتج مطلوب'; errEl.classList.remove('hidden'); return }
-  if (isNaN(price)) { errEl.textContent='السعر غير صحيح'; errEl.classList.remove('hidden'); return }
-  if (!isNaN(discount)&&discount>=price) { errEl.textContent='سعر الخصم يجب أن يكون أقل من السعر الأصلي'; errEl.classList.remove('hidden'); return }
+  const id       = document.getElementById('pm-id').value
+  const name     = document.getElementById('pm-name').value.trim()
+  const price    = parseFloat(document.getElementById('pm-price').value)
+  const discount = parseFloat(document.getElementById('pm-discount').value)
+  const errEl    = document.getElementById('pm-error')
+  if (!name)                                     { errEl.textContent = 'اسم المنتج مطلوب'; errEl.classList.remove('hidden'); return }
+  if (isNaN(price))                              { errEl.textContent = 'السعر غير صحيح';   errEl.classList.remove('hidden'); return }
+  if (!isNaN(discount) && discount >= price)     { errEl.textContent = 'سعر الخصم يجب أن يكون أقل من الأصلي'; errEl.classList.remove('hidden'); return }
   errEl.classList.add('hidden')
-  const unit = document.getElementById('pm-unit').value.trim() || 'قطعة'
-  const product_options = getOptionsData()
-  const also_with = [..._alsoWith]
   const payload = {
-    name, description:document.getElementById('pm-desc').value.trim()||null,
-    price, discount_price:!isNaN(discount)&&discount>0?discount:null,
-    category_id:document.getElementById('pm-category').value||null,
-    image_url:document.getElementById('pm-image').value.trim()||null,
-    is_available:document.getElementById('pm-available').checked,
-    availability:document.getElementById('pm-availability').value,
-    offer_badge:document.getElementById('pm-badge').value.trim()||null,
-    unit,
-    product_options: product_options.length ? product_options : null,
-    also_with: also_with.length ? also_with : null
+    name,
+    description:     document.getElementById('pm-desc').value.trim()        || null,
+    price,
+    discount_price:  !isNaN(discount) && discount > 0 ? discount            : null,
+    category_id:     document.getElementById('pm-category').value           || null,
+    image_url:       document.getElementById('pm-image').value.trim()       || null,
+    is_available:    document.getElementById('pm-available').checked,
+    availability:    document.getElementById('pm-availability').value,
+    offer_badge:     document.getElementById('pm-badge').value.trim()       || null,
+    unit:            document.getElementById('pm-unit').value.trim()        || 'قطعة',
+    product_options: getOptionsData().length ? getOptionsData()             : null,
+    also_with:       _alsoWith.length        ? [..._alsoWith]               : null
   }
-  if (id) { await db.from('products').update(payload).eq('id',id) }
-  else    { await db.from('products').insert({...payload,restaurant_id:state.restaurant.id,sort_order:state.products.length}) }
-  closeProductModal(); await loadProducts(); showToast(id?'تم تعديل المنتج ✅':'تم إضافة المنتج ✅')
+  if (id) await db.from('products').update(payload).eq('id', id)
+  else    await db.from('products').insert({ ...payload, restaurant_id: state.restaurant.id, sort_order: state.products.length })
+  closeProductModal(); await loadProducts(); showToast(id ? 'تم تعديل المنتج ✅' : 'تم إضافة المنتج ✅')
 }
 async function deleteProduct(id) {
-  const ok = await showConfirm('هل تريد حذف هذا المنتج؟', 'حذف المنتج')
-  if (!ok) return
-  productSnapshot=state.products.find(p=>p.id===id)
-  await db.from('products').delete().eq('id',id); await loadProducts(); showToastWithUndo('تم حذف المنتج', restoreProduct)
+  const ok = await showConfirm('هل تريد حذف هذا المنتج؟', 'حذف'); if (!ok) return
+  productSnapshot = state.products.find(p => p.id === id)
+  await db.from('products').delete().eq('id', id)
+  await loadProducts()
+  showToastWithUndo('تم حذف المنتج', restoreProduct)
 }
 async function restoreProduct() {
   if (!productSnapshot) return
-  const {id,...rest}=productSnapshot; await db.from('products').insert(rest); productSnapshot=null; await loadProducts(); showToast('تم استعادة المنتج ✅')
+  const { id, ...rest } = productSnapshot
+  await db.from('products').insert(rest)
+  productSnapshot = null
+  await loadProducts(); showToast('تم استعادة المنتج ✅')
 }
-function updateDiscountPreview() {
-  const price=parseFloat(document.getElementById('pm-price').value), discount=parseFloat(document.getElementById('pm-discount').value)
-  const preview=document.getElementById('discount-preview')
-  if (!isNaN(price)&&!isNaN(discount)&&discount>0&&discount<price) {
-    const percent=Math.round((1-discount/price)*100)
-    document.getElementById('dp-original').textContent=price.toFixed(2)+' ج.م'
-    document.getElementById('dp-discounted').textContent=discount.toFixed(2)+' ج.م'
-    document.getElementById('dp-percent').textContent='خصم '+percent+'%'
-    preview.classList.remove('hidden')
-  } else { preview.classList.add('hidden') }
-}
-async function toggleDiscount(id,current) { await db.from('products').update({discount_active:!current}).eq('id',id); await loadProducts(); showToast(!current?'🏷️ تم تفعيل الخصم':'تم إلغاء الخصم') }
-async function toggleAvailability(id,current) { await db.from('products').update({is_available:!current}).eq('id',id); await loadProducts(); showToast(!current?'✅ المنتج متاح الآن':'🚫 تم إخفاء المنتج') }
+async function toggleDiscount(id, current)    { await db.from('products').update({ discount_active: !current }).eq('id', id); await loadProducts(); showToast(!current ? '🏷️ تم تفعيل الخصم' : 'تم إلغاء الخصم') }
+async function toggleAvailability(id, current){ await db.from('products').update({ is_available: !current }).eq('id', id); await loadProducts(); showToast(!current ? '✅ المنتج متاح' : '🚫 تم الإخفاء') }
 
-// ── BUNDLES ──
+// ── BUNDLES ───────────────────────────────────────────────────────────
 async function loadBundles() {
-  const { data }=await db.from('bundles').select('*').eq('restaurant_id',state.restaurant.id).order('created_at',{ascending:false})
-  state_bundles=data||[]; renderBundles()
+  const { data } = await db.from('bundles').select('*').eq('restaurant_id', state.restaurant.id).order('created_at', { ascending: false })
+  state.bundles = data || []
+  renderBundles()
 }
 function renderBundles() {
-  const el=document.getElementById('bundles-list')
-  if (!state_bundles.length) { el.innerHTML=`<p class="text-center text-gray-400 text-sm py-8">لا توجد عروض مجمعة بعد</p>`; return }
-  el.innerHTML=state_bundles.map(b=>{
-    const items=(b.items||[]).map(i=>`${i.name}×${i.quantity}`).join(' + ')
-    return `<div class="bg-white rounded-2xl p-4 shadow-sm border border-gray-100">
+  const el = document.getElementById('bundles-list')
+  if (!state.bundles.length) { el.innerHTML = `<p class="text-center text-gray-400 text-sm py-8">لا توجد عروض بعد</p>`; return }
+  el.innerHTML = state.bundles.map(b => `
+    <div class="bg-white rounded-2xl p-4 shadow-sm border border-gray-100">
       <div class="flex items-start justify-between">
-        <div class="flex-1">
-          <div class="flex items-center gap-2"><p class="font-bold text-gray-800">🎁 ${b.name}</p><span class="text-xs px-2 py-0.5 rounded-full ${b.is_active?'bg-green-50 text-green-500':'bg-gray-100 text-gray-400'}">${b.is_active?'نشط':'متوقف'}</span></div>
-          ${b.description?`<p class="text-xs text-gray-400 mt-1">${b.description}</p>`:''}
-          ${items?`<p class="text-xs text-orange-500 mt-1">${items}</p>`:''}
+        <div>
+          <div class="flex items-center gap-2"><p class="font-bold text-gray-800">🎁 ${b.name}</p>
+            <span class="text-xs px-2 py-0.5 rounded-full ${b.is_active ? 'bg-green-50 text-green-500' : 'bg-gray-100 text-gray-400'}">${b.is_active ? 'نشط' : 'متوقف'}</span></div>
+          ${b.description ? `<p class="text-xs text-gray-400 mt-1">${b.description}</p>` : ''}
           <p class="font-extrabold text-orange-500 mt-2">${Number(b.price).toFixed(2)} ج.م</p>
         </div>
       </div>
       <div class="flex gap-2 mt-3">
-        <button onclick="toggleBundle('${b.id}',${b.is_active})" class="flex-1 text-xs font-bold px-3 py-2 rounded-xl ${b.is_active?'bg-gray-100 text-gray-600':'bg-green-500 text-white'}">${b.is_active?'إيقاف':'تفعيل'}</button>
+        <button onclick="toggleBundle('${b.id}',${b.is_active})" class="flex-1 text-xs font-bold px-3 py-2 rounded-xl ${b.is_active ? 'bg-gray-100 text-gray-600' : 'bg-green-500 text-white'}">${b.is_active ? 'إيقاف' : 'تفعيل'}</button>
         <button onclick="openBundleModal('${b.id}')" class="flex-1 text-xs bg-gray-100 text-gray-600 font-bold px-3 py-2 rounded-xl">تعديل</button>
-        <button onclick="deleteBundle('${b.id}')" class="text-xs bg-red-50 text-red-500 font-bold px-3 py-2 rounded-xl">حذف</button>
+        <button onclick="deleteBundle('${b.id}')"    class="text-xs bg-red-50 text-red-500 font-bold px-3 py-2 rounded-xl">حذف</button>
       </div>
-    </div>`}).join('')
+    </div>`).join('')
 }
-function openBundleModal(id=null) {
-  document.getElementById('bm-id').value=id||''; document.getElementById('bm-error').classList.add('hidden')
-  const container=document.getElementById('bm-products-checkboxes')
-  container.innerHTML=state.products.map(p=>`<label class="flex items-center gap-3 py-1 cursor-pointer"><input type="checkbox" value="${p.id}" class="bundle-product-check w-4 h-4 accent-orange-500" /><span class="text-sm text-gray-700">${p.name}</span><span class="text-xs text-gray-400 mr-auto">${Number(p.price).toFixed(2)} ج.م</span></label>`).join('')
+function openBundleModal(id = null) {
+  document.getElementById('bm-id').value = id || ''
+  document.getElementById('bm-error').classList.add('hidden')
+  document.getElementById('bm-image-preview-wrap').classList.add('hidden')
+  const container = document.getElementById('bm-products-checkboxes')
+  container.innerHTML = state.products.map(p => `<label class="flex items-center gap-3 py-1 cursor-pointer"><input type="checkbox" value="${p.id}" class="bundle-product-check w-4 h-4 accent-orange-500" /><span class="text-sm text-gray-700">${p.name}</span><span class="text-xs text-gray-400 mr-auto">${Number(p.price).toFixed(2)} ج.م</span></label>`).join('')
   if (id) {
-    const b=state_bundles.find(x=>x.id===id)
-    document.getElementById('bm-name').value=b.name; document.getElementById('bm-desc').value=b.description||''
-    document.getElementById('bm-price').value=b.price; document.getElementById('bm-image').value=b.image_url||''
-    document.getElementById('bm-active').checked=b.is_active; document.getElementById('bundle-modal-title').textContent='تعديل العرض'
-    if (b.image_url) { document.getElementById('bm-image-preview').src=b.image_url; document.getElementById('bm-image-preview-wrap').classList.remove('hidden') }
-    const selectedIds=(b.items||[]).map(i=>i.product_id)
-    container.querySelectorAll('.bundle-product-check').forEach(cb=>{ if (selectedIds.includes(cb.value)) cb.checked=true })
+    const b = state.bundles.find(x => x.id === id)
+    document.getElementById('bm-name').value     = b.name
+    document.getElementById('bm-desc').value     = b.description || ''
+    document.getElementById('bm-price').value    = b.price
+    document.getElementById('bm-image').value    = b.image_url   || ''
+    document.getElementById('bm-active').checked = b.is_active
+    document.getElementById('bundle-modal-title').textContent = 'تعديل العرض'
+    if (b.image_url) { document.getElementById('bm-image-preview').src = b.image_url; document.getElementById('bm-image-preview-wrap').classList.remove('hidden') }
+    const selectedIds = (b.items || []).map(i => i.product_id)
+    container.querySelectorAll('.bundle-product-check').forEach(cb => { if (selectedIds.includes(cb.value)) cb.checked = true })
   } else {
-    ['bm-name','bm-desc','bm-price','bm-image'].forEach(id=>document.getElementById(id).value='')
-    document.getElementById('bm-image-preview-wrap').classList.add('hidden'); document.getElementById('bm-active').checked=true; document.getElementById('bundle-modal-title').textContent='عرض مجمع جديد'
+    ;['bm-name','bm-desc','bm-price','bm-image'].forEach(fid => document.getElementById(fid).value = '')
+    document.getElementById('bm-active').checked = true
+    document.getElementById('bundle-modal-title').textContent = 'عرض مجمع جديد'
   }
   document.getElementById('modal-bundle').classList.remove('hidden')
 }
 function closeBundleModal() { document.getElementById('modal-bundle').classList.add('hidden') }
 async function saveBundle() {
-  const id=document.getElementById('bm-id').value, name=document.getElementById('bm-name').value.trim()
-  const price=parseFloat(document.getElementById('bm-price').value)
-  const selectedProducts=[...document.querySelectorAll('.bundle-product-check:checked')].map(cb=>cb.value)
-  const errEl=document.getElementById('bm-error')
-  if (!name) { errEl.textContent='اسم العرض مطلوب'; errEl.classList.remove('hidden'); return }
-  if (isNaN(price)) { errEl.textContent='السعر غير صحيح'; errEl.classList.remove('hidden'); return }
-  if (!selectedProducts.length) { errEl.textContent='اختر منتجاً واحداً على الأقل'; errEl.classList.remove('hidden'); return }
+  const id               = document.getElementById('bm-id').value
+  const name             = document.getElementById('bm-name').value.trim()
+  const price            = parseFloat(document.getElementById('bm-price').value)
+  const selectedProducts = [...document.querySelectorAll('.bundle-product-check:checked')].map(cb => cb.value)
+  const errEl            = document.getElementById('bm-error')
+  if (!name)                    { errEl.textContent = 'اسم العرض مطلوب';              errEl.classList.remove('hidden'); return }
+  if (isNaN(price))             { errEl.textContent = 'السعر غير صحيح';              errEl.classList.remove('hidden'); return }
+  if (!selectedProducts.length) { errEl.textContent = 'اختر منتجاً واحداً على الأقل'; errEl.classList.remove('hidden'); return }
   errEl.classList.add('hidden')
-  const items=selectedProducts.map(pid=>{ const prod=state.products.find(p=>p.id===pid); return {product_id:pid,name:prod?.name||'',price:prod?.price||0,quantity:1} })
-  const payload={name,description:document.getElementById('bm-desc').value.trim()||null,price,items,image_url:document.getElementById('bm-image').value.trim()||null,is_active:document.getElementById('bm-active').checked,restaurant_id:state.restaurant.id}
-  if (id) { const{error}=await db.from('bundles').update(payload).eq('id',id); if(error){errEl.textContent='خطأ: '+error.message;errEl.classList.remove('hidden');return} }
-  else    { const{error}=await db.from('bundles').insert(payload); if(error){errEl.textContent='خطأ: '+error.message;errEl.classList.remove('hidden');return} }
-  closeBundleModal(); await loadBundles(); showToast(id?'تم تعديل العرض ✅':'تم إضافة العرض ✅')
+  const items   = selectedProducts.map(pid => { const p = state.products.find(x => x.id === pid); return { product_id: pid, name: p?.name||'', price: p?.price||0, quantity: 1 } })
+  const payload = { name, description: document.getElementById('bm-desc').value.trim() || null, price, items, image_url: document.getElementById('bm-image').value.trim() || null, is_active: document.getElementById('bm-active').checked, restaurant_id: state.restaurant.id }
+  if (id) { const { error } = await db.from('bundles').update(payload).eq('id', id); if (error) { errEl.textContent = 'خطأ: ' + error.message; errEl.classList.remove('hidden'); return } }
+  else    { const { error } = await db.from('bundles').insert(payload); if (error) { errEl.textContent = 'خطأ: ' + error.message; errEl.classList.remove('hidden'); return } }
+  closeBundleModal(); await loadBundles(); showToast(id ? 'تم تعديل العرض ✅' : 'تم إضافة العرض ✅')
 }
-async function toggleBundle(id,current) { await db.from('bundles').update({is_active:!current}).eq('id',id); await loadBundles(); showToast(!current?'تم تفعيل العرض':'تم إيقاف العرض') }
-async function deleteBundle(id) { 
-  const ok = await showConfirm('هل تريد حذف هذا العرض؟', 'حذف العرض')
-  if (!ok) return
-  await db.from('bundles').delete().eq('id',id); await loadBundles(); showToast('تم حذف العرض') 
-}
+async function toggleBundle(id, current) { await db.from('bundles').update({ is_active: !current }).eq('id', id); await loadBundles(); showToast(!current ? 'تم تفعيل العرض' : 'تم إيقاف العرض') }
+async function deleteBundle(id) { const ok = await showConfirm('هل تريد حذف هذا العرض؟', 'حذف'); if (!ok) return; await db.from('bundles').delete().eq('id', id); await loadBundles(); showToast('تم حذف العرض') }
 
-// ── ORDERS ──
+// ── ORDERS ────────────────────────────────────────────────────────────
 async function loadOrders() {
-  const{data}=await db.from('orders').select('*').eq('restaurant_id',state.restaurant.id).order('created_at',{ascending:false}).limit(50)
-  state.orders=data||[]; renderOrders(); updateOrdersBadge(state.orders)
+  const { data } = await db.from('orders').select('*').eq('restaurant_id', state.restaurant.id).order('created_at', { ascending: false }).limit(50)
+  state.orders = data || []
+  renderOrders(); updateOrdersBadge(state.orders)
 }
 function renderOrders() {
-  const el=document.getElementById('orders-list')
-  if (!state.orders.length) { el.innerHTML=`<p class="text-center text-gray-400 text-sm py-8">لا توجد طلبات بعد</p>`; return }
-  const statusLabel={pending:'جديد',confirmed:'مؤكد',done:'منتهي',cancelled:'ملغي'}
-  const statusColor={pending:'bg-yellow-50 text-yellow-600',confirmed:'bg-blue-50 text-blue-600',done:'bg-green-50 text-green-600',cancelled:'bg-red-50 text-red-500'}
-  el.innerHTML=state.orders.map(o=>`
+  const el = document.getElementById('orders-list')
+  if (!state.orders.length) { el.innerHTML = `<p class="text-center text-gray-400 text-sm py-8">لا توجد طلبات بعد</p>`; return }
+  const statusLabel = { pending:'جديد', confirmed:'مؤكد', done:'منتهي', cancelled:'ملغي' }
+  const statusColor = { pending:'bg-yellow-50 text-yellow-600', confirmed:'bg-blue-50 text-blue-600', done:'bg-green-50 text-green-600', cancelled:'bg-red-50 text-red-500' }
+  el.innerHTML = state.orders.map(o => `
     <div class="bg-white rounded-2xl p-4 shadow-sm">
       <div class="flex items-center justify-between mb-3">
-        <div><p class="font-extrabold text-gray-800">${o.order_number}</p>${o.table_number?`<p class="text-xs text-gray-400">طاولة ${o.table_number}</p>`:''}</div>
+        <div><p class="font-extrabold text-gray-800">${o.order_number}</p>${o.table_number ? `<p class="text-xs text-gray-400">طاولة ${o.table_number}</p>` : ''}</div>
         <div class="flex items-center gap-2">
           <span class="text-xs font-bold px-3 py-1 rounded-full ${statusColor[o.status]}">${statusLabel[o.status]}</span>
           <select onchange="updateOrderStatus('${o.id}',this.value)" class="text-xs border border-gray-200 rounded-xl px-2 py-1 bg-white focus:outline-none">
-            <option value="pending" ${o.status==='pending'?'selected':''}>جديد</option>
-            <option value="confirmed" ${o.status==='confirmed'?'selected':''}>مؤكد</option>
-            <option value="done" ${o.status==='done'?'selected':''}>منتهي</option>
-            <option value="cancelled" ${o.status==='cancelled'?'selected':''}>ملغي</option>
+            <option value="pending"   ${o.status==='pending'   ?'selected':''}>جديد</option>
+            <option value="confirmed" ${o.status==='confirmed' ?'selected':''}>مؤكد</option>
+            <option value="done"      ${o.status==='done'      ?'selected':''}>منتهي</option>
+            <option value="cancelled" ${o.status==='cancelled' ?'selected':''}>ملغي</option>
           </select>
         </div>
       </div>
       <div class="space-y-1 border-t border-gray-50 pt-3">
-        ${o.items.map(i=>`<div class="flex justify-between text-sm"><span class="text-gray-600">${i.name}${i.options?` <span class="text-orange-400">(${i.options})</span>`:''} × ${i.qty}</span><span class="font-bold text-gray-800">${i.subtotal.toFixed(2)} ج.م</span></div>`).join('')}
+        ${o.items.map(i => `<div class="flex justify-between text-sm"><span class="text-gray-600">${i.name} × ${i.qty}</span><span class="font-bold text-gray-800">${Number(i.subtotal).toFixed(2)} ج.م</span></div>`).join('')}
         <div class="flex justify-between text-sm font-extrabold pt-2 border-t border-gray-100"><span>الإجمالي</span><span class="text-orange-500">${Number(o.total).toFixed(2)} ج.م</span></div>
       </div>
+      ${o.status === 'cancelled' && o.cancel_reason ? `<p class="text-xs text-red-500 bg-red-50 rounded-xl px-3 py-2 mt-2 font-bold">سبب الرفض: ${o.cancel_reason}</p>` : ''}
       <p class="text-xs text-gray-300 mt-2">${new Date(o.created_at).toLocaleString('ar-EG')}</p>
     </div>`).join('')
 }
-async function updateOrderStatus(id,status) { await db.from('orders').update({status}).eq('id',id); await loadOrders(); showToast('تم تحديث حالة الطلب') }
+async function updateOrderStatus(id, status) { await db.from('orders').update({ status }).eq('id', id); await loadOrders(); showToast('تم تحديث حالة الطلب') }
 
-// ── SETTINGS ──
-function resetColor() {
-  const D='#FF6B00'; document.getElementById('set-color').value=D; document.getElementById('set-color-hex').value=D
-  if (pickrInstance) pickrInstance.setColor(D); showToast('تم إعادة اللون للافتراضي')
-}
-async function saveSettings() {
-  const name=document.getElementById('set-name').value.trim(), whatsapp=document.getElementById('set-whatsapp').value.trim()
-  const logo_url=document.getElementById('set-logo').value.trim()||null, cover_url=document.getElementById('set-cover').value.trim()||null
-  const primary=document.getElementById('set-color').value, msgEl=document.getElementById('settings-msg')
-  if (!name||!whatsapp) { msgEl.textContent='الاسم والواتساب مطلوبان'; msgEl.className='text-center text-sm text-red-500'; msgEl.classList.remove('hidden'); return }
-  settingsSnapshot={name:document.getElementById('set-name').dataset.original||name,whatsapp:document.getElementById('set-whatsapp').dataset.original||whatsapp,logo_url:document.getElementById('set-logo').dataset.original||logo_url,primary:document.getElementById('set-color').dataset.original||primary}
-  const{error}=await db.from('restaurants').update({name,whatsapp,logo_url,cover_url,theme:{primary,secondary:'#1A1A1A'}}).eq('id',state.restaurant.id)
-  if (error) { msgEl.textContent='حدث خطأ أثناء الحفظ'; msgEl.className='text-center text-sm text-red-500' }
-  else {
-    document.getElementById('set-name').dataset.original=name; document.getElementById('set-whatsapp').dataset.original=whatsapp
-    document.getElementById('set-logo').dataset.original=logo_url||''; document.getElementById('set-color').dataset.original=primary
-    state.restaurant.name=name; document.getElementById('dash-restaurant-name').textContent=name
-    document.getElementById('undo-settings-btn').classList.remove('hidden')
-    msgEl.textContent='تم الحفظ بنجاح ✅'; msgEl.className='text-center text-sm text-green-500'; showToast('تم حفظ الإعدادات ✅')
-  }
-  msgEl.classList.remove('hidden'); setTimeout(()=>msgEl.classList.add('hidden'),3000)
-}
-function undoSettings() {
-  if (!settingsSnapshot) return
-  document.getElementById('set-name').value=settingsSnapshot.name; document.getElementById('set-whatsapp').value=settingsSnapshot.whatsapp
-  document.getElementById('set-logo').value=settingsSnapshot.logo_url||''; document.getElementById('set-color').value=settingsSnapshot.primary
-  document.getElementById('set-color-hex').value=settingsSnapshot.primary; document.getElementById('undo-settings-btn').classList.add('hidden')
-  settingsSnapshot=null; showToast('تم التراجع عن التعديلات')
-}
-
-// ── ANALYTICS ──
+// ── ANALYTICS ─────────────────────────────────────────────────────────
 async function loadAnalytics() {
-  const restId = state.restaurant.id
+  const rid        = state.restaurant.id
   const todayStart = new Date(); todayStart.setHours(0,0,0,0)
-
-  // 3 queries متوازية — كل واحدة تجلب فقط ما تحتاجه
-  const [
-    { count: totalOrders },
-    { count: todayOrders },
-    { data: revenueRows },
-    { data: topItemsRows }
-  ] = await Promise.all([
-    // عدد كل الطلبات (count فقط، بدون بيانات)
-    db.from('orders').select('*', { count:'exact', head:true })
-      .eq('restaurant_id', restId).neq('status','cancelled'),
-
-    // عدد طلبات اليوم فقط
-    db.from('orders').select('*', { count:'exact', head:true })
-      .eq('restaurant_id', restId).neq('status','cancelled')
-      .gte('created_at', todayStart.toISOString()),
-
-    // الإجمالي المالي — total فقط
-    db.from('orders').select('total')
-      .eq('restaurant_id', restId).neq('status','cancelled'),
-
-    // آخر 200 طلب للأكثر طلباً (items فقط)
-    db.from('orders').select('items')
-      .eq('restaurant_id', restId).neq('status','cancelled')
-      .order('created_at', { ascending:false }).limit(200)
+  const [{ count: total }, { count: today }, { data: revRows }, { data: itemRows }] = await Promise.all([
+    db.from('orders').select('*',{count:'exact',head:true}).eq('restaurant_id',rid).neq('status','cancelled'),
+    db.from('orders').select('*',{count:'exact',head:true}).eq('restaurant_id',rid).neq('status','cancelled').gte('created_at',todayStart.toISOString()),
+    db.from('orders').select('total').eq('restaurant_id',rid).neq('status','cancelled'),
+    db.from('orders').select('items').eq('restaurant_id',rid).neq('status','cancelled').order('created_at',{ascending:false}).limit(200)
   ])
-
-  const revenue = (revenueRows||[]).reduce((s,o) => s + Number(o.total), 0)
-  document.getElementById('stat-total-orders').textContent  = totalOrders || 0
+  const revenue = (revRows||[]).reduce((s,o) => s + Number(o.total), 0)
+  document.getElementById('stat-total-orders').textContent  = total   || 0
   document.getElementById('stat-total-revenue').textContent = revenue.toFixed(2)
-  document.getElementById('stat-today-orders').textContent  = todayOrders || 0
-  document.getElementById('stat-products-count').textContent = state.products.length
-
-  // أكثر المنتجات طلباً
+  document.getElementById('stat-today-orders').textContent  = today   || 0
+  document.getElementById('stat-products-count').textContent= state.products.length
   const counter = {}
-  ;(topItemsRows||[]).forEach(o => {
-    ;(o.items||[]).forEach(item => { counter[item.name] = (counter[item.name]||0) + (item.qty||1) })
-  })
+  ;(itemRows||[]).forEach(o => (o.items||[]).forEach(i => { counter[i.name] = (counter[i.name]||0) + (i.qty||1) }))
   const sorted = Object.entries(counter).sort((a,b) => b[1]-a[1]).slice(0,5)
-  const bsEl = document.getElementById('best-sellers-list')
+  const bsEl   = document.getElementById('best-sellers-list')
   bsEl.innerHTML = sorted.length
     ? sorted.map(([name,qty],i) => `<div class="flex items-center justify-between py-2 border-b border-gray-50 last:border-0"><div class="flex items-center gap-2"><span class="text-lg">${['🥇','🥈','🥉','4️⃣','5️⃣'][i]}</span><span class="text-sm text-gray-700 font-bold">${name}</span></div><span class="text-xs bg-orange-50 text-orange-500 font-bold px-2 py-1 rounded-full">${qty} طلب</span></div>`).join('')
     : `<p class="text-center text-gray-400 text-sm py-4">لا توجد طلبات بعد</p>`
-
-  // أحدث المنتجات
-  const recent = [...state.products].sort((a,b) => new Date(b.created_at||0)-new Date(a.created_at||0)).slice(0,5)
-  const rpEl = document.getElementById('recent-products-list')
-  rpEl.innerHTML = recent.length
-    ? recent.map(p => `<div class="flex items-center justify-between py-2 border-b border-gray-50 last:border-0"><span class="text-sm text-gray-700 font-bold">${p.name}</span><span class="text-xs text-gray-400">${Number(p.price).toFixed(2)} ج.م</span></div>`).join('')
-    : `<p class="text-center text-gray-400 text-sm py-4">لا توجد منتجات</p>`
 }
 
-// ── UPLOAD HELPERS ──
-async function uploadToSupabase(file,bucket,path) {
-  const{data,error}=await db.storage.from(bucket).upload(path,file,{upsert:true,contentType:file.type})
-  if (error) throw error
-  const{data:urlData}=db.storage.from(bucket).getPublicUrl(path)
-  return urlData.publicUrl
+// ── SETTINGS ──────────────────────────────────────────────────────────
+function openSupportChat(e) {
+  e.preventDefault()
+  const msg = encodeURIComponent(`السلام عليكم، أنا تاجر "${state.restaurant?.name || ''}" وعندي استفسار بخصوص لوحة التحكم.`)
+  window.open(`https://wa.me/${SUPPORT_WHATSAPP}?text=${msg}`, '_blank')
 }
-async function uploadLogoFile(input) {
-  const file=input.files[0]; if (!file) return
-  const msgEl=document.getElementById('logo-upload-msg'); msgEl.textContent='جاري الرفع...'; msgEl.classList.remove('hidden')
-  try { const path=`logos/${state.restaurant.id}-${Date.now()}.${file.name.split('.').pop()}`; const url=await uploadToSupabase(file,'restaurant-images',path); document.getElementById('set-logo').value=url; document.getElementById('logo-preview').src=url; document.getElementById('logo-preview-wrap').classList.remove('hidden'); msgEl.textContent='تم الرفع بنجاح ✅' }
-  catch(e) { msgEl.textContent='فشل الرفع — جرب رابط URL' }
+function resetColor() { const D='#FF6B00'; document.getElementById('set-color').value=D; document.getElementById('set-color-hex').value=D; if(pickrInstance) pickrInstance.setColor(D); showToast('تم إعادة اللون للافتراضي') }
+// تنضيف رقم التواصل لصيغة دولية موحدة (بدون +, بدون مسافات, مع كود مصر 20 لو ناقص)
+function normalizePhone(raw) {
+  let n = (raw || '').trim().replace(/[^\d]/g, '')
+  if (!n) return { ok: false, value: '', reason: 'الرقم مطلوب' }
+  if (n.startsWith('00')) n = n.slice(2)
+  if (n.startsWith('0'))  n = n.slice(1)
+  if ((n.length === 10 || n.length === 9) && n.startsWith('1')) n = '20' + n
+  if (n.length < 10 || n.length > 15) return { ok: false, value: n, reason: 'رقم التواصل غير صحيح — تأكد من كتابته كاملاً' }
+  return { ok: true, value: n }
 }
-async function uploadCoverFile(input) {
-  const file=input.files[0]; if (!file) return
-  const msgEl=document.getElementById('cover-upload-msg'); msgEl.textContent='جاري الرفع...'; msgEl.classList.remove('hidden')
-  try { const path=`covers/${state.restaurant.id}-${Date.now()}.${file.name.split('.').pop()}`; const url=await uploadToSupabase(file,'restaurant-images',path); document.getElementById('set-cover').value=url; document.getElementById('cover-preview').src=url; document.getElementById('cover-preview-wrap').classList.remove('hidden'); msgEl.textContent='تم الرفع بنجاح ✅' }
-  catch(e) { msgEl.textContent='فشل الرفع — جرب رابط URL' }
-}
-async function uploadBundleImage(input) {
-  const file=input.files[0]; if (!file) return
-  const msgEl=document.getElementById('bundle-upload-msg'); msgEl.textContent='جاري الرفع...'; msgEl.classList.remove('hidden')
-  try { const path=`bundles/${state.restaurant.id}-${Date.now()}.${file.name.split('.').pop()}`; const url=await uploadToSupabase(file,'restaurant-images',path); document.getElementById('bm-image').value=url; document.getElementById('bm-image-preview').src=url; document.getElementById('bm-image-preview-wrap').classList.remove('hidden'); msgEl.textContent='تم الرفع بنجاح ✅' }
-  catch(e) { msgEl.textContent='فشل الرفع — جرب رابط URL' }
-}
-async function uploadProductImage(input) {
-  const file=input.files[0]; if (!file) return
-  const msgEl=document.getElementById('product-upload-msg'); msgEl.textContent='جاري الرفع...'; msgEl.classList.remove('hidden')
-  try { const path=`products/${state.restaurant.id}-${Date.now()}.${file.name.split('.').pop()}`; const url=await uploadToSupabase(file,'restaurant-images',path); document.getElementById('pm-image').value=url; document.getElementById('pm-image-preview').src=url; document.getElementById('pm-image-preview-wrap').classList.remove('hidden'); msgEl.textContent='تم الرفع بنجاح ✅' }
-  catch(e) { msgEl.textContent='فشل الرفع — جرب رابط URL' }
-}
+async function saveSettings() {
+  const name        = document.getElementById('set-name').value.trim()
+  const whatsappRaw  = document.getElementById('set-whatsapp').value.trim()
+  const logo_url = document.getElementById('set-logo').value.trim()  || null
+  const cover_url= document.getElementById('set-cover').value.trim() || null
+  const primary  = document.getElementById('set-color').value
+  const msgEl    = document.getElementById('settings-msg')
+  if (!name||!whatsappRaw) { msgEl.textContent='الاسم ورقم التواصل مطلوبان'; msgEl.className='text-center text-sm text-red-500'; msgEl.classList.remove('hidden'); return }
 
-// ── UI HELPERS ──
-function showScreen(name) {
-  document.getElementById('screen-login').classList.add('hidden'); document.getElementById('screen-dashboard').classList.add('hidden')
-  document.getElementById('screen-'+name).classList.remove('hidden')
-}
-function showMoreMenu() { document.getElementById('more-menu').classList.remove('hidden') }
-function hideMoreMenu() { document.getElementById('more-menu').classList.add('hidden') }
+  const ph = normalizePhone(whatsappRaw)
+  if (!ph.ok) { msgEl.textContent = ph.reason; msgEl.className='text-center text-sm text-red-500'; msgEl.classList.remove('hidden'); return }
+  const whatsapp = ph.value
+  document.getElementById('set-whatsapp').value = whatsapp
 
-// ── CONFIRM DIALOG (بدل alert confirm) ──
-let _confirmResolve = null
-function showConfirm(msg, btnLabel = 'حذف') {
-  return new Promise(resolve => {
-    _confirmResolve = resolve
-    document.getElementById('confirm-msg').textContent = msg
-    document.getElementById('confirm-yes-btn').textContent = btnLabel
-    document.getElementById('confirm-yes-btn').onclick = () => { closeConfirm(); resolve(true) }
-    document.getElementById('confirm-dialog').classList.remove('hidden')
-  })
-}
-function closeConfirm() {
-  document.getElementById('confirm-dialog').classList.add('hidden')
-  if (_confirmResolve) { _confirmResolve(false); _confirmResolve = null }
-}
-
-// ── ORDERS BADGE ──
-function updateOrdersBadge(orders) {
-  const pending = orders.filter(o => o.status === 'pending').length
-  const badge = document.getElementById('orders-badge')
-  if (!badge) return
-  if (pending > 0) {
-    badge.textContent = pending > 9 ? '9+' : pending
-    badge.style.display = 'flex'
-  } else {
-    badge.style.display = 'none'
-  }
-}
-
-function showTab(name) {
-  const tabs=['products','categories','bundles','banners','orders','analytics','settings']
-  tabs.forEach(t=>{
-    document.getElementById('tab-content-'+t).classList.add('hidden')
-    // desktop tabs
-    const dTab = document.getElementById('tab-'+t+'-top')
-    if (dTab) { dTab.classList.remove('tab-active'); dTab.classList.add('text-gray-400') }
-  })
-  document.getElementById('tab-content-'+name).classList.remove('hidden')
-  const dTabActive = document.getElementById('tab-'+name+'-top')
-  if (dTabActive) { dTabActive.classList.add('tab-active'); dTabActive.classList.remove('text-gray-400') }
-
-  // bottom nav highlight
-  ;['products','orders','settings'].forEach(t => {
-    const btn = document.getElementById('bnav-'+t)
-    if (btn) btn.classList.toggle('active', t === name)
-  })
-  // more menu items
-  const moreItems = ['categories','bundles','banners','analytics']
-  const moreBtn = document.getElementById('bnav-more')
-  if (moreBtn) moreBtn.classList.toggle('active', moreItems.includes(name))
-
-  if (name==='orders')    loadOrders()
-  if (name==='bundles')   loadBundles()
-  if (name==='analytics') loadAnalytics()
-  if (name==='banners')   loadBanners()
-}
-function showToast(msg) {
-  const t=document.getElementById('toast'); t.innerHTML=msg; t.classList.remove('hidden'); setTimeout(()=>t.classList.add('hidden'),2500)
-}
-// ══════════════════════════════════════════════════════════
-// ── ORDER RECEIVE METHOD (ORM) ──
-// ══════════════════════════════════════════════════════════
-let _currentORM = 'whatsapp'
-
-function selectOrderMethod(method) {
-  _currentORM = method
-  ;['whatsapp','app'].forEach(m => {
-    const opt   = document.getElementById('orm-opt-'  + m)
-    const check = document.getElementById('orm-check-' + m)
-    if (!opt || !check) return
-    opt.style.borderColor = '#e5e7eb'
-    opt.style.backgroundColor = '#fff'
-    check.style.backgroundColor = '#e5e7eb'
-  })
-  const activeOpt   = document.getElementById('orm-opt-'   + method)
-  const activeCheck = document.getElementById('orm-check-' + method)
-  if (activeOpt)   { activeOpt.style.borderColor = '#FF6B00'; activeOpt.style.backgroundColor = '#FFF7F2' }
-  if (activeCheck) { activeCheck.style.backgroundColor = '#FF6B00' }
-}
-
-async function saveOrderMethod() {
-  const msgEl = document.getElementById('orm-msg')
-  const { error } = await db.from('restaurants')
-    .update({ order_receive_method: _currentORM })
-    .eq('id', state.restaurant.id)
-  if (error) {
-    msgEl.textContent = '❌ خطأ في الحفظ — تأكد إن عمود order_receive_method موجود في جدول restaurants'
-    msgEl.className = 'text-center text-xs mt-2 text-red-500'
-  } else {
-    state.restaurant.order_receive_method = _currentORM
-    // toggle realtime based on new method
-    if (_currentORM === 'app') {
-      startRealtimeOrders()
-    } else {
-      if (_realtimeChannel) { db.removeChannel(_realtimeChannel); _realtimeChannel = null }
-    }
-    msgEl.textContent = '✅ تم الحفظ'
-    msgEl.className = 'text-center text-xs mt-2 text-green-500'
-  }
+  settingsSnapshot = { name, whatsapp, logo_url, primary }
+  const { error } = await db.from('restaurants').update({ name, whatsapp, logo_url, cover_url, theme: { primary, secondary:'#1A1A1A' } }).eq('id', state.restaurant.id)
+  if (error) { msgEl.textContent='حدث خطأ أثناء الحفظ'; msgEl.className='text-center text-sm text-red-500' }
+  else { state.restaurant.name=name; document.getElementById('dash-restaurant-name').textContent=name; document.getElementById('undo-settings-btn').classList.remove('hidden'); msgEl.textContent='تم الحفظ بنجاح ✅'; msgEl.className='text-center text-sm text-green-500'; showToast('تم حفظ الإعدادات ✅') }
   msgEl.classList.remove('hidden')
   setTimeout(() => msgEl.classList.add('hidden'), 3000)
 }
-
-function initORMUI() {
-  const method = state.restaurant.order_receive_method || 'whatsapp'
-  _currentORM = method
-  selectOrderMethod(method)
+function undoSettings() {
+  if (!settingsSnapshot) return
+  document.getElementById('set-name').value     = settingsSnapshot.name
+  document.getElementById('set-whatsapp').value = settingsSnapshot.whatsapp
+  document.getElementById('set-logo').value     = settingsSnapshot.logo_url || ''
+  document.getElementById('set-color').value     = settingsSnapshot.primary
+  document.getElementById('set-color-hex').value = settingsSnapshot.primary
+  document.getElementById('undo-settings-btn').classList.add('hidden')
+  settingsSnapshot = null; showToast('تم التراجع')
 }
 
-// ══════════════════════════════════════════════════════════
-// ── ALARM SOUND (Web Audio API) ──
-// ══════════════════════════════════════════════════════════
-let _audioCtx = null
-
-function playAlarm() {
-  try {
-    if (!_audioCtx) _audioCtx = new (window.AudioContext || window.webkitAudioContext)()
-    const ctx = _audioCtx
-    const master = ctx.createGain()
-    master.gain.value = 1.0
-    master.connect(ctx.destination)
-
-    // نمط رنة تلفون: موجة مربعة + تكرار
-    const pattern = [
-      { f:880, t:0,    d:0.18 },
-      { f:880, t:0.22, d:0.18 },
-      { f:880, t:0.44, d:0.18 },
-      { f:660, t:0.72, d:0.28 },
-      { f:880, t:1.1,  d:0.18 },
-      { f:880, t:1.32, d:0.18 },
-      { f:880, t:1.54, d:0.18 },
-      { f:660, t:1.82, d:0.35 },
-    ]
-    pattern.forEach(({ f, t, d }) => {
-      const osc  = ctx.createOscillator()
-      const gain = ctx.createGain()
-      osc.type = 'square'
-      osc.frequency.value = f
-      gain.gain.setValueAtTime(0,   ctx.currentTime + t)
-      gain.gain.linearRampToValueAtTime(0.9, ctx.currentTime + t + 0.01)
-      gain.gain.linearRampToValueAtTime(0,   ctx.currentTime + t + d)
-      osc.connect(gain); gain.connect(master)
-      osc.start(ctx.currentTime + t)
-      osc.stop(ctx.currentTime  + t + d + 0.05)
-    })
-  } catch(e) { console.warn('Audio error:', e) }
-}
-
-// ══════════════════════════════════════════════════════════
-// ── REALTIME ORDERS ──
-// ══════════════════════════════════════════════════════════
-let _realtimeChannel  = null
-let _pendingOrderData = null
-
+// ── REALTIME ORDERS ───────────────────────────────────────────────────
 function startRealtimeOrders() {
   if (_realtimeChannel) return
   _realtimeChannel = db
     .channel('new-orders-' + state.restaurant.id)
-    .on('postgres_changes', {
-      event:  'INSERT',
-      schema: 'public',
-      table:  'orders',
-      filter: `restaurant_id=eq.${state.restaurant.id}`
-    }, payload => handleIncomingOrder(payload.new))
+    .on('postgres_changes', { event:'INSERT', schema:'public', table:'orders', filter:`restaurant_id=eq.${state.restaurant.id}` }, p => handleIncomingOrder(p.new))
     .subscribe()
 }
-
-function handleIncomingOrder(order) {
-  _pendingOrderData = order
-  playAlarm()
-  showNewOrderPopup(order)
-  updateOrdersBadge([...state.orders, order])
-}
-
+function handleIncomingOrder(order) { _pendingOrder = order; startAlarmLoop(); showNewOrderPopup(order); updateOrdersBadge([...state.orders, order]) }
 function showNewOrderPopup(order) {
   document.getElementById('nop-order-num').textContent = order.order_number
-
-  const items = order.items || []
-  document.getElementById('nop-items').innerHTML = items.map(i =>
-    `<div class="flex justify-between text-sm">
-      <span class="text-gray-600 font-bold">${i.name}${i.options?` <span class="text-orange-400 font-normal">(${i.options})</span>`:''} × ${i.qty}</span>
-      <span class="font-extrabold text-gray-800">${Number(i.subtotal).toFixed(2)} ج.م</span>
-    </div>`
-  ).join('')
-
+  document.getElementById('nop-items').innerHTML = (order.items||[]).map(i => `<div class="flex justify-between text-sm"><span class="text-gray-600 font-bold">${i.name} × ${i.qty}</span><span class="font-extrabold text-gray-800">${Number(i.subtotal).toFixed(2)} ج.م</span></div>`).join('')
   document.getElementById('nop-total').textContent = Number(order.total).toFixed(2) + ' ج.م'
-
   const meta = []
-  if (order.table_number)      meta.push(`🪑 طاولة: ${order.table_number}`)
-  if (order.customer_name)     meta.push(`👤 ${order.customer_name}`)
-  if (order.customer_phone)    meta.push(`📞 ${order.customer_phone}`)
-  if (order.customer_address)  meta.push(`🏠 ${order.customer_address}`)
-  if (order.customer_location) meta.push(`📍 <a href="${order.customer_location}" target="_blank" class="text-orange-500 underline font-bold">عرض الموقع</a>`)
-  if (order.note)              meta.push(`📝 ${order.note}`)
+  if (order.table_number)     meta.push(`🪑 طاولة: ${order.table_number}`)
+  if (order.customer_name)    meta.push(`👤 ${order.customer_name}`)
+  if (order.customer_phone)   meta.push(`📞 ${order.customer_phone}`)
+  if (order.customer_address) meta.push(`🏠 ${order.customer_address}`)
   document.getElementById('nop-meta').innerHTML = meta.map(m => `<p>${m}</p>`).join('')
-
   document.getElementById('new-order-popup').classList.remove('hidden')
 }
-
 async function confirmNewOrder() {
-  if (!_pendingOrderData) return
-  await db.from('orders').update({ status:'confirmed' }).eq('id', _pendingOrderData.id)
-  showToast('✅ تم قبول الطلب ' + _pendingOrderData.order_number)
+  if (!_pendingOrder) return
+  stopAlarmLoop()
+  const id = _pendingOrder.id
+  await db.from('orders').update({ status:'confirmed' }).eq('id', id)
+  showToast('✅ تم قبول الطلب')
   dismissNewOrderPopup()
   loadOrders()
 }
+function rejectNewOrder() {
+  if (!_pendingOrder) return
+  openRejectReasonModal()
+}
+function dismissNewOrderPopup() { document.getElementById('new-order-popup').classList.add('hidden'); _pendingOrder = null }
 
-async function rejectNewOrder() {
-  if (!_pendingOrderData) return
-  await db.from('orders').update({ status:'cancelled' }).eq('id', _pendingOrderData.id)
+// ── REJECT REASON ────────────────────────────────────────────────────
+const REJECT_REASONS = ['غير متوفر حالياً', 'المطعم مغلق الآن', 'تأخير كبير في التحضير']
+function openRejectReasonModal() {
+  const wrap = document.getElementById('reject-reason-list')
+  wrap.innerHTML = REJECT_REASONS.map(r => `<button onclick="submitRejectReason('${r.replace(/'/g, "\\'")}')" class="w-full text-right border border-gray-200 rounded-xl px-4 py-3 text-sm font-bold text-gray-700 hover:border-red-300 hover:bg-red-50 transition-colors">${r}</button>`).join('')
+  document.getElementById('reject-custom-reason').value = ''
+  document.getElementById('reject-reason-modal').classList.remove('hidden')
+}
+function closeRejectReasonModal() { document.getElementById('reject-reason-modal').classList.add('hidden') }
+function submitRejectCustomReason() {
+  const txt = document.getElementById('reject-custom-reason').value.trim()
+  if (!txt) { showToast('اكتب سبب الرفض أولاً'); return }
+  submitRejectReason(txt)
+}
+async function submitRejectReason(reason) {
+  if (!_pendingOrder) return
+  stopAlarmLoop()
+  const id = _pendingOrder.id
+  await db.from('orders').update({ status:'cancelled', cancel_reason: reason }).eq('id', id)
   showToast('❌ تم رفض الطلب')
+  closeRejectReasonModal()
   dismissNewOrderPopup()
   loadOrders()
 }
 
-function dismissNewOrderPopup() {
-  document.getElementById('new-order-popup').classList.add('hidden')
-  _pendingOrderData = null
+// ── ALARM (يتكرر لحد ما التاجر يقرر) ────────────────────────────────────
+let _alarmInterval = null
+function startAlarmLoop() {
+  stopAlarmLoop()
+  playAlarm()
+  _alarmInterval = setInterval(playAlarm, 4000)
+}
+function stopAlarmLoop() {
+  if (_alarmInterval) { clearInterval(_alarmInterval); _alarmInterval = null }
+}
+function playAlarm() {
+  try {
+    if (!_audioCtx) _audioCtx = new (window.AudioContext || window.webkitAudioContext)()
+    const ctx    = _audioCtx
+    const master = ctx.createGain(); master.gain.value = 1.0; master.connect(ctx.destination)
+    const pattern = [{f:880,t:0,d:0.18},{f:880,t:0.22,d:0.18},{f:880,t:0.44,d:0.18},{f:660,t:0.72,d:0.28},{f:880,t:1.1,d:0.18},{f:880,t:1.32,d:0.18},{f:660,t:1.6,d:0.35}]
+    pattern.forEach(({ f, t, d }) => {
+      const osc = ctx.createOscillator(); const gain = ctx.createGain()
+      osc.type = 'square'; osc.frequency.value = f
+      gain.gain.setValueAtTime(0, ctx.currentTime+t); gain.gain.linearRampToValueAtTime(0.9, ctx.currentTime+t+0.01); gain.gain.linearRampToValueAtTime(0, ctx.currentTime+t+d)
+      osc.connect(gain); gain.connect(master); osc.start(ctx.currentTime+t); osc.stop(ctx.currentTime+t+d+0.05)
+    })
+  } catch(e) { console.warn('Audio error:', e) }
 }
 
-// ══════════════════════════════════════════════════════════
-// ── WHATSAPP SHARE FROM ORDER ──
-// ══════════════════════════════════════════════════════════
-function openWhatsappShare() {
-  if (!_pendingOrderData) return
-  const o = _pendingOrderData
+// ── UPLOADS ───────────────────────────────────────────────────────────
+async function _uploadImage(file, folder, previewId, wrapId, msgId) {
+  const msgEl = document.getElementById(msgId); msgEl.textContent = 'جاري الرفع...'; msgEl.classList.remove('hidden')
+  try {
+    const path = `${folder}/${state.restaurant.id}-${Date.now()}.${file.name.split('.').pop()}`
+    const { error } = await db.storage.from('restaurant-images').upload(path, file, { upsert: true, contentType: file.type })
+    if (error) throw error
+    const { data: urlData } = db.storage.from('restaurant-images').getPublicUrl(path)
+    const url = urlData.publicUrl
+    document.getElementById(previewId).src = url; document.getElementById(wrapId).classList.remove('hidden')
+    msgEl.textContent = 'تم الرفع ✅'; return url
+  } catch(e) { msgEl.textContent = 'فشل الرفع — جرب رابط URL' }
+}
+async function uploadLogoFile(input)    { const f = input.files[0]; if (!f) return; const u = await _uploadImage(f,'logos','logo-preview','logo-preview-wrap','logo-upload-msg'); if (u) document.getElementById('set-logo').value = u }
+async function uploadCoverFile(input)   { const f = input.files[0]; if (!f) return; const u = await _uploadImage(f,'covers','cover-preview','cover-preview-wrap','cover-upload-msg'); if (u) document.getElementById('set-cover').value = u }
+async function uploadProductImage(input){ const f = input.files[0]; if (!f) return; const u = await _uploadImage(f,'products','pm-image-preview','pm-image-preview-wrap','product-upload-msg'); if (u) document.getElementById('pm-image').value = u }
+async function uploadBundleImage(input) { const f = input.files[0]; if (!f) return; const u = await _uploadImage(f,'bundles','bm-image-preview','bm-image-preview-wrap','bundle-upload-msg'); if (u) document.getElementById('bm-image').value = u }
+async function uploadBannerImage(input) { const f = input.files[0]; if (!f) return; const u = await _uploadImage(f,'banners','bnm-image-preview','bnm-image-preview-wrap','banner-upload-msg'); if (u) document.getElementById('bnm-image').value = u }
 
-  const opts = []
-  opts.push({ key:'order',   label:'🧾 ملخص الطلب والأسعار', checked:true, disabled:true })
-  if (o.customer_name)     opts.push({ key:'name',     label:`👤 الاسم: ${o.customer_name}`,         checked:true })
-  if (o.customer_phone)    opts.push({ key:'phone',    label:`📞 رقم التواصل: ${o.customer_phone}`,  checked:true })
-  if (o.customer_address)  opts.push({ key:'address',  label:`🏠 العنوان: ${o.customer_address}`,    checked:true })
-  if (o.customer_location) opts.push({ key:'location', label:'📍 رابط الموقع على الخريطة',           checked:true })
-  if (o.table_number)      opts.push({ key:'table',    label:`🪑 طاولة: ${o.table_number}`,          checked:true })
-  if (o.note)              opts.push({ key:'note',     label:`📝 ملاحظة: ${o.note}`,                checked:true })
+// ── UI HELPERS ────────────────────────────────────────────────────────
+function showScreen(name) { ['login','dashboard'].forEach(s => document.getElementById('screen-'+s).classList.add('hidden')); document.getElementById('screen-'+name).classList.remove('hidden') }
+function showMoreMenu()   { document.getElementById('more-menu').classList.remove('hidden') }
+function hideMoreMenu()   { document.getElementById('more-menu').classList.add('hidden') }
 
-  document.getElementById('wa-share-options').innerHTML = opts.map(opt => `
-    <label class="flex items-center gap-3 bg-gray-50 rounded-xl px-4 py-3 cursor-pointer">
-      <input type="checkbox" data-key="${opt.key}" ${opt.checked ? 'checked' : ''} ${opt.disabled ? 'disabled' : ''}
-             class="w-5 h-5 accent-orange-500 flex-shrink-0 rounded" />
-      <span class="text-sm font-bold text-gray-700 ${opt.disabled ? 'opacity-50' : ''}">${opt.label}</span>
-    </label>`
-  ).join('')
-
-  document.getElementById('wa-share-modal').classList.remove('hidden')
+function showTab(name) {
+  const tabs = ['products','categories','bundles','banners','orders','analytics','settings']
+  tabs.forEach(t => {
+    document.getElementById('tab-content-' + t).classList.add('hidden')
+    const d = document.getElementById('tab-' + t + '-top'); if (d) { d.classList.remove('tab-active'); d.classList.add('text-gray-400') }
+  })
+  document.getElementById('tab-content-' + name).classList.remove('hidden')
+  const da = document.getElementById('tab-' + name + '-top'); if (da) { da.classList.add('tab-active'); da.classList.remove('text-gray-400') }
+  ;['products','orders','settings'].forEach(t => { const b = document.getElementById('bnav-'+t); if (b) b.classList.toggle('active', t===name) })
+  const moreBtn = document.getElementById('bnav-more'); if (moreBtn) moreBtn.classList.toggle('active', ['categories','bundles','banners','analytics'].includes(name))
+  if (name === 'orders')    loadOrders()
+  if (name === 'bundles')   loadBundles()
+  if (name === 'analytics') loadAnalytics()
+  if (name === 'banners')   loadBanners()
 }
 
-function closeWhatsappShare() {
-  document.getElementById('wa-share-modal').classList.add('hidden')
+function showToast(msg) { const t=document.getElementById('toast'); t.textContent=msg; t.classList.remove('hidden'); setTimeout(()=>t.classList.add('hidden'),2500) }
+function showToastWithUndo(msg, cb) {
+  const t = document.getElementById('toast')
+  t.innerHTML = `${msg} — <button onclick="(${cb.toString()})();document.getElementById('toast').classList.add('hidden')" style="text-decoration:underline;font-weight:900;background:none;border:none;color:#FF6B00;cursor:pointer;font-family:'Rubik',sans-serif;">تراجع</button>`
+  t.classList.remove('hidden'); setTimeout(()=>t.classList.add('hidden'),4000)
 }
 
-function sendWhatsappShare() {
-  if (!_pendingOrderData) return
-  const o = _pendingOrderData
-  const checked = new Set(
-    [...document.querySelectorAll('#wa-share-options input[type=checkbox]:checked')]
-      .map(el => el.dataset.key)
-  )
+let _confirmResolve = null
+function showConfirm(msg, btnLabel='حذف') {
+  return new Promise(resolve => {
+    _confirmResolve = resolve
+    document.getElementById('confirm-msg').textContent       = msg
+    document.getElementById('confirm-yes-btn').textContent   = btnLabel
+    document.getElementById('confirm-yes-btn').onclick = () => { closeConfirm(); resolve(true) }
+    document.getElementById('confirm-dialog').classList.remove('hidden')
+  })
+}
+function closeConfirm() { document.getElementById('confirm-dialog').classList.add('hidden'); if (_confirmResolve) { _confirmResolve(false); _confirmResolve=null } }
 
-  const fmtMoney = v => Number(v).toFixed(2)
-  const lines = []
+function updateOrdersBadge(orders) {
+  const n = orders.filter(o=>o.status==='pending').length
+  const b = document.getElementById('orders-badge'); if (!b) return
+  b.textContent   = n > 9 ? '9+' : n
+  b.style.display = n > 0 ? 'flex' : 'none'
+}
 
-  if (checked.has('order')) {
-    lines.push(`🧾 *طلب ${o.order_number}*`)
-    lines.push(`─────────────────`)
-    ;(o.items||[]).forEach(i => lines.push(`• ${i.name}${i.options?` (${i.options})`:''} × ${i.qty}  ←  ${fmtMoney(i.subtotal)} ج.م`))
-    lines.push(`─────────────────`)
-    lines.push(`💰 *الإجمالي: ${fmtMoney(o.total)} ج.م*`)
+// ── PUSH NOTIFICATIONS (PWA) ─────────────────────────────────────────
+function isStandalonePWA() {
+  return window.matchMedia('(display-mode: standalone)').matches || window.navigator.standalone === true
+}
+function isIOS() {
+  return /iphone|ipad|ipod/i.test(navigator.userAgent)
+}
+function urlBase64ToUint8Array(base64String) {
+  const padding = '='.repeat((4 - base64String.length % 4) % 4)
+  const base64 = (base64String + padding).replace(/-/g, '+').replace(/_/g, '/')
+  const rawData = window.atob(base64)
+  return Uint8Array.from([...rawData].map(c => c.charCodeAt(0)))
+}
+async function initPushUI() {
+  // آيفون: لازم يكون مثبّت كـ PWA على الشاشة الرئيسية، وإلا الإشعارات مستحيل تشتغل
+  if (isIOS() && !isStandalonePWA()) {
+    document.getElementById('ios-install-banner').classList.remove('hidden')
+    return
   }
-  if (checked.has('name'))     lines.push(`👤 ${o.customer_name}`)
-  if (checked.has('phone'))    lines.push(`📞 ${o.customer_phone}`)
-  if (checked.has('address'))  lines.push(`🏠 ${o.customer_address}`)
-  if (checked.has('location')) lines.push(`📍 ${o.customer_location}`)
-  if (checked.has('table'))    lines.push(`🪑 طاولة: ${o.table_number}`)
-  if (checked.has('note'))     lines.push(`📝 ${o.note}`)
+  if (!('serviceWorker' in navigator) || !('PushManager' in window)) return // متصفح غير مدعوم
 
-  const wa = state.restaurant.whatsapp
-  window.open(`https://wa.me/${wa}?text=${encodeURIComponent(lines.join('\n'))}`, '_blank')
-  closeWhatsappShare()
+  try {
+    const reg = await navigator.serviceWorker.register('./sw.js')
+    const existing = await reg.pushManager.getSubscription()
+    if (existing) {
+      await savePushSubscription(existing) // تأكيد إن النسخة المخزنة بالسيرفر محدثة
+      return
+    }
+    if (Notification.permission === 'denied') return
+    document.getElementById('enable-push-btn').classList.remove('hidden')
+  } catch (e) { console.warn('Push init error:', e) }
+}
+async function enablePushNotifications() {
+  const btn = document.getElementById('enable-push-btn')
+  try {
+    const reg = await navigator.serviceWorker.register('./sw.js')
+    const permission = await Notification.requestPermission()
+    if (permission !== 'granted') { showToast('لازم توافق على الإشعارات حتى تستقبل تنبيهات الطلبات'); return }
+
+    const sub = await reg.pushManager.subscribe({
+      userVisibleOnly: true,
+      applicationServerKey: urlBase64ToUint8Array(VAPID_PUBLIC_KEY)
+    })
+    await savePushSubscription(sub)
+    btn.classList.add('hidden')
+    showToast('🔔 تم تفعيل تنبيهات الطلبات بنجاح')
+  } catch (e) {
+    console.error('Push subscribe error:', e)
+    showToast('حدث خطأ أثناء تفعيل التنبيهات')
+  }
+}
+async function savePushSubscription(sub) {
+  const json = sub.toJSON()
+  await db.from('push_subscriptions').upsert({
+    restaurant_id: state.restaurant.id,
+    endpoint:      json.endpoint,
+    p256dh:        json.keys?.p256dh,
+    auth:          json.keys?.auth
+  }, { onConflict: 'endpoint' })
 }
 
+// ── START ─────────────────────────────────────────────────────────────
 boot()
 </script>
 </body>
