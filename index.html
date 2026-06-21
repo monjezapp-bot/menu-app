@@ -56,14 +56,15 @@
     /* ══════════════════════════════════════════
        HERO (sticky + shrink on scroll)
     ══════════════════════════════════════════ */
-    .hero-wrap { position: sticky; top: 0; z-index: 25; }
+    .hero-wrap { position: relative; z-index: 25; }
 
     .hero {
       background: linear-gradient(135deg, var(--brand2) 0%, var(--brand) 100%);
       padding: 36px 20px 64px;
       position: relative;
       overflow: hidden;
-      transition: padding 0.3s ease;
+      transition: opacity 0.22s ease, max-height 0.22s ease, padding 0.22s ease;
+      max-height: 260px;
     }
     .hero::before {
       content: ''; position: absolute; inset: 0;
@@ -71,82 +72,73 @@
       pointer-events: none;
     }
 
-    /* Shrunk state — انتقال ناعم بالـ opacity بدل القطع الفوري بـ display */
-    .hero-wrap.shrunk .hero { padding: 12px 20px; }
+    /* Shrunk state — الهيدر كله (غلاف + اسم) يختفي كقطعة واحدة متماسكة */
+    .hero-wrap.shrunk .hero {
+      opacity: 0;
+      max-height: 0;
+      padding-top: 0; padding-bottom: 0;
+      overflow: hidden;
+      pointer-events: none;
+    }
 
     .hero-full-content {
       display: flex; position: relative; z-index: 1; align-items: center; gap: 14px;
-      transition: opacity 0.22s ease;
-      opacity: 1;
-    }
-    .hero-wrap.shrunk .hero-full-content {
-      opacity: 0;
-      max-height: 0;
-      overflow: hidden;
-      margin: 0; padding: 0;
-      pointer-events: none;
-    }
-
-    .hero-wrap.shrunk .search-wrap {
-      opacity: 0;
-      max-height: 0;
-      overflow: hidden;
-      margin: 0; padding: 0;
-      pointer-events: none;
     }
 
     .hero-mini {
-      display: none; align-items: center; gap: 10px; position: relative; z-index: 1;
-      transition: opacity 0.22s ease;
-      opacity: 0;
+      display: none; align-items: center; gap: 12px; position: relative; z-index: 1;
+      padding: 14px 16px 0;
     }
-    .hero-wrap.shrunk .hero-mini {
-      display: flex !important;
-      opacity: 1;
-    }
+    .sticky-bar.shrunk .hero-mini { display: flex !important; }
 
-    /* Hero: mini mode */
-    .hero-mini img       { width: 36px; height: 36px; border-radius: 10px; object-fit: cover; border: 2px solid rgba(255,255,255,0.3); }
-    .hero-mini h2        { color: #fff; font-size: 16px; font-weight: 800; flex: 1; }
+    /* الشريط الثابت دائماً: البحث + التصنيفات — لا يختفي ولا يتقلّص أبداً */
+    .sticky-bar {
+      position: sticky; top: 0; z-index: 25;
+      background: var(--bg);
+    }
+    .sticky-bar:not(.shrunk) .search-wrap { padding-top: 14px; }
+
+    /* Hero: mini mode (بطاقة بيضاء فيها لوجو + اسم + بحث) */
+    .hero-mini img       { width: 32px; height: 32px; border-radius: 9px; object-fit: cover; border: 1.5px solid #eee; }
+    .hero-mini h2        { color: #1a1a1a; font-size: 15px; font-weight: 800; flex: 1; }
     .search-icon-btn {
       width: 36px; height: 36px; border-radius: 50%;
-      background: rgba(255,255,255,0.2);
+      background: #fff;
+      border: 1.5px solid #e8e8e8;
       display: flex; align-items: center; justify-content: center;
-      color: #fff; cursor: pointer; border: none;
-      transition: background 0.2s;
+      color: #555; cursor: pointer;
+      transition: background 0.2s; flex-shrink: 0;
     }
-    .search-icon-btn:active { background: rgba(255,255,255,0.35); }
+    .search-icon-btn:active { background: #f5f5f5; }
 
     /* Cart icon in mini header */
     .cart-mini-btn {
       position: relative;
-      width: 38px; height: 38px; border-radius: 50%;
-      background: rgba(255,255,255,0.22);
+      width: 36px; height: 36px; border-radius: 50%;
+      background: var(--brand);
       display: flex; align-items: center; justify-content: center;
       border: none; cursor: pointer;
-      transition: background 0.2s; flex-shrink: 0;
+      transition: opacity 0.2s; flex-shrink: 0;
     }
-    .cart-mini-btn:active { background: rgba(255,255,255,0.38); }
+    .cart-mini-btn:active { opacity: 0.8; }
     .cart-mini-badge {
       position: absolute; top: -3px; left: -3px;
       background: #ff3b30; color: #fff;
       font-size: 9px; font-weight: 900;
       min-width: 17px; height: 17px;
       border-radius: 50%; display: flex; align-items: center; justify-content: center;
-      border: 2px solid var(--brand2);
+      border: 2px solid #fff;
     }
 
     /* ══════════════════════════════════════════
        SEARCH
     ══════════════════════════════════════════ */
-    /* Embedded search (full mode) */
     .search-wrap {
       position: relative;
-      margin: -26px 16px 0;
+      margin: 0 16px 14px;
       z-index: 10;
-      transition: opacity 0.22s ease;
-      opacity: 1;
     }
+    .sticky-bar.shrunk .search-wrap { display: none; } /* في الحالة المصغّرة، البحث يصبح أيقونة دائرية بدل الخانة الكاملة */
     .search-wrap input {
       width: 100%; background: #fff; border: none;
       border-radius: 16px;
@@ -198,12 +190,11 @@
        CATEGORY TABS
     ══════════════════════════════════════════ */
     .cat-tabs-wrap {
-      position: sticky; top: 0; z-index: 20;
+      position: relative;
       background: #fff;
       border-bottom: 1px solid #f0f0f0;
       box-shadow: 0 2px 12px rgba(0,0,0,0.06);
-      /* Fade edge on the left */
-      position: relative;
+      margin-top: 14px;
     }
     .cat-tabs-wrap::after {
       content: ''; position: absolute;
@@ -261,7 +252,7 @@
       border: 1.5px solid #efefef; position: relative;
     }
     .prod-card:active           { transform: scale(0.96); }
-    .prod-card .thumb           { position: relative; width: 100%; padding-top: 100%; background: #f8f8f8; }
+    .prod-card .thumb           { position: relative; width: 100%; padding-top: 72%; background: #f8f8f8; }
     .prod-card .thumb img       { position: absolute; inset: 0; width: 100%; height: 100%; object-fit: cover; }
     .prod-card .thumb .no-img   {
       position: absolute; inset: 0;
@@ -275,12 +266,6 @@
       line-height: 1.45; margin-bottom: 6px;
       display: -webkit-box; -webkit-line-clamp: 2; -webkit-box-orient: vertical; overflow: hidden;
     }
-    .prod-desc {
-      font-size: 11px; font-weight: 500; color: #999;
-      line-height: 1.4; margin-bottom: 6px;
-      display: -webkit-box; -webkit-line-clamp: 2; -webkit-box-orient: vertical; overflow: hidden;
-    }
-
     /* Price variants */
     .price-row    { display: flex; align-items: baseline; gap: 5px; flex-wrap: wrap; }
     .price-new    { font-size: 15px; font-weight: 900; color: var(--brand); }
@@ -476,24 +461,8 @@
 
   <!-- ── Hero (sticky, shrinks on scroll) ── -->
   <div class="hero-wrap" id="hero-wrap">
+    <!-- Hero (cover + name) — يختفي بالكامل كقطعة واحدة عند السكرول -->
     <div class="hero" id="hero-section">
-
-      <!-- Mini mode (shown when scrolled) -->
-      <div class="hero-mini" id="hero-mini">
-        <img id="mini-logo" src="" alt="" style="display:none" />
-        <h2 id="mini-name"></h2>
-        <button class="search-icon-btn" onclick="openSearchOverlay()">
-          <svg width="17" height="17" fill="none" stroke="currentColor" stroke-width="2.2" viewBox="0 0 24 24">
-            <circle cx="11" cy="11" r="8"/><path d="m21 21-4.35-4.35"/>
-          </svg>
-        </button>
-        <button class="cart-mini-btn" id="cart-mini-btn" onclick="openCartSheet()" style="display:none">
-          <svg width="18" height="18" fill="none" stroke="#fff" stroke-width="2.2" viewBox="0 0 24 24">
-            <path d="M6 2L3 6v14a2 2 0 002 2h14a2 2 0 002-2V6l-3-4zM3 6h18M16 10a4 4 0 01-8 0"/>
-          </svg>
-          <span class="cart-mini-badge" id="cart-mini-badge" style="display:none"></span>
-        </button>
-      </div>
 
       <!-- Full mode -->
       <div class="hero-full-content" id="hero-full">
@@ -509,8 +478,28 @@
         </div>
       </div>
     </div>
+  </div>
 
-    <!-- Search bar (full mode) -->
+  <!-- شريط/بطاقة ثابتة دائماً: لوجو مصغّر + اسم المطعم (يظهر فقط بعد السكرول) + البحث + التصنيفات -->
+  <div class="sticky-bar" id="sticky-bar">
+    <!-- Mini header (logo + name + search icon) — يظهر فقط بعد اختفاء الهيدر الكامل -->
+    <div class="hero-mini" id="hero-mini">
+      <img id="mini-logo" src="" alt="" style="display:none" />
+      <h2 id="mini-name"></h2>
+      <button class="search-icon-btn" onclick="openSearchOverlay()">
+        <svg width="17" height="17" fill="none" stroke="currentColor" stroke-width="2.2" viewBox="0 0 24 24">
+          <circle cx="11" cy="11" r="8"/><path d="m21 21-4.35-4.35"/>
+        </svg>
+      </button>
+      <button class="cart-mini-btn" id="cart-mini-btn" onclick="openCartSheet()" style="display:none">
+        <svg width="18" height="18" fill="none" stroke="#fff" stroke-width="2.2" viewBox="0 0 24 24">
+          <path d="M6 2L3 6v14a2 2 0 002 2h14a2 2 0 002-2V6l-3-4zM3 6h18M16 10a4 4 0 01-8 0"/>
+        </svg>
+        <span class="cart-mini-badge" id="cart-mini-badge" style="display:none"></span>
+      </button>
+    </div>
+
+    <!-- Search bar -->
     <div class="search-wrap" id="search-box-wrap">
       <input id="search-input" type="search" placeholder="ابحث عن أكلة..."
              oninput="handleSearch()" onfocus="showSuggestions()"
@@ -524,17 +513,8 @@
     </div>
 
     <!-- Category tabs -->
-    <div class="cat-tabs-wrap" style="margin-top:16px">
+    <div class="cat-tabs-wrap">
       <div id="cat-grid" class="cat-tabs"></div>
-    </div>
-  </div>
-
-  <!-- Closed restaurant banner -->
-  <div id="closed-banner" class="hidden" style="background:#fef2f2;border-bottom:1px solid #fee2e2;padding:12px 16px;display:flex;align-items:center;gap:10px">
-    <span style="font-size:20px">🔒</span>
-    <div>
-      <p style="font-size:13px;font-weight:800;color:#dc2626;margin:0">المطعم مغلق حالياً</p>
-      <p style="font-size:11px;color:#f87171;margin:2px 0 0">لا يمكن إرسال طلبات في الوقت الحالي، حاول مرة أخرى لاحقاً</p>
     </div>
   </div>
 
@@ -787,7 +767,6 @@ async function boot() {
     showState('app')
     initScrollBehavior()
     initScrollSpy()
-    trackRestaurantStatus()
 
     // إظهار شريط المعاينة فقط لو الرابط الحالي فعلياً يحتوي على preview=1 (فحص مزدوج للتأكيد)
     const previewBar = document.getElementById('back-to-dash')
@@ -809,7 +788,7 @@ function retryLoad() {
 async function loadData(slug) {
   const { data: r, error: rErr } = await db
     .from('restaurants')
-    .select('id,name,logo_url,cover_url,whatsapp,theme,slug,announcement_text,announcement_active,order_receive_method,is_open')
+    .select('id,name,logo_url,cover_url,whatsapp,theme,slug,announcement_text,announcement_active,order_receive_method')
     .eq('slug', slug).eq('is_active', true).single()
 
   if (rErr || !r) throw new Error('المطعم غير موجود أو غير نشط')
@@ -846,9 +825,6 @@ function renderHeader() {
   document.title = S.restaurant.name
   document.getElementById('restaurant-name').textContent = S.restaurant.name
   document.getElementById('mini-name').textContent       = S.restaurant.name
-
-  // حالة المطعم (مفتوح/مغلق) — افتراضياً مفتوح لو العمود غير موجود بعد
-  updateOpenClosedUI()
 
   if (S.restaurant.logo_url) {
     const l  = document.getElementById('restaurant-logo')
@@ -922,9 +898,10 @@ function handleBannerClick() {
 
 // ── SCROLL BEHAVIOR ───────────────────────────────────────────────────
 function initScrollBehavior() {
-  const heroWrap = document.getElementById('hero-wrap')
-  const backBtn  = document.getElementById('back-to-top-btn')
-  const cartBar  = document.getElementById('cart-bar')
+  const heroWrap  = document.getElementById('hero-wrap')
+  const stickyBar = document.getElementById('sticky-bar')
+  const backBtn   = document.getElementById('back-to-top-btn')
+  const cartBar   = document.getElementById('cart-bar')
   let isShrunk = false
 
   window.addEventListener('scroll', () => {
@@ -932,8 +909,15 @@ function initScrollBehavior() {
 
     // Hysteresis: عتبتان مختلفتان للدخول والخروج من وضع الانكماش
     // يمنع التبديل السريع المتكرر ("الرعشة") حول نقطة واحدة عند السحب الطبيعي
-    if (!isShrunk && y > 100) { isShrunk = true;  heroWrap.classList.add('shrunk') }
-    else if (isShrunk && y < 60) { isShrunk = false; heroWrap.classList.remove('shrunk') }
+    if (!isShrunk && y > 100) {
+      isShrunk = true
+      heroWrap.classList.add('shrunk')
+      stickyBar.classList.add('shrunk') // يظهر اللوجو + الاسم المصغّر داخل البطاقة الثابتة
+    } else if (isShrunk && y < 60) {
+      isShrunk = false
+      heroWrap.classList.remove('shrunk')
+      stickyBar.classList.remove('shrunk')
+    }
 
     // Show back-to-top after 400px or near bottom
     const nearBottom = (window.innerHeight + y) >= (document.body.scrollHeight - 120)
@@ -1064,8 +1048,8 @@ function selectCat(id) {
   const sec = document.getElementById(id === 'bundles' ? 'sec-bundles' : 'sec-' + id)
   if (sec) {
     setTimeout(() => {
-      const heroH = document.getElementById('hero-wrap').offsetHeight
-      const top   = sec.getBoundingClientRect().top + window.scrollY - heroH - 8
+      const stickyH = document.getElementById('sticky-bar').offsetHeight
+      const top   = sec.getBoundingClientRect().top + window.scrollY - stickyH - 8
       window.scrollTo({ top, behavior: 'smooth' })
     }, 50)
   }
@@ -1147,7 +1131,6 @@ function prodCardHTML(p) {
     </div>
     <div class="info">
       <h3>${p.name}</h3>
-      ${p.description ? `<p class="prod-desc">${p.description}</p>` : ''}
       ${priceHTML}
       ${unavailable
         ? `<span style="font-size:10px;background:#f0f0f0;color:#999;font-weight:700;padding:3px 8px;border-radius:8px;display:inline-block;margin-top:4px">غير متوفر</span>`
@@ -1547,7 +1530,6 @@ function clearFieldErrors() {
 // ── SEND ORDER ────────────────────────────────────────────────────────
 async function sendOrder() {
   if (!S.cart.length) return
-  if (S.restaurantClosed) { showToast('المطعم مغلق حالياً، لا يمكن إرسال الطلب'); return }
 
   const table    = document.getElementById('table-number-input').value.trim()
   const custName = document.getElementById('order-name').value.trim()
@@ -1635,26 +1617,6 @@ function handleOrderStatusChange(order) {
     updateSuccessModalState('confirmed')
   } else if (order.status === 'cancelled') {
     updateSuccessModalState('cancelled', order.cancel_reason)
-  }
-}
-
-// ── RESTAURANT OPEN/CLOSED STATUS (live) ────────────────────────────────
-function trackRestaurantStatus() {
-  db.channel('restaurant-status-' + S.restaurant.id)
-    .on('postgres_changes', { event: 'UPDATE', schema: 'public', table: 'restaurants', filter: `id=eq.${S.restaurant.id}` }, p => {
-      S.restaurant.is_open = p.new.is_open
-      updateOpenClosedUI()
-    })
-    .subscribe()
-}
-function updateOpenClosedUI() {
-  const isOpen = S.restaurant.is_open !== false
-  document.getElementById('closed-banner').classList.toggle('hidden', isOpen)
-  S.restaurantClosed = !isOpen
-  const sendBtn = document.getElementById('send-order-btn')
-  if (sendBtn) {
-    sendBtn.style.opacity = isOpen ? '1' : '0.5'
-    sendBtn.style.pointerEvents = isOpen ? 'auto' : 'none'
   }
 }
 
