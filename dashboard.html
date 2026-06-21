@@ -77,7 +77,11 @@
   <header class="bg-white border-b border-gray-100 px-4 py-4 flex items-center justify-between sticky top-0 z-30">
     <div>
       <p class="text-xs text-gray-400">إدارة مطعم</p>
-      <h1 id="dash-restaurant-name" class="text-lg font-extrabold text-gray-800"></h1>
+      <h1 id="dash-restaurant-name" class="text-lg font-extrabold text-gray-800 mb-1.5"></h1>
+      <button id="open-status-toggle" onclick="toggleRestaurantOpen()" class="flex items-center gap-1.5 text-xs font-bold px-2.5 py-1 rounded-full transition-colors">
+        <span id="open-status-dot" class="w-2 h-2 rounded-full"></span>
+        <span id="open-status-label"></span>
+      </button>
     </div>
     <div class="flex items-center gap-3">
       <button id="enable-push-btn" onclick="enablePushNotifications()" class="hidden text-xs bg-blue-50 text-blue-600 font-bold px-3 py-2 rounded-xl">🔔 تفعيل التنبيهات</button>
@@ -172,6 +176,17 @@
     <!-- Settings Tab -->
     <div id="tab-content-settings" class="hidden fade-up">
       <h2 class="font-extrabold text-gray-800 mb-4">إعدادات المطعم</h2>
+
+      <!-- رابط المنيو لمشاركته مع العملاء -->
+      <div class="bg-orange-50 rounded-2xl p-5 mb-4">
+        <p class="text-sm font-extrabold text-gray-800 mb-1">🔗 رابط المنيو لمشاركته مع عملائك</p>
+        <p class="text-xs text-gray-500 mb-3">انشر هذا الرابط على وسائل التواصل أو اطبعه على ملصق في المطعم — هذا هو الرابط الذي يشاهد عملاؤك المنيو من خلاله</p>
+        <div class="flex gap-2">
+          <input id="share-menu-link" type="text" readonly class="flex-1 border border-orange-200 rounded-xl px-3 py-2.5 text-xs text-gray-600 bg-white font-mono" />
+          <button onclick="copyShareLink()" class="bg-orange-500 text-white text-xs font-bold px-4 py-2.5 rounded-xl flex-shrink-0">📋 نسخ</button>
+        </div>
+      </div>
+
       <div class="bg-white rounded-2xl p-5 shadow-sm space-y-4">
         <div><label class="text-xs font-bold text-gray-500 mb-1 block">اسم المطعم</label>
           <input id="set-name" type="text" class="w-full border border-gray-200 rounded-xl px-4 py-3 text-sm focus:outline-none focus:ring-2 focus:ring-orange-400" /></div>
@@ -235,8 +250,8 @@
       <span class="text-orange-500 font-extrabold" id="dp-discounted"></span>
       <span class="bg-orange-500 text-white text-xs font-bold px-2 py-0.5 rounded-full" id="dp-percent"></span>
     </div>
-    <div><label class="text-xs font-bold text-gray-500 mb-1 block">التصنيف</label>
-      <select id="pm-category" class="w-full border border-gray-200 rounded-xl px-4 py-3 text-sm focus:outline-none focus:ring-2 focus:ring-orange-400 bg-white"><option value="">بدون تصنيف</option></select></div>
+    <div><label class="text-xs font-bold text-gray-500 mb-1 block">التصنيف <span class="text-red-400">*</span></label>
+      <select id="pm-category" class="w-full border border-gray-200 rounded-xl px-4 py-3 text-sm focus:outline-none focus:ring-2 focus:ring-orange-400 bg-white"><option value="" disabled selected>اختر تصنيف للمنتج...</option></select></div>
     <div>
       <label class="text-xs font-bold text-gray-500 mb-1 block">صورة المنتج</label>
       <button onclick="document.getElementById('product-file-input').click()" class="w-full border-2 border-dashed border-gray-200 rounded-xl py-3 text-sm text-gray-400 font-bold hover:border-orange-300 mb-2">📁 رفع صورة</button>
@@ -333,7 +348,13 @@
       <p id="bundle-upload-msg" class="text-xs text-gray-400 mt-1 hidden"></p>
     </div>
     <div>
-      <label class="text-xs font-bold text-gray-500 mb-1 block">المنتجات المضمنة</label>
+      <div class="flex items-center justify-between mb-1">
+        <label class="text-xs font-bold text-gray-500">المنتجات المضمنة</label>
+        <div class="flex items-center gap-2">
+          <span id="bm-selected-count" class="text-xs text-orange-500 font-bold"></span>
+          <button type="button" onclick="toggleAllBundleProducts()" class="text-xs text-gray-400 font-bold underline">تحديد الكل / إلغاء</button>
+        </div>
+      </div>
       <div id="bm-products-checkboxes" class="space-y-2 max-h-48 overflow-y-auto border border-gray-100 rounded-xl p-3"></div>
     </div>
     <div class="flex items-center gap-3">
@@ -547,6 +568,8 @@ async function loadDashboard() {
   state.restaurant = r
   document.getElementById('dash-restaurant-name').textContent = r.name
   document.getElementById('preview-link').href = MENU_BASE_URL + '?r=' + r.slug + '&preview=1'
+  document.getElementById('share-menu-link').value = MENU_BASE_URL + '?r=' + r.slug
+  renderOpenStatus(r.is_open !== false) // افتراضياً مفتوح لو العمود غير موجود بعد (قبل تطبيق الـ migration)
   initPushUI()
 
   await Promise.all([loadCategories(), loadProducts(), loadOrders(), loadBanners(), loadBundles()])
@@ -706,7 +729,7 @@ function renderCategories() {
 }
 function updateCategorySelect() {
   const sel = document.getElementById('pm-category')
-  sel.innerHTML = '<option value="">بدون تصنيف</option>' + state.categories.map(c => `<option value="${c.id}">${c.name}</option>`).join('')
+  sel.innerHTML = '<option value="" disabled>اختر تصنيف للمنتج...</option>' + state.categories.map(c => `<option value="${c.id}">${c.name}</option>`).join('')
 }
 function openCatModal(id = null) {
   document.getElementById('cm-id').value = id || ''
@@ -916,17 +939,19 @@ async function saveProduct() {
   const name     = document.getElementById('pm-name').value.trim()
   const price    = parseFloat(document.getElementById('pm-price').value)
   const discount = parseFloat(document.getElementById('pm-discount').value)
+  const category = document.getElementById('pm-category').value
   const errEl    = document.getElementById('pm-error')
   if (!name)                                     { errEl.textContent = 'اسم المنتج مطلوب'; errEl.classList.remove('hidden'); return }
   if (isNaN(price))                              { errEl.textContent = 'السعر غير صحيح';   errEl.classList.remove('hidden'); return }
   if (!isNaN(discount) && discount >= price)     { errEl.textContent = 'سعر الخصم يجب أن يكون أقل من الأصلي'; errEl.classList.remove('hidden'); return }
+  if (!category)                                 { errEl.textContent = 'يجب اختيار تصنيف للمنتج'; errEl.classList.remove('hidden'); document.getElementById('pm-category').focus(); return }
   errEl.classList.add('hidden')
   const payload = {
     name,
     description:     document.getElementById('pm-desc').value.trim()        || null,
     price,
     discount_price:  !isNaN(discount) && discount > 0 ? discount            : null,
-    category_id:     document.getElementById('pm-category').value           || null,
+    category_id:     category,
     image_url:       document.getElementById('pm-image').value.trim()       || null,
     is_available:    document.getElementById('pm-available').checked,
     availability:    document.getElementById('pm-availability').value,
@@ -987,7 +1012,7 @@ function openBundleModal(id = null) {
   document.getElementById('bm-error').classList.add('hidden')
   document.getElementById('bm-image-preview-wrap').classList.add('hidden')
   const container = document.getElementById('bm-products-checkboxes')
-  container.innerHTML = state.products.map(p => `<label class="flex items-center gap-3 py-1 cursor-pointer"><input type="checkbox" value="${p.id}" class="bundle-product-check w-4 h-4 accent-orange-500" /><span class="text-sm text-gray-700">${p.name}</span><span class="text-xs text-gray-400 mr-auto">${Number(p.price).toFixed(2)} ج.م</span></label>`).join('')
+  container.innerHTML = state.products.map(p => `<label class="flex items-center gap-3 py-1 cursor-pointer"><input type="checkbox" value="${p.id}" class="bundle-product-check w-4 h-4 accent-orange-500" onchange="updateBundleSelectedCount()" /><span class="text-sm text-gray-700">${p.name}</span><span class="text-xs text-gray-400 mr-auto">${Number(p.price).toFixed(2)} ج.م</span></label>`).join('')
   if (id) {
     const b = state.bundles.find(x => x.id === id)
     document.getElementById('bm-name').value     = b.name
@@ -1004,7 +1029,18 @@ function openBundleModal(id = null) {
     document.getElementById('bm-active').checked = true
     document.getElementById('bundle-modal-title').textContent = 'عرض مجمع جديد'
   }
+  updateBundleSelectedCount()
   document.getElementById('modal-bundle').classList.remove('hidden')
+}
+function updateBundleSelectedCount() {
+  const n = document.querySelectorAll('.bundle-product-check:checked').length
+  document.getElementById('bm-selected-count').textContent = n > 0 ? `${n} منتج محدد` : ''
+}
+function toggleAllBundleProducts() {
+  const boxes = document.querySelectorAll('.bundle-product-check')
+  const allChecked = [...boxes].every(cb => cb.checked)
+  boxes.forEach(cb => cb.checked = !allChecked)
+  updateBundleSelectedCount()
 }
 function closeBundleModal() { document.getElementById('modal-bundle').classList.add('hidden') }
 async function saveBundle() {
@@ -1086,10 +1122,43 @@ async function loadAnalytics() {
 }
 
 // ── SETTINGS ──────────────────────────────────────────────────────────
+// ── OPEN / CLOSED STATUS ─────────────────────────────────────────────
+function renderOpenStatus(isOpen) {
+  const btn = document.getElementById('open-status-toggle')
+  const dot = document.getElementById('open-status-dot')
+  const lbl = document.getElementById('open-status-label')
+  if (isOpen) {
+    btn.className = 'flex items-center gap-1.5 text-xs font-bold px-2.5 py-1 rounded-full transition-colors bg-green-50 text-green-600'
+    dot.className = 'w-2 h-2 rounded-full bg-green-500'
+    lbl.textContent = 'مفتوح الآن'
+  } else {
+    btn.className = 'flex items-center gap-1.5 text-xs font-bold px-2.5 py-1 rounded-full transition-colors bg-red-50 text-red-500'
+    dot.className = 'w-2 h-2 rounded-full bg-red-500'
+    lbl.textContent = 'مغلق الآن'
+  }
+}
+async function toggleRestaurantOpen() {
+  const newStatus = !(state.restaurant.is_open !== false)
+  const confirmMsg = newStatus ? 'فتح المطعم؟ ستبدأ تستقبل طلبات جديدة فوراً.' : 'إغلاق المطعم؟ سيتم إخفاء زر الطلب عن العملاء ولن تستقبل طلبات جديدة.'
+  const ok = await showConfirm(confirmMsg, newStatus ? 'فتح المطعم' : 'إغلاق المطعم')
+  if (!ok) return
+  const { error } = await db.from('restaurants').update({ is_open: newStatus }).eq('id', state.restaurant.id)
+  if (error) { showToast('حدث خطأ، حاول مجدداً'); return }
+  state.restaurant.is_open = newStatus
+  renderOpenStatus(newStatus)
+  showToast(newStatus ? '✅ المطعم بقى مفتوح' : '🔒 المطعم بقى مغلق')
+}
+
 function openSupportChat(e) {
   e.preventDefault()
   const msg = encodeURIComponent(`السلام عليكم، أنا تاجر "${state.restaurant?.name || ''}" وعندي استفسار بخصوص لوحة التحكم.`)
   window.open(`https://wa.me/${SUPPORT_WHATSAPP}?text=${msg}`, '_blank')
+}
+function copyShareLink() {
+  const input = document.getElementById('share-menu-link')
+  navigator.clipboard?.writeText(input.value).then(() => showToast('✅ تم نسخ الرابط')).catch(() => {
+    input.select(); document.execCommand('copy'); showToast('✅ تم نسخ الرابط')
+  })
 }
 function resetColor() { const D='#FF6B00'; document.getElementById('set-color').value=D; document.getElementById('set-color-hex').value=D; if(pickrInstance) pickrInstance.setColor(D); showToast('تم إعادة اللون للافتراضي') }
 // تنضيف رقم التواصل لصيغة دولية موحدة (بدون +, بدون مسافات, مع كود مصر 20 لو ناقص)

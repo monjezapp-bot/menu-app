@@ -71,24 +71,41 @@
       pointer-events: none;
     }
 
-    /* Shrunk state */
-    .hero-wrap.shrunk .hero              { padding: 12px 20px; }
-    .hero-wrap.shrunk .hero-full-content { display: none; }
-    .hero-wrap.shrunk .hero-mini         { display: flex !important; }
-    .hero-wrap.shrunk .search-wrap       { display: none; }
+    /* Shrunk state — انتقال ناعم بالـ opacity بدل القطع الفوري بـ display */
+    .hero-wrap.shrunk .hero { padding: 12px 20px; }
 
-    /* Hero: full mode */
     .hero-full-content {
-      position: relative; z-index: 1;
-      display: flex; align-items: center; gap: 14px;
+      display: flex; position: relative; z-index: 1; align-items: center; gap: 14px;
+      transition: opacity 0.22s ease;
+      opacity: 1;
+    }
+    .hero-wrap.shrunk .hero-full-content {
+      opacity: 0;
+      max-height: 0;
+      overflow: hidden;
+      margin: 0; padding: 0;
+      pointer-events: none;
+    }
+
+    .hero-wrap.shrunk .search-wrap {
+      opacity: 0;
+      max-height: 0;
+      overflow: hidden;
+      margin: 0; padding: 0;
+      pointer-events: none;
+    }
+
+    .hero-mini {
+      display: none; align-items: center; gap: 10px; position: relative; z-index: 1;
+      transition: opacity 0.22s ease;
+      opacity: 0;
+    }
+    .hero-wrap.shrunk .hero-mini {
+      display: flex !important;
+      opacity: 1;
     }
 
     /* Hero: mini mode */
-    .hero-mini {
-      display: none;
-      align-items: center; gap: 10px;
-      position: relative; z-index: 1;
-    }
     .hero-mini img       { width: 36px; height: 36px; border-radius: 10px; object-fit: cover; border: 2px solid rgba(255,255,255,0.3); }
     .hero-mini h2        { color: #fff; font-size: 16px; font-weight: 800; flex: 1; }
     .search-icon-btn {
@@ -127,6 +144,8 @@
       position: relative;
       margin: -26px 16px 0;
       z-index: 10;
+      transition: opacity 0.22s ease;
+      opacity: 1;
     }
     .search-wrap input {
       width: 100%; background: #fff; border: none;
@@ -254,6 +273,11 @@
     .prod-card h3               {
       font-size: 13px; font-weight: 700; color: #1a1a1a;
       line-height: 1.45; margin-bottom: 6px;
+      display: -webkit-box; -webkit-line-clamp: 2; -webkit-box-orient: vertical; overflow: hidden;
+    }
+    .prod-desc {
+      font-size: 11px; font-weight: 500; color: #999;
+      line-height: 1.4; margin-bottom: 6px;
       display: -webkit-box; -webkit-line-clamp: 2; -webkit-box-orient: vertical; overflow: hidden;
     }
 
@@ -431,9 +455,12 @@
      ERROR STATE
 ══════════════════════════════════════════ -->
 <div id="state-error" class="hidden flex flex-col items-center justify-center min-h-screen p-8 text-center">
-  <div style="font-size:68px;margin-bottom:16px">🍽️</div>
-  <h2 style="font-size:20px;font-weight:900;color:#1a1a1a;margin-bottom:8px">لم نجد هذا المطعم</h2>
-  <p id="error-msg" style="font-size:13px;color:#aaa">تحقق من الرابط وحاول مجدداً</p>
+  <div id="error-icon" style="font-size:68px;margin-bottom:16px">🍽️</div>
+  <h2 id="error-title" style="font-size:20px;font-weight:900;color:#1a1a1a;margin-bottom:8px">لم نجد هذا المطعم</h2>
+  <p id="error-msg" style="font-size:13px;color:#aaa;margin-bottom:20px">تحقق من الرابط وحاول مجدداً</p>
+  <button id="retry-btn" onclick="retryLoad()" class="hidden" style="background:var(--brand);color:#fff;font-size:14px;font-weight:800;border-radius:14px;padding:12px 28px">
+    🔄 حاول مرة أخرى
+  </button>
 </div>
 
 <!-- ══════════════════════════════════════════
@@ -474,9 +501,12 @@
              style="width:64px;height:64px;border-radius:18px;object-fit:cover;border:2.5px solid rgba(255,255,255,0.35);box-shadow:0 4px 16px rgba(0,0,0,0.2)" />
         <div style="flex:1">
           <p style="color:rgba(255,255,255,0.6);font-size:12px;font-weight:500;margin-bottom:3px">أهلاً بك في</p>
-          <h1 id="restaurant-name" style="color:#fff;font-size:23px;font-weight:900;line-height:1.2;letter-spacing:-0.4px"></h1>
+          <h1 id="restaurant-name" style="color:#fff;font-size:23px;font-weight:900;line-height:1.2;letter-spacing:-0.4px;margin-bottom:6px"></h1>
+          <a id="call-restaurant-btn" href="#" class="hidden" style="display:inline-flex;align-items:center;gap:6px;background:rgba(255,255,255,0.16);border-radius:20px;padding:6px 12px;text-decoration:none">
+            <span style="font-size:13px">📞</span>
+            <span style="color:#fff;font-size:12px;font-weight:700">تواصل مع المطعم</span>
+          </a>
         </div>
-        <a id="call-restaurant-btn" href="#" class="hidden" style="width:42px;height:42px;border-radius:50%;background:rgba(255,255,255,0.18);display:flex;align-items:center;justify-content:center;flex-shrink:0;font-size:19px;text-decoration:none">📞</a>
       </div>
     </div>
 
@@ -496,6 +526,15 @@
     <!-- Category tabs -->
     <div class="cat-tabs-wrap" style="margin-top:16px">
       <div id="cat-grid" class="cat-tabs"></div>
+    </div>
+  </div>
+
+  <!-- Closed restaurant banner -->
+  <div id="closed-banner" class="hidden" style="background:#fef2f2;border-bottom:1px solid #fee2e2;padding:12px 16px;display:flex;align-items:center;gap:10px">
+    <span style="font-size:20px">🔒</span>
+    <div>
+      <p style="font-size:13px;font-weight:800;color:#dc2626;margin:0">المطعم مغلق حالياً</p>
+      <p style="font-size:11px;color:#f87171;margin:2px 0 0">لا يمكن إرسال طلبات في الوقت الحالي، حاول مرة أخرى لاحقاً</p>
     </div>
   </div>
 
@@ -599,8 +638,8 @@
 
         <!-- Delivery info -->
         <div style="background:#f9f9f9;border-radius:16px;padding:12px 14px;margin-bottom:10px">
-          <p style="font-size:12px;font-weight:800;color:#888;margin-bottom:8px">بيانات التوصيل (اختياري)</p>
-          <input id="order-name"    type="text" placeholder="اسمك"
+          <p style="font-size:12px;font-weight:800;color:#888;margin-bottom:8px">بيانات التوصيل <span style="color:#bbb;font-weight:600">(مطلوبة لو الطلب توصيل)</span></p>
+          <input id="order-name"    type="text" placeholder="اسمك (اختياري)"
                  style="width:100%;border:1.5px solid #eee;border-radius:12px;padding:10px 12px;font-size:13px;color:#444;outline:none;font-family:'Rubik',sans-serif;margin-bottom:7px;background:#fff" />
           <input id="order-phone"   type="tel"  placeholder="رقم التواصل"
                  style="width:100%;border:1.5px solid #eee;border-radius:12px;padding:10px 12px;font-size:13px;color:#444;outline:none;font-family:'Rubik',sans-serif;margin-bottom:7px;background:#fff" />
@@ -611,7 +650,7 @@
           <button id="map-pick-btn" onclick="openMapPicker()"
                   style="width:100%;border:1.5px solid #eee;border-radius:12px;padding:10px 12px;font-size:13px;color:#888;font-family:'Rubik',sans-serif;background:#fff;text-align:right;cursor:pointer;display:flex;align-items:center;gap:8px">
             <span style="font-size:16px">📍</span>
-            <span id="map-pick-label">تحديد موقع التوصيل (اختياري)</span>
+            <span id="map-pick-label">تحديد موقع التوصيل (بدلاً من كتابة العنوان)</span>
           </button>
         </div>
 
@@ -729,9 +768,11 @@ function loadCart() {
 function clearCart() { S.cart = []; try { localStorage.removeItem(cartKey()) } catch(e) {} }
 
 // ── BOOT ──────────────────────────────────────────────────────────────
+let _lastSlug = null
 async function boot() {
   const slug = new URLSearchParams(location.search).get('r')
-  if (!slug) return showError('لم يتم تحديد المطعم. مثال: ?r=my-restaurant')
+  _lastSlug = slug
+  if (!slug) return showError('لم يتم تحديد المطعم. تأكد من الرابط الذي تستخدمه.', false)
 
   try {
     await loadData(slug)
@@ -746,21 +787,29 @@ async function boot() {
     showState('app')
     initScrollBehavior()
     initScrollSpy()
+    trackRestaurantStatus()
 
-    // إظهار شريط المعاينة إن وُجد
-    if (new URLSearchParams(location.search).get('preview') === '1') {
-      document.getElementById('back-to-dash').classList.remove('hidden')
-    }
+    // إظهار شريط المعاينة فقط لو الرابط الحالي فعلياً يحتوي على preview=1 (فحص مزدوج للتأكيد)
+    const previewBar = document.getElementById('back-to-dash')
+    const isPreviewMode = new URLSearchParams(location.search).get('preview') === '1'
+                        && /[?&]preview=1(&|$)/.test(location.search)
+    previewBar.classList.toggle('hidden', !isPreviewMode)
   } catch(e) {
-    showError(e.message)
+    // أخطاء "المطعم غير موجود" نهائية (لا تحتاج إعادة محاولة)، وأي خطأ آخر (شبكة/تقني) مؤقت وقابل لإعادة المحاولة
+    const isNotFound = e.message === 'المطعم غير موجود أو غير نشط'
+    showError(isNotFound ? e.message : 'تعذّر تحميل الصفحة. تأكد من اتصالك بالإنترنت وحاول مرة أخرى.', !isNotFound)
   }
+}
+function retryLoad() {
+  showState('loading')
+  boot()
 }
 
 // ── DATA LOADING ──────────────────────────────────────────────────────
 async function loadData(slug) {
   const { data: r, error: rErr } = await db
     .from('restaurants')
-    .select('id,name,logo_url,cover_url,whatsapp,theme,slug,announcement_text,announcement_active,order_receive_method')
+    .select('id,name,logo_url,cover_url,whatsapp,theme,slug,announcement_text,announcement_active,order_receive_method,is_open')
     .eq('slug', slug).eq('is_active', true).single()
 
   if (rErr || !r) throw new Error('المطعم غير موجود أو غير نشط')
@@ -798,6 +847,9 @@ function renderHeader() {
   document.getElementById('restaurant-name').textContent = S.restaurant.name
   document.getElementById('mini-name').textContent       = S.restaurant.name
 
+  // حالة المطعم (مفتوح/مغلق) — افتراضياً مفتوح لو العمود غير موجود بعد
+  updateOpenClosedUI()
+
   if (S.restaurant.logo_url) {
     const l  = document.getElementById('restaurant-logo')
     l.src = S.restaurant.logo_url
@@ -813,7 +865,7 @@ function renderHeader() {
     hero.style.backgroundSize     = 'cover'
     hero.style.backgroundPosition = 'center'
     const overlay = document.createElement('div')
-    overlay.style.cssText = 'position:absolute;inset:0;background:linear-gradient(to top,rgba(0,0,0,0.72) 0%,rgba(0,0,0,0.28) 100%);z-index:0'
+    overlay.style.cssText = 'position:absolute;inset:0;background:linear-gradient(to top,rgba(0,0,0,0.52) 0%,rgba(0,0,0,0.08) 100%);z-index:0'
     hero.insertBefore(overlay, hero.firstChild)
   }
 
@@ -873,12 +925,15 @@ function initScrollBehavior() {
   const heroWrap = document.getElementById('hero-wrap')
   const backBtn  = document.getElementById('back-to-top-btn')
   const cartBar  = document.getElementById('cart-bar')
+  let isShrunk = false
 
   window.addEventListener('scroll', () => {
     const y = window.scrollY
 
-    // Shrink hero after 80px
-    heroWrap.classList.toggle('shrunk', y > 80)
+    // Hysteresis: عتبتان مختلفتان للدخول والخروج من وضع الانكماش
+    // يمنع التبديل السريع المتكرر ("الرعشة") حول نقطة واحدة عند السحب الطبيعي
+    if (!isShrunk && y > 100) { isShrunk = true;  heroWrap.classList.add('shrunk') }
+    else if (isShrunk && y < 60) { isShrunk = false; heroWrap.classList.remove('shrunk') }
 
     // Show back-to-top after 400px or near bottom
     const nearBottom = (window.innerHeight + y) >= (document.body.scrollHeight - 120)
@@ -1092,6 +1147,7 @@ function prodCardHTML(p) {
     </div>
     <div class="info">
       <h3>${p.name}</h3>
+      ${p.description ? `<p class="prod-desc">${p.description}</p>` : ''}
       ${priceHTML}
       ${unavailable
         ? `<span style="font-size:10px;background:#f0f0f0;color:#999;font-weight:700;padding:3px 8px;border-radius:8px;display:inline-block;margin-top:4px">غير متوفر</span>`
@@ -1144,7 +1200,13 @@ function showState(name) {
   ['loading', 'error', 'app'].forEach(s => document.getElementById('state-' + s).classList.add('hidden'))
   document.getElementById('state-' + name).classList.remove('hidden')
 }
-function showError(msg)  { document.getElementById('error-msg').textContent = msg; showState('error') }
+function showError(msg, showRetry = false) {
+  document.getElementById('error-msg').textContent = msg
+  document.getElementById('retry-btn').classList.toggle('hidden', !showRetry)
+  document.getElementById('error-icon').textContent  = showRetry ? '📡' : '🍽️'
+  document.getElementById('error-title').textContent = showRetry ? 'حدثت مشكلة في الاتصال' : 'لم نجد هذا المطعم'
+  showState('error')
+}
 
 // ── PRODUCT PAGE (modal) ──────────────────────────────────────────────
 function openModal(pid) {
@@ -1473,14 +1535,19 @@ function showToast(msg) {
   clearTimeout(_toastTimeout)
   _toastTimeout = setTimeout(() => { toast.style.opacity = '0' }, 2500)
 }
+// تمييز حقل ناقص بإطار أحمر، وإزالته عند التصحيح
+function markFieldError(id) {
+  const el = document.getElementById(id)
+  if (el) { el.style.borderColor = '#ef4444'; el.addEventListener('input', () => { el.style.borderColor = '#eee' }, { once: true }) }
+}
+function clearFieldErrors() {
+  ;['order-phone', 'order-address'].forEach(id => { const el = document.getElementById(id); if (el) el.style.borderColor = '#eee' })
+}
 
 // ── SEND ORDER ────────────────────────────────────────────────────────
 async function sendOrder() {
   if (!S.cart.length) return
-  const btn      = document.getElementById('send-order-btn')
-  const btnLabel = '<span>إرسال الطلب</span><span style="font-size:20px">✅</span>'
-  const resetBtn = () => { btn.style.opacity = '1'; btn.innerHTML = btnLabel }
-  btn.style.opacity = '0.6'; btn.innerHTML = '<span>جاري الإرسال...</span>'
+  if (S.restaurantClosed) { showToast('المطعم مغلق حالياً، لا يمكن إرسال الطلب'); return }
 
   const table    = document.getElementById('table-number-input').value.trim()
   const custName = document.getElementById('order-name').value.trim()
@@ -1488,6 +1555,25 @@ async function sendOrder() {
   const custAddr = document.getElementById('order-address').value.trim()
   const custLoc  = document.getElementById('order-location').value.trim()
   const note     = document.getElementById('order-note').value.trim()
+
+  // تحقق إجباري: لو الطلب توصيل (مفيش رقم طاولة)، لازم رقم تواصل + (عنوان أو موقع على الخريطة)
+  clearFieldErrors()
+  if (!table) {
+    const missing = []
+    if (!custPhone) missing.push('order-phone')
+    if (!custAddr && !custLoc) missing.push('order-address')
+    if (missing.length) {
+      missing.forEach(id => markFieldError(id))
+      showToast('من فضلك اكتب رقم تواصلك وعنوانك (أو حدد موقعك) لإتمام التوصيل')
+      document.getElementById(missing[0]).scrollIntoView({ behavior: 'smooth', block: 'center' })
+      return
+    }
+  }
+
+  const btn      = document.getElementById('send-order-btn')
+  const btnLabel = '<span>إرسال الطلب</span><span style="font-size:20px">✅</span>'
+  const resetBtn = () => { btn.style.opacity = '1'; btn.innerHTML = btnLabel }
+  btn.style.opacity = '0.6'; btn.innerHTML = '<span>جاري الإرسال...</span>'
 
   const items = S.cart.map(c => ({
     id: c.id, type: c.type, name: c.name, price: c.price, qty: c.qty,
@@ -1549,6 +1635,26 @@ function handleOrderStatusChange(order) {
     updateSuccessModalState('confirmed')
   } else if (order.status === 'cancelled') {
     updateSuccessModalState('cancelled', order.cancel_reason)
+  }
+}
+
+// ── RESTAURANT OPEN/CLOSED STATUS (live) ────────────────────────────────
+function trackRestaurantStatus() {
+  db.channel('restaurant-status-' + S.restaurant.id)
+    .on('postgres_changes', { event: 'UPDATE', schema: 'public', table: 'restaurants', filter: `id=eq.${S.restaurant.id}` }, p => {
+      S.restaurant.is_open = p.new.is_open
+      updateOpenClosedUI()
+    })
+    .subscribe()
+}
+function updateOpenClosedUI() {
+  const isOpen = S.restaurant.is_open !== false
+  document.getElementById('closed-banner').classList.toggle('hidden', isOpen)
+  S.restaurantClosed = !isOpen
+  const sendBtn = document.getElementById('send-order-btn')
+  if (sendBtn) {
+    sendBtn.style.opacity = isOpen ? '1' : '0.5'
+    sendBtn.style.pointerEvents = isOpen ? 'auto' : 'none'
   }
 }
 
