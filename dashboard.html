@@ -284,10 +284,19 @@
     <div>
       <div class="flex items-center justify-between mb-2">
         <label class="text-xs font-bold text-gray-500">خيارات التخصيص</label>
-        <button type="button" onclick="addOptionGroup()" class="text-xs bg-orange-50 text-orange-500 font-bold px-3 py-1.5 rounded-xl">+ مجموعة جديدة</button>
+        <div class="relative">
+          <button type="button" onclick="toggleAddGroupMenu()" class="text-xs bg-orange-50 text-orange-500 font-bold px-3 py-1.5 rounded-xl">+ مجموعة جديدة</button>
+          <div id="add-group-menu" class="hidden absolute left-0 top-full mt-1 bg-white border border-gray-200 rounded-xl shadow-lg z-10 w-44 overflow-hidden">
+            <button type="button" onclick="addOptionGroup('size')"   class="w-full text-right px-4 py-2.5 text-sm hover:bg-gray-50 border-b border-gray-100">📏 حجم</button>
+            <button type="button" onclick="addOptionGroup('measure')" class="w-full text-right px-4 py-2.5 text-sm hover:bg-gray-50 border-b border-gray-100">📐 مقاس</button>
+            <button type="button" onclick="addOptionGroup('count')"  class="w-full text-right px-4 py-2.5 text-sm hover:bg-gray-50 border-b border-gray-100">🔢 عدد</button>
+            <button type="button" onclick="addOptionGroup('addons')" class="w-full text-right px-4 py-2.5 text-sm hover:bg-gray-50 border-b border-gray-100">➕ إضافات</button>
+            <button type="button" onclick="addOptionGroup('custom')" class="w-full text-right px-4 py-2.5 text-sm hover:bg-gray-50">⚙️ مجموعة مخصصة</button>
+          </div>
+        </div>
       </div>
       <div id="pm-options-list" class="space-y-3"></div>
-      <p class="text-xs text-gray-400 mt-1">💡 مثال: "الحجم" ← صغير 15ج / وسط 20ج / كبير 25ج</p>
+      <p class="text-xs text-gray-400 mt-1">💡 لمجموعات الحجم/المقاس/العدد: إذا كان أحد الخيارات يطابق المنتج الأساسي تماماً، اجعل سعره 0</p>
     </div>
     <!-- Also With -->
     <div>
@@ -858,54 +867,88 @@ function updateDiscountPreview() {
 }
 
 // ── OPTIONS UI ────────────────────────────────────────────────────────
+// ── PRODUCT OPTIONS (groups: size/measure/count/custom/addons) ─────────
+const GROUP_TYPE_LABELS = { size: '📏 حجم', measure: '📐 مقاس', count: '🔢 عدد', addons: '➕ إضافات', custom: '⚙️ مخصصة' }
+const FIXED_SINGLE_TYPES = ['size', 'measure', 'count'] // اختيار واحد فقط، ثابت لا يتغير
+
+function toggleAddGroupMenu() {
+  document.getElementById('add-group-menu').classList.toggle('hidden')
+}
+document.addEventListener('click', (e) => {
+  const menu = document.getElementById('add-group-menu')
+  if (menu && !menu.classList.contains('hidden') && !e.target.closest('.relative')) menu.classList.add('hidden')
+})
+
 function renderOptionsUI(groups) {
   const list = document.getElementById('pm-options-list'); list.innerHTML = ''
-  groups.forEach((g, gi) => {
-    const div = document.createElement('div')
-    div.className = 'border border-gray-200 rounded-2xl p-3 space-y-2 bg-gray-50'
-    div.innerHTML = `<div class="flex items-center gap-2">
-        <input type="text" placeholder="اسم المجموعة" value="${g.name || ''}" class="opt-group-name flex-1 border border-gray-200 rounded-xl px-3 py-2 text-sm focus:outline-none focus:ring-2 focus:ring-orange-400 bg-white" />
-        <label class="flex items-center gap-1 text-xs font-bold text-gray-500 whitespace-nowrap cursor-pointer"><input type="checkbox" ${g.required ? 'checked' : ''} class="opt-required accent-orange-500" /> مطلوب</label>
-        <button onclick="this.closest('.border').remove()" class="text-red-400 font-bold text-xl leading-none">×</button>
-      </div>
-      <div class="opt-items space-y-1.5">${(g.options||[]).map(o => optRowHTML(o)).join('')}</div>
-      <button onclick="this.closest('.border').querySelector('.opt-items').insertAdjacentHTML('beforeend', '${optRowHTML({name:'',price:0}).replace(/'/g,"\\'")}') " class="text-xs text-orange-500 font-bold hover:underline">+ خيار جديد</button>`
-    list.appendChild(div)
-  })
+  groups.forEach(g => list.appendChild(buildGroupEl(normalizeLegacyGroup(g))))
+}
+// توافق مع منتجات قديمة كانت محفوظة ببنية {name, required, options} بدون type/selection
+function normalizeLegacyGroup(g) {
+  if (g.type) return g
+  return { type: 'custom', name: g.name, selection: g.required ? 'single' : 'multiple', options: g.options || [] }
+}
+function addOptionGroup(type) {
+  document.getElementById('add-group-menu').classList.add('hidden')
+  const selection = type === 'addons' ? 'multiple' : (type === 'custom' ? 'single' : 'single')
+  const el = buildGroupEl({ type, name: type === 'addons' ? 'إضافات' : '', selection, options: [{ name: '', price: 0 }] })
+  document.getElementById('pm-options-list').appendChild(el)
+}
+function buildGroupEl(g) {
+  const isFixed = FIXED_SINGLE_TYPES.includes(g.type)
+  const div = document.createElement('div')
+  div.className = 'border border-gray-200 rounded-2xl p-3 space-y-2 bg-gray-50'
+  div.dataset.groupType = g.type || 'custom'
+  div.innerHTML = `
+    <div class="flex items-center gap-2">
+      <span class="text-xs font-bold text-gray-400 bg-white border border-gray-200 rounded-lg px-2 py-1.5 whitespace-nowrap">${GROUP_TYPE_LABELS[g.type] || GROUP_TYPE_LABELS.custom}</span>
+      ${isFixed
+        ? `<input type="text" value="${GROUP_TYPE_LABELS[g.type].replace(/^\S+\s/, '')}" class="opt-group-name flex-1 border border-gray-200 rounded-xl px-3 py-2 text-sm bg-gray-100 text-gray-400" readonly />`
+        : `<input type="text" placeholder="اسم المجموعة" value="${g.name || ''}" class="opt-group-name flex-1 border border-gray-200 rounded-xl px-3 py-2 text-sm focus:outline-none focus:ring-2 focus:ring-orange-400 bg-white" />`
+      }
+      <button onclick="this.closest('.border').remove()" class="text-red-400 font-bold text-xl leading-none">×</button>
+    </div>
+    ${g.type === 'custom' ? `
+      <label class="flex items-center gap-3 text-xs font-bold text-gray-500">
+        <span>نوع الاختيار:</span>
+        <label class="flex items-center gap-1 cursor-pointer"><input type="radio" name="sel-${Date.now()}-${Math.random()}" class="opt-selection-radio" value="single" ${g.selection !== 'multiple' ? 'checked' : ''} /> واحد فقط</label>
+        <label class="flex items-center gap-1 cursor-pointer"><input type="radio" name="sel-${Date.now()}-${Math.random()}" class="opt-selection-radio" value="multiple" ${g.selection === 'multiple' ? 'checked' : ''} /> متعدد</label>
+      </label>` : ''}
+    <div class="opt-items space-y-1.5">${(g.options || []).map(o => optRowHTML(o)).join('')}</div>
+    <button type="button" onclick="this.closest('.border').querySelector('.opt-items').insertAdjacentHTML('beforeend', addOptRowStr())" class="text-xs text-orange-500 font-bold hover:underline">+ خيار جديد</button>
+  `
+  // ربط راديو "نوع الاختيار" للمجموعات المخصصة ببعضها (نفس الاسم العشوائي أعلاه يضمن استقلالها عن باقي المجموعات)
+  if (g.type === 'custom') {
+    const radios = div.querySelectorAll('.opt-selection-radio')
+    const sharedName = 'sel-' + Math.random().toString(36).slice(2)
+    radios.forEach(r => r.name = sharedName)
+  }
+  return div
 }
 function optRowHTML(o) {
   return `<div class="flex gap-2 items-center opt-row">
     <input type="text"   placeholder="الاسم"  value="${o.name||''}"               class="opt-item-name  flex-1 border border-gray-200 rounded-xl px-3 py-2 text-sm focus:outline-none focus:ring-2 focus:ring-orange-400 bg-white" />
-    <input type="number" placeholder="السعر" value="${o.price!=null?o.price:''}" min="0" step="0.5" class="opt-item-price w-24 border border-gray-200 rounded-xl px-3 py-2 text-sm focus:outline-none focus:ring-2 focus:ring-orange-400 bg-white" />
+    <input type="number" placeholder="السعر (0 لو يطابق المنتج الأساسي)" value="${o.price!=null?o.price:''}" step="0.5" class="opt-item-price w-24 border border-gray-200 rounded-xl px-3 py-2 text-sm focus:outline-none focus:ring-2 focus:ring-orange-400 bg-white" />
     <button onclick="this.closest('.opt-row').remove()" class="text-red-400 font-bold text-xl leading-none">×</button>
   </div>`
-}
-function addOptionGroup() {
-  const list = document.getElementById('pm-options-list')
-  const div  = document.createElement('div')
-  div.className = 'border border-gray-200 rounded-2xl p-3 space-y-2 bg-gray-50'
-  div.innerHTML = `<div class="flex items-center gap-2">
-      <input type="text" placeholder="اسم المجموعة" class="opt-group-name flex-1 border border-gray-200 rounded-xl px-3 py-2 text-sm focus:outline-none focus:ring-2 focus:ring-orange-400 bg-white" />
-      <label class="flex items-center gap-1 text-xs font-bold text-gray-500 whitespace-nowrap cursor-pointer"><input type="checkbox" checked class="opt-required accent-orange-500" /> مطلوب</label>
-      <button onclick="this.closest('.border').remove()" class="text-red-400 font-bold text-xl leading-none">×</button>
-    </div>
-    <div class="opt-items space-y-1.5">${optRowHTML({name:'',price:0})}</div>
-    <button onclick="this.closest('.border').querySelector('.opt-items').insertAdjacentHTML('beforeend', addOptRowStr())" class="text-xs text-orange-500 font-bold hover:underline">+ خيار جديد</button>`
-  list.appendChild(div)
 }
 function addOptRowStr() { return optRowHTML({name:'',price:0}) }
 function getOptionsData() {
   const groups = []
   document.querySelectorAll('#pm-options-list > div').forEach(div => {
-    const name     = div.querySelector('.opt-group-name')?.value?.trim()
-    const required = div.querySelector('.opt-required')?.checked || false
+    const type     = div.dataset.groupType || 'custom'
+    const isFixed  = FIXED_SINGLE_TYPES.includes(type)
+    const name     = isFixed ? GROUP_TYPE_LABELS[type].replace(/^\S+\s/, '') : (div.querySelector('.opt-group-name')?.value?.trim() || '')
+    const selection = type === 'addons' ? 'multiple'
+                    : isFixed ? 'single'
+                    : (div.querySelector('.opt-selection-radio:checked')?.value || 'single')
     const options  = []
     div.querySelectorAll('.opt-row').forEach(row => {
       const n  = row.querySelector('.opt-item-name')?.value?.trim()
       const pr = parseFloat(row.querySelector('.opt-item-price')?.value) || 0
       if (n) options.push({ name: n, price: pr })
     })
-    if (name) groups.push({ name, required, options })
+    if (name && options.length) groups.push({ type, name, selection, options })
   })
   return groups
 }

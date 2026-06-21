@@ -1207,14 +1207,14 @@ function openModal(pid) {
     <div class="opt-group">
       <div class="opt-group-header">
         <span class="opt-group-name">${g.name}</span>
-        <span class="${g.required ? 'opt-required' : 'opt-optional'}">${g.required ? 'مطلوب' : 'اختياري'}</span>
+        <span class="${g.selection === 'multiple' ? 'opt-optional' : 'opt-required'}">${g.selection === 'multiple' ? 'اختياري - أكثر من واحد' : 'اختر واحد (اختياري)'}</span>
       </div>
       <div class="chips-wrap">
         ${g.options.map((o, oi) => `
           <button class="chip-btn" id="chip-${gi}-${oi}"
-            onclick="${g.required ? `selectChip(${gi},${oi})` : `toggleChip(${gi},${oi})`}">
+            onclick="${g.selection === 'multiple' ? `toggleChip(${gi},${oi})` : `selectChip(${gi},${oi})`}">
             <span>${o.name}</span>
-            ${o.price > 0 ? `<span class="chip-extra">+${fmt(o.price)}</span>` : ''}
+            ${o.price > 0 ? `<span class="chip-extra">+${fmt(o.price)}</span>` : o.price < 0 ? `<span class="chip-extra">${fmt(o.price)}</span>` : ''}
           </button>`).join('')}
       </div>
     </div>`).join('')
@@ -1273,14 +1273,13 @@ function openModal(pid) {
   modal.scrollTop = 0
   modal.classList.remove('hidden')
   document.body.style.overflow = 'hidden'
-
-  // Auto-select first required option
-  opts.forEach((g, gi) => { if (g.required && g.options.length) selectChip(gi, 0) })
 }
 
 function selectChip(gi, oi) {
+  const btn = document.getElementById(`chip-${gi}-${oi}`)
+  const wasSelected = btn?.classList.contains('selected')
   document.querySelectorAll(`[id^="chip-${gi}-"]`).forEach(b => b.classList.remove('selected'))
-  document.getElementById(`chip-${gi}-${oi}`)?.classList.add('selected')
+  if (!wasSelected) btn?.classList.add('selected') // toggle: لو كان محدد، يتشال التحديد بدل ما يتحدد تاني
   recalcModalTotal()
 }
 function toggleChip(gi, oi) {
@@ -1337,30 +1336,26 @@ function addFromModal(pid) {
   const p     = S.products.find(x => x.id === pid); if (!p) return
   const opts  = p.product_options || []
 
-  // Validate required options
-  for (let gi = 0; gi < opts.length; gi++) {
-    if (opts[gi].required && !document.querySelector(`[id^="chip-${gi}-"].selected`)) {
-      showToast(`اختر ${opts[gi].name} أولاً ⚠️`); return
-    }
-  }
-
   let optsExtra = 0
-  const selectedOpts = []
+  const selectedOptIds = [] // معرف فريد لكل خيار محدد (gi-oi)، يستخدم للمطابقة الدقيقة في السلة
+  const selectedOptNames = []
   opts.forEach((g, gi) => {
-    const sel = document.querySelector(`[id^="chip-${gi}-"].selected`)
-    if (sel) {
+    document.querySelectorAll(`[id^="chip-${gi}-"].selected`).forEach(sel => {
       const oi  = parseInt(sel.id.split('-')[2])
       const opt = g.options[oi]
-      if (opt) { optsExtra += opt.price || 0; selectedOpts.push(opt.name) }
-    }
+      if (opt) { optsExtra += opt.price || 0; selectedOptNames.push(opt.name); selectedOptIds.push(`${gi}-${oi}`) }
+    })
   })
 
-  const finalPrice = base + optsExtra
-  const unit = p.unit || 'قطعة'
-  const ci   = S.cart.find(c => c.id === pid && c.type === 'product' && !c._also)
-  const item = { id: pid, type: 'product', name: p.name, price: finalPrice, image_url: p.image_url, qty, unit, options: selectedOpts.join('، ') || null }
+  const finalPrice  = base + optsExtra
+  const unit        = p.unit || 'قطعة'
+  const optionsKey  = selectedOptIds.sort().join(',') // توقيع فريد للتركيبة المختارة (مرتب لتجاهل ترتيب الضغط)
+  // المطابقة في السلة تتم على (نفس المنتج + نفس تركيبة الخيارات بالضبط)، لا على المنتج فقط
+  // هذا يمنع استبدال أي تركيبة سابقة مختلفة (مثل "بيتزا كبيرة" تستبدل "بيتزا صغيرة" بالخطأ)
+  const ci   = S.cart.find(c => c.id === pid && c.type === 'product' && !c._also && (c._optionsKey || '') === optionsKey)
+  const item = { id: pid, type: 'product', name: p.name, price: finalPrice, image_url: p.image_url, qty, unit, options: selectedOptNames.join('، ') || null, _optionsKey: optionsKey }
 
-  if (ci) Object.assign(ci, item); else S.cart.push(item)
+  if (ci) { ci.qty += qty } else S.cart.push(item) // لو نفس التركيبة موجودة، نزود الكمية بدل الاستبدال؛ غير ذلك سطر جديد مستقل
 
   // Commit "also" items
   S.cart.forEach(c => { if (c._also) delete c._also })
