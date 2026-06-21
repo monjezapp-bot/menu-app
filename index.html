@@ -56,15 +56,20 @@
     /* ══════════════════════════════════════════
        HERO (sticky + shrink on scroll)
     ══════════════════════════════════════════ */
-    .hero-wrap { position: relative; z-index: 25; }
+    .hero-wrap {
+      position: relative; z-index: 25;
+      overflow: hidden; /* يقطع الهيدر بصرياً وهو بيخرج لفوق، بدل ما يفضل ظاهر تحت باقي المحتوى */
+      max-height: 230px;
+      transition: max-height 0.28s cubic-bezier(0.4, 0, 0.2, 1);
+    }
 
     .hero {
       background: linear-gradient(135deg, var(--brand2) 0%, var(--brand) 100%);
-      padding: 36px 20px 64px;
+      padding: 30px 20px 40px;
       position: relative;
-      overflow: hidden;
-      transition: opacity 0.22s ease, max-height 0.22s ease, padding 0.22s ease;
-      max-height: 260px;
+      transition: transform 0.28s cubic-bezier(0.4, 0, 0.2, 1);
+      transform: translateY(0);
+      will-change: transform;
     }
     .hero::before {
       content: ''; position: absolute; inset: 0;
@@ -72,14 +77,9 @@
       pointer-events: none;
     }
 
-    /* Shrunk state — الهيدر كله (غلاف + اسم) يختفي كقطعة واحدة متماسكة */
-    .hero-wrap.shrunk .hero {
-      opacity: 0;
-      max-height: 0;
-      padding-top: 0; padding-bottom: 0;
-      overflow: hidden;
-      pointer-events: none;
-    }
+    /* Shrunk state — الهيدر كله (غلاف + اسم) يخرج لفوق الشاشة بالكامل كقطعة واحدة متماسكة */
+    .hero-wrap.shrunk { max-height: 0; }
+    .hero-wrap.shrunk .hero { transform: translateY(-100%); }
 
     .hero-full-content {
       display: flex; position: relative; z-index: 1; align-items: center; gap: 14px;
