@@ -619,11 +619,14 @@
         <!-- Delivery info -->
         <div style="background:#f9f9f9;border-radius:16px;padding:12px 14px;margin-bottom:10px">
           <p style="font-size:12px;font-weight:800;color:#888;margin-bottom:8px">بيانات التوصيل <span style="color:#bbb;font-weight:600">(مطلوبة لو الطلب توصيل)</span></p>
-          <input id="order-name"    type="text" placeholder="اسمك (اختياري)"
+          <input id="order-name"    type="text" placeholder="اسمك (اختياري)" enterkeyhint="next"
+                 onkeydown="focusNextField(event, 'order-phone')"
                  style="width:100%;border:1.5px solid #eee;border-radius:12px;padding:10px 12px;font-size:13px;color:#444;outline:none;font-family:'Rubik',sans-serif;margin-bottom:7px;background:#fff" />
-          <input id="order-phone"   type="tel"  placeholder="رقم التواصل"
+          <input id="order-phone"   type="tel"  placeholder="رقم التواصل" enterkeyhint="next"
+                 onkeydown="focusNextField(event, 'order-address')"
                  style="width:100%;border:1.5px solid #eee;border-radius:12px;padding:10px 12px;font-size:13px;color:#444;outline:none;font-family:'Rubik',sans-serif;margin-bottom:7px;background:#fff" />
-          <input id="order-address" type="text" placeholder="العنوان"
+          <input id="order-address" type="text" placeholder="العنوان" enterkeyhint="next"
+                 onkeydown="focusNextField(event, 'order-note')"
                  style="width:100%;border:1.5px solid #eee;border-radius:12px;padding:10px 12px;font-size:13px;color:#444;outline:none;font-family:'Rubik',sans-serif;margin-bottom:7px;background:#fff" />
           <!-- Hidden location value + map picker button -->
           <input type="hidden" id="order-location" />
@@ -635,7 +638,8 @@
         </div>
 
         <!-- Note -->
-        <textarea id="order-note" rows="2" placeholder="ملاحظة على الطلب (اختياري)"
+        <textarea id="order-note" rows="2" placeholder="ملاحظة على الطلب (اختياري)" enterkeyhint="send"
+                  onkeydown="focusNextField(event, null, sendOrder)"
                   style="width:100%;border:1.5px solid #eee;border-radius:14px;padding:12px 14px;font-size:13px;color:#444;outline:none;font-family:'Rubik',sans-serif;resize:none;margin-bottom:10px"></textarea>
 
         <!-- Total -->
@@ -746,6 +750,27 @@ function loadCart() {
   } catch(e) { S.cart = [] }
 }
 function clearCart() { S.cart = []; try { localStorage.removeItem(cartKey()) } catch(e) {} }
+
+// ── MODAL HISTORY (زر الرجوع الفعلي يغلق آخر طبقة مفتوحة فقط) ──────────
+// كل مودال/طبقة فرعية مفتوحة = خطوة واحدة في تاريخ المتصفح.
+// الضغط على زر الرجوع الفعلي يُغلق آخر طبقة فقط (طبقة بطبقة)، لا كل الطبقات دفعة واحدة.
+const _modalStack = []
+function pushModal(name, closeFn) {
+  _modalStack.push({ name, closeFn })
+  history.pushState({ _modalName: name }, '')
+}
+function popModalSilently(name) {
+  // يُستخدم عند إغلاق المودال بزر "إغلاق" العادي (مش زر الرجوع)
+  // فنحتاج نرجع خطوة في history بدون ما نشغّل closeFn تاني (history.back سيشغّل popstate)
+  const idx = _modalStack.findIndex(m => m.name === name)
+  if (idx === -1) return
+  _modalStack.splice(idx, 1)
+  if (history.state && history.state._modalName === name) history.back()
+}
+window.addEventListener('popstate', () => {
+  const top = _modalStack.pop()
+  if (top) top.closeFn(true) // true = استُدعيت من popstate، لا تستدعي history.back() مرة أخرى
+})
 
 // ── BOOT ──────────────────────────────────────────────────────────────
 let _lastSlug = null
@@ -986,12 +1011,14 @@ function hideSuggestions() {
 function openSearchOverlay() {
   document.getElementById('search-overlay').classList.remove('hidden')
   setTimeout(() => document.getElementById('search-overlay-input').focus(), 100)
+  pushModal('search', closeSearchOverlay)
 }
 function closeSearchOverlay(e) {
-  if (e && e.target !== document.getElementById('search-overlay')) return
+  if (e && e.target && e.target !== document.getElementById('search-overlay')) return
   document.getElementById('search-overlay').classList.add('hidden')
   document.getElementById('search-overlay-input').value = ''
   document.getElementById('overlay-suggestions').classList.add('hidden')
+  if (e !== true) popModalSilently('search') // e === true يعني تم الاستدعاء من popstate
 }
 function handleOverlaySearch() {
   const q = document.getElementById('search-overlay-input').value.trim()
@@ -1273,6 +1300,7 @@ function openModal(pid) {
   modal.scrollTop = 0
   modal.classList.remove('hidden')
   document.body.style.overflow = 'hidden'
+  pushModal('product', closeModal)
 }
 
 function selectChip(gi, oi) {
@@ -1362,10 +1390,11 @@ function addFromModal(pid) {
 
   saveCart(); closeModal(); updateCartUI(); renderAllSections()
 }
-function closeModal() {
+function closeModal(fromPopstate) {
   document.getElementById('product-modal').classList.add('hidden')
   document.body.style.overflow = ''
   S.cart = S.cart.filter(c => !c._also)
+  if (!fromPopstate) popModalSilently('product')
 }
 
 // ── BUNDLE MODAL ──────────────────────────────────────────────────────
@@ -1406,10 +1435,12 @@ function openBundleModal(bid) {
 
   document.getElementById('bundle-modal').classList.remove('hidden')
   document.body.style.overflow = 'hidden'
+  pushModal('bundle', closeBundleModal)
 }
-function closeBundleModal() {
+function closeBundleModal(fromPopstate) {
   document.getElementById('bundle-modal').classList.add('hidden')
   document.body.style.overflow = ''
+  if (!fromPopstate) popModalSilently('bundle')
 }
 
 // ── CART ──────────────────────────────────────────────────────────────
@@ -1461,8 +1492,8 @@ function updateCartUI() {
     bar.classList.add('hidden'); closeCartSheet()
   }
 }
-function openCartSheet()  { renderCartItems(); document.getElementById('cart-sheet').classList.remove('hidden'); document.body.style.overflow = 'hidden' }
-function closeCartSheet() { document.getElementById('cart-sheet').classList.add('hidden'); document.body.style.overflow = '' }
+function openCartSheet()  { renderCartItems(); document.getElementById('cart-sheet').classList.remove('hidden'); document.body.style.overflow = 'hidden'; pushModal('cart', closeCartSheet) }
+function closeCartSheet(fromPopstate) { document.getElementById('cart-sheet').classList.add('hidden'); document.body.style.overflow = ''; if (!fromPopstate) popModalSilently('cart') }
 function renderCartItems() {
   const el  = document.getElementById('cart-items-list')
   const tot = document.getElementById('cart-grand-total')
@@ -1520,6 +1551,23 @@ function markFieldError(id) {
 }
 function clearFieldErrors() {
   ;['order-phone', 'order-address'].forEach(id => { const el = document.getElementById(id); if (el) el.style.borderColor = '#eee' })
+}
+
+// تفاعل لوحة المفاتيح: الضغط على "تم/Next" ينقل التركيز للحقل التالي،
+// أو ينفّذ فعل الفورم الرئيسي (مثل sendOrder) لو كان هذا آخر حقل
+function focusNextField(event, nextFieldId, submitFn) {
+  const isEnterKey = event.key === 'Enter'
+  if (!isEnterKey) return
+  // في textarea، Enter العادي بيعمل سطر جديد — نمنع ذلك فقط لو هذا آخر حقل بالفورم (عنده submitFn)
+  if (event.target.tagName === 'TEXTAREA' && !submitFn) return
+  event.preventDefault()
+  if (nextFieldId) {
+    const next = document.getElementById(nextFieldId)
+    if (next) next.focus()
+  } else if (submitFn) {
+    event.target.blur() // يقفل لوحة المفاتيح قبل التنفيذ
+    submitFn()
+  }
 }
 
 // ── SEND ORDER ────────────────────────────────────────────────────────
@@ -1620,6 +1668,7 @@ function showOrderSuccess(orderNumber) {
   setSuccessModalVisual('pending')
   document.getElementById('order-success-modal').classList.remove('hidden')
   document.body.style.overflow = 'hidden'
+  pushModal('success', closeSuccessModal)
 }
 function updateSuccessModalState(state, cancelReason) {
   // لو المستخدم قفل المودال بالفعل، نفتحه تاني عشان يشوف نتيجة طلبه أكيد
@@ -1656,9 +1705,10 @@ function setSuccessModalVisual(state, cancelReason) {
     }
   }
 }
-function closeSuccessModal() {
+function closeSuccessModal(fromPopstate) {
   document.getElementById('order-success-modal').classList.add('hidden')
   document.body.style.overflow = ''
+  if (!fromPopstate) popModalSilently('success')
 }
 
 // ── MAP PICKER ────────────────────────────────────────────────────────
@@ -1667,6 +1717,7 @@ let _map = null, _marker = null, _pickedLat = null, _pickedLng = null
 function openMapPicker() {
   document.getElementById('map-modal').classList.remove('hidden')
   document.body.style.overflow = 'hidden'
+  pushModal('map', closeMapPicker)
 
   if (!_map) {
     const defaultLat = 30.0444, defaultLng = 31.2357
@@ -1691,9 +1742,10 @@ function openMapPicker() {
 
   setTimeout(() => _map.invalidateSize(), 150)
 }
-function closeMapPicker() {
+function closeMapPicker(fromPopstate) {
   document.getElementById('map-modal').classList.add('hidden')
   document.body.style.overflow = ''
+  if (!fromPopstate) popModalSilently('map')
 }
 function updateCoordsLabel() {
   if (_pickedLat === null) return
