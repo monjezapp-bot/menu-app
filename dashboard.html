@@ -472,6 +472,7 @@
       <div class="w-11 h-11 bg-white/20 rounded-2xl flex items-center justify-center text-2xl">🔔</div>
       <div><p class="text-white font-extrabold text-base">طلب جديد!</p><p id="nop-order-num" class="text-orange-100 text-xs font-bold"></p></div>
     </div>
+    <p id="nop-queue-counter" class="hidden bg-yellow-50 text-yellow-700 text-xs font-extrabold text-center py-2 border-b border-yellow-100"></p>
     <div class="px-5 py-4">
       <div id="nop-items" class="space-y-1.5 mb-3 max-h-48 overflow-y-auto"></div>
       <div class="flex justify-between items-center border-t border-gray-100 pt-3 mb-1">
@@ -533,7 +534,6 @@ let settingsSnapshot = null
 let productSnapshot  = null
 let annSaveTimeout   = null
 let _realtimeChannel = null
-let _pendingOrder    = null
 let _audioCtx        = null
 let _alsoWith        = []
 let activeProductFilter = 'all'
@@ -1274,15 +1274,31 @@ function startRealtimeOrders() {
     .on('postgres_changes', { event:'UPDATE', schema:'public', table:'orders', filter:`restaurant_id=eq.${state.restaurant.id}` }, p => handleOrderUpdatedElsewhere(p.new))
     .subscribe()
 }
-function handleIncomingOrder(order) { _pendingOrder = order; startAlarmLoop(); showNewOrderPopup(order); updateOrdersBadge([...state.orders, order]) }
+// طابور الطلبات الجديدة المعلّقة — كل طلب جديد يُضاف للطابور، ولا يُفقد أي طلب
+// لو وصلت طلبات متعددة في نفس اللحظة. الـ popup يعرض طلب واحد بالترتيب، وينتقل للتالي تلقائياً.
+let _pendingOrdersQueue = []
+
+function handleIncomingOrder(order) {
+  _pendingOrdersQueue.push(order)
+  startAlarmLoop()
+  updateOrdersBadge([...state.orders, order])
+  if (_pendingOrdersQueue.length === 1) {
+    showNewOrderPopup(order) // مفيش طلب معروض حالياً، نعرض هذا فوراً
+  } else {
+    updateQueueCounter() // فيه طلب معروض بالفعل، نضيف الجديد للطابور بصمت ونحدّث العداد فقط
+  }
+}
 // لو التاجر له أكتر من تبويب/جهاز مفتوح، وتم قبول/رفض الطلب من تبويب آخر،
 // نوقف الصوت والبطاقة المنبثقة في هذا التبويب تلقائياً (التزامن بين كل النسخ المفتوحة)
 function handleOrderUpdatedElsewhere(order) {
-  if (_pendingOrder && _pendingOrder.id === order.id && order.status !== 'pending') {
-    stopAlarmLoop()
-    dismissNewOrderPopup()
-    loadOrders()
-  }
+  const idx = _pendingOrdersQueue.findIndex(o => o.id === order.id)
+  if (idx === -1) return
+  if (order.status === 'pending') return // تحديث غير متعلق بالقبول/الرفض
+  const wasCurrentlyShown = idx === 0
+  _pendingOrdersQueue.splice(idx, 1)
+  if (wasCurrentlyShown) advanceToNextPendingOrder()
+  else updateQueueCounter()
+  loadOrders()
 }
 function showNewOrderPopup(order) {
   document.getElementById('nop-order-num').textContent = order.order_number
@@ -1295,21 +1311,42 @@ function showNewOrderPopup(order) {
   if (order.customer_address) meta.push(`🏠 ${order.customer_address}`)
   document.getElementById('nop-meta').innerHTML = meta.map(m => `<p>${m}</p>`).join('')
   document.getElementById('new-order-popup').classList.remove('hidden')
+  updateQueueCounter()
+}
+// يحدّث شارة "+X طلبات أخرى في الانتظار" فوق البطاقة المنبثقة
+function updateQueueCounter() {
+  const remaining = _pendingOrdersQueue.length - 1 // الطلب الحالي المعروض لا يُحسب كـ"متبقي"
+  const el = document.getElementById('nop-queue-counter')
+  if (!el) return
+  if (remaining > 0) { el.textContent = `+${remaining} طلب آخر في الانتظار`; el.classList.remove('hidden') }
+  else el.classList.add('hidden')
+}
+// بعد قبول/رفض الطلب المعروض، ينقل للطلب التالي في الطابور تلقائياً (أو يقفل لو الطابور فاضي)
+function advanceToNextPendingOrder() {
+  if (_pendingOrdersQueue.length > 0) {
+    showNewOrderPopup(_pendingOrdersQueue[0]) // يعرض أقدم طلب متبقي في الطابور
+  } else {
+    document.getElementById('new-order-popup').classList.add('hidden')
+    stopAlarmLoop()
+  }
 }
 async function confirmNewOrder() {
-  if (!_pendingOrder) return
-  stopAlarmLoop()
-  const id = _pendingOrder.id
+  if (!_pendingOrdersQueue.length) return
+  const id = _pendingOrdersQueue[0].id
   await db.from('orders').update({ status:'confirmed' }).eq('id', id)
   showToast('✅ تم قبول الطلب')
-  dismissNewOrderPopup()
+  _pendingOrdersQueue.shift()
+  advanceToNextPendingOrder()
   loadOrders()
 }
 function rejectNewOrder() {
-  if (!_pendingOrder) return
+  if (!_pendingOrdersQueue.length) return
   openRejectReasonModal()
 }
-function dismissNewOrderPopup() { document.getElementById('new-order-popup').classList.add('hidden'); _pendingOrder = null }
+function dismissNewOrderPopup() {
+  // ملاحظة: لا يُستخدم هذا لإغلاق popup الطلب الإجباري بدون قرار — فقط كجزء من تدفق التأكيد/الرفض
+  document.getElementById('new-order-popup').classList.add('hidden')
+}
 
 // ── REJECT REASON ────────────────────────────────────────────────────
 const REJECT_REASONS = ['غير متوفر حالياً', 'المطعم مغلق الآن', 'تأخير كبير في التحضير']
@@ -1330,13 +1367,13 @@ function submitRejectCustomReason() {
   submitRejectReason(txt)
 }
 async function submitRejectReason(reason) {
-  if (!_pendingOrder) return
-  stopAlarmLoop()
-  const id = _pendingOrder.id
+  if (!_pendingOrdersQueue.length) return
+  const id = _pendingOrdersQueue[0].id
   await db.from('orders').update({ status:'cancelled', cancel_reason: reason }).eq('id', id)
   showToast('❌ تم رفض الطلب')
   closeRejectReasonModal()
-  dismissNewOrderPopup()
+  _pendingOrdersQueue.shift()
+  advanceToNextPendingOrder()
   loadOrders()
 }
 
