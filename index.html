@@ -708,15 +708,7 @@
     <h2 id="success-title" style="font-size:22px;font-weight:900;color:#1a1a1a;margin-bottom:6px">تم استلام طلبك!</h2>
     <p id="success-order-num" style="font-size:15px;font-weight:700;color:#FF6B00;margin-bottom:6px"></p>
     <p id="success-sub-msg"   style="font-size:13px;color:#aaa;margin-bottom:8px">🔔 في انتظار تأكيد المطعم...</p>
-    <div id="success-tracking-steps" class="hidden" style="align-items:flex-start;margin:18px 0 8px"></div>
     <p id="success-cancel-reason" class="hidden" style="font-size:13px;color:#ef4444;background:#fef2f2;border-radius:12px;padding:10px 14px;margin-bottom:16px;font-weight:700"></p>
-    <div id="success-delay-warning" class="hidden" style="font-size:12px;color:#92660a;background:#fff8e1;border-radius:12px;padding:10px 14px;margin-bottom:16px;text-align:right">
-      ⏱️ المطعم بياخد وقت أطول من المعتاد للرد، طلبك لسه محفوظ وموجود — جرّب تتواصل مع المطعم مباشرة لو حابب تستفسر.
-    </div>
-    <button id="confirm-receipt-btn" onclick="confirmOrderReceipt()" class="hidden"
-            style="width:100%;background:#22c55e;color:#fff;font-size:14px;font-weight:900;border-radius:16px;padding:13px;margin-bottom:8px">
-      ✅ تم استلام طلبي
-    </button>
     <button onclick="closeSuccessModal()"
             style="width:100%;background:var(--brand);color:#fff;font-size:15px;font-weight:900;border-radius:16px;padding:14px;margin-top:8px">
       تمام 👍
@@ -830,7 +822,7 @@ async function loadData(slug) {
   const [catRes, prodRes, bundleRes, bannerRes] = await Promise.all([
     db.from('categories').select('id,name,sort_order,icon_url').eq('restaurant_id', r.id).order('sort_order'),
     db.from('products')
-      .select('id,category_id,name,description,price,discount_price,offer_badge,discount_active,discount_starts_at,discount_ends_at,image_url,sort_order,is_available,status,availability,unit,product_options,also_with,prep_minutes')
+      .select('id,category_id,name,description,price,discount_price,offer_badge,discount_active,discount_starts_at,discount_ends_at,image_url,sort_order,is_available,status,availability,unit,product_options,also_with')
       .eq('restaurant_id', r.id).neq('status', 'hidden').order('sort_order'),
     db.from('bundles').select('id,name,description,price,image_url,items,sort_order').eq('restaurant_id', r.id).eq('is_active', true).order('sort_order'),
     db.from('banners').select('id,image_url,link_type,link_value,sort_order').eq('restaurant_id', r.id).order('sort_order')
@@ -1615,16 +1607,6 @@ async function sendOrder() {
   }))
   const total = cartTotal()
 
-  // الوقت التقديري الكلي للطلب = أكبر وقت تجهيز بين كل المنتجات (تُجهَّز بالتوازي لا بالتتابع)
-  const estimatedPrepMinutes = Math.max(
-    10, // حد أدنى افتراضي لو مفيش بيانات وقت تجهيز
-    ...S.cart.map(c => {
-      if (c.type === 'bundle') return 10 // العروض المجمّعة: قيمة افتراضية (لا يوجد وقت تجهيز مخصص لها حالياً)
-      const product = S.products.find(p => p.id === c.id)
-      return product?.prep_minutes || 10
-    })
-  )
-
   // Save order to DB — the merchant receives it live in the dashboard (no WhatsApp)
   let orderId, orderNumber
   try {
@@ -1641,8 +1623,7 @@ async function sendOrder() {
         customer_phone:   custPhone || null,
         customer_address: custAddr  || null,
         customer_location:custLoc   || null,
-        note:             note      || null,
-        estimated_prep_minutes: estimatedPrepMinutes
+        note:             note      || null
       })
       .select('id,order_number').single()
 
@@ -1661,75 +1642,47 @@ async function sendOrder() {
   ;['order-name', 'order-phone', 'order-address', 'order-location', 'order-note', 'table-number-input']
     .forEach(id => { const el = document.getElementById(id); if (el) el.value = '' })
   resetBtn()
-  showOrderSuccess(orderNumber, orderId)
+  showOrderSuccess(orderNumber)
   trackOrderStatus(orderId)
 }
 
 // ── ORDER STATUS TRACKING (live) ────────────────────────────────────────
 let _orderTrackChannel = null
-let _orderDelayTimeout  = null
-const ORDER_DELAY_WARNING_SECONDS = 300 // 5 دقائق بدون استجابة من المطعم = تنبيه للعميل
-
 function trackOrderStatus(orderId) {
   if (_orderTrackChannel) { db.removeChannel(_orderTrackChannel); _orderTrackChannel = null }
   _orderTrackChannel = db
     .channel('order-status-' + orderId)
     .on('postgres_changes', { event: 'UPDATE', schema: 'public', table: 'orders', filter: `id=eq.${orderId}` }, p => handleOrderStatusChange(p.new))
     .subscribe()
-
-  clearTimeout(_orderDelayTimeout)
-  _orderDelayTimeout = setTimeout(() => showOrderDelayWarning(), ORDER_DELAY_WARNING_SECONDS * 1000)
-}
-// تنبيه العميل لو الطلب فضل بدون استجابة من المطعم لفترة غير طبيعية —
-// لا يعني هذا فقدان الطلب، فقط تنبيه بوجود تأخير مع تأكيد أن الطلب لم يُفقد
-function showOrderDelayWarning() {
-  const msgEl = document.getElementById('success-sub-msg')
-  if (!msgEl || msgEl.dataset.state !== 'pending') return // الطلب أُكِّد أو اترفض بالفعل، التحذير غير مطلوب
-  const warnEl = document.getElementById('success-delay-warning')
-  if (warnEl) warnEl.classList.remove('hidden')
 }
 function handleOrderStatusChange(order) {
-  if (['confirmed', 'ready', 'delivering', 'delivered', 'cancelled'].includes(order.status)) {
-    updateSuccessModalState(order.status, order.cancel_reason, order)
+  if (order.status === 'confirmed') {
+    updateSuccessModalState('confirmed')
+  } else if (order.status === 'cancelled') {
+    updateSuccessModalState('cancelled', order.cancel_reason)
   }
 }
 
-function showOrderSuccess(orderNumber, orderId) {
+function showOrderSuccess(orderNumber) {
   document.getElementById('success-order-num').textContent = `رقم الطلب: ${orderNumber}`
-  document.getElementById('order-success-modal').dataset.orderId = orderId
   setSuccessModalVisual('pending')
   document.getElementById('order-success-modal').classList.remove('hidden')
   document.body.style.overflow = 'hidden'
   pushModal('success', closeSuccessModal)
 }
-function updateSuccessModalState(state, cancelReason, order) {
+function updateSuccessModalState(state, cancelReason) {
   // لو المستخدم قفل المودال بالفعل، نفتحه تاني عشان يشوف نتيجة طلبه أكيد
   document.getElementById('order-success-modal').classList.remove('hidden')
   document.body.style.overflow = 'hidden'
-  setSuccessModalVisual(state, cancelReason, order)
-  // الاشتراك يستمر طوال مراحل التتبع، ويُلغى فقط عند الوصول لحالة نهائية (تم التسليم أو الرفض)
-  if ((state === 'delivered' || state === 'cancelled') && _orderTrackChannel) {
-    db.removeChannel(_orderTrackChannel); _orderTrackChannel = null
-  }
+  setSuccessModalVisual(state, cancelReason)
+  if (_orderTrackChannel) { db.removeChannel(_orderTrackChannel); _orderTrackChannel = null }
 }
-function setSuccessModalVisual(state, cancelReason, order) {
+function setSuccessModalVisual(state, cancelReason) {
   const iconEl  = document.querySelector('#order-success-modal .success-icon')
   const titleEl = document.getElementById('success-title')
   const msgEl   = document.getElementById('success-sub-msg')
   const reasonEl= document.getElementById('success-cancel-reason')
-  const stepsEl = document.getElementById('success-tracking-steps')
-  const delayEl = document.getElementById('success-delay-warning')
   reasonEl.classList.add('hidden')
-  stepsEl.classList.add('hidden')
-  msgEl.dataset.state = state
-  if (state !== 'pending') { delayEl.classList.add('hidden'); clearTimeout(_orderDelayTimeout) }
-
-  const TRACKING_STATES = ['confirmed', 'ready', 'delivering', 'delivered']
-  if (TRACKING_STATES.includes(state)) {
-    stepsEl.classList.remove('hidden')
-    stepsEl.style.display = 'flex'
-    renderTrackingSteps(state)
-  }
 
   if (state === 'pending') {
     iconEl.textContent = '⏳'
@@ -1737,30 +1690,10 @@ function setSuccessModalVisual(state, cancelReason, order) {
     msgEl.textContent = '🔔 في انتظار تأكيد المطعم...'
     msgEl.style.color = '#aaa'
   } else if (state === 'confirmed') {
-    iconEl.textContent = '👨‍🍳'
+    iconEl.textContent = '✅'
     titleEl.textContent = 'تم تأكيد طلبك!'
-    const prepMin = order?.estimated_prep_minutes
-    msgEl.textContent = prepMin ? `جاري التجهيز — تقريباً ${prepMin} دقيقة 🎉` : 'المطعم بيجهز طلبك دلوقتي 🎉'
+    msgEl.textContent = 'المطعم بيجهز طلبك دلوقتي 🎉'
     msgEl.style.color = '#22c55e'
-  } else if (state === 'ready') {
-    iconEl.textContent = '📦'
-    titleEl.textContent = 'طلبك جاهز!'
-    msgEl.textContent = 'في انتظار استلام مندوب التوصيل'
-    msgEl.style.color = '#a855f7'
-  } else if (state === 'delivering') {
-    iconEl.textContent = '🛵'
-    titleEl.textContent = 'الطلب في الطريق إليك!'
-    msgEl.textContent = 'المندوب في الطريق الآن'
-    msgEl.style.color = '#6366f1'
-    document.getElementById('confirm-receipt-btn').classList.remove('hidden')
-    startAutoConfirmTimer(order?.id)
-  } else if (state === 'delivered') {
-    iconEl.textContent = '🎉'
-    titleEl.textContent = 'تم التسليم!'
-    msgEl.textContent = 'بالعافية، نتمنى أن تكون استمتعت بطلبك'
-    msgEl.style.color = '#22c55e'
-    document.getElementById('confirm-receipt-btn').classList.add('hidden')
-    clearTimeout(_autoConfirmTimeout)
   } else if (state === 'cancelled') {
     iconEl.textContent = '❌'
     titleEl.textContent = 'تعذّر قبول الطلب'
@@ -1770,50 +1703,7 @@ function setSuccessModalVisual(state, cancelReason, order) {
       reasonEl.textContent = `السبب: ${cancelReason}`
       reasonEl.classList.remove('hidden')
     }
-  } else {
-    document.getElementById('confirm-receipt-btn').classList.add('hidden')
   }
-}
-// تأكيد استلام يدوي من العميل (زر "تم استلام طلبي")
-async function confirmOrderReceipt() {
-  const orderId = document.getElementById('order-success-modal').dataset.orderId
-  if (!orderId) return
-  await db.from('orders').update({ status: 'delivered', delivered_at: new Date().toISOString() }).eq('id', orderId)
-  document.getElementById('confirm-receipt-btn').classList.add('hidden')
-}
-// تأكيد استلام تلقائي لو العميل لم يضغط الزر بنفسه بعد مدة معقولة من بدء التوصيل
-let _autoConfirmTimeout = null
-const AUTO_CONFIRM_MINUTES_AFTER_DELIVERING = 30
-function startAutoConfirmTimer(orderId) {
-  clearTimeout(_autoConfirmTimeout)
-  if (!orderId) return
-  _autoConfirmTimeout = setTimeout(async () => {
-    await db.from('orders').update({ status: 'delivered', delivered_at: new Date().toISOString() }).eq('id', orderId)
-  }, AUTO_CONFIRM_MINUTES_AFTER_DELIVERING * 60 * 1000)
-}
-// يعرض شريط مراحل بصري (4 نقاط متصلة) يوضّح موقع الطلب الحالي ضمن رحلة التجهيز والتوصيل
-function renderTrackingSteps(currentState) {
-  const steps = [
-    { key: 'confirmed',  icon: '👨‍🍳', label: 'التجهيز' },
-    { key: 'ready',      icon: '📦',   label: 'جاهز' },
-    { key: 'delivering', icon: '🛵',   label: 'التوصيل' },
-    { key: 'delivered',  icon: '🎉',   label: 'التسليم' }
-  ]
-  const currentIdx = steps.findIndex(s => s.key === currentState)
-  const el = document.getElementById('success-tracking-steps')
-  el.innerHTML = steps.map((s, i) => {
-    const isDone   = i < currentIdx
-    const isActive = i === currentIdx
-    const color = isDone || isActive ? 'var(--brand)' : '#e5e5e5'
-    const textColor = isDone || isActive ? '#1a1a1a' : '#bbb'
-    return `
-      <div style="display:flex;flex-direction:column;align-items:center;flex:1">
-        <div style="width:32px;height:32px;border-radius:50%;background:${color};display:flex;align-items:center;justify-content:center;font-size:14px;${isActive ? 'box-shadow:0 0 0 4px ' + color + '33' : ''}">${isDone || isActive ? s.icon : ''}</div>
-        <p style="font-size:10px;font-weight:700;color:${textColor};margin-top:4px">${s.label}</p>
-      </div>
-      ${i < steps.length - 1 ? `<div style="flex:0.5;height:2px;background:${i < currentIdx ? 'var(--brand)' : '#e5e5e5'};margin-top:16px"></div>` : ''}
-    `
-  }).join('')
 }
 function closeSuccessModal(fromPopstate) {
   document.getElementById('order-success-modal').classList.add('hidden')
