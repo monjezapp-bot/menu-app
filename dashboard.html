@@ -54,8 +54,8 @@
       <p class="text-gray-400 text-sm mt-1">سجّل دخولك لإدارة مطعمك</p>
     </div>
     <div class="space-y-4">
-      <input id="login-email" type="email" placeholder="البريد الإلكتروني" enterkeyhint="next" onkeydown="focusNextField(event, 'login-pass')" class="w-full border border-gray-200 rounded-xl px-4 py-3 text-sm focus:outline-none focus:ring-2 focus:ring-orange-400" />
-      <input id="login-pass"  type="password" placeholder="كلمة المرور" enterkeyhint="done" onkeydown="focusNextField(event, null, doLogin)" class="w-full border border-gray-200 rounded-xl px-4 py-3 text-sm focus:outline-none focus:ring-2 focus:ring-orange-400" />
+      <input id="login-email" type="email" placeholder="البريد الإلكتروني" class="w-full border border-gray-200 rounded-xl px-4 py-3 text-sm focus:outline-none focus:ring-2 focus:ring-orange-400" />
+      <input id="login-pass"  type="password" placeholder="كلمة المرور"       class="w-full border border-gray-200 rounded-xl px-4 py-3 text-sm focus:outline-none focus:ring-2 focus:ring-orange-400" />
       <p id="login-error" class="text-red-500 text-xs text-center hidden"></p>
       <button onclick="doLogin()" class="w-full bg-orange-500 hover:bg-orange-600 text-white font-bold rounded-xl py-3 transition-colors flex items-center justify-center gap-2">
         <span id="login-btn-text">دخول</span>
@@ -232,23 +232,20 @@
     <h3 id="product-modal-title" class="text-lg font-extrabold text-gray-800">إضافة منتج</h3>
     <input type="hidden" id="pm-id" />
     <div><label class="text-xs font-bold text-gray-500 mb-1 block">اسم المنتج *</label>
-      <input id="pm-name" type="text" enterkeyhint="next" onkeydown="focusNextField(event, 'pm-desc')" class="w-full border border-gray-200 rounded-xl px-4 py-3 text-sm focus:outline-none focus:ring-2 focus:ring-orange-400" /></div>
+      <input id="pm-name" type="text" class="w-full border border-gray-200 rounded-xl px-4 py-3 text-sm focus:outline-none focus:ring-2 focus:ring-orange-400" /></div>
     <div><label class="text-xs font-bold text-gray-500 mb-1 block">الوصف</label>
-      <textarea id="pm-desc" rows="2" enterkeyhint="next" onkeydown="focusNextField(event, 'pm-price')" class="w-full border border-gray-200 rounded-xl px-4 py-3 text-sm focus:outline-none focus:ring-2 focus:ring-orange-400 resize-none"></textarea></div>
+      <textarea id="pm-desc" rows="2" class="w-full border border-gray-200 rounded-xl px-4 py-3 text-sm focus:outline-none focus:ring-2 focus:ring-orange-400 resize-none"></textarea></div>
     <div class="flex gap-3">
       <div class="flex-1"><label class="text-xs font-bold text-gray-500 mb-1 block">السعر الأصلي *</label>
-        <input id="pm-price" type="number" step="0.01" min="0" oninput="updateDiscountPreview()" enterkeyhint="next" onkeydown="focusNextField(event, 'pm-discount')" class="w-full border border-gray-200 rounded-xl px-4 py-3 text-sm focus:outline-none focus:ring-2 focus:ring-orange-400" /></div>
+        <input id="pm-price" type="number" step="0.01" min="0" oninput="updateDiscountPreview()" class="w-full border border-gray-200 rounded-xl px-4 py-3 text-sm focus:outline-none focus:ring-2 focus:ring-orange-400" /></div>
       <div class="flex-1"><label class="text-xs font-bold text-gray-500 mb-1 block">سعر الخصم</label>
-        <input id="pm-discount" type="number" step="0.01" min="0" oninput="updateDiscountPreview()" placeholder="اتركه فارغاً إن لا يوجد خصم" enterkeyhint="next" onkeydown="focusNextField(event, 'pm-prep-minutes')" class="w-full border border-gray-200 rounded-xl px-4 py-3 text-sm focus:outline-none focus:ring-2 focus:ring-orange-400" /></div>
+        <input id="pm-discount" type="number" step="0.01" min="0" oninput="updateDiscountPreview()" placeholder="اتركه فارغاً إن لا يوجد خصم" class="w-full border border-gray-200 rounded-xl px-4 py-3 text-sm focus:outline-none focus:ring-2 focus:ring-orange-400" /></div>
     </div>
     <div id="discount-preview" class="hidden bg-orange-50 rounded-xl px-4 py-2 text-sm flex items-center gap-2">
       <span class="text-gray-400 line-through" id="dp-original"></span>
       <span class="text-orange-500 font-extrabold" id="dp-discounted"></span>
       <span class="bg-orange-500 text-white text-xs font-bold px-2 py-0.5 rounded-full" id="dp-percent"></span>
     </div>
-    <div><label class="text-xs font-bold text-gray-500 mb-1 block">⏱️ وقت التجهيز التقديري (بالدقائق)</label>
-      <input id="pm-prep-minutes" type="number" step="1" min="1" placeholder="مثال: 10" enterkeyhint="done" onkeydown="focusNextField(event, null, saveProduct)" class="w-full border border-gray-200 rounded-xl px-4 py-3 text-sm focus:outline-none focus:ring-2 focus:ring-orange-400" />
-      <p class="text-[11px] text-gray-400 mt-1">يُستخدم لحساب الوقت التقديري الذي يظهر للعميل بعد تأكيد طلبه</p></div>
     <div><label class="text-xs font-bold text-gray-500 mb-1 block">التصنيف <span class="text-red-400">*</span></label>
       <select id="pm-category" class="w-full border border-gray-200 rounded-xl px-4 py-3 text-sm focus:outline-none focus:ring-2 focus:ring-orange-400 bg-white"><option value="" disabled selected>اختر تصنيف للمنتج...</option></select></div>
     <div>
@@ -287,19 +284,10 @@
     <div>
       <div class="flex items-center justify-between mb-2">
         <label class="text-xs font-bold text-gray-500">خيارات التخصيص</label>
-        <div class="relative">
-          <button type="button" onclick="toggleAddGroupMenu()" class="text-xs bg-orange-50 text-orange-500 font-bold px-3 py-1.5 rounded-xl">+ مجموعة جديدة</button>
-          <div id="add-group-menu" class="hidden absolute left-0 top-full mt-1 bg-white border border-gray-200 rounded-xl shadow-lg z-10 w-44 overflow-hidden">
-            <button type="button" onclick="addOptionGroup('size')"   class="w-full text-right px-4 py-2.5 text-sm hover:bg-gray-50 border-b border-gray-100">📏 حجم</button>
-            <button type="button" onclick="addOptionGroup('measure')" class="w-full text-right px-4 py-2.5 text-sm hover:bg-gray-50 border-b border-gray-100">📐 مقاس</button>
-            <button type="button" onclick="addOptionGroup('count')"  class="w-full text-right px-4 py-2.5 text-sm hover:bg-gray-50 border-b border-gray-100">🔢 عدد</button>
-            <button type="button" onclick="addOptionGroup('addons')" class="w-full text-right px-4 py-2.5 text-sm hover:bg-gray-50 border-b border-gray-100">➕ إضافات</button>
-            <button type="button" onclick="addOptionGroup('custom')" class="w-full text-right px-4 py-2.5 text-sm hover:bg-gray-50">⚙️ مجموعة مخصصة</button>
-          </div>
-        </div>
+        <button type="button" onclick="addOptionGroup()" class="text-xs bg-orange-50 text-orange-500 font-bold px-3 py-1.5 rounded-xl">+ مجموعة جديدة</button>
       </div>
       <div id="pm-options-list" class="space-y-3"></div>
-      <p class="text-xs text-gray-400 mt-1">💡 لمجموعات الحجم/المقاس/العدد: إذا كان أحد الخيارات يطابق المنتج الأساسي تماماً، اجعل سعره 0</p>
+      <p class="text-xs text-gray-400 mt-1">💡 مثال: "الحجم" ← صغير 15ج / وسط 20ج / كبير 25ج</p>
     </div>
     <!-- Also With -->
     <div>
@@ -475,7 +463,6 @@
       <div class="w-11 h-11 bg-white/20 rounded-2xl flex items-center justify-center text-2xl">🔔</div>
       <div><p class="text-white font-extrabold text-base">طلب جديد!</p><p id="nop-order-num" class="text-orange-100 text-xs font-bold"></p></div>
     </div>
-    <p id="nop-queue-counter" class="hidden bg-yellow-50 text-yellow-700 text-xs font-extrabold text-center py-2 border-b border-yellow-100"></p>
     <div class="px-5 py-4">
       <div id="nop-items" class="space-y-1.5 mb-3 max-h-48 overflow-y-auto"></div>
       <div class="flex justify-between items-center border-t border-gray-100 pt-3 mb-1">
@@ -537,44 +524,10 @@ let settingsSnapshot = null
 let productSnapshot  = null
 let annSaveTimeout   = null
 let _realtimeChannel = null
+let _pendingOrder    = null
 let _audioCtx        = null
 let _alsoWith        = []
 let activeProductFilter = 'all'
-
-// ── MODAL HISTORY (زر الرجوع الفعلي يغلق آخر طبقة مفتوحة فقط) ──────────
-// ملاحظة: لا تنطبق على تابات لوحة التحكم نفسها (منتجات/طلبات/إعدادات...) —
-// فقط على المودالات التي تُفتح من فوق هذه التابات.
-const _modalStack = []
-function pushModal(name, closeFn) {
-  _modalStack.push({ name, closeFn })
-  history.pushState({ _modalName: name }, '')
-}
-function popModalSilently(name) {
-  const idx = _modalStack.findIndex(m => m.name === name)
-  if (idx === -1) return
-  _modalStack.splice(idx, 1)
-  if (history.state && history.state._modalName === name) history.back()
-}
-window.addEventListener('popstate', () => {
-  const top = _modalStack.pop()
-  if (top) top.closeFn(true)
-})
-
-// تفاعل لوحة المفاتيح: الضغط على "تم/Next" ينقل التركيز للحقل التالي،
-// أو ينفّذ فعل الفورم الرئيسي لو كان هذا آخر حقل
-function focusNextField(event, nextFieldId, submitFn) {
-  const isEnterKey = event.key === 'Enter'
-  if (!isEnterKey) return
-  if (event.target.tagName === 'TEXTAREA' && !submitFn) return
-  event.preventDefault()
-  if (nextFieldId) {
-    const next = document.getElementById(nextFieldId)
-    if (next) next.focus()
-  } else if (submitFn) {
-    event.target.blur()
-    submitFn()
-  }
-}
 
 // ── BOOT ──────────────────────────────────────────────────────────────
 async function boot() {
@@ -722,12 +675,8 @@ function openBannerModal(id = null) {
   }
   updateBannerLinkUI()
   document.getElementById('modal-banner').classList.remove('hidden')
-  pushModal('banner', closeBannerModal)
 }
-function closeBannerModal(fromPopstate) {
-  document.getElementById('modal-banner').classList.add('hidden')
-  if (!fromPopstate) popModalSilently('banner')
-}
+function closeBannerModal() { document.getElementById('modal-banner').classList.add('hidden') }
 function updateBannerLinkUI() {
   const t = document.getElementById('bnm-link-type').value
   document.getElementById('bnm-external-wrap').classList.toggle('hidden', t !== 'external')
@@ -784,12 +733,8 @@ function openCatModal(id = null) {
   else    { document.getElementById('cm-name').value = ''; document.getElementById('cm-icon').value = ''; document.getElementById('cat-modal-title').textContent = 'إضافة تصنيف' }
   document.getElementById('modal-category').classList.remove('hidden')
   setTimeout(() => document.getElementById('cm-name').focus(), 100)
-  pushModal('category', closeCatModal)
 }
-function closeCatModal(fromPopstate) {
-  document.getElementById('modal-category').classList.add('hidden')
-  if (!fromPopstate) popModalSilently('category')
-}
+function closeCatModal() { document.getElementById('modal-category').classList.add('hidden') }
 async function saveCat() {
   const id   = document.getElementById('cm-id').value
   const name = document.getElementById('cm-name').value.trim()
@@ -879,7 +824,6 @@ function openProductModal(id = null) {
     document.getElementById('pm-availability').value = p.availability   || 'available'
     document.getElementById('pm-badge').value        = p.offer_badge    || ''
     document.getElementById('pm-available').checked  = p.is_available
-    document.getElementById('pm-prep-minutes').value  = p.prep_minutes || 10
     document.getElementById('product-modal-title').textContent = 'تعديل منتج'
     setUnitField(p.unit || 'قطعة')
     updateDiscountPreview()
@@ -892,7 +836,6 @@ function openProductModal(id = null) {
     document.getElementById('pm-category').value     = ''
     document.getElementById('pm-availability').value = 'available'
     document.getElementById('pm-available').checked  = true
-    document.getElementById('pm-prep-minutes').value  = 10
     document.getElementById('pm-image-preview-wrap').classList.add('hidden')
     document.getElementById('discount-preview').classList.add('hidden')
     document.getElementById('product-modal-title').textContent = 'إضافة منتج'
@@ -900,12 +843,8 @@ function openProductModal(id = null) {
   }
   document.getElementById('modal-product').classList.remove('hidden')
   setTimeout(() => document.getElementById('pm-name').focus(), 100)
-  pushModal('product', closeProductModal)
 }
-function closeProductModal(fromPopstate) {
-  document.getElementById('modal-product').classList.add('hidden')
-  if (!fromPopstate) popModalSilently('product')
-}
+function closeProductModal() { document.getElementById('modal-product').classList.add('hidden') }
 function updateDiscountPreview() {
   const price = parseFloat(document.getElementById('pm-price').value)
   const disc  = parseFloat(document.getElementById('pm-discount').value)
@@ -919,88 +858,54 @@ function updateDiscountPreview() {
 }
 
 // ── OPTIONS UI ────────────────────────────────────────────────────────
-// ── PRODUCT OPTIONS (groups: size/measure/count/custom/addons) ─────────
-const GROUP_TYPE_LABELS = { size: '📏 حجم', measure: '📐 مقاس', count: '🔢 عدد', addons: '➕ إضافات', custom: '⚙️ مخصصة' }
-const FIXED_SINGLE_TYPES = ['size', 'measure', 'count'] // اختيار واحد فقط، ثابت لا يتغير
-
-function toggleAddGroupMenu() {
-  document.getElementById('add-group-menu').classList.toggle('hidden')
-}
-document.addEventListener('click', (e) => {
-  const menu = document.getElementById('add-group-menu')
-  if (menu && !menu.classList.contains('hidden') && !e.target.closest('.relative')) menu.classList.add('hidden')
-})
-
 function renderOptionsUI(groups) {
   const list = document.getElementById('pm-options-list'); list.innerHTML = ''
-  groups.forEach(g => list.appendChild(buildGroupEl(normalizeLegacyGroup(g))))
-}
-// توافق مع منتجات قديمة كانت محفوظة ببنية {name, required, options} بدون type/selection
-function normalizeLegacyGroup(g) {
-  if (g.type) return g
-  return { type: 'custom', name: g.name, selection: g.required ? 'single' : 'multiple', options: g.options || [] }
-}
-function addOptionGroup(type) {
-  document.getElementById('add-group-menu').classList.add('hidden')
-  const selection = type === 'addons' ? 'multiple' : (type === 'custom' ? 'single' : 'single')
-  const el = buildGroupEl({ type, name: type === 'addons' ? 'إضافات' : '', selection, options: [{ name: '', price: 0 }] })
-  document.getElementById('pm-options-list').appendChild(el)
-}
-function buildGroupEl(g) {
-  const isFixed = FIXED_SINGLE_TYPES.includes(g.type)
-  const div = document.createElement('div')
-  div.className = 'border border-gray-200 rounded-2xl p-3 space-y-2 bg-gray-50'
-  div.dataset.groupType = g.type || 'custom'
-  div.innerHTML = `
-    <div class="flex items-center gap-2">
-      <span class="text-xs font-bold text-gray-400 bg-white border border-gray-200 rounded-lg px-2 py-1.5 whitespace-nowrap">${GROUP_TYPE_LABELS[g.type] || GROUP_TYPE_LABELS.custom}</span>
-      ${isFixed
-        ? `<input type="text" value="${GROUP_TYPE_LABELS[g.type].replace(/^\S+\s/, '')}" class="opt-group-name flex-1 border border-gray-200 rounded-xl px-3 py-2 text-sm bg-gray-100 text-gray-400" readonly />`
-        : `<input type="text" placeholder="اسم المجموعة" value="${g.name || ''}" class="opt-group-name flex-1 border border-gray-200 rounded-xl px-3 py-2 text-sm focus:outline-none focus:ring-2 focus:ring-orange-400 bg-white" />`
-      }
-      <button onclick="this.closest('.border').remove()" class="text-red-400 font-bold text-xl leading-none">×</button>
-    </div>
-    ${g.type === 'custom' ? `
-      <label class="flex items-center gap-3 text-xs font-bold text-gray-500">
-        <span>نوع الاختيار:</span>
-        <label class="flex items-center gap-1 cursor-pointer"><input type="radio" name="sel-${Date.now()}-${Math.random()}" class="opt-selection-radio" value="single" ${g.selection !== 'multiple' ? 'checked' : ''} /> واحد فقط</label>
-        <label class="flex items-center gap-1 cursor-pointer"><input type="radio" name="sel-${Date.now()}-${Math.random()}" class="opt-selection-radio" value="multiple" ${g.selection === 'multiple' ? 'checked' : ''} /> متعدد</label>
-      </label>` : ''}
-    <div class="opt-items space-y-1.5">${(g.options || []).map(o => optRowHTML(o)).join('')}</div>
-    <button type="button" onclick="this.closest('.border').querySelector('.opt-items').insertAdjacentHTML('beforeend', addOptRowStr())" class="text-xs text-orange-500 font-bold hover:underline">+ خيار جديد</button>
-  `
-  // ربط راديو "نوع الاختيار" للمجموعات المخصصة ببعضها (نفس الاسم العشوائي أعلاه يضمن استقلالها عن باقي المجموعات)
-  if (g.type === 'custom') {
-    const radios = div.querySelectorAll('.opt-selection-radio')
-    const sharedName = 'sel-' + Math.random().toString(36).slice(2)
-    radios.forEach(r => r.name = sharedName)
-  }
-  return div
+  groups.forEach((g, gi) => {
+    const div = document.createElement('div')
+    div.className = 'border border-gray-200 rounded-2xl p-3 space-y-2 bg-gray-50'
+    div.innerHTML = `<div class="flex items-center gap-2">
+        <input type="text" placeholder="اسم المجموعة" value="${g.name || ''}" class="opt-group-name flex-1 border border-gray-200 rounded-xl px-3 py-2 text-sm focus:outline-none focus:ring-2 focus:ring-orange-400 bg-white" />
+        <label class="flex items-center gap-1 text-xs font-bold text-gray-500 whitespace-nowrap cursor-pointer"><input type="checkbox" ${g.required ? 'checked' : ''} class="opt-required accent-orange-500" /> مطلوب</label>
+        <button onclick="this.closest('.border').remove()" class="text-red-400 font-bold text-xl leading-none">×</button>
+      </div>
+      <div class="opt-items space-y-1.5">${(g.options||[]).map(o => optRowHTML(o)).join('')}</div>
+      <button onclick="this.closest('.border').querySelector('.opt-items').insertAdjacentHTML('beforeend', '${optRowHTML({name:'',price:0}).replace(/'/g,"\\'")}') " class="text-xs text-orange-500 font-bold hover:underline">+ خيار جديد</button>`
+    list.appendChild(div)
+  })
 }
 function optRowHTML(o) {
   return `<div class="flex gap-2 items-center opt-row">
     <input type="text"   placeholder="الاسم"  value="${o.name||''}"               class="opt-item-name  flex-1 border border-gray-200 rounded-xl px-3 py-2 text-sm focus:outline-none focus:ring-2 focus:ring-orange-400 bg-white" />
-    <input type="number" placeholder="السعر (0 لو يطابق المنتج الأساسي)" value="${o.price!=null?o.price:''}" step="0.5" class="opt-item-price w-24 border border-gray-200 rounded-xl px-3 py-2 text-sm focus:outline-none focus:ring-2 focus:ring-orange-400 bg-white" />
+    <input type="number" placeholder="السعر" value="${o.price!=null?o.price:''}" min="0" step="0.5" class="opt-item-price w-24 border border-gray-200 rounded-xl px-3 py-2 text-sm focus:outline-none focus:ring-2 focus:ring-orange-400 bg-white" />
     <button onclick="this.closest('.opt-row').remove()" class="text-red-400 font-bold text-xl leading-none">×</button>
   </div>`
+}
+function addOptionGroup() {
+  const list = document.getElementById('pm-options-list')
+  const div  = document.createElement('div')
+  div.className = 'border border-gray-200 rounded-2xl p-3 space-y-2 bg-gray-50'
+  div.innerHTML = `<div class="flex items-center gap-2">
+      <input type="text" placeholder="اسم المجموعة" class="opt-group-name flex-1 border border-gray-200 rounded-xl px-3 py-2 text-sm focus:outline-none focus:ring-2 focus:ring-orange-400 bg-white" />
+      <label class="flex items-center gap-1 text-xs font-bold text-gray-500 whitespace-nowrap cursor-pointer"><input type="checkbox" checked class="opt-required accent-orange-500" /> مطلوب</label>
+      <button onclick="this.closest('.border').remove()" class="text-red-400 font-bold text-xl leading-none">×</button>
+    </div>
+    <div class="opt-items space-y-1.5">${optRowHTML({name:'',price:0})}</div>
+    <button onclick="this.closest('.border').querySelector('.opt-items').insertAdjacentHTML('beforeend', addOptRowStr())" class="text-xs text-orange-500 font-bold hover:underline">+ خيار جديد</button>`
+  list.appendChild(div)
 }
 function addOptRowStr() { return optRowHTML({name:'',price:0}) }
 function getOptionsData() {
   const groups = []
   document.querySelectorAll('#pm-options-list > div').forEach(div => {
-    const type     = div.dataset.groupType || 'custom'
-    const isFixed  = FIXED_SINGLE_TYPES.includes(type)
-    const name     = isFixed ? GROUP_TYPE_LABELS[type].replace(/^\S+\s/, '') : (div.querySelector('.opt-group-name')?.value?.trim() || '')
-    const selection = type === 'addons' ? 'multiple'
-                    : isFixed ? 'single'
-                    : (div.querySelector('.opt-selection-radio:checked')?.value || 'single')
+    const name     = div.querySelector('.opt-group-name')?.value?.trim()
+    const required = div.querySelector('.opt-required')?.checked || false
     const options  = []
     div.querySelectorAll('.opt-row').forEach(row => {
       const n  = row.querySelector('.opt-item-name')?.value?.trim()
       const pr = parseFloat(row.querySelector('.opt-item-price')?.value) || 0
       if (n) options.push({ name: n, price: pr })
     })
-    if (name && options.length) groups.push({ type, name, selection, options })
+    if (name) groups.push({ name, required, options })
   })
   return groups
 }
@@ -1047,7 +952,6 @@ async function saveProduct() {
     availability:    document.getElementById('pm-availability').value,
     offer_badge:     document.getElementById('pm-badge').value.trim()       || null,
     unit:            document.getElementById('pm-unit').value.trim()        || 'قطعة',
-    prep_minutes:    parseInt(document.getElementById('pm-prep-minutes').value) || 10,
     product_options: getOptionsData().length ? getOptionsData()             : null,
     also_with:       _alsoWith.length        ? [..._alsoWith]               : null
   }
@@ -1122,7 +1026,6 @@ function openBundleModal(id = null) {
   }
   updateBundleSelectedCount()
   document.getElementById('modal-bundle').classList.remove('hidden')
-  pushModal('bundle', closeBundleModal)
 }
 function updateBundleSelectedCount() {
   const n = document.querySelectorAll('.bundle-product-check:checked').length
@@ -1134,10 +1037,7 @@ function toggleAllBundleProducts() {
   boxes.forEach(cb => cb.checked = !allChecked)
   updateBundleSelectedCount()
 }
-function closeBundleModal(fromPopstate) {
-  document.getElementById('modal-bundle').classList.add('hidden')
-  if (!fromPopstate) popModalSilently('bundle')
-}
+function closeBundleModal() { document.getElementById('modal-bundle').classList.add('hidden') }
 async function saveBundle() {
   const id               = document.getElementById('bm-id').value
   const name             = document.getElementById('bm-name').value.trim()
@@ -1166,37 +1066,31 @@ async function loadOrders() {
 function renderOrders() {
   const el = document.getElementById('orders-list')
   if (!state.orders.length) { el.innerHTML = `<p class="text-center text-gray-400 text-sm py-8">لا توجد طلبات بعد</p>`; return }
-  const statusLabel = { pending:'جديد', confirmed:'جاري التجهيز', ready:'جاهز', delivering:'جاري التوصيل', delivered:'تم التسليم', cancelled:'ملغي' }
-  const statusColor = { pending:'bg-yellow-50 text-yellow-600', confirmed:'bg-blue-50 text-blue-600', ready:'bg-purple-50 text-purple-600', delivering:'bg-indigo-50 text-indigo-600', delivered:'bg-green-50 text-green-600', cancelled:'bg-red-50 text-red-500' }
-  // الزر التالي المناسب لكل حالة (يدفع الطلب للمرحلة التالية في تدفق واحد بسيط)
-  const nextActionBtn = {
-    confirmed:  `<button onclick="updateOrderStatus('{ID}','ready')" class="text-xs font-bold bg-purple-500 text-white px-3 py-1.5 rounded-xl">📦 تم التجهيز</button>`,
-    ready:      `<button onclick="updateOrderStatus('{ID}','delivering')" class="text-xs font-bold bg-indigo-500 text-white px-3 py-1.5 rounded-xl">🛵 جاري التوصيل</button>`,
-    delivering: `<button onclick="updateOrderStatus('{ID}','delivered')" class="text-xs font-bold bg-green-500 text-white px-3 py-1.5 rounded-xl">✅ تم التسليم</button>`
-  }
+  const statusLabel = { pending:'جديد', confirmed:'مؤكد', done:'منتهي', cancelled:'ملغي' }
+  const statusColor = { pending:'bg-yellow-50 text-yellow-600', confirmed:'bg-blue-50 text-blue-600', done:'bg-green-50 text-green-600', cancelled:'bg-red-50 text-red-500' }
   el.innerHTML = state.orders.map(o => `
     <div class="bg-white rounded-2xl p-4 shadow-sm">
       <div class="flex items-center justify-between mb-3">
         <div><p class="font-extrabold text-gray-800">${o.order_number}</p>${o.table_number ? `<p class="text-xs text-gray-400">طاولة ${o.table_number}</p>` : ''}</div>
-        <span class="text-xs font-bold px-3 py-1 rounded-full ${statusColor[o.status]}">${statusLabel[o.status]}</span>
+        <div class="flex items-center gap-2">
+          <span class="text-xs font-bold px-3 py-1 rounded-full ${statusColor[o.status]}">${statusLabel[o.status]}</span>
+          <select onchange="updateOrderStatus('${o.id}',this.value)" class="text-xs border border-gray-200 rounded-xl px-2 py-1 bg-white focus:outline-none">
+            <option value="pending"   ${o.status==='pending'   ?'selected':''}>جديد</option>
+            <option value="confirmed" ${o.status==='confirmed' ?'selected':''}>مؤكد</option>
+            <option value="done"      ${o.status==='done'      ?'selected':''}>منتهي</option>
+            <option value="cancelled" ${o.status==='cancelled' ?'selected':''}>ملغي</option>
+          </select>
+        </div>
       </div>
       <div class="space-y-1 border-t border-gray-50 pt-3">
         ${o.items.map(i => `<div class="flex justify-between text-sm"><span class="text-gray-600">${i.name} × ${i.qty}</span><span class="font-bold text-gray-800">${Number(i.subtotal).toFixed(2)} ج.م</span></div>`).join('')}
         <div class="flex justify-between text-sm font-extrabold pt-2 border-t border-gray-100"><span>الإجمالي</span><span class="text-orange-500">${Number(o.total).toFixed(2)} ج.م</span></div>
       </div>
       ${o.status === 'cancelled' && o.cancel_reason ? `<p class="text-xs text-red-500 bg-red-50 rounded-xl px-3 py-2 mt-2 font-bold">سبب الرفض: ${o.cancel_reason}</p>` : ''}
-      ${nextActionBtn[o.status] ? `<div class="mt-3">${nextActionBtn[o.status].replace('{ID}', o.id)}</div>` : ''}
       <p class="text-xs text-gray-300 mt-2">${new Date(o.created_at).toLocaleString('ar-EG')}</p>
     </div>`).join('')
 }
-async function updateOrderStatus(id, status) {
-  const timestampField = { ready: 'ready_at', delivering: 'delivering_at', delivered: 'delivered_at' }[status]
-  const payload = { status }
-  if (timestampField) payload[timestampField] = new Date().toISOString()
-  await db.from('orders').update(payload).eq('id', id)
-  await loadOrders()
-  showToast('تم تحديث حالة الطلب')
-}
+async function updateOrderStatus(id, status) { await db.from('orders').update({ status }).eq('id', id); await loadOrders(); showToast('تم تحديث حالة الطلب') }
 
 // ── ANALYTICS ─────────────────────────────────────────────────────────
 async function loadAnalytics() {
@@ -1286,31 +1180,15 @@ function startRealtimeOrders() {
     .on('postgres_changes', { event:'UPDATE', schema:'public', table:'orders', filter:`restaurant_id=eq.${state.restaurant.id}` }, p => handleOrderUpdatedElsewhere(p.new))
     .subscribe()
 }
-// طابور الطلبات الجديدة المعلّقة — كل طلب جديد يُضاف للطابور، ولا يُفقد أي طلب
-// لو وصلت طلبات متعددة في نفس اللحظة. الـ popup يعرض طلب واحد بالترتيب، وينتقل للتالي تلقائياً.
-let _pendingOrdersQueue = []
-
-function handleIncomingOrder(order) {
-  _pendingOrdersQueue.push(order)
-  startAlarmLoop()
-  updateOrdersBadge([...state.orders, order])
-  if (_pendingOrdersQueue.length === 1) {
-    showNewOrderPopup(order) // مفيش طلب معروض حالياً، نعرض هذا فوراً
-  } else {
-    updateQueueCounter() // فيه طلب معروض بالفعل، نضيف الجديد للطابور بصمت ونحدّث العداد فقط
-  }
-}
+function handleIncomingOrder(order) { _pendingOrder = order; startAlarmLoop(); showNewOrderPopup(order); updateOrdersBadge([...state.orders, order]) }
 // لو التاجر له أكتر من تبويب/جهاز مفتوح، وتم قبول/رفض الطلب من تبويب آخر،
 // نوقف الصوت والبطاقة المنبثقة في هذا التبويب تلقائياً (التزامن بين كل النسخ المفتوحة)
 function handleOrderUpdatedElsewhere(order) {
-  const idx = _pendingOrdersQueue.findIndex(o => o.id === order.id)
-  if (idx === -1) return
-  if (order.status === 'pending') return // تحديث غير متعلق بالقبول/الرفض
-  const wasCurrentlyShown = idx === 0
-  _pendingOrdersQueue.splice(idx, 1)
-  if (wasCurrentlyShown) advanceToNextPendingOrder()
-  else updateQueueCounter()
-  loadOrders()
+  if (_pendingOrder && _pendingOrder.id === order.id && order.status !== 'pending') {
+    stopAlarmLoop()
+    dismissNewOrderPopup()
+    loadOrders()
+  }
 }
 function showNewOrderPopup(order) {
   document.getElementById('nop-order-num').textContent = order.order_number
@@ -1323,42 +1201,21 @@ function showNewOrderPopup(order) {
   if (order.customer_address) meta.push(`🏠 ${order.customer_address}`)
   document.getElementById('nop-meta').innerHTML = meta.map(m => `<p>${m}</p>`).join('')
   document.getElementById('new-order-popup').classList.remove('hidden')
-  updateQueueCounter()
-}
-// يحدّث شارة "+X طلبات أخرى في الانتظار" فوق البطاقة المنبثقة
-function updateQueueCounter() {
-  const remaining = _pendingOrdersQueue.length - 1 // الطلب الحالي المعروض لا يُحسب كـ"متبقي"
-  const el = document.getElementById('nop-queue-counter')
-  if (!el) return
-  if (remaining > 0) { el.textContent = `+${remaining} طلب آخر في الانتظار`; el.classList.remove('hidden') }
-  else el.classList.add('hidden')
-}
-// بعد قبول/رفض الطلب المعروض، ينقل للطلب التالي في الطابور تلقائياً (أو يقفل لو الطابور فاضي)
-function advanceToNextPendingOrder() {
-  if (_pendingOrdersQueue.length > 0) {
-    showNewOrderPopup(_pendingOrdersQueue[0]) // يعرض أقدم طلب متبقي في الطابور
-  } else {
-    document.getElementById('new-order-popup').classList.add('hidden')
-    stopAlarmLoop()
-  }
 }
 async function confirmNewOrder() {
-  if (!_pendingOrdersQueue.length) return
-  const id = _pendingOrdersQueue[0].id
-  await db.from('orders').update({ status:'confirmed', confirmed_at: new Date().toISOString() }).eq('id', id)
+  if (!_pendingOrder) return
+  stopAlarmLoop()
+  const id = _pendingOrder.id
+  await db.from('orders').update({ status:'confirmed' }).eq('id', id)
   showToast('✅ تم قبول الطلب')
-  _pendingOrdersQueue.shift()
-  advanceToNextPendingOrder()
+  dismissNewOrderPopup()
   loadOrders()
 }
 function rejectNewOrder() {
-  if (!_pendingOrdersQueue.length) return
+  if (!_pendingOrder) return
   openRejectReasonModal()
 }
-function dismissNewOrderPopup() {
-  // ملاحظة: لا يُستخدم هذا لإغلاق popup الطلب الإجباري بدون قرار — فقط كجزء من تدفق التأكيد/الرفض
-  document.getElementById('new-order-popup').classList.add('hidden')
-}
+function dismissNewOrderPopup() { document.getElementById('new-order-popup').classList.add('hidden'); _pendingOrder = null }
 
 // ── REJECT REASON ────────────────────────────────────────────────────
 const REJECT_REASONS = ['غير متوفر حالياً', 'المطعم مغلق الآن', 'تأخير كبير في التحضير']
@@ -1367,25 +1224,21 @@ function openRejectReasonModal() {
   wrap.innerHTML = REJECT_REASONS.map(r => `<button onclick="submitRejectReason('${r.replace(/'/g, "\\'")}')" class="w-full text-right border border-gray-200 rounded-xl px-4 py-3 text-sm font-bold text-gray-700 hover:border-red-300 hover:bg-red-50 transition-colors">${r}</button>`).join('')
   document.getElementById('reject-custom-reason').value = ''
   document.getElementById('reject-reason-modal').classList.remove('hidden')
-  pushModal('reject-reason', closeRejectReasonModal)
 }
-function closeRejectReasonModal(fromPopstate) {
-  document.getElementById('reject-reason-modal').classList.add('hidden')
-  if (!fromPopstate) popModalSilently('reject-reason')
-}
+function closeRejectReasonModal() { document.getElementById('reject-reason-modal').classList.add('hidden') }
 function submitRejectCustomReason() {
   const txt = document.getElementById('reject-custom-reason').value.trim()
   if (!txt) { showToast('اكتب سبب الرفض أولاً'); return }
   submitRejectReason(txt)
 }
 async function submitRejectReason(reason) {
-  if (!_pendingOrdersQueue.length) return
-  const id = _pendingOrdersQueue[0].id
+  if (!_pendingOrder) return
+  stopAlarmLoop()
+  const id = _pendingOrder.id
   await db.from('orders').update({ status:'cancelled', cancel_reason: reason }).eq('id', id)
   showToast('❌ تم رفض الطلب')
   closeRejectReasonModal()
-  _pendingOrdersQueue.shift()
-  advanceToNextPendingOrder()
+  dismissNewOrderPopup()
   loadOrders()
 }
 
