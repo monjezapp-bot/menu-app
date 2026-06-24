@@ -635,6 +635,8 @@
                  style="width:100%;border:1.5px solid #eee;border-radius:12px;padding:10px 12px;font-size:13px;color:#444;outline:none;font-family:'Rubik',sans-serif;margin-bottom:7px;background:#fff" />
           <!-- Hidden location value + map picker button -->
           <input type="hidden" id="order-location" />
+          <input type="hidden" id="order-location-lat" />
+          <input type="hidden" id="order-location-lng" />
           <button id="map-pick-btn" onclick="openMapPicker()"
                   style="width:100%;border:1.5px solid #eee;border-radius:12px;padding:10px 12px;font-size:13px;color:#888;font-family:'Rubik',sans-serif;background:#fff;text-align:right;cursor:pointer;display:flex;align-items:center;gap:8px">
             <span style="font-size:16px">📍</span>
@@ -648,11 +650,11 @@
                   style="width:100%;border:1.5px solid #eee;border-radius:14px;padding:12px 14px;font-size:13px;color:#444;outline:none;font-family:'Rubik',sans-serif;resize:none;margin-bottom:10px"></textarea>
 
         <!-- Total -->
-        <div style="display:flex;align-items:center;justify-content:space-between;margin-bottom:6px;padding:0 2px">
-          <span style="font-size:14px;font-weight:600;color:#999">الإجمالي</span>
-          <span id="cart-grand-total" style="font-size:24px;font-weight:900;color:var(--brand)">0 ج.م</span>
+        <div style="display:flex;align-items:center;justify-content:space-between;margin-bottom:4px;padding:0 2px">
+          <span style="font-size:14px;font-weight:600;color:#999">المنتجات</span>
+          <span id="cart-grand-total" style="font-size:20px;font-weight:900;color:var(--brand)">0 ج.م</span>
         </div>
-        <p style="font-size:11px;color:#bbb;text-align:center;margin-bottom:10px">⚠️ السعر لا يشمل رسوم التوصيل</p>
+        <div id="cart-delivery-row" style="display:none;align-items:center;justify-content:space-between;margin-bottom:6px;padding:0 2px"></div>
 
         <!-- Send button -->
         <button id="send-order-btn" onclick="sendOrder()"
@@ -711,7 +713,8 @@
   <div class="bg-white rounded-3xl shadow-2xl mx-4 w-full max-w-sm p-8 text-center fade-up">
     <div class="success-icon text-6xl mb-4">⏳</div>
     <h2 id="success-title" style="font-size:22px;font-weight:900;color:#1a1a1a;margin-bottom:6px">تم استلام طلبك!</h2>
-    <p id="success-order-num" style="font-size:15px;font-weight:700;color:#FF6B00;margin-bottom:6px"></p>
+    <p id="success-order-num" style="font-size:15px;font-weight:700;color:#FF6B00;margin-bottom:4px"></p>
+    <p id="success-delivery-fee" style="display:none;font-size:12px;color:#888;font-weight:600;margin-bottom:6px"></p>
     <p id="success-sub-msg"   style="font-size:13px;color:#aaa;margin-bottom:8px">🔔 في انتظار تأكيد المطعم...</p>
     <div id="success-tracking-steps" class="hidden" style="align-items:flex-start;margin:18px 0 8px"></div>
     <p id="success-cancel-reason" class="hidden" style="font-size:13px;color:#ef4444;background:#fef2f2;border-radius:12px;padding:10px 14px;margin-bottom:16px;font-weight:700"></p>
@@ -874,19 +877,20 @@ function retryLoad() {
 async function loadData(slug) {
   const { data: r, error: rErr } = await db
     .from('restaurants')
-    .select('id,name,logo_url,cover_url,whatsapp,theme,slug,announcement_text,announcement_active,order_receive_method')
+    .select('id,name,logo_url,cover_url,whatsapp,theme,slug,announcement_text,announcement_active,order_receive_method,price_per_km')
     .eq('slug', slug).eq('is_active', true).single()
 
   if (rErr || !r) throw new Error('المطعم غير موجود أو غير نشط')
   S.restaurant = r
 
-  const [catRes, prodRes, bundleRes, bannerRes] = await Promise.all([
+  const [catRes, prodRes, bundleRes, bannerRes, branchRes] = await Promise.all([
     db.from('categories').select('id,name,sort_order,icon_url').eq('restaurant_id', r.id).order('sort_order'),
     db.from('products')
       .select('id,category_id,name,description,price,discount_price,offer_badge,discount_active,discount_starts_at,discount_ends_at,image_url,sort_order,is_available,status,availability,unit,product_options,also_with,prep_minutes')
       .eq('restaurant_id', r.id).neq('status', 'hidden').order('sort_order'),
     db.from('bundles').select('id,name,description,price,image_url,items,sort_order').eq('restaurant_id', r.id).eq('is_active', true).order('sort_order'),
-    db.from('banners').select('id,image_url,link_type,link_value,sort_order').eq('restaurant_id', r.id).order('sort_order')
+    db.from('banners').select('id,image_url,link_type,link_value,sort_order').eq('restaurant_id', r.id).order('sort_order'),
+    db.from('branches').select('id,name,lat,lng').eq('restaurant_id', r.id).eq('is_active', true)
   ])
 
   if (catRes.error)  throw new Error('فشل تحميل التصنيفات')
@@ -896,6 +900,7 @@ async function loadData(slug) {
   S.products   = prodRes.data
   S.bundles    = bundleRes.data ?? []
   S.banners    = bannerRes.data ?? []
+  S.branches   = branchRes.data ?? []
   S.activeCat  = catRes.data[0]?.id ?? null
 }
 
@@ -1257,6 +1262,26 @@ function isDiscountActive(p) {
   return Number(p.discount_price) < Number(p.price)
 }
 function fmt(v)          { return `${Number(v).toFixed(0)} ج.م` }
+
+// المسافة بالكيلومتر بين نقطتين (صيغة Haversine)
+function distanceKm(lat1, lng1, lat2, lng2) {
+  const R = 6371
+  const dLat = (lat2 - lat1) * Math.PI / 180
+  const dLng = (lng2 - lng1) * Math.PI / 180
+  const a = Math.sin(dLat/2)**2 + Math.cos(lat1*Math.PI/180) * Math.cos(lat2*Math.PI/180) * Math.sin(dLng/2)**2
+  return R * 2 * Math.atan2(Math.sqrt(a), Math.sqrt(1-a))
+}
+// أقرب فرع نشط لموقع العميل، باستثناء الفروع المرفوضة مسبقاً لهذا الطلب (للتحويل التلقائي عند الرفض)
+function findNearestBranch(custLat, custLng, excludeIds = []) {
+  const candidates = (S.branches || []).filter(b => !excludeIds.includes(b.id))
+  if (!candidates.length) return null
+  let nearest = null, minDist = Infinity
+  candidates.forEach(b => {
+    const d = distanceKm(custLat, custLng, b.lat, b.lng)
+    if (d < minDist) { minDist = d; nearest = b }
+  })
+  return { branch: nearest, distanceKm: minDist }
+}
 // تنضيف رقم تواصل المطعم لصيغة دولية موحدة قبل استخدامه في رابط tel:
 // (يغطي صيغ مختلفة: 0 محلي / + / مسافات / بدون كود دولة)
 function normalizeWhatsAppNumber(raw) {
@@ -1588,6 +1613,22 @@ function renderCartItems() {
     </div>`).join('')
 
   tot.textContent = fmt(cartTotal())
+
+  // عرض رسوم التوصيل التقديرية لو العميل حدد موقعه
+  const deliveryRow = document.getElementById('cart-delivery-row')
+  const custLat = document.getElementById('order-location-lat')?.value
+  const custLng = document.getElementById('order-location-lng')?.value
+  const pricePerKm = parseFloat(S.restaurant?.price_per_km) || 0
+  if (deliveryRow) {
+    if (custLat && custLng && pricePerKm > 0 && S.branches.length) {
+      const result = findNearestBranch(parseFloat(custLat), parseFloat(custLng))
+      if (result) {
+        const fee = Math.round(result.distanceKm * pricePerKm * 100) / 100
+        deliveryRow.innerHTML = `<span style="font-size:13px;color:#888">🛵 رسوم التوصيل (${result.distanceKm.toFixed(1)} كم)</span><span style="font-size:13px;font-weight:900;color:#555">${fmt(fee)}</span>`
+        deliveryRow.style.display = 'flex'
+      } else deliveryRow.style.display = 'none'
+    } else deliveryRow.style.display = 'none'
+  }
 }
 
 // ── TOAST ─────────────────────────────────────────────────────────────
@@ -1611,7 +1652,7 @@ function markFieldError(id) {
   if (el) { el.style.borderColor = '#ef4444'; el.addEventListener('input', () => { el.style.borderColor = '#eee' }, { once: true }) }
 }
 function clearFieldErrors() {
-  ;['order-phone', 'order-address'].forEach(id => { const el = document.getElementById(id); if (el) el.style.borderColor = '#eee' })
+  ;['order-phone', 'map-pick-btn'].forEach(id => { const el = document.getElementById(id); if (el) el.style.borderColor = '#eee' })
 }
 
 // تفاعل لوحة المفاتيح: الضغط على "تم/Next" ينقل التركيز للحقل التالي،
@@ -1640,17 +1681,20 @@ async function sendOrder() {
   const custPhone= document.getElementById('order-phone').value.trim()
   const custAddr = document.getElementById('order-address').value.trim()
   const custLoc  = document.getElementById('order-location').value.trim()
+  const custLat  = document.getElementById('order-location-lat').value
+  const custLng  = document.getElementById('order-location-lng').value
   const note     = document.getElementById('order-note').value.trim()
 
-  // تحقق إجباري: لو الطلب توصيل (مفيش رقم طاولة)، لازم رقم تواصل + (عنوان أو موقع على الخريطة)
+  // تحقق إجباري: لو الطلب توصيل (مفيش رقم طاولة)، لازم رقم تواصل + تحديد الموقع على الخريطة
+  // (الموقع إجباري وليس بديلاً اختيارياً للعنوان، لأنه أساس حساب أقرب فرع وتكلفة التوصيل)
   clearFieldErrors()
   if (!table) {
     const missing = []
     if (!custPhone) missing.push('order-phone')
-    if (!custAddr && !custLoc) missing.push('order-address')
+    if (!custLat) missing.push('map-pick-btn')
     if (missing.length) {
       missing.forEach(id => markFieldError(id))
-      showToast('من فضلك اكتب رقم تواصلك وعنوانك (أو حدد موقعك) لإتمام التوصيل')
+      showToast('من فضلك اكتب رقم تواصلك وحدد موقعك على الخريطة لإتمام التوصيل')
       document.getElementById(missing[0]).scrollIntoView({ behavior: 'smooth', block: 'center' })
       return
     }
@@ -1678,6 +1722,21 @@ async function sendOrder() {
     })
   )
 
+  // أقرب فرع نشط لموقع العميل (لو الطلب توصيل ومفيش طاولة) — أساس توجيه الطلب وحساب التوصيل
+  let nearestBranchId = null
+  let deliveryFee     = 0
+  if (!table && custLat && custLng && S.branches.length) {
+    const result = findNearestBranch(parseFloat(custLat), parseFloat(custLng))
+    if (result) {
+      nearestBranchId = result.branch.id
+      const pricePerKm = parseFloat(S.restaurant.price_per_km) || 0
+      if (pricePerKm > 0) {
+        deliveryFee = Math.round(result.distanceKm * pricePerKm * 100) / 100
+      }
+    }
+  }
+  const grandTotal = Math.round((cartTotal() + deliveryFee) * 100) / 100
+
   // Save order to DB — the merchant receives it live in the dashboard (no WhatsApp)
   let orderId, orderNumber
   try {
@@ -1688,14 +1747,18 @@ async function sendOrder() {
       .insert({
         restaurant_id:    S.restaurant.id,
         order_number:     rpc,
-        items, total,
+        items, total:     grandTotal,
         table_number:     table     || null,
         customer_name:    custName  || null,
         customer_phone:   custPhone || null,
         customer_address: custAddr  || null,
         customer_location:custLoc   || null,
+        customer_lat:     custLat   ? parseFloat(custLat) : null,
+        customer_lng:     custLng   ? parseFloat(custLng) : null,
         note:             note      || null,
-        estimated_prep_minutes: estimatedPrepMinutes
+        estimated_prep_minutes: estimatedPrepMinutes,
+        branch_id:        nearestBranchId,
+        delivery_fee:     deliveryFee > 0 ? deliveryFee : null
       })
       .select('id,order_number').single()
 
@@ -1713,8 +1776,10 @@ async function sendOrder() {
   clearCart(); updateCartUI(); closeCartSheet()
   ;['order-name', 'order-phone', 'order-address', 'order-location', 'order-note', 'table-number-input']
     .forEach(id => { const el = document.getElementById(id); if (el) el.value = '' })
+  document.getElementById('order-location-lat').value = ''
+  document.getElementById('order-location-lng').value = ''
   resetBtn()
-  showOrderSuccess(orderNumber, orderId)
+  showOrderSuccess(orderNumber, orderId, grandTotal, deliveryFee)
   trackOrderStatus(orderId)
 }
 
@@ -1747,8 +1812,16 @@ function handleOrderStatusChange(order) {
   }
 }
 
-function showOrderSuccess(orderNumber, orderId) {
+function showOrderSuccess(orderNumber, orderId, total, deliveryFee) {
   document.getElementById('success-order-num').textContent = `رقم الطلب: ${orderNumber}`
+  // عرض رسوم التوصيل في مودال النجاح
+  const dfEl = document.getElementById('success-delivery-fee')
+  if (dfEl) {
+    if (deliveryFee > 0) {
+      dfEl.textContent = `🛵 رسوم التوصيل: ${fmt(deliveryFee)} — الإجمالي: ${fmt(total)}`
+      dfEl.style.display = 'block'
+    } else dfEl.style.display = 'none'
+  }
   document.getElementById('order-success-modal').dataset.orderId = orderId
   setSuccessModalVisual('pending')
   document.getElementById('order-success-modal').classList.remove('hidden')
@@ -1926,11 +1999,15 @@ function useMyLocation() {
 function confirmLocation() {
   if (_pickedLat === null) { closeMapPicker(); return }
   const url = `https://www.google.com/maps?q=${_pickedLat},${_pickedLng}`
-  document.getElementById('order-location').value = url
+  document.getElementById('order-location').value     = url
+  document.getElementById('order-location-lat').value = _pickedLat
+  document.getElementById('order-location-lng').value = _pickedLng
   document.getElementById('map-pick-label').textContent = `✅ تم تحديد الموقع (${_pickedLat.toFixed(4)}, ${_pickedLng.toFixed(4)})`
   document.getElementById('map-pick-btn').style.borderColor = 'var(--brand)'
   document.getElementById('map-pick-btn').style.color       = 'var(--brand)'
   closeMapPicker()
+  // تحديث عرض رسوم التوصيل في السلة فور تحديد الموقع
+  renderCartItems()
 }
 
 // ── START ─────────────────────────────────────────────────────────────

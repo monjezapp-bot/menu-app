@@ -80,6 +80,33 @@
   </div>
 </div>
 
+<!-- ══ PASSCODE SCREEN ══ -->
+<div id="screen-passcode" class="hidden min-h-screen flex items-center justify-center p-6">
+  <div class="bg-white rounded-3xl shadow-xl w-full max-w-sm p-8 fade-up">
+    <div class="text-center mb-6">
+      <div class="text-5xl mb-3">🔐</div>
+      <h1 id="pc-title" class="text-xl font-extrabold text-gray-800">اختر وضع الدخول</h1>
+      <p id="pc-subtitle" class="text-gray-400 text-sm mt-1">مطعم <span id="pc-rest-name" class="font-bold text-gray-600"></span></p>
+    </div>
+    <!-- قائمة الفروع للاختيار -->
+    <div id="pc-branches-list" class="space-y-2 mb-4"></div>
+    <!-- حقل كلمة السر -->
+    <div id="pc-passcode-section" class="hidden space-y-3">
+      <p id="pc-selected-label" class="text-sm font-bold text-gray-700 text-center"></p>
+      <input id="pc-passcode-input" type="password" placeholder="كلمة السر" enterkeyhint="done"
+             onkeydown="if(event.key==='Enter'){event.preventDefault();submitPasscode()}"
+             class="w-full border border-gray-200 rounded-xl px-4 py-3 text-sm focus:outline-none focus:ring-2 focus:ring-orange-400" />
+      <p id="pc-error" class="text-red-500 text-xs text-center hidden">كلمة السر غير صحيحة</p>
+      <button onclick="submitPasscode()" class="w-full bg-orange-500 hover:bg-orange-600 text-white font-bold rounded-xl py-3 transition-colors">
+        دخول
+      </button>
+      <button onclick="backToBranchList()" class="w-full bg-gray-100 text-gray-500 font-bold rounded-xl py-2.5 text-sm">
+        ← رجوع
+      </button>
+    </div>
+  </div>
+</div>
+
 <!-- ══ DASHBOARD ══ -->
 <div id="screen-dashboard" class="hidden min-h-screen">
 
@@ -206,6 +233,9 @@
         <div><label class="text-xs font-bold text-gray-500 mb-1 block">رقم تواصل المطعم (للعملاء)</label>
           <input id="set-whatsapp" type="text" placeholder="01012345678 أو 201012345678" class="w-full border border-gray-200 rounded-xl px-4 py-3 text-sm focus:outline-none focus:ring-2 focus:ring-orange-400" />
           <p class="text-[11px] text-gray-400 mt-1">هيظهر للعميل كرقم اتصال مباشر بالمطعم — اكتبه بأي صيغة وسيتم ضبطه تلقائياً</p></div>
+        <div><label class="text-xs font-bold text-gray-500 mb-1 block">سعر التوصيل لكل كيلومتر (ج.م)</label>
+          <input id="set-price-per-km" type="number" step="0.5" min="0" placeholder="مثال: 5 — اتركه 0 أو فارغاً لعدم احتساب رسوم توصيل" class="w-full border border-gray-200 rounded-xl px-4 py-3 text-sm focus:outline-none focus:ring-2 focus:ring-orange-400" />
+          <p class="text-[11px] text-gray-400 mt-1">تُضاف رسوم التوصيل تلقائياً للفاتورة بناءً على المسافة بين موقع العميل وأقرب فرع</p></div>
         <div>
           <label class="text-xs font-bold text-gray-500 mb-1 block">اللون الرئيسي</label>
           <div class="flex items-center gap-3">
@@ -236,6 +266,19 @@
           <button onclick="undoSettings()" id="undo-settings-btn" class="flex-1 bg-gray-100 text-gray-600 font-bold rounded-xl py-3 hidden">↩ تراجع</button>
         </div>
         <p id="settings-msg" class="text-center text-sm hidden"></p>
+      </div>
+
+      <!-- إدارة كلمة سر الأدمن وتبديل الوضع — للأدمن فقط -->
+      <div id="admin-passcode-section" class="hidden bg-white rounded-2xl p-5 shadow-sm space-y-4 mt-4">
+        <h3 class="font-bold text-gray-700">🔐 كلمة سر الأدمن</h3>
+        <div>
+          <label class="text-xs font-bold text-gray-500 mb-1 block">كلمة سر الأدمن (تمنح وصولاً كاملاً)</label>
+          <input id="set-admin-passcode" type="text" placeholder="اتركها فارغة إن لم تريد كلمة سر للأدمن"
+                 class="w-full border border-gray-200 rounded-xl px-4 py-3 text-sm focus:outline-none focus:ring-2 focus:ring-orange-400" />
+        </div>
+        <button onclick="saveAdminPasscode()" class="w-full bg-orange-500 text-white font-bold rounded-xl py-3">حفظ كلمة سر الأدمن</button>
+        <hr class="border-gray-100" />
+        <button onclick="switchRole()" class="w-full bg-gray-100 text-gray-600 font-bold rounded-xl py-2.5 text-sm">🔄 تبديل وضع الدخول (دخول كفرع)</button>
       </div>
     </div>
 
@@ -618,6 +661,13 @@ let _audioCtx        = null
 let _alsoWith        = []
 let activeProductFilter = 'all'
 
+// ── ROLE / PASSCODE STATE ──────────────────────────────────────────────
+// role: 'admin' | 'branch'
+// activeBranchId: uuid الفرع الحالي (لو role === 'branch')
+let _role          = null
+let _activeBranchId = null
+const LS_ROLE_KEY   = 'menu_role'       // 'admin' | 'branch:<id>'
+
 // ── MODAL HISTORY (زر الرجوع الفعلي يغلق آخر طبقة مفتوحة فقط) ──────────
 // ملاحظة: لا تنطبق على تابات لوحة التحكم نفسها (منتجات/طلبات/إعدادات...) —
 // فقط على المودالات التي تُفتح من فوق هذه التابات.
@@ -684,13 +734,178 @@ window.addEventListener('scroll', () => {
 // ── BOOT ──────────────────────────────────────────────────────────────
 async function boot() {
   const { data: { session } } = await db.auth.getSession()
-  if (session) await loadDashboard()
+  if (session) await afterLogin()
   else showScreen('login')
 
   db.auth.onAuthStateChange(async (event) => {
-    if (event === 'SIGNED_IN')  await loadDashboard()
-    if (event === 'SIGNED_OUT') showScreen('login')
+    if (event === 'SIGNED_IN')  await afterLogin()
+    if (event === 'SIGNED_OUT') { _role = null; _activeBranchId = null; showScreen('login') }
   })
+}
+
+// بعد التحقق من الجلسة — نقرر هل نذهب لشاشة الـ passcode أم مباشرة للداشبورد
+async function afterLogin() {
+  const { data: { user } } = await db.auth.getUser()
+  const { data: r }        = await db.from('restaurants').select('*').eq('owner_id', user.id).single()
+  if (!r) { showToast('لم يتم العثور على مطعم مرتبط بهذا الحساب'); return }
+
+  // اقرأ الفروع أولاً لتحديد إذا كان فيه أكثر من فرع
+  const { data: branches } = await db.from('branches').select('id,name,passcode').eq('restaurant_id', r.id).order('created_at')
+  const multiplesBranches  = branches && branches.length > 1
+
+  // تحقق من localStorage
+  const saved = localStorage.getItem(LS_ROLE_KEY + '_' + r.id)
+  if (saved) {
+    if (saved === 'admin') {
+      _role = 'admin'; _activeBranchId = null
+      await loadDashboard(r, branches)
+      return
+    }
+    if (saved.startsWith('branch:')) {
+      const branchId = saved.split(':')[1]
+      const branch   = branches && branches.find(b => b.id === branchId)
+      if (branch) {
+        _role = 'branch'; _activeBranchId = branchId
+        await loadDashboard(r, branches)
+        return
+      }
+    }
+    // saved value لم يعد صالحاً (فرع محذوف مثلاً)، احذفه
+    localStorage.removeItem(LS_ROLE_KEY + '_' + r.id)
+  }
+
+  // لو فرع واحد فقط → أدمن مباشرة
+  if (!multiplesBranches) {
+    _role = 'admin'; _activeBranchId = null
+    localStorage.setItem(LS_ROLE_KEY + '_' + r.id, 'admin')
+    await loadDashboard(r, branches)
+    return
+  }
+
+  // أكثر من فرع → شاشة اختيار كلمة السر
+  showPasscodeScreen(r, branches)
+}
+
+// ── PASSCODE SCREEN ────────────────────────────────────────────────────
+let _pcRestaurant = null
+let _pcBranches   = null
+let _pcSelected   = null  // 'admin' | branch object
+
+function showPasscodeScreen(r, branches) {
+  _pcRestaurant = r
+  _pcBranches   = branches
+  _pcSelected   = null
+  document.getElementById('pc-rest-name').textContent = r.name
+  document.getElementById('pc-title').textContent     = 'اختر وضع الدخول'
+  document.getElementById('pc-passcode-section').classList.add('hidden')
+  document.getElementById('pc-error').classList.add('hidden')
+  renderBranchListForPasscode(r, branches)
+  showScreen('passcode')
+}
+
+function renderBranchListForPasscode(r, branches) {
+  const el = document.getElementById('pc-branches-list')
+  let html = ''
+  // زر الأدمن دائماً أول (بس لو في admin_passcode أو ما فيش passcode على الإطلاق)
+  html += `<button onclick="selectPasscodeTarget('admin')"
+    class="w-full flex items-center gap-3 bg-orange-50 border border-orange-200 rounded-2xl px-4 py-3 text-right hover:bg-orange-100 transition-colors">
+    <span class="text-2xl">👑</span>
+    <div><p class="font-extrabold text-gray-800 text-sm">دخول كأدمن</p><p class="text-xs text-gray-400">وصول كامل لكل التبويبات والفروع</p></div>
+  </button>`
+  branches.forEach(b => {
+    html += `<button onclick="selectPasscodeTarget('${b.id}')"
+      class="w-full flex items-center gap-3 bg-gray-50 border border-gray-200 rounded-2xl px-4 py-3 text-right hover:bg-gray-100 transition-colors">
+      <span class="text-2xl">🏬</span>
+      <div><p class="font-extrabold text-gray-800 text-sm">${b.name}</p><p class="text-xs text-gray-400">عرض طلبات هذا الفرع فقط</p></div>
+    </button>`
+  })
+  el.innerHTML = html
+}
+
+function selectPasscodeTarget(target) {
+  _pcSelected = target  // 'admin' | branch_id
+  const label = target === 'admin'
+    ? '👑 دخول كأدمن'
+    : '🏬 ' + (_pcBranches.find(b => b.id === target)?.name || '')
+  document.getElementById('pc-selected-label').textContent = label
+  document.getElementById('pc-passcode-input').value       = ''
+  document.getElementById('pc-error').classList.add('hidden')
+  document.getElementById('pc-branches-list').classList.add('hidden')
+  document.getElementById('pc-passcode-section').classList.remove('hidden')
+  document.getElementById('pc-title').textContent = 'أدخل كلمة السر'
+  setTimeout(() => document.getElementById('pc-passcode-input').focus(), 100)
+}
+
+function backToBranchList() {
+  _pcSelected = null
+  document.getElementById('pc-branches-list').classList.remove('hidden')
+  document.getElementById('pc-passcode-section').classList.add('hidden')
+  document.getElementById('pc-title').textContent = 'اختر وضع الدخول'
+}
+
+async function submitPasscode() {
+  const entered = document.getElementById('pc-passcode-input').value.trim()
+  const errEl   = document.getElementById('pc-error')
+  errEl.classList.add('hidden')
+
+  if (_pcSelected === 'admin') {
+    const adminPass = _pcRestaurant.admin_passcode || ''
+    if (adminPass && entered !== adminPass) { errEl.classList.remove('hidden'); return }
+    _role = 'admin'; _activeBranchId = null
+    localStorage.setItem(LS_ROLE_KEY + '_' + _pcRestaurant.id, 'admin')
+    await loadDashboard(_pcRestaurant, _pcBranches)
+  } else {
+    const branch = _pcBranches.find(b => b.id === _pcSelected)
+    if (!branch || entered !== branch.passcode) { errEl.classList.remove('hidden'); return }
+    _role = 'branch'; _activeBranchId = branch.id
+    localStorage.setItem(LS_ROLE_KEY + '_' + _pcRestaurant.id, 'branch:' + branch.id)
+    await loadDashboard(_pcRestaurant, _pcBranches)
+  }
+}
+
+// تبديل الوضع: يمسح localStorage ويُظهر شاشة الاختيار من جديد
+function switchRole() {
+  if (!state.restaurant) return
+  localStorage.removeItem(LS_ROLE_KEY + '_' + state.restaurant.id)
+  _role = null; _activeBranchId = null
+  // إيقاف realtime قبل العودة
+  if (_realtimeChannel) { db.removeChannel(_realtimeChannel); _realtimeChannel = null }
+  showPasscodeScreen(state.restaurant, state.branches)
+}
+
+// تطبيق صلاحيات الواجهة بعد تحديد الـ role
+function applyRoleUI() {
+  const isAdmin = _role === 'admin'
+  // إخفاء/إظهار تبويبات admin-only في desktop nav
+  document.querySelectorAll('[data-admin-only="1"]').forEach(el => {
+    el.style.display = isAdmin ? '' : 'none'
+  })
+  // more-menu: إخفاء analytics + branches لو مش أدمن
+  const moreMenuBtns = document.querySelectorAll('#more-menu button')
+  moreMenuBtns.forEach(btn => {
+    const fn = btn.getAttribute('onclick') || ''
+    if (!isAdmin && (fn.includes("'analytics'") || fn.includes("'branches'"))) {
+      btn.style.display = 'none'
+    } else {
+      btn.style.display = ''
+    }
+  })
+  // bottom nav: إخفاء settings لو مش أدمن
+  const bnavSettings = document.getElementById('bnav-settings')
+  if (bnavSettings) bnavSettings.style.display = isAdmin ? '' : 'none'
+  // قسم admin-passcode في الإعدادات
+  const apSection = document.getElementById('admin-passcode-section')
+  if (apSection) apSection.classList.toggle('hidden', !isAdmin)
+  // لو مش أدمن وكان في settings → نحوله لـ orders
+  if (!isAdmin) {
+    const activeTab = document.querySelector('.tab-btn.tab-active')
+    if (activeTab) {
+      const fn = activeTab.getAttribute('onclick') || ''
+      if (fn.includes("'settings'") || fn.includes("'analytics'") || fn.includes("'branches'")) {
+        showTab('orders')
+      }
+    }
+  }
 }
 
 // ── AUTH ──────────────────────────────────────────────────────────────
@@ -707,13 +922,19 @@ async function doLogin() {
 async function doLogout() { await db.auth.signOut() }
 
 // ── LOAD DASHBOARD ────────────────────────────────────────────────────
-async function loadDashboard() {
-  showScreen('dashboard')
-  const { data: { user } } = await db.auth.getUser()
-  const { data: r }        = await db.from('restaurants').select('*').eq('owner_id', user.id).single()
-  if (!r) { showToast('لم يتم العثور على مطعم مرتبط بهذا الحساب'); return }
+async function loadDashboard(r, branches) {
+  // لو استُدعيت بدون معاملات (من onAuthStateChange مثلاً)، اجلب البيانات من الصفر
+  if (!r) {
+    const { data: { user } } = await db.auth.getUser()
+    const res = await db.from('restaurants').select('*').eq('owner_id', user.id).single()
+    r = res.data
+    if (!r) { showToast('لم يتم العثور على مطعم مرتبط بهذا الحساب'); return }
+    const br = await db.from('branches').select('id,name,passcode').eq('restaurant_id', r.id).order('created_at')
+    branches = br.data || []
+  }
 
   state.restaurant = r
+  state.branches   = branches || []
   document.getElementById('dash-restaurant-name').textContent = r.name
   document.getElementById('preview-link').href = MENU_BASE_URL + '?r=' + r.slug + '&preview=1'
   document.getElementById('share-menu-link').value = MENU_BASE_URL + '?r=' + r.slug
@@ -726,6 +947,8 @@ async function loadDashboard() {
   document.getElementById('set-whatsapp').value = r.whatsapp
   document.getElementById('set-logo').value     = r.logo_url  || ''
   document.getElementById('set-cover').value    = r.cover_url || ''
+  document.getElementById('set-admin-passcode').value = r.admin_passcode || ''
+  document.getElementById('set-price-per-km').value   = r.price_per_km  ?? ''
   const primary = r.theme?.primary || '#FF6B00'
   document.getElementById('set-color').value     = primary
   document.getElementById('set-color-hex').value = primary
@@ -733,7 +956,9 @@ async function loadDashboard() {
   document.getElementById('ann-active-toggle').checked   = r.announcement_active || false
 
   setTimeout(() => initPickr(primary), 100)
-  startRealtimeOrders() // الطلبات تجي دايماً عبر التطبيق (واتساب أُزيل من تدفق الطلبات)
+  showScreen('dashboard')
+  applyRoleUI()
+  startRealtimeOrders()
 
   // Live sync: color hex input
   document.getElementById('set-color-hex').addEventListener('input', e => {
@@ -747,6 +972,13 @@ async function loadDashboard() {
     if (url) { document.getElementById('logo-preview').src = url; wrap.classList.remove('hidden') }
     else wrap.classList.add('hidden')
   })
+}
+
+async function saveAdminPasscode() {
+  const pass = document.getElementById('set-admin-passcode').value.trim()
+  await db.from('restaurants').update({ admin_passcode: pass || null }).eq('id', state.restaurant.id)
+  state.restaurant.admin_passcode = pass || null
+  showToast(pass ? 'تم حفظ كلمة سر الأدمن ✅' : 'تم إزالة كلمة سر الأدمن')
 }
 
 // ── PICKR (Color Picker) ──────────────────────────────────────────────
@@ -1023,16 +1255,31 @@ async function saveBranch() {
   if (!passcode)                                { errEl.textContent = 'كلمة سر الفرع مطلوبة';    errEl.classList.remove('hidden'); return }
   if (_branchPickedLat === null)                { errEl.textContent = 'حدد موقع الفرع على الخريطة'; errEl.classList.remove('hidden'); return }
   errEl.classList.add('hidden')
+  const wasOneBranch = state.branches.length <= 1
   const payload = { name, passcode, lat: _branchPickedLat, lng: _branchPickedLng }
   if (id) await db.from('branches').update(payload).eq('id', id)
   else    await db.from('branches').insert({ ...payload, restaurant_id: state.restaurant.id })
   closeBranchModal(); await loadBranches(); showToast(id ? 'تم تعديل الفرع ✅' : 'تم إضافة الفرع ✅')
+  // لو أضفنا فرعاً ثانياً لأول مرة → أعد اختيار الوضع (لأن الأدمن المخزّن كان بدون passcode)
+  if (!id && wasOneBranch && state.branches.length > 1) {
+    localStorage.removeItem(LS_ROLE_KEY + '_' + state.restaurant.id)
+    if (_realtimeChannel) { db.removeChannel(_realtimeChannel); _realtimeChannel = null }
+    showToast('تم إضافة فرع جديد — سيُطلب منك اختيار الوضع من الآن')
+    setTimeout(() => switchRole(), 1200)
+  }
 }
 async function deleteBranch(id) {
   const ok = await showConfirm('حذف هذا الفرع؟ الطلبات السابقة المرتبطة به تبقى محفوظة.', 'حذف')
   if (!ok) return
   await db.from('branches').delete().eq('id', id)
-  await loadBranches(); showToast('تم حذف الفرع')
+  await loadBranches()
+  showToast('تم حذف الفرع')
+  // لو اتبقى فرع واحد بس → امسح localStorage لكل الأجهزة المرتبطة بهذا الفرع تلقائياً (محلياً)
+  if (state.branches.length <= 1) {
+    const lsKey = LS_ROLE_KEY + '_' + state.restaurant.id
+    const saved  = localStorage.getItem(lsKey)
+    if (saved && saved !== 'admin') localStorage.removeItem(lsKey)
+  }
 }
 
 // ── BRANCH MAP PICKER ─────────────────────────────────────────────────
@@ -1380,7 +1627,9 @@ async function deleteBundle(id) { const ok = await showConfirm('هل تريد ح
 
 // ── ORDERS ────────────────────────────────────────────────────────────
 async function loadOrders() {
-  const { data } = await db.from('orders').select('*').eq('restaurant_id', state.restaurant.id).order('created_at', { ascending: false }).limit(50)
+  let q = db.from('orders').select('*').eq('restaurant_id', state.restaurant.id).order('created_at', { ascending: false }).limit(50)
+  if (_role === 'branch' && _activeBranchId) q = q.eq('branch_id', _activeBranchId)
+  const { data } = await q
   state.orders = data || []
   renderOrders(); updateOrdersBadge(state.orders)
 }
@@ -1403,6 +1652,7 @@ function renderOrders() {
       </div>
       <div class="space-y-1 border-t border-gray-50 pt-3">
         ${o.items.map(i => `<div class="flex justify-between text-sm"><span class="text-gray-600">${i.name} × ${i.qty}</span><span class="font-bold text-gray-800">${Number(i.subtotal).toFixed(2)} ج.م</span></div>`).join('')}
+        ${o.delivery_fee ? `<div class="flex justify-between text-sm"><span class="text-gray-500">🛵 رسوم التوصيل</span><span class="font-bold text-gray-700">${Number(o.delivery_fee).toFixed(2)} ج.م</span></div>` : ''}
         <div class="flex justify-between text-sm font-extrabold pt-2 border-t border-gray-100"><span>الإجمالي</span><span class="text-orange-500">${Number(o.total).toFixed(2)} ج.م</span></div>
       </div>
       ${o.status === 'cancelled' && o.cancel_reason ? `<p class="text-xs text-red-500 bg-red-50 rounded-xl px-3 py-2 mt-2 font-bold">سبب الرفض: ${o.cancel_reason}</p>` : ''}
@@ -1472,6 +1722,8 @@ async function saveSettings() {
   const logo_url = document.getElementById('set-logo').value.trim()  || null
   const cover_url= document.getElementById('set-cover').value.trim() || null
   const primary  = document.getElementById('set-color').value
+  const pricePerKmRaw = document.getElementById('set-price-per-km').value
+  const price_per_km  = pricePerKmRaw !== '' ? parseFloat(pricePerKmRaw) : null
   const msgEl    = document.getElementById('settings-msg')
   if (!name||!whatsappRaw) { msgEl.textContent='الاسم ورقم التواصل مطلوبان'; msgEl.className='text-center text-sm text-red-500'; msgEl.classList.remove('hidden'); return }
 
@@ -1481,9 +1733,9 @@ async function saveSettings() {
   document.getElementById('set-whatsapp').value = whatsapp
 
   settingsSnapshot = { name, whatsapp, logo_url, primary }
-  const { error } = await db.from('restaurants').update({ name, whatsapp, logo_url, cover_url, theme: { primary, secondary:'#1A1A1A' } }).eq('id', state.restaurant.id)
+  const { error } = await db.from('restaurants').update({ name, whatsapp, logo_url, cover_url, theme: { primary, secondary:'#1A1A1A' }, price_per_km: price_per_km ?? null }).eq('id', state.restaurant.id)
   if (error) { msgEl.textContent='حدث خطأ أثناء الحفظ'; msgEl.className='text-center text-sm text-red-500' }
-  else { state.restaurant.name=name; document.getElementById('dash-restaurant-name').textContent=name; document.getElementById('undo-settings-btn').classList.remove('hidden'); msgEl.textContent='تم الحفظ بنجاح ✅'; msgEl.className='text-center text-sm text-green-500'; showToast('تم حفظ الإعدادات ✅') }
+  else { state.restaurant.name=name; state.restaurant.price_per_km=price_per_km; document.getElementById('dash-restaurant-name').textContent=name; document.getElementById('undo-settings-btn').classList.remove('hidden'); msgEl.textContent='تم الحفظ بنجاح ✅'; msgEl.className='text-center text-sm text-green-500'; showToast('تم حفظ الإعدادات ✅') }
   msgEl.classList.remove('hidden')
   setTimeout(() => msgEl.classList.add('hidden'), 3000)
 }
@@ -1501,9 +1753,16 @@ function undoSettings() {
 // ── REALTIME ORDERS ───────────────────────────────────────────────────
 function startRealtimeOrders() {
   if (_realtimeChannel) return
+  // لو role=branch، نفلتر بالـ branch_id بدل restaurant_id لتقليل الأحداث غير المعنية
+  // ملاحظة: الفلترة بـ branch_id في Supabase Realtime تعمل على القيم الموجودة في وقت الحدث فقط
+  // لذا نحتاج INSERT filter بـ restaurant_id دايماً (INSERT الجديد يكون عنده branch_id صح)
+  // لكن UPDATE (تحويل الفرع) نستقبله دايماً ونفلتر يدوياً في handleOrderUpdatedElsewhere
+  const insertFilter = _role === 'branch' && _activeBranchId
+    ? `branch_id=eq.${_activeBranchId}`
+    : `restaurant_id=eq.${state.restaurant.id}`
   _realtimeChannel = db
     .channel('new-orders-' + state.restaurant.id)
-    .on('postgres_changes', { event:'INSERT', schema:'public', table:'orders', filter:`restaurant_id=eq.${state.restaurant.id}` }, p => handleIncomingOrder(p.new))
+    .on('postgres_changes', { event:'INSERT', schema:'public', table:'orders', filter: insertFilter }, p => handleIncomingOrder(p.new))
     .on('postgres_changes', { event:'UPDATE', schema:'public', table:'orders', filter:`restaurant_id=eq.${state.restaurant.id}` }, p => handleOrderUpdatedElsewhere(p.new))
     .subscribe()
 }
@@ -1522,11 +1781,19 @@ function handleIncomingOrder(order) {
   }
 }
 // لو التاجر له أكتر من تبويب/جهاز مفتوح، وتم قبول/رفض الطلب من تبويب آخر،
-// نوقف الصوت والبطاقة المنبثقة في هذا التبويب تلقائياً (التزامن بين كل النسخ المفتوحة)
+// نوقف الصوت والبطاقة المنبثقة في هذا التبويب تلقائياً (التزامن بين كل النسخ المفتوحة).
+// كذلك يُستخدم لاستقبال الطلبات المحوَّلة تلقائياً من فرع آخر رفضها (ترجع لحالة pending من جديد).
 function handleOrderUpdatedElsewhere(order) {
+  if (order.status === 'pending') {
+    // تحويل تلقائي من فرع آخر رفض الطلب — يُعامل كطلب جديد تماماً عند هذا الفرع
+    // لو role=branch، نتحقق إن الطلب المحوَّل هو لفرعنا فعلاً
+    if (_role === 'branch' && _activeBranchId && order.branch_id !== _activeBranchId) return
+    const alreadyQueued = _pendingOrdersQueue.some(o => o.id === order.id)
+    if (!alreadyQueued) handleIncomingOrder(order)
+    return
+  }
   const idx = _pendingOrdersQueue.findIndex(o => o.id === order.id)
   if (idx === -1) return
-  if (order.status === 'pending') return // تحديث غير متعلق بالقبول/الرفض
   const wasCurrentlyShown = idx === 0
   _pendingOrdersQueue.splice(idx, 1)
   if (wasCurrentlyShown) advanceToNextPendingOrder()
@@ -1536,6 +1803,7 @@ function handleOrderUpdatedElsewhere(order) {
 function showNewOrderPopup(order) {
   document.getElementById('nop-order-num').textContent = order.order_number
   document.getElementById('nop-items').innerHTML = (order.items||[]).map(i => `<div class="flex justify-between text-sm"><span class="text-gray-600 font-bold">${i.name} × ${i.qty}</span><span class="font-extrabold text-gray-800">${Number(i.subtotal).toFixed(2)} ج.م</span></div>`).join('')
+  + (order.delivery_fee ? `<div class="flex justify-between text-sm border-t border-gray-100 pt-1.5 mt-1"><span class="text-gray-500 font-bold">🛵 رسوم التوصيل</span><span class="font-extrabold text-gray-700">${Number(order.delivery_fee).toFixed(2)} ج.م</span></div>` : '')
   document.getElementById('nop-total').textContent = Number(order.total).toFixed(2) + ' ج.م'
   const meta = []
   if (order.table_number)     meta.push(`🪑 طاولة: ${order.table_number}`)
@@ -1601,13 +1869,47 @@ function submitRejectCustomReason() {
 }
 async function submitRejectReason(reason) {
   if (!_pendingOrdersQueue.length) return
-  const id = _pendingOrdersQueue[0].id
-  await db.from('orders').update({ status:'cancelled', cancel_reason: reason }).eq('id', id)
-  showToast('❌ تم رفض الطلب')
+  const order = _pendingOrdersQueue[0]
+  const transferred = await tryTransferToNextBranch(order, reason)
+  if (!transferred) {
+    await db.from('orders').update({ status:'cancelled', cancel_reason: reason }).eq('id', order.id)
+    showToast('❌ تم رفض الطلب')
+  }
   closeRejectReasonModal()
   _pendingOrdersQueue.shift()
   advanceToNextPendingOrder()
   loadOrders()
+}
+// عند رفض الفرع للطلب، يبحث عن أقرب فرع تالٍ لم يُجرَّب بعد لنفس الطلب، ويحوّل الطلب إليه تلقائياً
+// بنفس البيانات الأصلية، فيبدأ تنبيه جديد عند هذا الفرع كطلب جديد عادي. يعيد true لو تم التحويل بنجاح.
+async function tryTransferToNextBranch(order, reason) {
+  if (!order.customer_lat || !order.customer_lng) return false
+  const { data: branches } = await db.from('branches').select('id,lat,lng').eq('restaurant_id', state.restaurant.id).eq('is_active', true)
+  if (!branches || branches.length < 2) return false
+
+  const alreadyRejected = [...(order.rejected_branch_ids || []), order.branch_id].filter(Boolean)
+  const candidates = branches.filter(b => !alreadyRejected.includes(b.id))
+  if (!candidates.length) return false
+
+  let nearest = null, minDist = Infinity
+  candidates.forEach(b => {
+    const R = 6371
+    const dLat = (b.lat - order.customer_lat) * Math.PI / 180
+    const dLng = (b.lng - order.customer_lng) * Math.PI / 180
+    const a = Math.sin(dLat/2)**2 + Math.cos(order.customer_lat*Math.PI/180) * Math.cos(b.lat*Math.PI/180) * Math.sin(dLng/2)**2
+    const d = R * 2 * Math.atan2(Math.sqrt(a), Math.sqrt(1-a))
+    if (d < minDist) { minDist = d; nearest = b }
+  })
+  if (!nearest) return false
+
+  await db.from('orders').update({
+    branch_id: nearest.id,
+    rejected_branch_ids: [...alreadyRejected],
+    status: 'pending',
+    cancel_reason: null
+  }).eq('id', order.id)
+  showToast(`تم تحويل الطلب لفرع آخر بعد الرفض (السبب: ${reason})`)
+  return true
 }
 
 // ── ALARM (يتكرر لحد ما التاجر يقرر) ────────────────────────────────────
@@ -1655,7 +1957,7 @@ async function uploadBundleImage(input) { const f = input.files[0]; if (!f) retu
 async function uploadBannerImage(input) { const f = input.files[0]; if (!f) return; const u = await _uploadImage(f,'banners','bnm-image-preview','bnm-image-preview-wrap','banner-upload-msg'); if (u) document.getElementById('bnm-image').value = u }
 
 // ── UI HELPERS ────────────────────────────────────────────────────────
-function showScreen(name) { ['login','dashboard'].forEach(s => document.getElementById('screen-'+s).classList.add('hidden')); document.getElementById('screen-'+name).classList.remove('hidden') }
+function showScreen(name) { ['login','passcode','dashboard'].forEach(s => document.getElementById('screen-'+s).classList.add('hidden')); document.getElementById('screen-'+name).classList.remove('hidden') }
 function showMoreMenu()   { document.getElementById('more-menu').classList.remove('hidden') }
 function hideMoreMenu()   { document.getElementById('more-menu').classList.add('hidden') }
 
