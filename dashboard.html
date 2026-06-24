@@ -13,6 +13,8 @@
   <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
   <link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/@simonwep/pickr/dist/themes/nano.min.css" />
   <script src="https://cdn.jsdelivr.net/npm/@simonwep/pickr/dist/pickr.min.js"></script>
+  <link rel="stylesheet" href="https://unpkg.com/leaflet@1.9.4/dist/leaflet.css" />
+  <script src="https://unpkg.com/leaflet@1.9.4/dist/leaflet.js"></script>
   <link href="https://fonts.googleapis.com/css2?family=Rubik:wght@400;500;600;700;800;900&display=swap" rel="stylesheet" />
   <style>
     * { font-family: 'Rubik', sans-serif; }
@@ -108,8 +110,9 @@
     <button onclick="showTab('bundles')"    id="tab-bundles-top"    class="tab-btn flex-shrink-0 py-3 px-3 text-sm font-bold text-gray-400 transition-colors">العروض</button>
     <button onclick="showTab('banners')"    id="tab-banners-top"    class="tab-btn flex-shrink-0 py-3 px-3 text-sm font-bold text-gray-400 transition-colors">📢 البنرات</button>
     <button onclick="showTab('orders')"     id="tab-orders-top"     class="tab-btn flex-shrink-0 py-3 px-3 text-sm font-bold text-gray-400 transition-colors">الطلبات</button>
-    <button onclick="showTab('analytics')"  id="tab-analytics-top"  class="tab-btn flex-shrink-0 py-3 px-3 text-sm font-bold text-gray-400 transition-colors">📊 إحصائيات</button>
-    <button onclick="showTab('settings')"   id="tab-settings-top"   class="tab-btn flex-shrink-0 py-3 px-3 text-sm font-bold text-gray-400 transition-colors">الإعدادات</button>
+    <button onclick="showTab('analytics')"  id="tab-analytics-top"  class="tab-btn flex-shrink-0 py-3 px-3 text-sm font-bold text-gray-400 transition-colors" data-admin-only="1">📊 إحصائيات</button>
+    <button onclick="showTab('branches')"   id="tab-branches-top"   class="tab-btn flex-shrink-0 py-3 px-3 text-sm font-bold text-gray-400 transition-colors" data-admin-only="1">🏬 الفروع</button>
+    <button onclick="showTab('settings')"   id="tab-settings-top"   class="tab-btn flex-shrink-0 py-3 px-3 text-sm font-bold text-gray-400 transition-colors" data-admin-only="1">الإعدادات</button>
   </div>
 
   <!-- Main Content -->
@@ -236,8 +239,59 @@
       </div>
     </div>
 
+    <!-- Branches Tab -->
+    <div id="tab-content-branches" class="hidden fade-up">
+      <div class="flex items-center justify-between mb-4">
+        <h2 class="font-extrabold text-gray-800">🏬 الفروع</h2>
+        <button onclick="openBranchModal()" class="bg-orange-500 text-white text-sm font-bold px-4 py-2 rounded-xl">+ فرع جديد</button>
+      </div>
+      <p class="text-xs text-gray-400 mb-4">حدد موقع كل فرع بدقة على الخريطة — هذا أساس حساب أقرب فرع للعميل وتكلفة التوصيل. كل فرع له كلمة سر خاصة تُستخدم لدخول موظفيه.</p>
+      <div id="branches-list" class="space-y-3"></div>
+    </div>
+
   </main>
 </div><!-- /screen-dashboard -->
+
+<!-- ══ BRANCH MODAL ══ -->
+<div id="modal-branch" class="hidden fixed inset-0 z-50 flex items-end justify-center">
+  <div class="absolute inset-0 bg-black/50" onclick="closeBranchModal()"></div>
+  <div class="relative bg-white rounded-t-3xl w-full max-w-lg p-6 space-y-4 max-h-[90vh] overflow-y-auto">
+    <h3 id="branch-modal-title" class="text-lg font-extrabold text-gray-800">فرع جديد</h3>
+    <input type="hidden" id="bm-branch-id" />
+    <div><label class="text-xs font-bold text-gray-500 mb-1 block">اسم الفرع *</label>
+      <input id="bm-branch-name" type="text" placeholder="مثال: فرع الدقي" enterkeyhint="next" onkeydown="focusNextField(event, 'bm-branch-passcode')" class="w-full border border-gray-200 rounded-xl px-4 py-3 text-sm focus:outline-none focus:ring-2 focus:ring-orange-400" /></div>
+    <div><label class="text-xs font-bold text-gray-500 mb-1 block">كلمة سر الفرع *</label>
+      <input id="bm-branch-passcode" type="text" placeholder="يحددها التاجر، يستخدمها موظف الفرع للدخول" enterkeyhint="done" onkeydown="focusNextField(event, null, saveBranch)" class="w-full border border-gray-200 rounded-xl px-4 py-3 text-sm focus:outline-none focus:ring-2 focus:ring-orange-400" /></div>
+    <div>
+      <label class="text-xs font-bold text-gray-500 mb-1 block">موقع الفرع على الخريطة *</label>
+      <button onclick="openBranchMapPicker()" id="bm-map-pick-btn" class="w-full border border-gray-200 rounded-xl px-4 py-3 text-sm text-gray-500 text-right flex items-center gap-2">
+        <span>📍</span><span id="bm-map-pick-label">اضغط لتحديد الموقع</span>
+      </button>
+    </div>
+    <p id="bm-error" class="text-red-500 text-xs text-center hidden"></p>
+    <button onclick="saveBranch()" class="w-full bg-orange-500 text-white font-bold rounded-xl py-3">حفظ الفرع</button>
+  </div>
+</div>
+
+<!-- ══ BRANCH MAP PICKER ══ -->
+<div id="branch-map-modal" class="hidden fixed inset-0 z-[60] flex flex-col" style="background:#fff">
+  <div style="display:flex;align-items:center;justify-content:space-between;padding:14px 16px;border-bottom:1px solid #f0f0f0;flex-shrink:0">
+    <p style="font-size:16px;font-weight:900;color:#1a1a1a">📍 حدد موقع الفرع</p>
+    <button onclick="closeBranchMapPicker()" style="width:36px;height:36px;border-radius:50%;background:#f5f5f5;color:#555;font-size:20px;font-weight:700;display:flex;align-items:center;justify-content:center">&times;</button>
+  </div>
+  <div id="branch-leaflet-map" style="flex:1;width:100%;min-height:0"></div>
+  <button onclick="useBranchMyLocation()"
+          style="position:absolute;bottom:90px;left:16px;z-index:1000;background:#fff;border:none;border-radius:12px;padding:10px 14px;font-size:13px;font-weight:800;color:#1a1a1a;box-shadow:0 2px 12px rgba(0,0,0,0.15);display:flex;align-items:center;gap:6px;font-family:'Rubik',sans-serif;cursor:pointer">
+    🎯 موقعي الحالي
+  </button>
+  <div style="padding:12px 16px;border-top:1px solid #f0f0f0;background:#fff;flex-shrink:0">
+    <p id="branch-map-coords-label" style="font-size:12px;color:#aaa;text-align:center;margin-bottom:10px">لم يتم تحديد موقع بعد</p>
+    <button onclick="confirmBranchLocation()"
+            style="width:100%;background:#FF6B00;color:#fff;font-size:15px;font-weight:900;border-radius:16px;padding:14px;font-family:'Rubik',sans-serif">
+      ✅ تأكيد الموقع
+    </button>
+  </div>
+</div>
 
 <!-- ══ PRODUCT MODAL ══ -->
 <div id="modal-product" class="hidden fixed inset-0 z-50 flex items-end justify-center">
@@ -469,7 +523,8 @@
       <button onclick="hideMoreMenu();showTab('bundles')"    class="flex flex-col items-center gap-2 bg-gray-50 rounded-2xl p-4"><span class="text-2xl">🎁</span><span class="text-xs font-bold text-gray-600">العروض</span></button>
       <button onclick="hideMoreMenu();showTab('banners')"    class="flex flex-col items-center gap-2 bg-gray-50 rounded-2xl p-4"><span class="text-2xl">📢</span><span class="text-xs font-bold text-gray-600">البنرات</span></button>
       <button onclick="hideMoreMenu();showTab('analytics')"  class="flex flex-col items-center gap-2 bg-gray-50 rounded-2xl p-4"><span class="text-2xl">📊</span><span class="text-xs font-bold text-gray-600">إحصائيات</span></button>
-      <button onclick="doLogout()" class="flex flex-col items-center gap-2 bg-red-50 rounded-2xl p-4 col-span-2"><span class="text-2xl">🚪</span><span class="text-xs font-bold text-red-500">تسجيل الخروج</span></button>
+      <button onclick="hideMoreMenu();showTab('branches')"   class="flex flex-col items-center gap-2 bg-gray-50 rounded-2xl p-4"><span class="text-2xl">🏬</span><span class="text-xs font-bold text-gray-600">الفروع</span></button>
+      <button onclick="doLogout()" class="flex flex-col items-center gap-2 bg-red-50 rounded-2xl p-4 col-span-3"><span class="text-2xl">🚪</span><span class="text-xs font-bold text-red-500">تسجيل الخروج</span></button>
     </div>
   </div>
 </div>
@@ -550,7 +605,8 @@ const state = {
   products:   [],
   orders:     [],
   banners:    [],
-  bundles:    []
+  bundles:    [],
+  branches:   []
 }
 
 let pickrInstance    = null
@@ -663,7 +719,7 @@ async function loadDashboard() {
   document.getElementById('share-menu-link').value = MENU_BASE_URL + '?r=' + r.slug
   initPushUI()
 
-  await Promise.all([loadCategories(), loadProducts(), loadOrders(), loadBanners(), loadBundles()])
+  await Promise.all([loadCategories(), loadProducts(), loadOrders(), loadBanners(), loadBundles(), loadBranches()])
 
   // Populate settings
   document.getElementById('set-name').value     = r.name
@@ -910,6 +966,122 @@ function setUnitField(unit) {
   if (opts.includes(unit)) { sel.value = unit; document.getElementById('pm-unit-custom').classList.add('hidden') }
   else { sel.value = 'custom'; document.getElementById('pm-unit-custom').classList.remove('hidden'); document.getElementById('pm-unit-custom').value = unit }
   document.getElementById('pm-unit').value = unit
+}
+
+// ── BRANCHES ──────────────────────────────────────────────────────────
+async function loadBranches() {
+  const { data } = await db.from('branches').select('*').eq('restaurant_id', state.restaurant.id).order('created_at')
+  state.branches = data || []
+  renderBranches()
+}
+function renderBranches() {
+  const el = document.getElementById('branches-list')
+  if (!state.branches.length) { el.innerHTML = `<p class="text-center text-gray-400 text-sm py-8">لا توجد فروع بعد — أضف فرعك الأول</p>`; return }
+  el.innerHTML = state.branches.map(b => `
+    <div class="bg-white rounded-2xl p-4 shadow-sm flex items-center justify-between">
+      <div>
+        <p class="font-extrabold text-gray-800">${b.name}</p>
+        <p class="text-xs text-gray-400">📍 ${b.lat.toFixed(4)}, ${b.lng.toFixed(4)}</p>
+      </div>
+      <div class="flex gap-2">
+        <button onclick="openBranchModal('${b.id}')" class="text-xs bg-gray-100 text-gray-600 font-bold px-3 py-2 rounded-xl">تعديل</button>
+        <button onclick="deleteBranch('${b.id}')" class="text-xs bg-red-50 text-red-500 font-bold px-3 py-2 rounded-xl">حذف</button>
+      </div>
+    </div>`).join('')
+}
+let _branchPickedLat = null, _branchPickedLng = null
+function openBranchModal(id = null) {
+  document.getElementById('bm-branch-id').value = id || ''
+  document.getElementById('bm-error').classList.add('hidden')
+  _branchPickedLat = null; _branchPickedLng = null
+  if (id) {
+    const b = state.branches.find(x => x.id === id)
+    document.getElementById('bm-branch-name').value     = b.name
+    document.getElementById('bm-branch-passcode').value = b.passcode
+    _branchPickedLat = b.lat; _branchPickedLng = b.lng
+    document.getElementById('bm-map-pick-label').textContent = `✅ تم تحديد الموقع (${b.lat.toFixed(4)}, ${b.lng.toFixed(4)})`
+    document.getElementById('branch-modal-title').textContent = 'تعديل فرع'
+  } else {
+    document.getElementById('bm-branch-name').value     = ''
+    document.getElementById('bm-branch-passcode').value = ''
+    document.getElementById('bm-map-pick-label').textContent = 'اضغط لتحديد الموقع'
+    document.getElementById('branch-modal-title').textContent = 'فرع جديد'
+  }
+  document.getElementById('modal-branch').classList.remove('hidden')
+  pushModal('branch', closeBranchModal)
+}
+function closeBranchModal(fromPopstate) {
+  document.getElementById('modal-branch').classList.add('hidden')
+  if (!fromPopstate) popModalSilently('branch')
+}
+async function saveBranch() {
+  const id       = document.getElementById('bm-branch-id').value
+  const name     = document.getElementById('bm-branch-name').value.trim()
+  const passcode = document.getElementById('bm-branch-passcode').value.trim()
+  const errEl    = document.getElementById('bm-error')
+  if (!name)                                    { errEl.textContent = 'اسم الفرع مطلوب';        errEl.classList.remove('hidden'); return }
+  if (!passcode)                                { errEl.textContent = 'كلمة سر الفرع مطلوبة';    errEl.classList.remove('hidden'); return }
+  if (_branchPickedLat === null)                { errEl.textContent = 'حدد موقع الفرع على الخريطة'; errEl.classList.remove('hidden'); return }
+  errEl.classList.add('hidden')
+  const payload = { name, passcode, lat: _branchPickedLat, lng: _branchPickedLng }
+  if (id) await db.from('branches').update(payload).eq('id', id)
+  else    await db.from('branches').insert({ ...payload, restaurant_id: state.restaurant.id })
+  closeBranchModal(); await loadBranches(); showToast(id ? 'تم تعديل الفرع ✅' : 'تم إضافة الفرع ✅')
+}
+async function deleteBranch(id) {
+  const ok = await showConfirm('حذف هذا الفرع؟ الطلبات السابقة المرتبطة به تبقى محفوظة.', 'حذف')
+  if (!ok) return
+  await db.from('branches').delete().eq('id', id)
+  await loadBranches(); showToast('تم حذف الفرع')
+}
+
+// ── BRANCH MAP PICKER ─────────────────────────────────────────────────
+let _branchMap = null, _branchMarker = null
+function openBranchMapPicker() {
+  document.getElementById('branch-map-modal').classList.remove('hidden')
+  pushModal('branch-map', closeBranchMapPicker)
+  const startLat = _branchPickedLat ?? 30.0444
+  const startLng = _branchPickedLng ?? 31.2357
+  if (!_branchMap) {
+    _branchMap = L.map('branch-leaflet-map', { zoomControl: true }).setView([startLat, startLng], 13)
+    L.tileLayer('https://{s}.tile.openstreetmap.org/{z}/{x}/{y}.png', { attribution: '© OpenStreetMap', maxZoom: 19 }).addTo(_branchMap)
+    _branchMarker = L.marker([startLat, startLng], { draggable: true }).addTo(_branchMap)
+    _branchMarker.on('dragend', e => {
+      const pos = e.target.getLatLng()
+      _branchPickedLat = pos.lat; _branchPickedLng = pos.lng; updateBranchCoordsLabel()
+    })
+    _branchMap.on('click', e => {
+      _branchPickedLat = e.latlng.lat; _branchPickedLng = e.latlng.lng
+      _branchMarker.setLatLng([_branchPickedLat, _branchPickedLng]); updateBranchCoordsLabel()
+    })
+  } else {
+    _branchMap.setView([startLat, startLng], 13)
+    _branchMarker.setLatLng([startLat, startLng])
+  }
+  if (_branchPickedLat === null) { _branchPickedLat = startLat; _branchPickedLng = startLng }
+  updateBranchCoordsLabel()
+  setTimeout(() => _branchMap.invalidateSize(), 150)
+}
+function closeBranchMapPicker(fromPopstate) {
+  document.getElementById('branch-map-modal').classList.add('hidden')
+  if (!fromPopstate) popModalSilently('branch-map')
+}
+function updateBranchCoordsLabel() {
+  if (_branchPickedLat === null) return
+  document.getElementById('branch-map-coords-label').textContent = `📍 ${_branchPickedLat.toFixed(5)}, ${_branchPickedLng.toFixed(5)}`
+}
+function useBranchMyLocation() {
+  if (!navigator.geolocation) { showToast('متصفحك لا يدعم تحديد الموقع'); return }
+  navigator.geolocation.getCurrentPosition(pos => {
+    _branchPickedLat = pos.coords.latitude; _branchPickedLng = pos.coords.longitude
+    _branchMap.setView([_branchPickedLat, _branchPickedLng], 16)
+    _branchMarker.setLatLng([_branchPickedLat, _branchPickedLng])
+    updateBranchCoordsLabel()
+  }, () => showToast('تعذّر تحديد موقعك — تأكد من إذن الموقع'))
+}
+function confirmBranchLocation() {
+  document.getElementById('bm-map-pick-label').textContent = `✅ تم تحديد الموقع (${_branchPickedLat.toFixed(4)}, ${_branchPickedLng.toFixed(4)})`
+  closeBranchMapPicker()
 }
 
 // ── PRODUCT MODAL ─────────────────────────────────────────────────────
@@ -1488,7 +1660,7 @@ function showMoreMenu()   { document.getElementById('more-menu').classList.remov
 function hideMoreMenu()   { document.getElementById('more-menu').classList.add('hidden') }
 
 function showTab(name) {
-  const tabs = ['products','categories','bundles','banners','orders','analytics','settings']
+  const tabs = ['products','categories','bundles','banners','orders','analytics','branches','settings']
   tabs.forEach(t => {
     document.getElementById('tab-content-' + t).classList.add('hidden')
     const d = document.getElementById('tab-' + t + '-top'); if (d) { d.classList.remove('tab-active'); d.classList.add('text-gray-400') }
@@ -1496,11 +1668,12 @@ function showTab(name) {
   document.getElementById('tab-content-' + name).classList.remove('hidden')
   const da = document.getElementById('tab-' + name + '-top'); if (da) { da.classList.add('tab-active'); da.classList.remove('text-gray-400') }
   ;['products','orders','settings'].forEach(t => { const b = document.getElementById('bnav-'+t); if (b) b.classList.toggle('active', t===name) })
-  const moreBtn = document.getElementById('bnav-more'); if (moreBtn) moreBtn.classList.toggle('active', ['categories','bundles','banners','analytics'].includes(name))
+  const moreBtn = document.getElementById('bnav-more'); if (moreBtn) moreBtn.classList.toggle('active', ['categories','bundles','banners','analytics','branches'].includes(name))
   if (name === 'orders')    loadOrders()
   if (name === 'bundles')   loadBundles()
   if (name === 'analytics') loadAnalytics()
   if (name === 'banners')   loadBanners()
+  if (name === 'branches')  loadBranches()
 }
 
 function showToast(msg) { const t=document.getElementById('toast'); t.textContent=msg; t.classList.remove('hidden'); setTimeout(()=>t.classList.add('hidden'),2500) }
