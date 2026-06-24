@@ -1,43 +1,46 @@
-// منجز — Service Worker لإشعارات الطلبات (Web Push)
-const SW_VERSION = 'v1'
+// sw.js — Dashboard Service Worker
+// الوظيفة: Push Notifications فقط، بدون أي كاش أو تدخل في الـ requests
 
-self.addEventListener('install', (event) => {
-  self.skipWaiting()
-})
+self.addEventListener('install', () => self.skipWaiting());
+self.addEventListener('activate', () => self.clients.claim());
 
-self.addEventListener('activate', (event) => {
-  event.waitUntil(self.clients.claim())
-})
+// ══ Network-Only: كل request يروح للشبكة مباشرة، مفيش كاش ══
+self.addEventListener('fetch', (event) => {
+  event.respondWith(fetch(event.request));
+});
 
-// استقبال إشعار Push من السيرفر عند وصول طلب جديد
+// ══ Push Notifications ══
 self.addEventListener('push', (event) => {
-  let data = {}
-  try { data = event.data ? event.data.json() : {} } catch (e) { data = { title: 'طلب جديد', body: event.data ? event.data.text() : '' } }
+  const data  = event.data?.json?.() ?? {};
+  const title = data.title ?? 'طلب جديد 🍽️';
+  const body  = data.body  ?? 'لديك طلب جديد في المطعم';
+  const url   = data.url   ?? '/dashboard.html';
 
-  const title = data.title || '🔔 طلب جديد!'
-  const options = {
-    body: data.body || 'لديك طلب جديد في انتظار الموافقة',
-    icon: data.icon || './icon-192.png',
-    badge: './icon-192.png',
-    vibrate: [300, 150, 300, 150, 300, 150, 500], // نمط اهتزاز متكرر وواضح
-    tag: 'monjez-new-order', // إشعار جديد يستبدل القديم بدل تكديسه
-    renotify: true,          // يهتز/يصوت تاني حتى لو فيه إشعار سابق بنفس tag
-    requireInteraction: true, // الإشعار يفضل ظاهر لحد ما التاجر يتعامل معه (مدعوم على أندرويد)
-    data: { orderId: data.orderId || null, url: data.url || './dashboard.html' }
-  }
-  event.waitUntil(self.registration.showNotification(title, options))
-})
-
-// عند الضغط على الإشعار: فتح الداشبورد أو التركيز على نافذة مفتوحة بالفعل
-self.addEventListener('notificationclick', (event) => {
-  event.notification.close()
-  const targetUrl = (event.notification.data && event.notification.data.url) || './dashboard.html'
   event.waitUntil(
-    self.clients.matchAll({ type: 'window', includeUncontrolled: true }).then((clientsArr) => {
-      for (const client of clientsArr) {
-        if (client.url.includes('dashboard.html') && 'focus' in client) return client.focus()
-      }
-      if (self.clients.openWindow) return self.clients.openWindow(targetUrl)
+    self.registration.showNotification(title, {
+      body,
+      icon:             '/icon-192.png',
+      badge:            '/icon-192.png',
+      data:             { url },
+      requireInteraction: true,
+      dir:  'rtl',
+      lang: 'ar'
     })
-  )
-})
+  );
+});
+
+// ══ Notification Click ══
+self.addEventListener('notificationclick', (event) => {
+  event.notification.close();
+  const target = event.notification.data?.url ?? '/dashboard.html';
+
+  event.waitUntil(
+    clients.matchAll({ type: 'window', includeUncontrolled: true }).then((list) => {
+      for (const client of list) {
+        if (client.url.includes('dashboard') && 'focus' in client)
+          return client.focus();
+      }
+      return clients.openWindow(target);
+    })
+  );
+});
