@@ -27,6 +27,20 @@
     .fade-up { animation: fadeUp .3s ease both; }
     .spinner { border:3px solid #f3f3f3; border-top:3px solid #FF6B00; border-radius:50%; width:22px; height:22px; animation:spin .7s linear infinite; display:inline-block; }
 
+    .back-to-top {
+      position: fixed; bottom: 84px; left: 50%; transform: translateX(-50%);
+      background: #1a1a1a; color: #fff;
+      border: none; border-radius: 100px;
+      padding: 10px 20px; font-size: 13px; font-weight: 700;
+      display: flex; align-items: center; gap: 7px;
+      box-shadow: 0 4px 16px rgba(0,0,0,0.2);
+      cursor: pointer; z-index: 28;
+      transition: opacity 0.3s, transform 0.3s;
+      font-family: 'Rubik', sans-serif;
+    }
+    .back-to-top.hidden-btn { opacity: 0; pointer-events: none; transform: translateX(-50%) translateY(10px); }
+    .back-to-top:active     { transform: translateX(-50%) scale(0.96); }
+
     /* ── Bottom Nav ── */
     .bottom-nav { position:fixed; bottom:0; left:0; right:0; z-index:40; background:#fff; border-top:1px solid #f0f0f0; display:flex; padding-bottom:env(safe-area-inset-bottom); box-shadow:0 -4px 20px rgba(0,0,0,0.06); }
     .bnav-btn   { flex:1; display:flex; flex-direction:column; align-items:center; gap:3px; padding:10px 4px 8px; font-size:10px; font-weight:700; color:#aaa; border:none; background:none; cursor:pointer; transition:color 0.2s; position:relative; }
@@ -239,13 +253,16 @@
       <div class="flex-1"><label class="text-xs font-bold text-gray-500 mb-1 block">السعر الأصلي *</label>
         <input id="pm-price" type="number" step="0.01" min="0" oninput="updateDiscountPreview()" enterkeyhint="next" onkeydown="focusNextField(event, 'pm-discount')" class="w-full border border-gray-200 rounded-xl px-4 py-3 text-sm focus:outline-none focus:ring-2 focus:ring-orange-400" /></div>
       <div class="flex-1"><label class="text-xs font-bold text-gray-500 mb-1 block">سعر الخصم</label>
-        <input id="pm-discount" type="number" step="0.01" min="0" oninput="updateDiscountPreview()" placeholder="اتركه فارغاً إن لا يوجد خصم" enterkeyhint="done" onkeydown="focusNextField(event, null, saveProduct)" class="w-full border border-gray-200 rounded-xl px-4 py-3 text-sm focus:outline-none focus:ring-2 focus:ring-orange-400" /></div>
+        <input id="pm-discount" type="number" step="0.01" min="0" oninput="updateDiscountPreview()" placeholder="اتركه فارغاً إن لا يوجد خصم" enterkeyhint="next" onkeydown="focusNextField(event, 'pm-prep-minutes')" class="w-full border border-gray-200 rounded-xl px-4 py-3 text-sm focus:outline-none focus:ring-2 focus:ring-orange-400" /></div>
     </div>
     <div id="discount-preview" class="hidden bg-orange-50 rounded-xl px-4 py-2 text-sm flex items-center gap-2">
       <span class="text-gray-400 line-through" id="dp-original"></span>
       <span class="text-orange-500 font-extrabold" id="dp-discounted"></span>
       <span class="bg-orange-500 text-white text-xs font-bold px-2 py-0.5 rounded-full" id="dp-percent"></span>
     </div>
+    <div><label class="text-xs font-bold text-gray-500 mb-1 block">⏱️ وقت التجهيز التقديري (بالدقائق)</label>
+      <input id="pm-prep-minutes" type="number" step="1" min="1" placeholder="مثال: 10" enterkeyhint="done" onkeydown="focusNextField(event, null, saveProduct)" class="w-full border border-gray-200 rounded-xl px-4 py-3 text-sm focus:outline-none focus:ring-2 focus:ring-orange-400" />
+      <p class="text-[11px] text-gray-400 mt-1">يُستخدم لحساب الوقت التقديري الذي يظهر للعميل بعد تأكيد طلبه</p></div>
     <div><label class="text-xs font-bold text-gray-500 mb-1 block">التصنيف <span class="text-red-400">*</span></label>
       <select id="pm-category" class="w-full border border-gray-200 rounded-xl px-4 py-3 text-sm focus:outline-none focus:ring-2 focus:ring-orange-400 bg-white"><option value="" disabled selected>اختر تصنيف للمنتج...</option></select></div>
     <div>
@@ -414,6 +431,13 @@
   </div>
 </div>
 
+<button class="back-to-top hidden-btn" id="back-to-top-btn" onclick="scrollToTop()">
+  <svg width="14" height="14" fill="none" stroke="currentColor" stroke-width="2.5" viewBox="0 0 24 24">
+    <path d="M18 15l-6-6-6 6"/>
+  </svg>
+  الأعلى
+</button>
+
 <!-- ══ BOTTOM NAV (mobile) ══ -->
 <nav class="bottom-nav md:hidden" id="bottom-nav">
   <button class="bnav-btn active" id="bnav-products" onclick="showTab('products')">
@@ -472,6 +496,7 @@
       <div class="w-11 h-11 bg-white/20 rounded-2xl flex items-center justify-center text-2xl">🔔</div>
       <div><p class="text-white font-extrabold text-base">طلب جديد!</p><p id="nop-order-num" class="text-orange-100 text-xs font-bold"></p></div>
     </div>
+    <p id="nop-queue-counter" class="hidden bg-yellow-50 text-yellow-700 text-xs font-extrabold text-center py-2 border-b border-yellow-100"></p>
     <div class="px-5 py-4">
       <div id="nop-items" class="space-y-1.5 mb-3 max-h-48 overflow-y-auto"></div>
       <div class="flex justify-between items-center border-t border-gray-100 pt-3 mb-1">
@@ -533,7 +558,6 @@ let settingsSnapshot = null
 let productSnapshot  = null
 let annSaveTimeout   = null
 let _realtimeChannel = null
-let _pendingOrder    = null
 let _audioCtx        = null
 let _alsoWith        = []
 let activeProductFilter = 'all'
@@ -552,9 +576,28 @@ function popModalSilently(name) {
   _modalStack.splice(idx, 1)
   if (history.state && history.state._modalName === name) history.back()
 }
-window.addEventListener('popstate', () => {
+// طبقة أمان أساسية تمنع خروج التاجر من لوحة التحكم بالكامل بضغطة رجوع واحدة بالغلط
+// وهو واقف على أي تاب رئيسي (بدون أي مودال مفتوح فوقه)
+let _exitConfirmOpen = false
+let _exitConfirmedByUser = false
+history.pushState({ _appBase: true }, '') // طبقة حماية فوق صفحة الدخول الأصلية
+
+window.addEventListener('popstate', async () => {
   const top = _modalStack.pop()
-  if (top) top.closeFn(true)
+  if (top) { top.closeFn(true); return }
+
+  // لو التاجر أكّد الخروج بالفعل، نسمح بهذا الرجوع يكتمل طبيعياً
+  if (_exitConfirmedByUser) { _exitConfirmedByUser = false; return }
+
+  history.pushState({ _appBase: true }, '') // نعيد إضافة طبقة الحماية فوراً لمنع الخروج الفعلي
+  if (_exitConfirmOpen) return
+  _exitConfirmOpen = true
+  const confirmed = await showConfirm('هل أنت متأكد من الخروج؟', 'نعم، خروج')
+  _exitConfirmOpen = false
+  if (confirmed) {
+    _exitConfirmedByUser = true
+    history.back()
+  }
 })
 
 // تفاعل لوحة المفاتيح: الضغط على "تم/Next" ينقل التركيز للحقل التالي،
@@ -572,6 +615,15 @@ function focusNextField(event, nextFieldId, submitFn) {
     submitFn()
   }
 }
+
+// ── BACK TO TOP ───────────────────────────────────────────────────────
+function scrollToTop() { window.scrollTo({ top: 0, behavior: 'smooth' }) }
+window.addEventListener('scroll', () => {
+  const backBtn = document.getElementById('back-to-top-btn')
+  if (!backBtn) return
+  if (window.scrollY > 400) backBtn.classList.remove('hidden-btn')
+  else backBtn.classList.add('hidden-btn')
+}, { passive: true })
 
 // ── BOOT ──────────────────────────────────────────────────────────────
 async function boot() {
@@ -876,6 +928,7 @@ function openProductModal(id = null) {
     document.getElementById('pm-availability').value = p.availability   || 'available'
     document.getElementById('pm-badge').value        = p.offer_badge    || ''
     document.getElementById('pm-available').checked  = p.is_available
+    document.getElementById('pm-prep-minutes').value  = p.prep_minutes || 10
     document.getElementById('product-modal-title').textContent = 'تعديل منتج'
     setUnitField(p.unit || 'قطعة')
     updateDiscountPreview()
@@ -888,6 +941,7 @@ function openProductModal(id = null) {
     document.getElementById('pm-category').value     = ''
     document.getElementById('pm-availability').value = 'available'
     document.getElementById('pm-available').checked  = true
+    document.getElementById('pm-prep-minutes').value  = 10
     document.getElementById('pm-image-preview-wrap').classList.add('hidden')
     document.getElementById('discount-preview').classList.add('hidden')
     document.getElementById('product-modal-title').textContent = 'إضافة منتج'
@@ -1042,6 +1096,7 @@ async function saveProduct() {
     availability:    document.getElementById('pm-availability').value,
     offer_badge:     document.getElementById('pm-badge').value.trim()       || null,
     unit:            document.getElementById('pm-unit').value.trim()        || 'قطعة',
+    prep_minutes:    parseInt(document.getElementById('pm-prep-minutes').value) || 10,
     product_options: getOptionsData().length ? getOptionsData()             : null,
     also_with:       _alsoWith.length        ? [..._alsoWith]               : null
   }
@@ -1160,31 +1215,37 @@ async function loadOrders() {
 function renderOrders() {
   const el = document.getElementById('orders-list')
   if (!state.orders.length) { el.innerHTML = `<p class="text-center text-gray-400 text-sm py-8">لا توجد طلبات بعد</p>`; return }
-  const statusLabel = { pending:'جديد', confirmed:'مؤكد', done:'منتهي', cancelled:'ملغي' }
-  const statusColor = { pending:'bg-yellow-50 text-yellow-600', confirmed:'bg-blue-50 text-blue-600', done:'bg-green-50 text-green-600', cancelled:'bg-red-50 text-red-500' }
+  const statusLabel = { pending:'جديد', confirmed:'جاري التجهيز', ready:'جاهز', delivering:'جاري التوصيل', delivered:'تم التسليم', cancelled:'ملغي' }
+  const statusColor = { pending:'bg-yellow-50 text-yellow-600', confirmed:'bg-blue-50 text-blue-600', ready:'bg-purple-50 text-purple-600', delivering:'bg-indigo-50 text-indigo-600', delivered:'bg-green-50 text-green-600', cancelled:'bg-red-50 text-red-500' }
+  // الزر التالي المناسب لكل حالة (يدفع الطلب للمرحلة التالية في تدفق واحد بسيط)
+  const nextActionBtn = {
+    confirmed:  `<button onclick="updateOrderStatus('{ID}','ready')" class="text-xs font-bold bg-purple-500 text-white px-3 py-1.5 rounded-xl">📦 تم التجهيز</button>`,
+    ready:      `<button onclick="updateOrderStatus('{ID}','delivering')" class="text-xs font-bold bg-indigo-500 text-white px-3 py-1.5 rounded-xl">🛵 جاري التوصيل</button>`,
+    delivering: `<button onclick="updateOrderStatus('{ID}','delivered')" class="text-xs font-bold bg-green-500 text-white px-3 py-1.5 rounded-xl">✅ تم التسليم</button>`
+  }
   el.innerHTML = state.orders.map(o => `
     <div class="bg-white rounded-2xl p-4 shadow-sm">
       <div class="flex items-center justify-between mb-3">
         <div><p class="font-extrabold text-gray-800">${o.order_number}</p>${o.table_number ? `<p class="text-xs text-gray-400">طاولة ${o.table_number}</p>` : ''}</div>
-        <div class="flex items-center gap-2">
-          <span class="text-xs font-bold px-3 py-1 rounded-full ${statusColor[o.status]}">${statusLabel[o.status]}</span>
-          <select onchange="updateOrderStatus('${o.id}',this.value)" class="text-xs border border-gray-200 rounded-xl px-2 py-1 bg-white focus:outline-none">
-            <option value="pending"   ${o.status==='pending'   ?'selected':''}>جديد</option>
-            <option value="confirmed" ${o.status==='confirmed' ?'selected':''}>مؤكد</option>
-            <option value="done"      ${o.status==='done'      ?'selected':''}>منتهي</option>
-            <option value="cancelled" ${o.status==='cancelled' ?'selected':''}>ملغي</option>
-          </select>
-        </div>
+        <span class="text-xs font-bold px-3 py-1 rounded-full ${statusColor[o.status]}">${statusLabel[o.status]}</span>
       </div>
       <div class="space-y-1 border-t border-gray-50 pt-3">
         ${o.items.map(i => `<div class="flex justify-between text-sm"><span class="text-gray-600">${i.name} × ${i.qty}</span><span class="font-bold text-gray-800">${Number(i.subtotal).toFixed(2)} ج.م</span></div>`).join('')}
         <div class="flex justify-between text-sm font-extrabold pt-2 border-t border-gray-100"><span>الإجمالي</span><span class="text-orange-500">${Number(o.total).toFixed(2)} ج.م</span></div>
       </div>
       ${o.status === 'cancelled' && o.cancel_reason ? `<p class="text-xs text-red-500 bg-red-50 rounded-xl px-3 py-2 mt-2 font-bold">سبب الرفض: ${o.cancel_reason}</p>` : ''}
+      ${nextActionBtn[o.status] ? `<div class="mt-3">${nextActionBtn[o.status].replace('{ID}', o.id)}</div>` : ''}
       <p class="text-xs text-gray-300 mt-2">${new Date(o.created_at).toLocaleString('ar-EG')}</p>
     </div>`).join('')
 }
-async function updateOrderStatus(id, status) { await db.from('orders').update({ status }).eq('id', id); await loadOrders(); showToast('تم تحديث حالة الطلب') }
+async function updateOrderStatus(id, status) {
+  const timestampField = { ready: 'ready_at', delivering: 'delivering_at', delivered: 'delivered_at' }[status]
+  const payload = { status }
+  if (timestampField) payload[timestampField] = new Date().toISOString()
+  await db.from('orders').update(payload).eq('id', id)
+  await loadOrders()
+  showToast('تم تحديث حالة الطلب')
+}
 
 // ── ANALYTICS ─────────────────────────────────────────────────────────
 async function loadAnalytics() {
@@ -1274,15 +1335,31 @@ function startRealtimeOrders() {
     .on('postgres_changes', { event:'UPDATE', schema:'public', table:'orders', filter:`restaurant_id=eq.${state.restaurant.id}` }, p => handleOrderUpdatedElsewhere(p.new))
     .subscribe()
 }
-function handleIncomingOrder(order) { _pendingOrder = order; startAlarmLoop(); showNewOrderPopup(order); updateOrdersBadge([...state.orders, order]) }
+// طابور الطلبات الجديدة المعلّقة — كل طلب جديد يُضاف للطابور، ولا يُفقد أي طلب
+// لو وصلت طلبات متعددة في نفس اللحظة. الـ popup يعرض طلب واحد بالترتيب، وينتقل للتالي تلقائياً.
+let _pendingOrdersQueue = []
+
+function handleIncomingOrder(order) {
+  _pendingOrdersQueue.push(order)
+  startAlarmLoop()
+  updateOrdersBadge([...state.orders, order])
+  if (_pendingOrdersQueue.length === 1) {
+    showNewOrderPopup(order) // مفيش طلب معروض حالياً، نعرض هذا فوراً
+  } else {
+    updateQueueCounter() // فيه طلب معروض بالفعل، نضيف الجديد للطابور بصمت ونحدّث العداد فقط
+  }
+}
 // لو التاجر له أكتر من تبويب/جهاز مفتوح، وتم قبول/رفض الطلب من تبويب آخر،
 // نوقف الصوت والبطاقة المنبثقة في هذا التبويب تلقائياً (التزامن بين كل النسخ المفتوحة)
 function handleOrderUpdatedElsewhere(order) {
-  if (_pendingOrder && _pendingOrder.id === order.id && order.status !== 'pending') {
-    stopAlarmLoop()
-    dismissNewOrderPopup()
-    loadOrders()
-  }
+  const idx = _pendingOrdersQueue.findIndex(o => o.id === order.id)
+  if (idx === -1) return
+  if (order.status === 'pending') return // تحديث غير متعلق بالقبول/الرفض
+  const wasCurrentlyShown = idx === 0
+  _pendingOrdersQueue.splice(idx, 1)
+  if (wasCurrentlyShown) advanceToNextPendingOrder()
+  else updateQueueCounter()
+  loadOrders()
 }
 function showNewOrderPopup(order) {
   document.getElementById('nop-order-num').textContent = order.order_number
@@ -1295,21 +1372,42 @@ function showNewOrderPopup(order) {
   if (order.customer_address) meta.push(`🏠 ${order.customer_address}`)
   document.getElementById('nop-meta').innerHTML = meta.map(m => `<p>${m}</p>`).join('')
   document.getElementById('new-order-popup').classList.remove('hidden')
+  updateQueueCounter()
+}
+// يحدّث شارة "+X طلبات أخرى في الانتظار" فوق البطاقة المنبثقة
+function updateQueueCounter() {
+  const remaining = _pendingOrdersQueue.length - 1 // الطلب الحالي المعروض لا يُحسب كـ"متبقي"
+  const el = document.getElementById('nop-queue-counter')
+  if (!el) return
+  if (remaining > 0) { el.textContent = `+${remaining} طلب آخر في الانتظار`; el.classList.remove('hidden') }
+  else el.classList.add('hidden')
+}
+// بعد قبول/رفض الطلب المعروض، ينقل للطلب التالي في الطابور تلقائياً (أو يقفل لو الطابور فاضي)
+function advanceToNextPendingOrder() {
+  if (_pendingOrdersQueue.length > 0) {
+    showNewOrderPopup(_pendingOrdersQueue[0]) // يعرض أقدم طلب متبقي في الطابور
+  } else {
+    document.getElementById('new-order-popup').classList.add('hidden')
+    stopAlarmLoop()
+  }
 }
 async function confirmNewOrder() {
-  if (!_pendingOrder) return
-  stopAlarmLoop()
-  const id = _pendingOrder.id
-  await db.from('orders').update({ status:'confirmed' }).eq('id', id)
+  if (!_pendingOrdersQueue.length) return
+  const id = _pendingOrdersQueue[0].id
+  await db.from('orders').update({ status:'confirmed', confirmed_at: new Date().toISOString() }).eq('id', id)
   showToast('✅ تم قبول الطلب')
-  dismissNewOrderPopup()
+  _pendingOrdersQueue.shift()
+  advanceToNextPendingOrder()
   loadOrders()
 }
 function rejectNewOrder() {
-  if (!_pendingOrder) return
+  if (!_pendingOrdersQueue.length) return
   openRejectReasonModal()
 }
-function dismissNewOrderPopup() { document.getElementById('new-order-popup').classList.add('hidden'); _pendingOrder = null }
+function dismissNewOrderPopup() {
+  // ملاحظة: لا يُستخدم هذا لإغلاق popup الطلب الإجباري بدون قرار — فقط كجزء من تدفق التأكيد/الرفض
+  document.getElementById('new-order-popup').classList.add('hidden')
+}
 
 // ── REJECT REASON ────────────────────────────────────────────────────
 const REJECT_REASONS = ['غير متوفر حالياً', 'المطعم مغلق الآن', 'تأخير كبير في التحضير']
@@ -1330,13 +1428,13 @@ function submitRejectCustomReason() {
   submitRejectReason(txt)
 }
 async function submitRejectReason(reason) {
-  if (!_pendingOrder) return
-  stopAlarmLoop()
-  const id = _pendingOrder.id
+  if (!_pendingOrdersQueue.length) return
+  const id = _pendingOrdersQueue[0].id
   await db.from('orders').update({ status:'cancelled', cancel_reason: reason }).eq('id', id)
   showToast('❌ تم رفض الطلب')
   closeRejectReasonModal()
-  dismissNewOrderPopup()
+  _pendingOrdersQueue.shift()
+  advanceToNextPendingOrder()
   loadOrders()
 }
 
