@@ -987,7 +987,6 @@ async function boot() {
     // إظهار شريط المعاينة فقط لو الرابط الحالي فعلياً يحتوي على preview=1 (فحص مزدوج للتأكيد)
     const previewBar = document.getElementById('back-to-dash')
     const isPreviewMode = new URLSearchParams(location.search).get('preview') === '1'
-                        && /[?&]preview=1(&|$)/.test(location.search)
     previewBar.classList.toggle('hidden', !isPreviewMode)
   } catch(e) {
     // أخطاء "المطعم غير موجود" نهائية (لا تحتاج إعادة محاولة)، وأي خطأ آخر (شبكة/تقني) مؤقت وقابل لإعادة المحاولة
@@ -1014,7 +1013,7 @@ async function loadData(slug) {
     db.from('categories').select('id,name,sort_order,icon_url').eq('restaurant_id', r.id).order('sort_order'),
     db.from('products')
       .select('id,category_id,name,description,price,discount_price,offer_badge,discount_active,discount_starts_at,discount_ends_at,image_url,sort_order,is_available,status,availability,unit,product_options,also_with,prep_minutes')
-      .eq('restaurant_id', r.id).neq('status', 'hidden').order('sort_order'),
+      .eq('restaurant_id', r.id).neq('availability', 'hidden').order('sort_order'),
     db.from('bundles').select('id,name,description,price,image_url,items,sort_order').eq('restaurant_id', r.id).eq('is_active', true).order('sort_order'),
     db.from('banners').select('id,image_url,link_type,link_value,sort_order').eq('restaurant_id', r.id).order('sort_order'),
     db.from('branches').select('id,name,lat,lng').eq('restaurant_id', r.id).eq('is_active', true)
@@ -1434,7 +1433,7 @@ function showError(msg, showRetry = false) {
 // ── PRODUCT PAGE (modal) ──────────────────────────────────────────────
 function openModal(pid) {
   const p = S.products.find(x => x.id === pid); if (!p) return
-  const hasDiscount  = p.discount_price && Number(p.discount_price) < Number(p.price)
+  const hasDiscount  = isDiscountActive(p)
   const displayPrice = hasDiscount ? Number(p.discount_price) : Number(p.price)
 
   const priceHTML = hasDiscount
@@ -1461,7 +1460,7 @@ function openModal(pid) {
 
   // "Also with" section
   const alsoIds      = Array.isArray(p.also_with) ? p.also_with : []
-  const alsoProducts = alsoIds.map(id => S.products.find(x => x.id === id)).filter(x => x && x.is_available !== false && x.availability !== 'hidden')
+  const alsoProducts = alsoIds.map(id => S.products.find(x => x.id === id)).filter(x => x && x.availability !== 'hidden' && x.availability !== 'unavailable' && x.is_available !== false)
   const alsoHTML = alsoProducts.length ? `
     <div class="prod-divider"></div>
     <p class="also-title">تطلب معها أيضاً 🤩</p>
@@ -1943,8 +1942,6 @@ async function sendOrder() {
 
     // تحديث عداد الكود المستخدم
     if (_appliedCode) {
-      await db.from('discount_codes').update({ used_count: db.rpc }).eq('id', _appliedCode)
-      // increment used_count
       const { data: codeRow } = await db.from('discount_codes').select('used_count').eq('id', _appliedCode).single()
       if (codeRow) await db.from('discount_codes').update({ used_count: (codeRow.used_count || 0) + 1 }).eq('id', _appliedCode)
     }
@@ -1970,6 +1967,33 @@ async function sendOrder() {
   resetBtn()
   showOrderSuccess(orderNumber, orderId, finalTotal, deliveryFee)
   trackOrderStatus(orderId)
+
+  // إرسال واتساب — لو المطعم يستقبل الطلبات عبر واتساب (أو كلاهما)
+  const receiveMethod = S.restaurant.order_receive_method || 'whatsapp'
+  if (receiveMethod !== 'dashboard') {
+    const phone = normalizeWhatsAppNumber(S.restaurant.whatsapp)
+    if (phone) {
+      const itemsText = S.cart.length
+        ? items.map(i => `• ${i.name}${i.options ? ` (${i.options})` : ''} × ${i.qty} = ${Number(i.subtotal).toFixed(0)} ج.م`).join('\n')
+        : items.map(i => `• ${i.name} × ${i.qty} = ${Number(i.subtotal).toFixed(0)} ج.م`).join('\n')
+      const lines = [
+        `🧾 طلب جديد — ${orderNumber}`,
+        `━━━━━━━━━━━━━━━━━━`,
+        itemsText,
+        `━━━━━━━━━━━━━━━━━━`,
+        deliveryFee > 0 ? `🛵 رسوم التوصيل: ${deliveryFee.toFixed(0)} ج.م` : null,
+        `💰 الإجمالي: ${finalTotal.toFixed(0)} ج.م`,
+        table ? `🪑 طاولة: ${table}` : null,
+        custName  ? `👤 الاسم: ${custName}` : null,
+        custPhone ? `📞 التواصل: ${custPhone}` : null,
+        custAddr  ? `🏠 العنوان: ${custAddr}` : null,
+        custLat && custLng ? `📍 الموقع: https://maps.google.com/?q=${custLat},${custLng}` : null,
+        note      ? `📝 ملاحظة: ${note}` : null,
+      ].filter(Boolean).join('\n')
+      const waUrl = `https://wa.me/${phone}?text=${encodeURIComponent(lines)}`
+      setTimeout(() => window.open(waUrl, '_blank'), 800)
+    }
+  }
 }
 
 // ── ORDER STATUS TRACKING (live) ────────────────────────────────────────
@@ -2228,7 +2252,8 @@ function updateWalletBadge() {
   const badge = document.getElementById('wallet-mini-badge')
   if (!badge) return
   if (S.customer && S.customer.coins_balance > 0) {
-    const egp = (S.customer.coins_balance / 1000).toFixed(0)
+    const coinsPerEgp = S.restaurant?.coins_per_egp ?? 1000
+    const egp = (S.customer.coins_balance / coinsPerEgp).toFixed(0)
     badge.textContent = egp + 'ج'
     badge.style.display = 'block'
   } else {
@@ -2247,6 +2272,15 @@ function openCustAuth() {
   document.getElementById('cust-auth-modal').classList.remove('hidden')
   document.body.style.overflow = 'hidden'
   pushModal('custauth', closeCustAuth)
+  // ملء كود الإحالة تلقائياً لو جاء من رابط مشاركة
+  try {
+    const pendingRef = localStorage.getItem('pending_ref_code_' + (S.restaurant?.id || ''))
+    if (pendingRef) {
+      document.getElementById('cauth-ref').value = pendingRef
+      // التبديل لوضع التسجيل تلقائياً لأن الرابط واضح إنه دعوة جديدة
+      if (_custAuthMode !== 'signup') { _custAuthMode = 'signup'; syncCauthUI() }
+    }
+  } catch(e) {}
   setTimeout(() => document.getElementById('cauth-email').focus(), 200)
 }
 function closeCustAuth(fromPopstate) {
@@ -2286,7 +2320,12 @@ async function custAuthSubmit() {
   } else {
     const name  = document.getElementById('cauth-name').value.trim()
     const phone = document.getElementById('cauth-phone').value.trim()
-    const ref   = document.getElementById('cauth-ref').value.trim().toUpperCase()
+    const refInput = document.getElementById('cauth-ref').value.trim().toUpperCase()
+    // fallback: لو الحقل فارغ، ابحث في localStorage عن كود إحالة محفوظ من رابط المشاركة
+    let ref = refInput
+    if (!ref) {
+      try { ref = localStorage.getItem('pending_ref_code_' + S.restaurant.id) || '' } catch(e) {}
+    }
     const { data: signData, error: signErr } = await db.auth.signUp({ email, password: pass })
     if (signErr) { errEl.textContent = signErr.message; errEl.classList.remove('hidden'); document.getElementById('cauth-main-btn').textContent = 'إنشاء حساب 🎁'; return }
     // إنشاء بروفايل العميل
@@ -2314,6 +2353,7 @@ async function custAuthSubmit() {
       })
     }
     S.customer = newCust
+    try { localStorage.removeItem('pending_ref_code_' + S.restaurant.id) } catch(e) {}
     closeCustAuth()
     updateWalletBadge()
     updateCoinsRowInCart()
@@ -2557,12 +2597,11 @@ async function awardLoyaltyAndWelcome(orderId, orderItems, customerId) {
   let balanceDelta = 0
   const txs = []
 
-  // بونص الترحيب عند أول طلب
+  // بونص إحالة — لو العميل أُحيل من شخص ولم يسبق منحه البونص (يجب الفحص قبل تحديث welcome_coins_claimed)
+  const wasNotClaimed = !cust.welcome_coins_claimed
+
+  // بونص الترحيب عند أول طلب — نحدد claimed=true فقط، الرصيد والـ transaction سُجّلا وقت التسجيل
   if (!cust.welcome_coins_claimed) {
-    const welcomeCoins = S.restaurant.welcome_coins ?? 10000
-    txs.push({ customer_id: cust.id, restaurant_id: S.restaurant.id, type: 'welcome', amount: welcomeCoins, order_id: orderId, note: 'بونص الترحيب عند أول شراء' })
-    // welcome_coins كانت أُضيفت لحظة التسجيل كـ "معلّقة" — لا نضيفها مرة تانية
-    // كل اللي بنعمله هو نحدد claimed=true
     await db.from('customers').update({ welcome_coins_claimed: true }).eq('id', cust.id)
     S.customer.welcome_coins_claimed = true
   }
@@ -2573,11 +2612,10 @@ async function awardLoyaltyAndWelcome(orderId, orderItems, customerId) {
     balanceDelta += totalLoyalty
   }
 
-  // بونص إحالة — لو العميل أُحيل من شخص ولم يسبق منحه البونص
-  if (cust.referred_by && !cust.welcome_coins_claimed) {
+  if (cust.referred_by && wasNotClaimed) {
     const referralCoins = S.restaurant.referral_coins ?? 5000
     txs.push({ customer_id: cust.referred_by, restaurant_id: S.restaurant.id, type: 'referral_reward', amount: referralCoins, order_id: orderId, note: `إحالة ناجحة` })
-    await db.from('customers').update({ coins_balance: db.rpc('increment', { row_id: cust.referred_by, amount: referralCoins }) }).eq('id', cust.referred_by)
+    await incrementCustomerCoins(cust.referred_by, referralCoins)
   }
 
   if (txs.length) await db.from('coin_transactions').insert(txs)

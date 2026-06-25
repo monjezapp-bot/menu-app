@@ -1042,6 +1042,16 @@ async function loadDashboard(r, branches) {
   document.getElementById('ann-text').value              = r.announcement_text   || ''
   document.getElementById('ann-active-toggle').checked   = r.announcement_active || false
 
+  // Initial preview: logo and cover
+  if (r.logo_url) {
+    document.getElementById('logo-preview').src = r.logo_url
+    document.getElementById('logo-preview-wrap').classList.remove('hidden')
+  }
+  if (r.cover_url) {
+    document.getElementById('cover-preview').src = r.cover_url
+    document.getElementById('cover-preview-wrap').classList.remove('hidden')
+  }
+
   setTimeout(() => initPickr(primary), 100)
   showScreen('dashboard')
   applyRoleUI()
@@ -1704,6 +1714,7 @@ async function saveProduct() {
     description:     document.getElementById('pm-desc').value.trim()        || null,
     price,
     discount_price:  !isNaN(discount) && discount > 0 ? discount            : null,
+    discount_active: !isNaN(discount) && discount > 0,
     category_id:     category,
     image_url:       document.getElementById('pm-image').value.trim()       || null,
     is_available:    document.getElementById('pm-available').checked,
@@ -1857,8 +1868,23 @@ async function saveBundle() {
   errEl.classList.add('hidden')
   const items   = selectedProducts.map(pid => { const p = state.products.find(x => x.id === pid); return { product_id: pid, name: p?.name||'', price: p?.price||0, quantity: 1 } })
   const payload = { name, description: document.getElementById('bm-desc').value.trim() || null, price, items, image_url: document.getElementById('bm-image').value.trim() || null, is_active: document.getElementById('bm-active').checked, restaurant_id: state.restaurant.id }
-  if (id) { const { error } = await db.from('bundles').update(payload).eq('id', id); if (error) { errEl.textContent = 'خطأ: ' + error.message; errEl.classList.remove('hidden'); return } }
-  else    { const { error } = await db.from('bundles').insert(payload); if (error) { errEl.textContent = 'خطأ: ' + error.message; errEl.classList.remove('hidden'); return } }
+  let bundleId = id
+  if (id) {
+    const { error } = await db.from('bundles').update(payload).eq('id', id)
+    if (error) { errEl.textContent = 'خطأ: ' + error.message; errEl.classList.remove('hidden'); return }
+  } else {
+    const { data: newB, error } = await db.from('bundles').insert(payload).select('id').single()
+    if (error) { errEl.textContent = 'خطأ: ' + error.message; errEl.classList.remove('hidden'); return }
+    bundleId = newB.id
+  }
+  // حفظ ارتباط الفروع
+  if (state.branches.length > 1 && _role === 'admin' && bundleId) {
+    await db.from('bundle_branches').delete().eq('bundle_id', bundleId)
+    const selectedBranches = [...document.querySelectorAll('.bundle-branch-item:checked')].map(cb => cb.value)
+    if (selectedBranches.length && selectedBranches.length < state.branches.length) {
+      await db.from('bundle_branches').insert(selectedBranches.map(bid => ({ bundle_id: bundleId, branch_id: bid })))
+    }
+  }
   closeBundleModal(); await loadBundles(); showToast(id ? 'تم تعديل العرض ✅' : 'تم إضافة العرض ✅')
 }
 async function toggleBundle(id, current) { await db.from('bundles').update({ is_active: !current }).eq('id', id); await loadBundles(); showToast(!current ? 'تم تفعيل العرض' : 'تم إيقاف العرض') }
@@ -1879,6 +1905,7 @@ function renderOrders() {
   const statusColor = { pending:'bg-yellow-50 text-yellow-600', confirmed:'bg-blue-50 text-blue-600', ready:'bg-purple-50 text-purple-600', delivering:'bg-indigo-50 text-indigo-600', delivered:'bg-green-50 text-green-600', cancelled:'bg-red-50 text-red-500' }
   // الزر التالي المناسب لكل حالة (يدفع الطلب للمرحلة التالية في تدفق واحد بسيط)
   const nextActionBtn = {
+    pending:    `<div class="flex gap-2"><button onclick="quickConfirmOrder('{ID}')" class="flex-1 text-xs font-bold bg-green-500 text-white px-3 py-2 rounded-xl">✅ قبول</button><button onclick="quickRejectOrder('{ID}')" class="flex-1 text-xs font-bold bg-red-50 text-red-500 px-3 py-2 rounded-xl border border-red-200">❌ رفض</button></div>`,
     confirmed:  `<button onclick="updateOrderStatus('{ID}','ready')" class="text-xs font-bold bg-purple-500 text-white px-3 py-1.5 rounded-xl">📦 تم التجهيز</button>`,
     ready:      `<button onclick="updateOrderStatus('{ID}','delivering')" class="text-xs font-bold bg-indigo-500 text-white px-3 py-1.5 rounded-xl">🛵 جاري التوصيل</button>`,
     delivering: `<button onclick="updateOrderStatus('{ID}','delivered')" class="text-xs font-bold bg-green-500 text-white px-3 py-1.5 rounded-xl">✅ تم التسليم</button>`
@@ -1895,9 +1922,32 @@ function renderOrders() {
         <div class="flex justify-between text-sm font-extrabold pt-2 border-t border-gray-100"><span>الإجمالي</span><span class="text-orange-500">${Number(o.total).toFixed(2)} ج.م</span></div>
       </div>
       ${o.status === 'cancelled' && o.cancel_reason ? `<p class="text-xs text-red-500 bg-red-50 rounded-xl px-3 py-2 mt-2 font-bold">سبب الرفض: ${o.cancel_reason}</p>` : ''}
-      ${nextActionBtn[o.status] ? `<div class="mt-3">${nextActionBtn[o.status].replace('{ID}', o.id)}</div>` : ''}
+      ${(o.customer_name || o.customer_phone || o.customer_address || o.note) ? `<div class="mt-2 space-y-0.5 border-t border-gray-50 pt-2">${o.customer_name ? `<p class="text-xs text-gray-500">👤 ${o.customer_name}</p>` : ''}${o.customer_phone ? `<p class="text-xs text-gray-500">📞 <a href="tel:${o.customer_phone}" class="text-blue-500 font-bold">${o.customer_phone}</a></p>` : ''}${o.customer_address ? `<p class="text-xs text-gray-500">🏠 ${o.customer_address}</p>` : ''}${o.note ? `<p class="text-xs text-orange-600 font-bold">📝 ${o.note}</p>` : ''}</div>` : ''}
+      ${nextActionBtn[o.status] ? `<div class="mt-3">${nextActionBtn[o.status].replace(/\{ID\}/g, o.id)}</div>` : ''}
       <p class="text-xs text-gray-300 mt-2">${new Date(o.created_at).toLocaleString('ar-EG')}</p>
     </div>`).join('')
+}
+async function quickConfirmOrder(id) {
+  await db.from('orders').update({ status:'confirmed', confirmed_at: new Date().toISOString() }).eq('id', id)
+  showToast('✅ تم قبول الطلب')
+  // لو الطلب موجود في الطابور كمان، نشيله عشان ما يتعرضش في الـ popup مرة تانية
+  const idx = _pendingOrdersQueue.findIndex(o => o.id === id)
+  if (idx !== -1) { _pendingOrdersQueue.splice(idx, 1); if (idx === 0) advanceToNextPendingOrder() }
+  loadOrders()
+}
+async function quickRejectOrder(id) {
+  const reason = prompt('سبب الرفض (اختياري):') || 'رفض من القائمة'
+  const order = state.orders.find(o => o.id === id)
+  if (order) {
+    const transferred = await tryTransferToNextBranch(order, reason)
+    if (!transferred) await db.from('orders').update({ status:'cancelled', cancel_reason: reason }).eq('id', id)
+  } else {
+    await db.from('orders').update({ status:'cancelled', cancel_reason: reason }).eq('id', id)
+  }
+  showToast('❌ تم رفض الطلب')
+  const idx = _pendingOrdersQueue.findIndex(o => o.id === id)
+  if (idx !== -1) { _pendingOrdersQueue.splice(idx, 1); if (idx === 0) advanceToNextPendingOrder() }
+  loadOrders()
 }
 async function updateOrderStatus(id, status) {
   const timestampField = { ready: 'ready_at', delivering: 'delivering_at', delivered: 'delivered_at' }[status]
@@ -1971,7 +2021,7 @@ async function saveSettings() {
   const whatsapp = ph.value
   document.getElementById('set-whatsapp').value = whatsapp
 
-  settingsSnapshot = { name, whatsapp, logo_url, primary }
+  settingsSnapshot = { name, whatsapp, logo_url, cover_url, primary, price_per_km: pricePerKmRaw }
   const { error } = await db.from('restaurants').update({ name, whatsapp, logo_url, cover_url, theme: { primary, secondary:'#1A1A1A' }, price_per_km: price_per_km ?? null }).eq('id', state.restaurant.id)
   if (error) { msgEl.textContent='حدث خطأ أثناء الحفظ'; msgEl.className='text-center text-sm text-red-500' }
   else { state.restaurant.name=name; state.restaurant.price_per_km=price_per_km; document.getElementById('dash-restaurant-name').textContent=name; document.getElementById('undo-settings-btn').classList.remove('hidden'); msgEl.textContent='تم الحفظ بنجاح ✅'; msgEl.className='text-center text-sm text-green-500'; showToast('تم حفظ الإعدادات ✅') }
@@ -1983,6 +2033,8 @@ function undoSettings() {
   document.getElementById('set-name').value     = settingsSnapshot.name
   document.getElementById('set-whatsapp').value = settingsSnapshot.whatsapp
   document.getElementById('set-logo').value     = settingsSnapshot.logo_url || ''
+  document.getElementById('set-cover').value    = settingsSnapshot.cover_url || ''
+  document.getElementById('set-price-per-km').value = settingsSnapshot.price_per_km ?? ''
   document.getElementById('set-color').value     = settingsSnapshot.primary
   document.getElementById('set-color-hex').value = settingsSnapshot.primary
   document.getElementById('undo-settings-btn').classList.add('hidden')
@@ -2010,6 +2062,8 @@ function startRealtimeOrders() {
 let _pendingOrdersQueue = []
 
 function handleIncomingOrder(order) {
+  // فلتر يدوي إضافي — Supabase Realtime لا يضمن عمل الفلتر على columns nullable في INSERT
+  if (_role === 'branch' && _activeBranchId && order.branch_id !== _activeBranchId) return
   _pendingOrdersQueue.push(order)
   startAlarmLoop()
   updateOrdersBadge([...state.orders, order])
