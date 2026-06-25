@@ -138,6 +138,7 @@
     <button onclick="showTab('banners')"    id="tab-banners-top"    class="tab-btn flex-shrink-0 py-3 px-3 text-sm font-bold text-gray-400 transition-colors">📢 البنرات</button>
     <button onclick="showTab('orders')"     id="tab-orders-top"     class="tab-btn flex-shrink-0 py-3 px-3 text-sm font-bold text-gray-400 transition-colors">الطلبات</button>
     <button onclick="showTab('analytics')"  id="tab-analytics-top"  class="tab-btn flex-shrink-0 py-3 px-3 text-sm font-bold text-gray-400 transition-colors" data-admin-only="1">📊 إحصائيات</button>
+    <button onclick="showTab('customers')"  id="tab-customers-top"  class="tab-btn flex-shrink-0 py-3 px-3 text-sm font-bold text-gray-400 transition-colors" data-admin-only="1">👥 العملاء</button>
     <button onclick="showTab('branches')"   id="tab-branches-top"   class="tab-btn flex-shrink-0 py-3 px-3 text-sm font-bold text-gray-400 transition-colors" data-admin-only="1">🏬 الفروع</button>
     <button onclick="showTab('settings')"   id="tab-settings-top"   class="tab-btn flex-shrink-0 py-3 px-3 text-sm font-bold text-gray-400 transition-colors" data-admin-only="1">الإعدادات</button>
   </div>
@@ -196,6 +197,25 @@
     <div id="tab-content-orders" class="hidden fade-up">
       <h2 class="font-extrabold text-gray-800 mb-4">الطلبات الواردة</h2>
       <div id="orders-list" class="space-y-4"></div>
+    </div>
+
+    <!-- Customers Tab -->
+    <div id="tab-content-customers" class="hidden fade-up">
+      <h2 class="font-extrabold text-gray-800 mb-4">👥 العملاء</h2>
+      <!-- إحصائيات سريعة -->
+      <div class="grid grid-cols-3 gap-3 mb-4">
+        <div class="bg-orange-50 rounded-2xl p-3 text-center"><p class="text-2xl font-extrabold text-orange-500" id="cust-stat-total">—</p><p class="text-xs text-gray-500 mt-1">عدد العملاء</p></div>
+        <div class="bg-green-50 rounded-2xl p-3 text-center"><p class="text-2xl font-extrabold text-green-500" id="cust-stat-coins">—</p><p class="text-xs text-gray-500 mt-1">إجمالي الكوينز</p></div>
+        <div class="bg-blue-50 rounded-2xl p-3 text-center"><p class="text-2xl font-extrabold text-blue-500" id="cust-stat-orders">—</p><p class="text-xs text-gray-500 mt-1">طلبات بحسابات</p></div>
+      </div>
+      <!-- فلتر بحث -->
+      <div class="flex gap-2 mb-4">
+        <input id="cust-search" type="search" placeholder="ابحث بالاسم أو الإيميل..." oninput="filterCustomers()"
+               class="flex-1 border border-gray-200 rounded-xl px-4 py-2.5 text-sm focus:outline-none focus:ring-2 focus:ring-orange-400" />
+        <button onclick="loadCustomers()" class="bg-gray-100 text-gray-600 font-bold px-4 py-2.5 rounded-xl text-sm">تحديث</button>
+      </div>
+      <!-- قائمة العملاء -->
+      <div id="customers-list" class="space-y-3"></div>
     </div>
 
     <!-- Analytics Tab -->
@@ -637,6 +657,7 @@
       <button onclick="hideMoreMenu();showTab('bundles')"    class="flex flex-col items-center gap-2 bg-gray-50 rounded-2xl p-4"><span class="text-2xl">🎁</span><span class="text-xs font-bold text-gray-600">العروض</span></button>
       <button onclick="hideMoreMenu();showTab('banners')"    class="flex flex-col items-center gap-2 bg-gray-50 rounded-2xl p-4"><span class="text-2xl">📢</span><span class="text-xs font-bold text-gray-600">البنرات</span></button>
       <button onclick="hideMoreMenu();showTab('analytics')"  class="flex flex-col items-center gap-2 bg-gray-50 rounded-2xl p-4"><span class="text-2xl">📊</span><span class="text-xs font-bold text-gray-600">إحصائيات</span></button>
+      <button onclick="hideMoreMenu();showTab('customers')"  class="flex flex-col items-center gap-2 bg-gray-50 rounded-2xl p-4"><span class="text-2xl">👥</span><span class="text-xs font-bold text-gray-600">العملاء</span></button>
       <button onclick="hideMoreMenu();showTab('branches')"   class="flex flex-col items-center gap-2 bg-gray-50 rounded-2xl p-4"><span class="text-2xl">🏬</span><span class="text-xs font-bold text-gray-600">الفروع</span></button>
       <button onclick="doLogout()" class="flex flex-col items-center gap-2 bg-red-50 rounded-2xl p-4 col-span-3"><span class="text-2xl">🚪</span><span class="text-xs font-bold text-red-500">تسجيل الخروج</span></button>
     </div>
@@ -956,7 +977,7 @@ function applyRoleUI() {
   const moreMenuBtns = document.querySelectorAll('#more-menu button')
   moreMenuBtns.forEach(btn => {
     const fn = btn.getAttribute('onclick') || ''
-    if (!isAdmin && (fn.includes("'analytics'") || fn.includes("'branches'"))) {
+    if (!isAdmin && (fn.includes("'analytics'") || fn.includes("'branches'") || fn.includes("'customers'"))) {
       btn.style.display = 'none'
     } else {
       btn.style.display = ''
@@ -979,7 +1000,7 @@ function applyRoleUI() {
     const activeTab = document.querySelector('.tab-btn.tab-active')
     if (activeTab) {
       const fn = activeTab.getAttribute('onclick') || ''
-      if (fn.includes("'settings'") || fn.includes("'analytics'") || fn.includes("'branches'")) {
+      if (fn.includes("'settings'") || fn.includes("'analytics'") || fn.includes("'branches'") || fn.includes("'customers'")) {
         showTab('orders')
       }
     }
@@ -1042,16 +1063,6 @@ async function loadDashboard(r, branches) {
   document.getElementById('ann-text').value              = r.announcement_text   || ''
   document.getElementById('ann-active-toggle').checked   = r.announcement_active || false
 
-  // Initial preview: logo and cover
-  if (r.logo_url) {
-    document.getElementById('logo-preview').src = r.logo_url
-    document.getElementById('logo-preview-wrap').classList.remove('hidden')
-  }
-  if (r.cover_url) {
-    document.getElementById('cover-preview').src = r.cover_url
-    document.getElementById('cover-preview-wrap').classList.remove('hidden')
-  }
-
   setTimeout(() => initPickr(primary), 100)
   showScreen('dashboard')
   applyRoleUI()
@@ -1106,7 +1117,8 @@ async function saveLoyaltySettings() {
 async function loadDiscountCodes() {
   const { data } = await db.from('discount_codes')
     .select('*').eq('restaurant_id', state.restaurant.id).order('created_at', { ascending: false })
-  renderDiscountCodes(data || [])
+  state.discountCodes = data || []
+  renderDiscountCodes(state.discountCodes)
 }
 
 function renderDiscountCodes(codes) {
@@ -1714,7 +1726,6 @@ async function saveProduct() {
     description:     document.getElementById('pm-desc').value.trim()        || null,
     price,
     discount_price:  !isNaN(discount) && discount > 0 ? discount            : null,
-    discount_active: !isNaN(discount) && discount > 0,
     category_id:     category,
     image_url:       document.getElementById('pm-image').value.trim()       || null,
     is_available:    document.getElementById('pm-available').checked,
@@ -1868,29 +1879,100 @@ async function saveBundle() {
   errEl.classList.add('hidden')
   const items   = selectedProducts.map(pid => { const p = state.products.find(x => x.id === pid); return { product_id: pid, name: p?.name||'', price: p?.price||0, quantity: 1 } })
   const payload = { name, description: document.getElementById('bm-desc').value.trim() || null, price, items, image_url: document.getElementById('bm-image').value.trim() || null, is_active: document.getElementById('bm-active').checked, restaurant_id: state.restaurant.id }
+
   let bundleId = id
   if (id) {
     const { error } = await db.from('bundles').update(payload).eq('id', id)
     if (error) { errEl.textContent = 'خطأ: ' + error.message; errEl.classList.remove('hidden'); return }
   } else {
-    const { data: newB, error } = await db.from('bundles').insert(payload).select('id').single()
-    if (error) { errEl.textContent = 'خطأ: ' + error.message; errEl.classList.remove('hidden'); return }
-    bundleId = newB.id
+    const { data: nb, error } = await db.from('bundles').insert(payload).select('id').single()
+    if (error || !nb) { errEl.textContent = 'خطأ: ' + (error?.message || 'insert failed'); errEl.classList.remove('hidden'); return }
+    bundleId = nb.id
   }
-  // حفظ ارتباط الفروع
-  if (state.branches.length > 1 && _role === 'admin' && bundleId) {
-    await db.from('bundle_branches').delete().eq('bundle_id', bundleId)
+
+  // حفظ ربط الفروع
+  if (state.branches.length > 1 && _role === 'admin') {
     const selectedBranches = [...document.querySelectorAll('.bundle-branch-item:checked')].map(cb => cb.value)
-    if (selectedBranches.length && selectedBranches.length < state.branches.length) {
+    await db.from('bundle_branches').delete().eq('bundle_id', bundleId)
+    // لو كل الفروع محددة = لا نحفظ أي قيد (يعني العرض لكل الفروع افتراضياً)
+    if (selectedBranches.length > 0 && selectedBranches.length < state.branches.length) {
       await db.from('bundle_branches').insert(selectedBranches.map(bid => ({ bundle_id: bundleId, branch_id: bid })))
     }
   }
+
   closeBundleModal(); await loadBundles(); showToast(id ? 'تم تعديل العرض ✅' : 'تم إضافة العرض ✅')
 }
 async function toggleBundle(id, current) { await db.from('bundles').update({ is_active: !current }).eq('id', id); await loadBundles(); showToast(!current ? 'تم تفعيل العرض' : 'تم إيقاف العرض') }
 async function deleteBundle(id) { const ok = await showConfirm('هل تريد حذف هذا العرض؟', 'حذف'); if (!ok) return; await db.from('bundles').delete().eq('id', id); await loadBundles(); showToast('تم حذف العرض') }
 
-// ── ORDERS ────────────────────────────────────────────────────────────
+// ── CUSTOMERS TAB ─────────────────────────────────────────────────────
+let _allCustomers = []
+async function loadCustomers() {
+  const { data: custs } = await db.from('customers')
+    .select('id,name,email,phone,coins_balance,referral_code,created_at,welcome_coins_claimed')
+    .eq('restaurant_id', state.restaurant.id)
+    .order('created_at', { ascending: false })
+    .limit(200)
+  _allCustomers = custs || []
+
+  // إحصائيات
+  document.getElementById('cust-stat-total').textContent  = _allCustomers.length
+  const totalCoins = _allCustomers.reduce((s, c) => s + (c.coins_balance || 0), 0)
+  document.getElementById('cust-stat-coins').textContent  = (totalCoins / 1000).toFixed(0) + ' ج'
+  const { count } = await db.from('orders').select('id', { count: 'exact', head: true })
+    .eq('restaurant_id', state.restaurant.id).not('customer_id', 'is', null)
+  document.getElementById('cust-stat-orders').textContent = count || 0
+
+  renderCustomers(_allCustomers)
+}
+
+function filterCustomers() {
+  const q = document.getElementById('cust-search').value.trim().toLowerCase()
+  if (!q) { renderCustomers(_allCustomers); return }
+  renderCustomers(_allCustomers.filter(c =>
+    (c.name || '').toLowerCase().includes(q) || (c.email || '').toLowerCase().includes(q) || (c.phone || '').includes(q)
+  ))
+}
+
+function renderCustomers(custs) {
+  const el = document.getElementById('customers-list')
+  if (!custs.length) { el.innerHTML = `<p class="text-center text-gray-400 text-sm py-8">لا يوجد عملاء بعد</p>`; return }
+  el.innerHTML = custs.map(c => `
+    <div class="bg-white rounded-2xl p-4 shadow-sm">
+      <div class="flex items-center justify-between">
+        <div>
+          <p class="font-extrabold text-gray-800 text-sm">${c.name || '(بدون اسم)'}</p>
+          <p class="text-xs text-gray-400">${c.email || ''} ${c.phone ? '· ' + c.phone : ''}</p>
+          <p class="text-xs text-gray-400">${new Date(c.created_at).toLocaleDateString('ar-EG')}</p>
+        </div>
+        <div class="text-left">
+          <p class="text-sm font-extrabold text-orange-500">${(c.coins_balance || 0).toLocaleString('ar-EG')} 🪙</p>
+          <p class="text-xs text-gray-400">= ${((c.coins_balance || 0) / 1000).toFixed(2)} ج.م</p>
+        </div>
+      </div>
+      <div class="flex gap-2 mt-3">
+        <button onclick="giftCoins('${c.id}','${(c.name||'العميل').replace(/'/g,'')}')"
+                class="flex-1 text-xs bg-orange-50 text-orange-600 font-bold px-3 py-2 rounded-xl">🎀 إهداء كوينز</button>
+        <span class="text-xs text-gray-300 px-2 py-2">كود: ${c.referral_code || '—'}</span>
+      </div>
+    </div>`).join('')
+}
+
+async function giftCoins(customerId, customerName) {
+  const amount = prompt(`كم كوين تريد إهداء لـ ${customerName}؟\n(مثال: 5000 = 5 ج.م)`)
+  if (!amount || isNaN(parseInt(amount))) return
+  const coins = Math.abs(parseInt(amount))
+  const { data: cust } = await db.from('customers').select('coins_balance').eq('id', customerId).single()
+  if (!cust) return
+  const newBalance = (cust.coins_balance || 0) + coins
+  await db.from('customers').update({ coins_balance: newBalance }).eq('id', customerId)
+  await db.from('coin_transactions').insert({
+    customer_id: customerId, restaurant_id: state.restaurant.id,
+    type: 'gift', amount: coins, note: `هدية من المطعم`
+  })
+  showToast(`تم إهداء ${coins.toLocaleString('ar-EG')} كوين ✅`)
+  loadCustomers()
+}
 async function loadOrders() {
   let q = db.from('orders').select('*').eq('restaurant_id', state.restaurant.id).order('created_at', { ascending: false }).limit(50)
   if (_role === 'branch' && _activeBranchId) q = q.eq('branch_id', _activeBranchId)
@@ -1905,7 +1987,6 @@ function renderOrders() {
   const statusColor = { pending:'bg-yellow-50 text-yellow-600', confirmed:'bg-blue-50 text-blue-600', ready:'bg-purple-50 text-purple-600', delivering:'bg-indigo-50 text-indigo-600', delivered:'bg-green-50 text-green-600', cancelled:'bg-red-50 text-red-500' }
   // الزر التالي المناسب لكل حالة (يدفع الطلب للمرحلة التالية في تدفق واحد بسيط)
   const nextActionBtn = {
-    pending:    `<div class="flex gap-2"><button onclick="quickConfirmOrder('{ID}')" class="flex-1 text-xs font-bold bg-green-500 text-white px-3 py-2 rounded-xl">✅ قبول</button><button onclick="quickRejectOrder('{ID}')" class="flex-1 text-xs font-bold bg-red-50 text-red-500 px-3 py-2 rounded-xl border border-red-200">❌ رفض</button></div>`,
     confirmed:  `<button onclick="updateOrderStatus('{ID}','ready')" class="text-xs font-bold bg-purple-500 text-white px-3 py-1.5 rounded-xl">📦 تم التجهيز</button>`,
     ready:      `<button onclick="updateOrderStatus('{ID}','delivering')" class="text-xs font-bold bg-indigo-500 text-white px-3 py-1.5 rounded-xl">🛵 جاري التوصيل</button>`,
     delivering: `<button onclick="updateOrderStatus('{ID}','delivered')" class="text-xs font-bold bg-green-500 text-white px-3 py-1.5 rounded-xl">✅ تم التسليم</button>`
@@ -1922,32 +2003,9 @@ function renderOrders() {
         <div class="flex justify-between text-sm font-extrabold pt-2 border-t border-gray-100"><span>الإجمالي</span><span class="text-orange-500">${Number(o.total).toFixed(2)} ج.م</span></div>
       </div>
       ${o.status === 'cancelled' && o.cancel_reason ? `<p class="text-xs text-red-500 bg-red-50 rounded-xl px-3 py-2 mt-2 font-bold">سبب الرفض: ${o.cancel_reason}</p>` : ''}
-      ${(o.customer_name || o.customer_phone || o.customer_address || o.note) ? `<div class="mt-2 space-y-0.5 border-t border-gray-50 pt-2">${o.customer_name ? `<p class="text-xs text-gray-500">👤 ${o.customer_name}</p>` : ''}${o.customer_phone ? `<p class="text-xs text-gray-500">📞 <a href="tel:${o.customer_phone}" class="text-blue-500 font-bold">${o.customer_phone}</a></p>` : ''}${o.customer_address ? `<p class="text-xs text-gray-500">🏠 ${o.customer_address}</p>` : ''}${o.note ? `<p class="text-xs text-orange-600 font-bold">📝 ${o.note}</p>` : ''}</div>` : ''}
-      ${nextActionBtn[o.status] ? `<div class="mt-3">${nextActionBtn[o.status].replace(/\{ID\}/g, o.id)}</div>` : ''}
+      ${nextActionBtn[o.status] ? `<div class="mt-3">${nextActionBtn[o.status].replace('{ID}', o.id)}</div>` : ''}
       <p class="text-xs text-gray-300 mt-2">${new Date(o.created_at).toLocaleString('ar-EG')}</p>
     </div>`).join('')
-}
-async function quickConfirmOrder(id) {
-  await db.from('orders').update({ status:'confirmed', confirmed_at: new Date().toISOString() }).eq('id', id)
-  showToast('✅ تم قبول الطلب')
-  // لو الطلب موجود في الطابور كمان، نشيله عشان ما يتعرضش في الـ popup مرة تانية
-  const idx = _pendingOrdersQueue.findIndex(o => o.id === id)
-  if (idx !== -1) { _pendingOrdersQueue.splice(idx, 1); if (idx === 0) advanceToNextPendingOrder() }
-  loadOrders()
-}
-async function quickRejectOrder(id) {
-  const reason = prompt('سبب الرفض (اختياري):') || 'رفض من القائمة'
-  const order = state.orders.find(o => o.id === id)
-  if (order) {
-    const transferred = await tryTransferToNextBranch(order, reason)
-    if (!transferred) await db.from('orders').update({ status:'cancelled', cancel_reason: reason }).eq('id', id)
-  } else {
-    await db.from('orders').update({ status:'cancelled', cancel_reason: reason }).eq('id', id)
-  }
-  showToast('❌ تم رفض الطلب')
-  const idx = _pendingOrdersQueue.findIndex(o => o.id === id)
-  if (idx !== -1) { _pendingOrdersQueue.splice(idx, 1); if (idx === 0) advanceToNextPendingOrder() }
-  loadOrders()
 }
 async function updateOrderStatus(id, status) {
   const timestampField = { ready: 'ready_at', delivering: 'delivering_at', delivered: 'delivered_at' }[status]
@@ -2021,7 +2079,7 @@ async function saveSettings() {
   const whatsapp = ph.value
   document.getElementById('set-whatsapp').value = whatsapp
 
-  settingsSnapshot = { name, whatsapp, logo_url, cover_url, primary, price_per_km: pricePerKmRaw }
+  settingsSnapshot = { name, whatsapp, logo_url, primary }
   const { error } = await db.from('restaurants').update({ name, whatsapp, logo_url, cover_url, theme: { primary, secondary:'#1A1A1A' }, price_per_km: price_per_km ?? null }).eq('id', state.restaurant.id)
   if (error) { msgEl.textContent='حدث خطأ أثناء الحفظ'; msgEl.className='text-center text-sm text-red-500' }
   else { state.restaurant.name=name; state.restaurant.price_per_km=price_per_km; document.getElementById('dash-restaurant-name').textContent=name; document.getElementById('undo-settings-btn').classList.remove('hidden'); msgEl.textContent='تم الحفظ بنجاح ✅'; msgEl.className='text-center text-sm text-green-500'; showToast('تم حفظ الإعدادات ✅') }
@@ -2033,8 +2091,6 @@ function undoSettings() {
   document.getElementById('set-name').value     = settingsSnapshot.name
   document.getElementById('set-whatsapp').value = settingsSnapshot.whatsapp
   document.getElementById('set-logo').value     = settingsSnapshot.logo_url || ''
-  document.getElementById('set-cover').value    = settingsSnapshot.cover_url || ''
-  document.getElementById('set-price-per-km').value = settingsSnapshot.price_per_km ?? ''
   document.getElementById('set-color').value     = settingsSnapshot.primary
   document.getElementById('set-color-hex').value = settingsSnapshot.primary
   document.getElementById('undo-settings-btn').classList.add('hidden')
@@ -2062,8 +2118,6 @@ function startRealtimeOrders() {
 let _pendingOrdersQueue = []
 
 function handleIncomingOrder(order) {
-  // فلتر يدوي إضافي — Supabase Realtime لا يضمن عمل الفلتر على columns nullable في INSERT
-  if (_role === 'branch' && _activeBranchId && order.branch_id !== _activeBranchId) return
   _pendingOrdersQueue.push(order)
   startAlarmLoop()
   updateOrdersBadge([...state.orders, order])
@@ -2255,7 +2309,7 @@ function showMoreMenu()   { document.getElementById('more-menu').classList.remov
 function hideMoreMenu()   { document.getElementById('more-menu').classList.add('hidden') }
 
 function showTab(name) {
-  const tabs = ['products','categories','bundles','banners','orders','analytics','branches','settings']
+  const tabs = ['products','categories','bundles','banners','orders','customers','analytics','branches','settings']
   tabs.forEach(t => {
     document.getElementById('tab-content-' + t).classList.add('hidden')
     const d = document.getElementById('tab-' + t + '-top'); if (d) { d.classList.remove('tab-active'); d.classList.add('text-gray-400') }
@@ -2263,10 +2317,11 @@ function showTab(name) {
   document.getElementById('tab-content-' + name).classList.remove('hidden')
   const da = document.getElementById('tab-' + name + '-top'); if (da) { da.classList.add('tab-active'); da.classList.remove('text-gray-400') }
   ;['products','orders','settings'].forEach(t => { const b = document.getElementById('bnav-'+t); if (b) b.classList.toggle('active', t===name) })
-  const moreBtn = document.getElementById('bnav-more'); if (moreBtn) moreBtn.classList.toggle('active', ['categories','bundles','banners','analytics','branches'].includes(name))
+  const moreBtn = document.getElementById('bnav-more'); if (moreBtn) moreBtn.classList.toggle('active', ['categories','bundles','banners','analytics','branches','customers'].includes(name))
   if (name === 'orders')    loadOrders()
   if (name === 'bundles')   loadBundles()
   if (name === 'analytics') loadAnalytics()
+  if (name === 'customers') loadCustomers()
   if (name === 'banners')   loadBanners()
   if (name === 'branches')  loadBranches()
 }
