@@ -826,13 +826,18 @@ window.addEventListener('scroll', () => {
 
 // ── BOOT ──────────────────────────────────────────────────────────────
 async function boot() {
+  let _booted = false
   const { data: { session } } = await db.auth.getSession()
-  if (session) await afterLogin()
+  if (session) { _booted = true; await afterLogin() }
   else showScreen('login')
 
   db.auth.onAuthStateChange(async (event) => {
-    if (event === 'SIGNED_IN')  await afterLogin()
-    if (event === 'SIGNED_OUT') { _role = null; _activeBranchId = null; showScreen('login') }
+    if (event === 'SIGNED_IN') {
+      if (_booted) return   // منع التنفيذ المزدوج عند وجود session محفوظة
+      _booted = true
+      await afterLogin()
+    }
+    if (event === 'SIGNED_OUT') { _booted = false; _role = null; _activeBranchId = null; showScreen('login') }
   })
 }
 
