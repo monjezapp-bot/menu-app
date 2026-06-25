@@ -13,8 +13,6 @@
   <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
   <link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/@simonwep/pickr/dist/themes/nano.min.css" />
   <script src="https://cdn.jsdelivr.net/npm/@simonwep/pickr/dist/pickr.min.js"></script>
-  <link rel="stylesheet" href="https://unpkg.com/leaflet@1.9.4/dist/leaflet.css" />
-  <script src="https://unpkg.com/leaflet@1.9.4/dist/leaflet.js"></script>
   <link href="https://fonts.googleapis.com/css2?family=Rubik:wght@400;500;600;700;800;900&display=swap" rel="stylesheet" />
   <style>
     * { font-family: 'Rubik', sans-serif; }
@@ -28,20 +26,6 @@
 
     .fade-up { animation: fadeUp .3s ease both; }
     .spinner { border:3px solid #f3f3f3; border-top:3px solid #FF6B00; border-radius:50%; width:22px; height:22px; animation:spin .7s linear infinite; display:inline-block; }
-
-    .back-to-top {
-      position: fixed; bottom: 84px; left: 50%; transform: translateX(-50%);
-      background: #1a1a1a; color: #fff;
-      border: none; border-radius: 100px;
-      padding: 10px 20px; font-size: 13px; font-weight: 700;
-      display: flex; align-items: center; gap: 7px;
-      box-shadow: 0 4px 16px rgba(0,0,0,0.2);
-      cursor: pointer; z-index: 28;
-      transition: opacity 0.3s, transform 0.3s;
-      font-family: 'Rubik', sans-serif;
-    }
-    .back-to-top.hidden-btn { opacity: 0; pointer-events: none; transform: translateX(-50%) translateY(10px); }
-    .back-to-top:active     { transform: translateX(-50%) scale(0.96); }
 
     /* ── Bottom Nav ── */
     .bottom-nav { position:fixed; bottom:0; left:0; right:0; z-index:40; background:#fff; border-top:1px solid #f0f0f0; display:flex; padding-bottom:env(safe-area-inset-bottom); box-shadow:0 -4px 20px rgba(0,0,0,0.06); }
@@ -80,33 +64,6 @@
   </div>
 </div>
 
-<!-- ══ PASSCODE SCREEN ══ -->
-<div id="screen-passcode" class="hidden min-h-screen flex items-center justify-center p-6">
-  <div class="bg-white rounded-3xl shadow-xl w-full max-w-sm p-8 fade-up">
-    <div class="text-center mb-6">
-      <div class="text-5xl mb-3">🔐</div>
-      <h1 id="pc-title" class="text-xl font-extrabold text-gray-800">اختر وضع الدخول</h1>
-      <p id="pc-subtitle" class="text-gray-400 text-sm mt-1">مطعم <span id="pc-rest-name" class="font-bold text-gray-600"></span></p>
-    </div>
-    <!-- قائمة الفروع للاختيار -->
-    <div id="pc-branches-list" class="space-y-2 mb-4"></div>
-    <!-- حقل كلمة السر -->
-    <div id="pc-passcode-section" class="hidden space-y-3">
-      <p id="pc-selected-label" class="text-sm font-bold text-gray-700 text-center"></p>
-      <input id="pc-passcode-input" type="password" placeholder="كلمة السر" enterkeyhint="done"
-             onkeydown="if(event.key==='Enter'){event.preventDefault();submitPasscode()}"
-             class="w-full border border-gray-200 rounded-xl px-4 py-3 text-sm focus:outline-none focus:ring-2 focus:ring-orange-400" />
-      <p id="pc-error" class="text-red-500 text-xs text-center hidden">كلمة السر غير صحيحة</p>
-      <button onclick="submitPasscode()" class="w-full bg-orange-500 hover:bg-orange-600 text-white font-bold rounded-xl py-3 transition-colors">
-        دخول
-      </button>
-      <button onclick="backToBranchList()" class="w-full bg-gray-100 text-gray-500 font-bold rounded-xl py-2.5 text-sm">
-        ← رجوع
-      </button>
-    </div>
-  </div>
-</div>
-
 <!-- ══ DASHBOARD ══ -->
 <div id="screen-dashboard" class="hidden min-h-screen">
 
@@ -137,10 +94,8 @@
     <button onclick="showTab('bundles')"    id="tab-bundles-top"    class="tab-btn flex-shrink-0 py-3 px-3 text-sm font-bold text-gray-400 transition-colors">العروض</button>
     <button onclick="showTab('banners')"    id="tab-banners-top"    class="tab-btn flex-shrink-0 py-3 px-3 text-sm font-bold text-gray-400 transition-colors">📢 البنرات</button>
     <button onclick="showTab('orders')"     id="tab-orders-top"     class="tab-btn flex-shrink-0 py-3 px-3 text-sm font-bold text-gray-400 transition-colors">الطلبات</button>
-    <button onclick="showTab('analytics')"  id="tab-analytics-top"  class="tab-btn flex-shrink-0 py-3 px-3 text-sm font-bold text-gray-400 transition-colors" data-admin-only="1">📊 إحصائيات</button>
-    <button onclick="showTab('customers')"  id="tab-customers-top"  class="tab-btn flex-shrink-0 py-3 px-3 text-sm font-bold text-gray-400 transition-colors" data-admin-only="1">👥 العملاء</button>
-    <button onclick="showTab('branches')"   id="tab-branches-top"   class="tab-btn flex-shrink-0 py-3 px-3 text-sm font-bold text-gray-400 transition-colors" data-admin-only="1">🏬 الفروع</button>
-    <button onclick="showTab('settings')"   id="tab-settings-top"   class="tab-btn flex-shrink-0 py-3 px-3 text-sm font-bold text-gray-400 transition-colors" data-admin-only="1">الإعدادات</button>
+    <button onclick="showTab('analytics')"  id="tab-analytics-top"  class="tab-btn flex-shrink-0 py-3 px-3 text-sm font-bold text-gray-400 transition-colors">📊 إحصائيات</button>
+    <button onclick="showTab('settings')"   id="tab-settings-top"   class="tab-btn flex-shrink-0 py-3 px-3 text-sm font-bold text-gray-400 transition-colors">الإعدادات</button>
   </div>
 
   <!-- Main Content -->
@@ -199,25 +154,6 @@
       <div id="orders-list" class="space-y-4"></div>
     </div>
 
-    <!-- Customers Tab -->
-    <div id="tab-content-customers" class="hidden fade-up">
-      <h2 class="font-extrabold text-gray-800 mb-4">👥 العملاء</h2>
-      <!-- إحصائيات سريعة -->
-      <div class="grid grid-cols-3 gap-3 mb-4">
-        <div class="bg-orange-50 rounded-2xl p-3 text-center"><p class="text-2xl font-extrabold text-orange-500" id="cust-stat-total">—</p><p class="text-xs text-gray-500 mt-1">عدد العملاء</p></div>
-        <div class="bg-green-50 rounded-2xl p-3 text-center"><p class="text-2xl font-extrabold text-green-500" id="cust-stat-coins">—</p><p class="text-xs text-gray-500 mt-1">إجمالي الكوينز</p></div>
-        <div class="bg-blue-50 rounded-2xl p-3 text-center"><p class="text-2xl font-extrabold text-blue-500" id="cust-stat-orders">—</p><p class="text-xs text-gray-500 mt-1">طلبات بحسابات</p></div>
-      </div>
-      <!-- فلتر بحث -->
-      <div class="flex gap-2 mb-4">
-        <input id="cust-search" type="search" placeholder="ابحث بالاسم أو الإيميل..." oninput="filterCustomers()"
-               class="flex-1 border border-gray-200 rounded-xl px-4 py-2.5 text-sm focus:outline-none focus:ring-2 focus:ring-orange-400" />
-        <button onclick="loadCustomers()" class="bg-gray-100 text-gray-600 font-bold px-4 py-2.5 rounded-xl text-sm">تحديث</button>
-      </div>
-      <!-- قائمة العملاء -->
-      <div id="customers-list" class="space-y-3"></div>
-    </div>
-
     <!-- Analytics Tab -->
     <div id="tab-content-analytics" class="hidden fade-up">
       <h2 class="font-extrabold text-gray-800 mb-4">📊 إحصائيات</h2>
@@ -253,9 +189,6 @@
         <div><label class="text-xs font-bold text-gray-500 mb-1 block">رقم تواصل المطعم (للعملاء)</label>
           <input id="set-whatsapp" type="text" placeholder="01012345678 أو 201012345678" class="w-full border border-gray-200 rounded-xl px-4 py-3 text-sm focus:outline-none focus:ring-2 focus:ring-orange-400" />
           <p class="text-[11px] text-gray-400 mt-1">هيظهر للعميل كرقم اتصال مباشر بالمطعم — اكتبه بأي صيغة وسيتم ضبطه تلقائياً</p></div>
-        <div><label class="text-xs font-bold text-gray-500 mb-1 block">سعر التوصيل لكل كيلومتر (ج.م)</label>
-          <input id="set-price-per-km" type="number" step="0.5" min="0" placeholder="مثال: 5 — اتركه 0 أو فارغاً لعدم احتساب رسوم توصيل" class="w-full border border-gray-200 rounded-xl px-4 py-3 text-sm focus:outline-none focus:ring-2 focus:ring-orange-400" />
-          <p class="text-[11px] text-gray-400 mt-1">تُضاف رسوم التوصيل تلقائياً للفاتورة بناءً على المسافة بين موقع العميل وأقرب فرع</p></div>
         <div>
           <label class="text-xs font-bold text-gray-500 mb-1 block">اللون الرئيسي</label>
           <div class="flex items-center gap-3">
@@ -287,104 +220,10 @@
         </div>
         <p id="settings-msg" class="text-center text-sm hidden"></p>
       </div>
-
-      <!-- إدارة كلمة سر الأدمن وتبديل الوضع — للأدمن فقط -->
-      <div id="admin-passcode-section" class="hidden bg-white rounded-2xl p-5 shadow-sm space-y-4 mt-4">
-        <h3 class="font-bold text-gray-700">🔐 كلمة سر الأدمن</h3>
-        <div>
-          <label class="text-xs font-bold text-gray-500 mb-1 block">كلمة سر الأدمن (تمنح وصولاً كاملاً)</label>
-          <input id="set-admin-passcode" type="text" placeholder="اتركها فارغة إن لم تريد كلمة سر للأدمن"
-                 class="w-full border border-gray-200 rounded-xl px-4 py-3 text-sm focus:outline-none focus:ring-2 focus:ring-orange-400" />
-        </div>
-        <button onclick="saveAdminPasscode()" class="w-full bg-orange-500 text-white font-bold rounded-xl py-3">حفظ كلمة سر الأدمن</button>
-        <hr class="border-gray-100" />
-        <button onclick="switchRole()" class="w-full bg-gray-100 text-gray-600 font-bold rounded-xl py-2.5 text-sm">🔄 تبديل وضع الدخول (دخول كفرع)</button>
-      </div>
-
-      <!-- إعدادات الولاء والكوينز -->
-      <div id="loyalty-section" class="hidden bg-white rounded-2xl p-5 shadow-sm space-y-4 mt-4">
-        <div class="flex items-center justify-between">
-          <h3 class="font-bold text-gray-700">🪙 نظام الكوينز</h3>
-          <div class="flex items-center gap-2">
-            <span class="text-xs text-gray-400">تفعيل</span>
-            <input id="set-loyalty-enabled" type="checkbox" class="w-5 h-5 accent-orange-500" onchange="toggleLoyaltySection()" />
-          </div>
-        </div>
-        <div id="loyalty-fields" class="hidden space-y-3">
-          <p class="text-xs text-gray-400">1,000 كوين = 1 ج.م — القيم أدناه بالكوين</p>
-          <div><label class="text-xs font-bold text-gray-500 mb-1 block">🎁 بونص الترحيب عند أول تسجيل (كوين)</label>
-            <input id="set-welcome-coins" type="number" min="0" placeholder="10000" class="w-full border border-gray-200 rounded-xl px-4 py-3 text-sm focus:outline-none focus:ring-2 focus:ring-orange-400" /></div>
-          <div><label class="text-xs font-bold text-gray-500 mb-1 block">🔗 بونص الإحالة للمُحيل (كوين)</label>
-            <input id="set-referral-coins" type="number" min="0" placeholder="5000" class="w-full border border-gray-200 rounded-xl px-4 py-3 text-sm focus:outline-none focus:ring-2 focus:ring-orange-400" /></div>
-          <div><label class="text-xs font-bold text-gray-500 mb-1 block">⬇️ الحد الأدنى للاسترداد (كوين) — مثال: 100,000 = 100 ج.م</label>
-            <input id="set-min-redeem" type="number" min="0" placeholder="100000" class="w-full border border-gray-200 rounded-xl px-4 py-3 text-sm focus:outline-none focus:ring-2 focus:ring-orange-400" /></div>
-          <button onclick="saveLoyaltySettings()" class="w-full bg-orange-500 text-white font-bold rounded-xl py-3">حفظ إعدادات الكوينز</button>
-        </div>
-      </div>
-
-      <!-- أكواد الخصم -->
-      <div id="discount-codes-section" class="hidden bg-white rounded-2xl p-5 shadow-sm space-y-4 mt-4">
-        <div class="flex items-center justify-between">
-          <h3 class="font-bold text-gray-700">🏷️ أكواد الخصم</h3>
-          <button onclick="openDiscountCodeModal()" class="bg-orange-500 text-white text-xs font-bold px-4 py-2 rounded-xl">+ كود جديد</button>
-        </div>
-        <div id="discount-codes-list" class="space-y-2"></div>
-      </div>
-    </div>
-
-    <!-- Branches Tab -->
-    <div id="tab-content-branches" class="hidden fade-up">
-      <div class="flex items-center justify-between mb-4">
-        <h2 class="font-extrabold text-gray-800">🏬 الفروع</h2>
-        <button onclick="openBranchModal()" class="bg-orange-500 text-white text-sm font-bold px-4 py-2 rounded-xl">+ فرع جديد</button>
-      </div>
-      <p class="text-xs text-gray-400 mb-4">حدد موقع كل فرع بدقة على الخريطة — هذا أساس حساب أقرب فرع للعميل وتكلفة التوصيل. كل فرع له كلمة سر خاصة تُستخدم لدخول موظفيه.</p>
-      <div id="branches-list" class="space-y-3"></div>
     </div>
 
   </main>
 </div><!-- /screen-dashboard -->
-
-<!-- ══ BRANCH MODAL ══ -->
-<div id="modal-branch" class="hidden fixed inset-0 z-50 flex items-end justify-center">
-  <div class="absolute inset-0 bg-black/50" onclick="closeBranchModal()"></div>
-  <div class="relative bg-white rounded-t-3xl w-full max-w-lg p-6 space-y-4 max-h-[90vh] overflow-y-auto">
-    <h3 id="branch-modal-title" class="text-lg font-extrabold text-gray-800">فرع جديد</h3>
-    <input type="hidden" id="bm-branch-id" />
-    <div><label class="text-xs font-bold text-gray-500 mb-1 block">اسم الفرع *</label>
-      <input id="bm-branch-name" type="text" placeholder="مثال: فرع الدقي" enterkeyhint="next" onkeydown="focusNextField(event, 'bm-branch-passcode')" class="w-full border border-gray-200 rounded-xl px-4 py-3 text-sm focus:outline-none focus:ring-2 focus:ring-orange-400" /></div>
-    <div><label class="text-xs font-bold text-gray-500 mb-1 block">كلمة سر الفرع *</label>
-      <input id="bm-branch-passcode" type="text" placeholder="يحددها التاجر، يستخدمها موظف الفرع للدخول" enterkeyhint="done" onkeydown="focusNextField(event, null, saveBranch)" class="w-full border border-gray-200 rounded-xl px-4 py-3 text-sm focus:outline-none focus:ring-2 focus:ring-orange-400" /></div>
-    <div>
-      <label class="text-xs font-bold text-gray-500 mb-1 block">موقع الفرع على الخريطة *</label>
-      <button onclick="openBranchMapPicker()" id="bm-map-pick-btn" class="w-full border border-gray-200 rounded-xl px-4 py-3 text-sm text-gray-500 text-right flex items-center gap-2">
-        <span>📍</span><span id="bm-map-pick-label">اضغط لتحديد الموقع</span>
-      </button>
-    </div>
-    <p id="bm-error" class="text-red-500 text-xs text-center hidden"></p>
-    <button onclick="saveBranch()" class="w-full bg-orange-500 text-white font-bold rounded-xl py-3">حفظ الفرع</button>
-  </div>
-</div>
-
-<!-- ══ BRANCH MAP PICKER ══ -->
-<div id="branch-map-modal" class="hidden fixed inset-0 z-[60] flex flex-col" style="background:#fff">
-  <div style="display:flex;align-items:center;justify-content:space-between;padding:14px 16px;border-bottom:1px solid #f0f0f0;flex-shrink:0">
-    <p style="font-size:16px;font-weight:900;color:#1a1a1a">📍 حدد موقع الفرع</p>
-    <button onclick="closeBranchMapPicker()" style="width:36px;height:36px;border-radius:50%;background:#f5f5f5;color:#555;font-size:20px;font-weight:700;display:flex;align-items:center;justify-content:center">&times;</button>
-  </div>
-  <div id="branch-leaflet-map" style="flex:1;width:100%;min-height:0"></div>
-  <button onclick="useBranchMyLocation()"
-          style="position:absolute;bottom:90px;left:16px;z-index:1000;background:#fff;border:none;border-radius:12px;padding:10px 14px;font-size:13px;font-weight:800;color:#1a1a1a;box-shadow:0 2px 12px rgba(0,0,0,0.15);display:flex;align-items:center;gap:6px;font-family:'Rubik',sans-serif;cursor:pointer">
-    🎯 موقعي الحالي
-  </button>
-  <div style="padding:12px 16px;border-top:1px solid #f0f0f0;background:#fff;flex-shrink:0">
-    <p id="branch-map-coords-label" style="font-size:12px;color:#aaa;text-align:center;margin-bottom:10px">لم يتم تحديد موقع بعد</p>
-    <button onclick="confirmBranchLocation()"
-            style="width:100%;background:#FF6B00;color:#fff;font-size:15px;font-weight:900;border-radius:16px;padding:14px;font-family:'Rubik',sans-serif">
-      ✅ تأكيد الموقع
-    </button>
-  </div>
-</div>
 
 <!-- ══ PRODUCT MODAL ══ -->
 <div id="modal-product" class="hidden fixed inset-0 z-50 flex items-end justify-center">
@@ -400,19 +239,13 @@
       <div class="flex-1"><label class="text-xs font-bold text-gray-500 mb-1 block">السعر الأصلي *</label>
         <input id="pm-price" type="number" step="0.01" min="0" oninput="updateDiscountPreview()" enterkeyhint="next" onkeydown="focusNextField(event, 'pm-discount')" class="w-full border border-gray-200 rounded-xl px-4 py-3 text-sm focus:outline-none focus:ring-2 focus:ring-orange-400" /></div>
       <div class="flex-1"><label class="text-xs font-bold text-gray-500 mb-1 block">سعر الخصم</label>
-        <input id="pm-discount" type="number" step="0.01" min="0" oninput="updateDiscountPreview()" placeholder="اتركه فارغاً إن لا يوجد خصم" enterkeyhint="next" onkeydown="focusNextField(event, 'pm-prep-minutes')" class="w-full border border-gray-200 rounded-xl px-4 py-3 text-sm focus:outline-none focus:ring-2 focus:ring-orange-400" /></div>
+        <input id="pm-discount" type="number" step="0.01" min="0" oninput="updateDiscountPreview()" placeholder="اتركه فارغاً إن لا يوجد خصم" enterkeyhint="done" onkeydown="focusNextField(event, null, saveProduct)" class="w-full border border-gray-200 rounded-xl px-4 py-3 text-sm focus:outline-none focus:ring-2 focus:ring-orange-400" /></div>
     </div>
     <div id="discount-preview" class="hidden bg-orange-50 rounded-xl px-4 py-2 text-sm flex items-center gap-2">
       <span class="text-gray-400 line-through" id="dp-original"></span>
       <span class="text-orange-500 font-extrabold" id="dp-discounted"></span>
       <span class="bg-orange-500 text-white text-xs font-bold px-2 py-0.5 rounded-full" id="dp-percent"></span>
     </div>
-    <div><label class="text-xs font-bold text-gray-500 mb-1 block">⏱️ وقت التجهيز التقديري (بالدقائق)</label>
-      <input id="pm-prep-minutes" type="number" step="1" min="1" placeholder="مثال: 10" enterkeyhint="next" onkeydown="focusNextField(event, 'pm-loyalty-coins', saveProduct)" class="w-full border border-gray-200 rounded-xl px-4 py-3 text-sm focus:outline-none focus:ring-2 focus:ring-orange-400" />
-      <p class="text-[11px] text-gray-400 mt-1">يُستخدم لحساب الوقت التقديري الذي يظهر للعميل بعد تأكيد طلبه</p></div>
-    <div id="pm-loyalty-coins-wrap" class="hidden"><label class="text-xs font-bold text-gray-500 mb-1 block">🪙 كوينز ولاء على هذا المنتج (لو نظام الكوينز مفعّل)</label>
-      <input id="pm-loyalty-coins" type="number" step="100" min="0" placeholder="مثال: 500 = 0.5 ج.م" enterkeyhint="done" onkeydown="focusNextField(event, null, saveProduct)" class="w-full border border-gray-200 rounded-xl px-4 py-3 text-sm focus:outline-none focus:ring-2 focus:ring-orange-400" />
-      <p class="text-[11px] text-gray-400 mt-1">العميل يكسب هذا العدد من الكوينز عند شراء المنتج</p></div>
     <div><label class="text-xs font-bold text-gray-500 mb-1 block">التصنيف <span class="text-red-400">*</span></label>
       <select id="pm-category" class="w-full border border-gray-200 rounded-xl px-4 py-3 text-sm focus:outline-none focus:ring-2 focus:ring-orange-400 bg-white"><option value="" disabled selected>اختر تصنيف للمنتج...</option></select></div>
     <div>
@@ -533,48 +366,10 @@
       <input id="bm-active" type="checkbox" checked class="w-5 h-5 accent-orange-500 rounded" />
       <label class="text-sm font-bold text-gray-700">العرض نشط</label>
     </div>
-    <!-- ربط الفروع — يظهر فقط لو فيه أكثر من فرع -->
-    <div id="bm-branches-section" class="hidden">
-      <label class="text-xs font-bold text-gray-500 mb-2 block">إتاحة العرض لـ</label>
-      <div id="bm-branches-checkboxes" class="space-y-2 border border-gray-100 rounded-xl p-3"></div>
-    </div>
     <p id="bm-error" class="text-red-500 text-xs hidden"></p>
     <div class="flex gap-3 pt-2">
       <button onclick="saveBundle()"       class="flex-1 bg-orange-500 text-white font-bold rounded-xl py-3">حفظ</button>
       <button onclick="closeBundleModal()" class="flex-1 bg-gray-100 text-gray-600 font-bold rounded-xl py-3">إلغاء</button>
-    </div>
-  </div>
-</div>
-
-<!-- ══ DISCOUNT CODE MODAL ══ -->
-<div id="modal-discount-code" class="hidden fixed inset-0 z-50 flex items-end justify-center">
-  <div class="absolute inset-0 bg-black/50" onclick="closeDiscountCodeModal()"></div>
-  <div class="relative bg-white rounded-t-3xl w-full max-w-lg p-6 space-y-4 max-h-[90vh] overflow-y-auto">
-    <h3 id="dcm-title" class="text-lg font-extrabold text-gray-800">كود خصم جديد</h3>
-    <input type="hidden" id="dcm-id" />
-    <div><label class="text-xs font-bold text-gray-500 mb-1 block">الكود *</label>
-      <input id="dcm-code" type="text" placeholder="مثال: WELCOME50" style="text-transform:uppercase"
-             class="w-full border border-gray-200 rounded-xl px-4 py-3 text-sm focus:outline-none focus:ring-2 focus:ring-orange-400 uppercase" /></div>
-    <div><label class="text-xs font-bold text-gray-500 mb-1 block">قيمة الخصم (ج.م) *</label>
-      <input id="dcm-discount" type="number" step="0.5" min="0" placeholder="مثال: 50"
-             class="w-full border border-gray-200 rounded-xl px-4 py-3 text-sm focus:outline-none focus:ring-2 focus:ring-orange-400" /></div>
-    <div><label class="text-xs font-bold text-gray-500 mb-1 block">عدد مرات الاستخدام (اتركه فارغاً = غير محدود)</label>
-      <input id="dcm-max-uses" type="number" min="1" placeholder="مثال: 100"
-             class="w-full border border-gray-200 rounded-xl px-4 py-3 text-sm focus:outline-none focus:ring-2 focus:ring-orange-400" /></div>
-    <div class="flex gap-3">
-      <div class="flex-1"><label class="text-xs font-bold text-gray-500 mb-1 block">صالح من</label>
-        <input id="dcm-from" type="datetime-local" class="w-full border border-gray-200 rounded-xl px-3 py-2.5 text-sm focus:outline-none focus:ring-2 focus:ring-orange-400" /></div>
-      <div class="flex-1"><label class="text-xs font-bold text-gray-500 mb-1 block">صالح حتى</label>
-        <input id="dcm-until" type="datetime-local" class="w-full border border-gray-200 rounded-xl px-3 py-2.5 text-sm focus:outline-none focus:ring-2 focus:ring-orange-400" /></div>
-    </div>
-    <div class="flex items-center gap-3">
-      <input id="dcm-active" type="checkbox" checked class="w-5 h-5 accent-orange-500" />
-      <label class="text-sm font-bold text-gray-700">الكود نشط</label>
-    </div>
-    <p id="dcm-error" class="text-red-500 text-xs hidden"></p>
-    <div class="flex gap-3 pt-2">
-      <button onclick="saveDiscountCode()"       class="flex-1 bg-orange-500 text-white font-bold rounded-xl py-3">حفظ</button>
-      <button onclick="closeDiscountCodeModal()" class="flex-1 bg-gray-100 text-gray-600 font-bold rounded-xl py-3">إلغاء</button>
     </div>
   </div>
 </div>
@@ -619,13 +414,6 @@
   </div>
 </div>
 
-<button class="back-to-top hidden-btn" id="back-to-top-btn" onclick="scrollToTop()">
-  <svg width="14" height="14" fill="none" stroke="currentColor" stroke-width="2.5" viewBox="0 0 24 24">
-    <path d="M18 15l-6-6-6 6"/>
-  </svg>
-  الأعلى
-</button>
-
 <!-- ══ BOTTOM NAV (mobile) ══ -->
 <nav class="bottom-nav md:hidden" id="bottom-nav">
   <button class="bnav-btn active" id="bnav-products" onclick="showTab('products')">
@@ -657,9 +445,7 @@
       <button onclick="hideMoreMenu();showTab('bundles')"    class="flex flex-col items-center gap-2 bg-gray-50 rounded-2xl p-4"><span class="text-2xl">🎁</span><span class="text-xs font-bold text-gray-600">العروض</span></button>
       <button onclick="hideMoreMenu();showTab('banners')"    class="flex flex-col items-center gap-2 bg-gray-50 rounded-2xl p-4"><span class="text-2xl">📢</span><span class="text-xs font-bold text-gray-600">البنرات</span></button>
       <button onclick="hideMoreMenu();showTab('analytics')"  class="flex flex-col items-center gap-2 bg-gray-50 rounded-2xl p-4"><span class="text-2xl">📊</span><span class="text-xs font-bold text-gray-600">إحصائيات</span></button>
-      <button onclick="hideMoreMenu();showTab('customers')"  class="flex flex-col items-center gap-2 bg-gray-50 rounded-2xl p-4"><span class="text-2xl">👥</span><span class="text-xs font-bold text-gray-600">العملاء</span></button>
-      <button onclick="hideMoreMenu();showTab('branches')"   class="flex flex-col items-center gap-2 bg-gray-50 rounded-2xl p-4"><span class="text-2xl">🏬</span><span class="text-xs font-bold text-gray-600">الفروع</span></button>
-      <button onclick="doLogout()" class="flex flex-col items-center gap-2 bg-red-50 rounded-2xl p-4 col-span-3"><span class="text-2xl">🚪</span><span class="text-xs font-bold text-red-500">تسجيل الخروج</span></button>
+      <button onclick="doLogout()" class="flex flex-col items-center gap-2 bg-red-50 rounded-2xl p-4 col-span-2"><span class="text-2xl">🚪</span><span class="text-xs font-bold text-red-500">تسجيل الخروج</span></button>
     </div>
   </div>
 </div>
@@ -686,7 +472,6 @@
       <div class="w-11 h-11 bg-white/20 rounded-2xl flex items-center justify-center text-2xl">🔔</div>
       <div><p class="text-white font-extrabold text-base">طلب جديد!</p><p id="nop-order-num" class="text-orange-100 text-xs font-bold"></p></div>
     </div>
-    <p id="nop-queue-counter" class="hidden bg-yellow-50 text-yellow-700 text-xs font-extrabold text-center py-2 border-b border-yellow-100"></p>
     <div class="px-5 py-4">
       <div id="nop-items" class="space-y-1.5 mb-3 max-h-48 overflow-y-auto"></div>
       <div class="flex justify-between items-center border-t border-gray-100 pt-3 mb-1">
@@ -740,9 +525,7 @@ const state = {
   products:   [],
   orders:     [],
   banners:    [],
-  bundles:    [],
-  branches:   [],
-  discountCodes: []
+  bundles:    []
 }
 
 let pickrInstance    = null
@@ -750,16 +533,10 @@ let settingsSnapshot = null
 let productSnapshot  = null
 let annSaveTimeout   = null
 let _realtimeChannel = null
+let _pendingOrder    = null
 let _audioCtx        = null
 let _alsoWith        = []
 let activeProductFilter = 'all'
-
-// ── ROLE / PASSCODE STATE ──────────────────────────────────────────────
-// role: 'admin' | 'branch'
-// activeBranchId: uuid الفرع الحالي (لو role === 'branch')
-let _role          = null
-let _activeBranchId = null
-const LS_ROLE_KEY   = 'menu_role'       // 'admin' | 'branch:<id>'
 
 // ── MODAL HISTORY (زر الرجوع الفعلي يغلق آخر طبقة مفتوحة فقط) ──────────
 // ملاحظة: لا تنطبق على تابات لوحة التحكم نفسها (منتجات/طلبات/إعدادات...) —
@@ -775,28 +552,9 @@ function popModalSilently(name) {
   _modalStack.splice(idx, 1)
   if (history.state && history.state._modalName === name) history.back()
 }
-// طبقة أمان أساسية تمنع خروج التاجر من لوحة التحكم بالكامل بضغطة رجوع واحدة بالغلط
-// وهو واقف على أي تاب رئيسي (بدون أي مودال مفتوح فوقه)
-let _exitConfirmOpen = false
-let _exitConfirmedByUser = false
-history.pushState({ _appBase: true }, '') // طبقة حماية فوق صفحة الدخول الأصلية
-
-window.addEventListener('popstate', async () => {
+window.addEventListener('popstate', () => {
   const top = _modalStack.pop()
-  if (top) { top.closeFn(true); return }
-
-  // لو التاجر أكّد الخروج بالفعل، نسمح بهذا الرجوع يكتمل طبيعياً
-  if (_exitConfirmedByUser) { _exitConfirmedByUser = false; return }
-
-  history.pushState({ _appBase: true }, '') // نعيد إضافة طبقة الحماية فوراً لمنع الخروج الفعلي
-  if (_exitConfirmOpen) return
-  _exitConfirmOpen = true
-  const confirmed = await showConfirm('هل أنت متأكد من الخروج؟', 'نعم، خروج')
-  _exitConfirmOpen = false
-  if (confirmed) {
-    _exitConfirmedByUser = true
-    history.back()
-  }
+  if (top) top.closeFn(true)
 })
 
 // تفاعل لوحة المفاتيح: الضغط على "تم/Next" ينقل التركيز للحقل التالي،
@@ -815,196 +573,16 @@ function focusNextField(event, nextFieldId, submitFn) {
   }
 }
 
-// ── BACK TO TOP ───────────────────────────────────────────────────────
-function scrollToTop() { window.scrollTo({ top: 0, behavior: 'smooth' }) }
-window.addEventListener('scroll', () => {
-  const backBtn = document.getElementById('back-to-top-btn')
-  if (!backBtn) return
-  if (window.scrollY > 400) backBtn.classList.remove('hidden-btn')
-  else backBtn.classList.add('hidden-btn')
-}, { passive: true })
-
 // ── BOOT ──────────────────────────────────────────────────────────────
 async function boot() {
   const { data: { session } } = await db.auth.getSession()
-  if (session) await afterLogin()
+  if (session) await loadDashboard()
   else showScreen('login')
 
   db.auth.onAuthStateChange(async (event) => {
-    if (event === 'SIGNED_IN')  await afterLogin()
-    if (event === 'SIGNED_OUT') { _role = null; _activeBranchId = null; showScreen('login') }
+    if (event === 'SIGNED_IN')  await loadDashboard()
+    if (event === 'SIGNED_OUT') showScreen('login')
   })
-}
-
-// بعد التحقق من الجلسة — نقرر هل نذهب لشاشة الـ passcode أم مباشرة للداشبورد
-async function afterLogin() {
-  const { data: { user } } = await db.auth.getUser()
-  const { data: r }        = await db.from('restaurants').select('*').eq('owner_id', user.id).single()
-  if (!r) { showToast('لم يتم العثور على مطعم مرتبط بهذا الحساب'); return }
-
-  // اقرأ الفروع أولاً لتحديد إذا كان فيه أكثر من فرع
-  const { data: branches } = await db.from('branches').select('id,name,passcode').eq('restaurant_id', r.id).order('created_at')
-  const multiplesBranches  = branches && branches.length > 1
-
-  // تحقق من localStorage
-  const saved = localStorage.getItem(LS_ROLE_KEY + '_' + r.id)
-  if (saved) {
-    if (saved === 'admin') {
-      _role = 'admin'; _activeBranchId = null
-      await loadDashboard(r, branches)
-      return
-    }
-    if (saved.startsWith('branch:')) {
-      const branchId = saved.split(':')[1]
-      const branch   = branches && branches.find(b => b.id === branchId)
-      if (branch) {
-        _role = 'branch'; _activeBranchId = branchId
-        await loadDashboard(r, branches)
-        return
-      }
-    }
-    // saved value لم يعد صالحاً (فرع محذوف مثلاً)، احذفه
-    localStorage.removeItem(LS_ROLE_KEY + '_' + r.id)
-  }
-
-  // لو فرع واحد فقط → أدمن مباشرة
-  if (!multiplesBranches) {
-    _role = 'admin'; _activeBranchId = null
-    localStorage.setItem(LS_ROLE_KEY + '_' + r.id, 'admin')
-    await loadDashboard(r, branches)
-    return
-  }
-
-  // أكثر من فرع → شاشة اختيار كلمة السر
-  showPasscodeScreen(r, branches)
-}
-
-// ── PASSCODE SCREEN ────────────────────────────────────────────────────
-let _pcRestaurant = null
-let _pcBranches   = null
-let _pcSelected   = null  // 'admin' | branch object
-
-function showPasscodeScreen(r, branches) {
-  _pcRestaurant = r
-  _pcBranches   = branches
-  _pcSelected   = null
-  document.getElementById('pc-rest-name').textContent = r.name
-  document.getElementById('pc-title').textContent     = 'اختر وضع الدخول'
-  document.getElementById('pc-passcode-section').classList.add('hidden')
-  document.getElementById('pc-error').classList.add('hidden')
-  renderBranchListForPasscode(r, branches)
-  showScreen('passcode')
-}
-
-function renderBranchListForPasscode(r, branches) {
-  const el = document.getElementById('pc-branches-list')
-  let html = ''
-  // زر الأدمن دائماً أول (بس لو في admin_passcode أو ما فيش passcode على الإطلاق)
-  html += `<button onclick="selectPasscodeTarget('admin')"
-    class="w-full flex items-center gap-3 bg-orange-50 border border-orange-200 rounded-2xl px-4 py-3 text-right hover:bg-orange-100 transition-colors">
-    <span class="text-2xl">👑</span>
-    <div><p class="font-extrabold text-gray-800 text-sm">دخول كأدمن</p><p class="text-xs text-gray-400">وصول كامل لكل التبويبات والفروع</p></div>
-  </button>`
-  branches.forEach(b => {
-    html += `<button onclick="selectPasscodeTarget('${b.id}')"
-      class="w-full flex items-center gap-3 bg-gray-50 border border-gray-200 rounded-2xl px-4 py-3 text-right hover:bg-gray-100 transition-colors">
-      <span class="text-2xl">🏬</span>
-      <div><p class="font-extrabold text-gray-800 text-sm">${b.name}</p><p class="text-xs text-gray-400">عرض طلبات هذا الفرع فقط</p></div>
-    </button>`
-  })
-  el.innerHTML = html
-}
-
-function selectPasscodeTarget(target) {
-  _pcSelected = target  // 'admin' | branch_id
-  const label = target === 'admin'
-    ? '👑 دخول كأدمن'
-    : '🏬 ' + (_pcBranches.find(b => b.id === target)?.name || '')
-  document.getElementById('pc-selected-label').textContent = label
-  document.getElementById('pc-passcode-input').value       = ''
-  document.getElementById('pc-error').classList.add('hidden')
-  document.getElementById('pc-branches-list').classList.add('hidden')
-  document.getElementById('pc-passcode-section').classList.remove('hidden')
-  document.getElementById('pc-title').textContent = 'أدخل كلمة السر'
-  setTimeout(() => document.getElementById('pc-passcode-input').focus(), 100)
-}
-
-function backToBranchList() {
-  _pcSelected = null
-  document.getElementById('pc-branches-list').classList.remove('hidden')
-  document.getElementById('pc-passcode-section').classList.add('hidden')
-  document.getElementById('pc-title').textContent = 'اختر وضع الدخول'
-}
-
-async function submitPasscode() {
-  const entered = document.getElementById('pc-passcode-input').value.trim()
-  const errEl   = document.getElementById('pc-error')
-  errEl.classList.add('hidden')
-
-  if (_pcSelected === 'admin') {
-    const adminPass = _pcRestaurant.admin_passcode || ''
-    if (adminPass && entered !== adminPass) { errEl.classList.remove('hidden'); return }
-    _role = 'admin'; _activeBranchId = null
-    localStorage.setItem(LS_ROLE_KEY + '_' + _pcRestaurant.id, 'admin')
-    await loadDashboard(_pcRestaurant, _pcBranches)
-  } else {
-    const branch = _pcBranches.find(b => b.id === _pcSelected)
-    if (!branch || entered !== branch.passcode) { errEl.classList.remove('hidden'); return }
-    _role = 'branch'; _activeBranchId = branch.id
-    localStorage.setItem(LS_ROLE_KEY + '_' + _pcRestaurant.id, 'branch:' + branch.id)
-    await loadDashboard(_pcRestaurant, _pcBranches)
-  }
-}
-
-// تبديل الوضع: يمسح localStorage ويُظهر شاشة الاختيار من جديد
-function switchRole() {
-  if (!state.restaurant) return
-  localStorage.removeItem(LS_ROLE_KEY + '_' + state.restaurant.id)
-  _role = null; _activeBranchId = null
-  // إيقاف realtime قبل العودة
-  if (_realtimeChannel) { db.removeChannel(_realtimeChannel); _realtimeChannel = null }
-  showPasscodeScreen(state.restaurant, state.branches)
-}
-
-// تطبيق صلاحيات الواجهة بعد تحديد الـ role
-function applyRoleUI() {
-  const isAdmin = _role === 'admin'
-  // إخفاء/إظهار تبويبات admin-only في desktop nav
-  document.querySelectorAll('[data-admin-only="1"]').forEach(el => {
-    el.style.display = isAdmin ? '' : 'none'
-  })
-  // more-menu: إخفاء analytics + branches لو مش أدمن
-  const moreMenuBtns = document.querySelectorAll('#more-menu button')
-  moreMenuBtns.forEach(btn => {
-    const fn = btn.getAttribute('onclick') || ''
-    if (!isAdmin && (fn.includes("'analytics'") || fn.includes("'branches'") || fn.includes("'customers'"))) {
-      btn.style.display = 'none'
-    } else {
-      btn.style.display = ''
-    }
-  })
-  // bottom nav: إخفاء settings لو مش أدمن
-  const bnavSettings = document.getElementById('bnav-settings')
-  if (bnavSettings) bnavSettings.style.display = isAdmin ? '' : 'none'
-  // قسم admin-passcode في الإعدادات
-  const apSection = document.getElementById('admin-passcode-section')
-  if (apSection) apSection.classList.toggle('hidden', !isAdmin)
-  const loySection = document.getElementById('loyalty-section')
-  if (loySection) loySection.classList.toggle('hidden', !isAdmin)
-  const dcSection = document.getElementById('discount-codes-section')
-  if (dcSection) dcSection.classList.toggle('hidden', !isAdmin)
-  const pmLoyWrap = document.getElementById('pm-loyalty-coins-wrap')
-  if (pmLoyWrap) pmLoyWrap.classList.toggle('hidden', !isAdmin || !state.restaurant?.loyalty_enabled)
-  // لو مش أدمن وكان في settings → نحوله لـ orders
-  if (!isAdmin) {
-    const activeTab = document.querySelector('.tab-btn.tab-active')
-    if (activeTab) {
-      const fn = activeTab.getAttribute('onclick') || ''
-      if (fn.includes("'settings'") || fn.includes("'analytics'") || fn.includes("'branches'") || fn.includes("'customers'")) {
-        showTab('orders')
-      }
-    }
-  }
 }
 
 // ── AUTH ──────────────────────────────────────────────────────────────
@@ -1021,42 +599,25 @@ async function doLogin() {
 async function doLogout() { await db.auth.signOut() }
 
 // ── LOAD DASHBOARD ────────────────────────────────────────────────────
-async function loadDashboard(r, branches) {
-  // لو استُدعيت بدون معاملات (من onAuthStateChange مثلاً)، اجلب البيانات من الصفر
-  if (!r) {
-    const { data: { user } } = await db.auth.getUser()
-    const res = await db.from('restaurants').select('*').eq('owner_id', user.id).single()
-    r = res.data
-    if (!r) { showToast('لم يتم العثور على مطعم مرتبط بهذا الحساب'); return }
-    const br = await db.from('branches').select('id,name,passcode').eq('restaurant_id', r.id).order('created_at')
-    branches = br.data || []
-  }
+async function loadDashboard() {
+  showScreen('dashboard')
+  const { data: { user } } = await db.auth.getUser()
+  const { data: r }        = await db.from('restaurants').select('*').eq('owner_id', user.id).single()
+  if (!r) { showToast('لم يتم العثور على مطعم مرتبط بهذا الحساب'); return }
 
   state.restaurant = r
-  state.branches   = branches || []
   document.getElementById('dash-restaurant-name').textContent = r.name
   document.getElementById('preview-link').href = MENU_BASE_URL + '?r=' + r.slug + '&preview=1'
   document.getElementById('share-menu-link').value = MENU_BASE_URL + '?r=' + r.slug
   initPushUI()
 
-  await Promise.all([loadCategories(), loadProducts(), loadOrders(), loadBanners(), loadBundles(), loadBranches(), loadDiscountCodes()])
+  await Promise.all([loadCategories(), loadProducts(), loadOrders(), loadBanners(), loadBundles()])
 
   // Populate settings
   document.getElementById('set-name').value     = r.name
   document.getElementById('set-whatsapp').value = r.whatsapp
   document.getElementById('set-logo').value     = r.logo_url  || ''
   document.getElementById('set-cover').value    = r.cover_url || ''
-  document.getElementById('set-admin-passcode').value = r.admin_passcode || ''
-  document.getElementById('set-price-per-km').value   = r.price_per_km  ?? ''
-  // إعدادات الولاء
-  const loyEl = document.getElementById('set-loyalty-enabled')
-  if (loyEl) {
-    loyEl.checked = r.loyalty_enabled || false
-    document.getElementById('set-welcome-coins').value  = r.welcome_coins  ?? 10000
-    document.getElementById('set-referral-coins').value = r.referral_coins ?? 5000
-    document.getElementById('set-min-redeem').value     = r.min_redeem_coins ?? 100000
-    document.getElementById('loyalty-fields').classList.toggle('hidden', !r.loyalty_enabled)
-  }
   const primary = r.theme?.primary || '#FF6B00'
   document.getElementById('set-color').value     = primary
   document.getElementById('set-color-hex').value = primary
@@ -1064,9 +625,7 @@ async function loadDashboard(r, branches) {
   document.getElementById('ann-active-toggle').checked   = r.announcement_active || false
 
   setTimeout(() => initPickr(primary), 100)
-  showScreen('dashboard')
-  applyRoleUI()
-  startRealtimeOrders()
+  startRealtimeOrders() // الطلبات تجي دايماً عبر التطبيق (واتساب أُزيل من تدفق الطلبات)
 
   // Live sync: color hex input
   document.getElementById('set-color-hex').addEventListener('input', e => {
@@ -1080,120 +639,6 @@ async function loadDashboard(r, branches) {
     if (url) { document.getElementById('logo-preview').src = url; wrap.classList.remove('hidden') }
     else wrap.classList.add('hidden')
   })
-}
-
-async function saveAdminPasscode() {
-  const pass = document.getElementById('set-admin-passcode').value.trim()
-  await db.from('restaurants').update({ admin_passcode: pass || null }).eq('id', state.restaurant.id)
-  state.restaurant.admin_passcode = pass || null
-  showToast(pass ? 'تم حفظ كلمة سر الأدمن ✅' : 'تم إزالة كلمة سر الأدمن')
-}
-
-// ── LOYALTY SETTINGS ──────────────────────────────────────────────────
-function toggleLoyaltySection() {
-  const enabled = document.getElementById('set-loyalty-enabled').checked
-  document.getElementById('loyalty-fields').classList.toggle('hidden', !enabled)
-}
-
-async function saveLoyaltySettings() {
-  const enabled    = document.getElementById('set-loyalty-enabled').checked
-  const welcome    = parseInt(document.getElementById('set-welcome-coins').value)  || 10000
-  const referral   = parseInt(document.getElementById('set-referral-coins').value) || 5000
-  const minRedeem  = parseInt(document.getElementById('set-min-redeem').value)     || 100000
-  await db.from('restaurants').update({
-    loyalty_enabled: enabled,
-    welcome_coins:   welcome,
-    referral_coins:  referral,
-    min_redeem_coins: minRedeem
-  }).eq('id', state.restaurant.id)
-  state.restaurant.loyalty_enabled  = enabled
-  state.restaurant.welcome_coins    = welcome
-  state.restaurant.referral_coins   = referral
-  state.restaurant.min_redeem_coins = minRedeem
-  showToast('تم حفظ إعدادات الكوينز ✅')
-}
-
-// ── DISCOUNT CODES ────────────────────────────────────────────────────
-async function loadDiscountCodes() {
-  const { data } = await db.from('discount_codes')
-    .select('*').eq('restaurant_id', state.restaurant.id).order('created_at', { ascending: false })
-  state.discountCodes = data || []
-  renderDiscountCodes(state.discountCodes)
-}
-
-function renderDiscountCodes(codes) {
-  const el = document.getElementById('discount-codes-list')
-  if (!el) return
-  if (!codes.length) { el.innerHTML = `<p class="text-center text-gray-400 text-sm py-4">لا توجد أكواد بعد</p>`; return }
-  el.innerHTML = codes.map(c => {
-    const exp = c.valid_until ? new Date(c.valid_until) < new Date() : false
-    return `<div class="flex items-center justify-between bg-gray-50 rounded-xl p-3 ${exp ? 'opacity-50' : ''}">
-      <div>
-        <p class="font-extrabold text-gray-800 text-sm tracking-widest">${c.code}</p>
-        <p class="text-xs text-gray-400">خصم ${Number(c.discount_egp).toFixed(2)} ج.م · استُخدم ${c.used_count}${c.max_uses ? '/' + c.max_uses : ''} مرة</p>
-        ${c.valid_until ? `<p class="text-xs text-gray-400">حتى ${new Date(c.valid_until).toLocaleDateString('ar-EG')}</p>` : ''}
-      </div>
-      <div class="flex gap-2 items-center">
-        <span class="text-xs px-2 py-0.5 rounded-full ${c.is_active && !exp ? 'bg-green-50 text-green-500' : 'bg-gray-100 text-gray-400'}">${c.is_active && !exp ? 'نشط' : 'متوقف'}</span>
-        <button onclick="openDiscountCodeModal('${c.id}')" class="text-xs bg-gray-100 text-gray-600 font-bold px-3 py-1.5 rounded-lg">تعديل</button>
-        <button onclick="deleteDiscountCode('${c.id}')" class="text-xs bg-red-50 text-red-400 font-bold px-3 py-1.5 rounded-lg">حذف</button>
-      </div>
-    </div>`
-  }).join('')
-}
-
-function openDiscountCodeModal(id = null) {
-  document.getElementById('dcm-id').value    = id || ''
-  document.getElementById('dcm-error').classList.add('hidden')
-  document.getElementById('dcm-title').textContent = id ? 'تعديل الكود' : 'كود خصم جديد'
-  if (id) {
-    const code = state.discountCodes?.find(c => c.id === id)
-    if (code) {
-      document.getElementById('dcm-code').value      = code.code
-      document.getElementById('dcm-discount').value  = code.discount_egp
-      document.getElementById('dcm-max-uses').value  = code.max_uses || ''
-      document.getElementById('dcm-from').value      = code.valid_from ? code.valid_from.slice(0,16) : ''
-      document.getElementById('dcm-until').value     = code.valid_until ? code.valid_until.slice(0,16) : ''
-      document.getElementById('dcm-active').checked  = code.is_active
-    }
-  } else {
-    ;['dcm-code','dcm-discount','dcm-max-uses','dcm-from','dcm-until'].forEach(id => { const el = document.getElementById(id); if(el) el.value = '' })
-    document.getElementById('dcm-active').checked = true
-  }
-  document.getElementById('modal-discount-code').classList.remove('hidden')
-  pushModal('discountcode', closeDiscountCodeModal)
-}
-function closeDiscountCodeModal(fromPopstate) {
-  document.getElementById('modal-discount-code').classList.add('hidden')
-  if (!fromPopstate) popModalSilently('discountcode')
-}
-
-async function saveDiscountCode() {
-  const id       = document.getElementById('dcm-id').value
-  const code     = document.getElementById('dcm-code').value.trim().toUpperCase()
-  const discount = parseFloat(document.getElementById('dcm-discount').value)
-  const maxUses  = parseInt(document.getElementById('dcm-max-uses').value) || null
-  const from     = document.getElementById('dcm-from').value || null
-  const until    = document.getElementById('dcm-until').value || null
-  const active   = document.getElementById('dcm-active').checked
-  const errEl    = document.getElementById('dcm-error')
-  if (!code)         { errEl.textContent = 'الكود مطلوب';          errEl.classList.remove('hidden'); return }
-  if (isNaN(discount)) { errEl.textContent = 'قيمة الخصم غير صحيحة'; errEl.classList.remove('hidden'); return }
-  errEl.classList.add('hidden')
-  const payload = { code, discount_egp: discount, max_uses: maxUses, valid_from: from || null, valid_until: until || null, is_active: active, restaurant_id: state.restaurant.id }
-  if (id) await db.from('discount_codes').update(payload).eq('id', id)
-  else    await db.from('discount_codes').insert(payload)
-  closeDiscountCodeModal()
-  await loadDiscountCodes()
-  showToast(id ? 'تم تعديل الكود ✅' : 'تم إنشاء الكود ✅')
-}
-
-async function deleteDiscountCode(id) {
-  const ok = await showConfirm('حذف هذا الكود؟', 'حذف')
-  if (!ok) return
-  await db.from('discount_codes').delete().eq('id', id)
-  await loadDiscountCodes()
-  showToast('تم الحذف')
 }
 
 // ── PICKR (Color Picker) ──────────────────────────────────────────────
@@ -1415,137 +860,6 @@ function setUnitField(unit) {
   document.getElementById('pm-unit').value = unit
 }
 
-// ── BRANCHES ──────────────────────────────────────────────────────────
-async function loadBranches() {
-  const { data } = await db.from('branches').select('*').eq('restaurant_id', state.restaurant.id).order('created_at')
-  state.branches = data || []
-  renderBranches()
-}
-function renderBranches() {
-  const el = document.getElementById('branches-list')
-  if (!state.branches.length) { el.innerHTML = `<p class="text-center text-gray-400 text-sm py-8">لا توجد فروع بعد — أضف فرعك الأول</p>`; return }
-  el.innerHTML = state.branches.map(b => `
-    <div class="bg-white rounded-2xl p-4 shadow-sm flex items-center justify-between">
-      <div>
-        <p class="font-extrabold text-gray-800">${b.name}</p>
-        <p class="text-xs text-gray-400">📍 ${b.lat.toFixed(4)}, ${b.lng.toFixed(4)}</p>
-      </div>
-      <div class="flex gap-2">
-        <button onclick="openBranchModal('${b.id}')" class="text-xs bg-gray-100 text-gray-600 font-bold px-3 py-2 rounded-xl">تعديل</button>
-        <button onclick="deleteBranch('${b.id}')" class="text-xs bg-red-50 text-red-500 font-bold px-3 py-2 rounded-xl">حذف</button>
-      </div>
-    </div>`).join('')
-}
-let _branchPickedLat = null, _branchPickedLng = null
-function openBranchModal(id = null) {
-  document.getElementById('bm-branch-id').value = id || ''
-  document.getElementById('bm-error').classList.add('hidden')
-  _branchPickedLat = null; _branchPickedLng = null
-  if (id) {
-    const b = state.branches.find(x => x.id === id)
-    document.getElementById('bm-branch-name').value     = b.name
-    document.getElementById('bm-branch-passcode').value = b.passcode
-    _branchPickedLat = b.lat; _branchPickedLng = b.lng
-    document.getElementById('bm-map-pick-label').textContent = `✅ تم تحديد الموقع (${b.lat.toFixed(4)}, ${b.lng.toFixed(4)})`
-    document.getElementById('branch-modal-title').textContent = 'تعديل فرع'
-  } else {
-    document.getElementById('bm-branch-name').value     = ''
-    document.getElementById('bm-branch-passcode').value = ''
-    document.getElementById('bm-map-pick-label').textContent = 'اضغط لتحديد الموقع'
-    document.getElementById('branch-modal-title').textContent = 'فرع جديد'
-  }
-  document.getElementById('modal-branch').classList.remove('hidden')
-  pushModal('branch', closeBranchModal)
-}
-function closeBranchModal(fromPopstate) {
-  document.getElementById('modal-branch').classList.add('hidden')
-  if (!fromPopstate) popModalSilently('branch')
-}
-async function saveBranch() {
-  const id       = document.getElementById('bm-branch-id').value
-  const name     = document.getElementById('bm-branch-name').value.trim()
-  const passcode = document.getElementById('bm-branch-passcode').value.trim()
-  const errEl    = document.getElementById('bm-error')
-  if (!name)                                    { errEl.textContent = 'اسم الفرع مطلوب';        errEl.classList.remove('hidden'); return }
-  if (!passcode)                                { errEl.textContent = 'كلمة سر الفرع مطلوبة';    errEl.classList.remove('hidden'); return }
-  if (_branchPickedLat === null)                { errEl.textContent = 'حدد موقع الفرع على الخريطة'; errEl.classList.remove('hidden'); return }
-  errEl.classList.add('hidden')
-  const wasOneBranch = state.branches.length <= 1
-  const payload = { name, passcode, lat: _branchPickedLat, lng: _branchPickedLng }
-  if (id) await db.from('branches').update(payload).eq('id', id)
-  else    await db.from('branches').insert({ ...payload, restaurant_id: state.restaurant.id })
-  closeBranchModal(); await loadBranches(); showToast(id ? 'تم تعديل الفرع ✅' : 'تم إضافة الفرع ✅')
-  // لو أضفنا فرعاً ثانياً لأول مرة → أعد اختيار الوضع (لأن الأدمن المخزّن كان بدون passcode)
-  if (!id && wasOneBranch && state.branches.length > 1) {
-    localStorage.removeItem(LS_ROLE_KEY + '_' + state.restaurant.id)
-    if (_realtimeChannel) { db.removeChannel(_realtimeChannel); _realtimeChannel = null }
-    showToast('تم إضافة فرع جديد — سيُطلب منك اختيار الوضع من الآن')
-    setTimeout(() => switchRole(), 1200)
-  }
-}
-async function deleteBranch(id) {
-  const ok = await showConfirm('حذف هذا الفرع؟ الطلبات السابقة المرتبطة به تبقى محفوظة.', 'حذف')
-  if (!ok) return
-  await db.from('branches').delete().eq('id', id)
-  await loadBranches()
-  showToast('تم حذف الفرع')
-  // لو اتبقى فرع واحد بس → امسح localStorage لكل الأجهزة المرتبطة بهذا الفرع تلقائياً (محلياً)
-  if (state.branches.length <= 1) {
-    const lsKey = LS_ROLE_KEY + '_' + state.restaurant.id
-    const saved  = localStorage.getItem(lsKey)
-    if (saved && saved !== 'admin') localStorage.removeItem(lsKey)
-  }
-}
-
-// ── BRANCH MAP PICKER ─────────────────────────────────────────────────
-let _branchMap = null, _branchMarker = null
-function openBranchMapPicker() {
-  document.getElementById('branch-map-modal').classList.remove('hidden')
-  pushModal('branch-map', closeBranchMapPicker)
-  const startLat = _branchPickedLat ?? 30.0444
-  const startLng = _branchPickedLng ?? 31.2357
-  if (!_branchMap) {
-    _branchMap = L.map('branch-leaflet-map', { zoomControl: true }).setView([startLat, startLng], 13)
-    L.tileLayer('https://{s}.tile.openstreetmap.org/{z}/{x}/{y}.png', { attribution: '© OpenStreetMap', maxZoom: 19 }).addTo(_branchMap)
-    _branchMarker = L.marker([startLat, startLng], { draggable: true }).addTo(_branchMap)
-    _branchMarker.on('dragend', e => {
-      const pos = e.target.getLatLng()
-      _branchPickedLat = pos.lat; _branchPickedLng = pos.lng; updateBranchCoordsLabel()
-    })
-    _branchMap.on('click', e => {
-      _branchPickedLat = e.latlng.lat; _branchPickedLng = e.latlng.lng
-      _branchMarker.setLatLng([_branchPickedLat, _branchPickedLng]); updateBranchCoordsLabel()
-    })
-  } else {
-    _branchMap.setView([startLat, startLng], 13)
-    _branchMarker.setLatLng([startLat, startLng])
-  }
-  if (_branchPickedLat === null) { _branchPickedLat = startLat; _branchPickedLng = startLng }
-  updateBranchCoordsLabel()
-  setTimeout(() => _branchMap.invalidateSize(), 150)
-}
-function closeBranchMapPicker(fromPopstate) {
-  document.getElementById('branch-map-modal').classList.add('hidden')
-  if (!fromPopstate) popModalSilently('branch-map')
-}
-function updateBranchCoordsLabel() {
-  if (_branchPickedLat === null) return
-  document.getElementById('branch-map-coords-label').textContent = `📍 ${_branchPickedLat.toFixed(5)}, ${_branchPickedLng.toFixed(5)}`
-}
-function useBranchMyLocation() {
-  if (!navigator.geolocation) { showToast('متصفحك لا يدعم تحديد الموقع'); return }
-  navigator.geolocation.getCurrentPosition(pos => {
-    _branchPickedLat = pos.coords.latitude; _branchPickedLng = pos.coords.longitude
-    _branchMap.setView([_branchPickedLat, _branchPickedLng], 16)
-    _branchMarker.setLatLng([_branchPickedLat, _branchPickedLng])
-    updateBranchCoordsLabel()
-  }, () => showToast('تعذّر تحديد موقعك — تأكد من إذن الموقع'))
-}
-function confirmBranchLocation() {
-  document.getElementById('bm-map-pick-label').textContent = `✅ تم تحديد الموقع (${_branchPickedLat.toFixed(4)}, ${_branchPickedLng.toFixed(4)})`
-  closeBranchMapPicker()
-}
-
 // ── PRODUCT MODAL ─────────────────────────────────────────────────────
 function openProductModal(id = null) {
   document.getElementById('pm-id').value = id || ''
@@ -1562,8 +876,6 @@ function openProductModal(id = null) {
     document.getElementById('pm-availability').value = p.availability   || 'available'
     document.getElementById('pm-badge').value        = p.offer_badge    || ''
     document.getElementById('pm-available').checked  = p.is_available
-    document.getElementById('pm-prep-minutes').value  = p.prep_minutes || 10
-    document.getElementById('pm-loyalty-coins').value = p.loyalty_coins || 0
     document.getElementById('product-modal-title').textContent = 'تعديل منتج'
     setUnitField(p.unit || 'قطعة')
     updateDiscountPreview()
@@ -1576,8 +888,6 @@ function openProductModal(id = null) {
     document.getElementById('pm-category').value     = ''
     document.getElementById('pm-availability').value = 'available'
     document.getElementById('pm-available').checked  = true
-    document.getElementById('pm-prep-minutes').value  = 10
-    document.getElementById('pm-loyalty-coins').value = 0
     document.getElementById('pm-image-preview-wrap').classList.add('hidden')
     document.getElementById('discount-preview').classList.add('hidden')
     document.getElementById('product-modal-title').textContent = 'إضافة منتج'
@@ -1732,8 +1042,6 @@ async function saveProduct() {
     availability:    document.getElementById('pm-availability').value,
     offer_badge:     document.getElementById('pm-badge').value.trim()       || null,
     unit:            document.getElementById('pm-unit').value.trim()        || 'قطعة',
-    prep_minutes:    parseInt(document.getElementById('pm-prep-minutes').value) || 10,
-    loyalty_coins:   parseInt(document.getElementById('pm-loyalty-coins').value) || 0,
     product_options: getOptionsData().length ? getOptionsData()             : null,
     also_with:       _alsoWith.length        ? [..._alsoWith]               : null
   }
@@ -1760,31 +1068,20 @@ async function toggleAvailability(id, current){ await db.from('products').update
 
 // ── BUNDLES ───────────────────────────────────────────────────────────
 async function loadBundles() {
-  const { data: bundles } = await db.from('bundles').select('*').eq('restaurant_id', state.restaurant.id).order('created_at', { ascending: false })
-  if (!bundles) { state.bundles = []; renderBundles(); return }
-  // جلب الفروع المرتبطة بكل bundle
-  const { data: bb } = await db.from('bundle_branches').select('bundle_id,branch_id')
-    .in('bundle_id', bundles.map(b => b.id))
-  const bbMap = {}
-  ;(bb || []).forEach(r => { if (!bbMap[r.bundle_id]) bbMap[r.bundle_id] = []; bbMap[r.bundle_id].push(r.branch_id) })
-  state.bundles = bundles.map(b => ({ ...b, branch_ids: bbMap[b.id] || [] }))
+  const { data } = await db.from('bundles').select('*').eq('restaurant_id', state.restaurant.id).order('created_at', { ascending: false })
+  state.bundles = data || []
   renderBundles()
 }
 function renderBundles() {
   const el = document.getElementById('bundles-list')
   if (!state.bundles.length) { el.innerHTML = `<p class="text-center text-gray-400 text-sm py-8">لا توجد عروض بعد</p>`; return }
-  el.innerHTML = state.bundles.map(b => {
-    const branchTags = b.branch_ids && b.branch_ids.length && state.branches.length > 1
-      ? `<p class="text-xs text-blue-500 mt-1">🏬 ${b.branch_ids.length === state.branches.length ? 'كل الفروع' : b.branch_ids.map(id => state.branches.find(br => br.id === id)?.name || '').filter(Boolean).join('، ')}</p>`
-      : (state.branches.length > 1 ? `<p class="text-xs text-gray-400 mt-1">🏬 كل الفروع</p>` : '')
-    return `
+  el.innerHTML = state.bundles.map(b => `
     <div class="bg-white rounded-2xl p-4 shadow-sm border border-gray-100">
       <div class="flex items-start justify-between">
         <div>
           <div class="flex items-center gap-2"><p class="font-bold text-gray-800">🎁 ${b.name}</p>
             <span class="text-xs px-2 py-0.5 rounded-full ${b.is_active ? 'bg-green-50 text-green-500' : 'bg-gray-100 text-gray-400'}">${b.is_active ? 'نشط' : 'متوقف'}</span></div>
           ${b.description ? `<p class="text-xs text-gray-400 mt-1">${b.description}</p>` : ''}
-          ${branchTags}
           <p class="font-extrabold text-orange-500 mt-2">${Number(b.price).toFixed(2)} ج.م</p>
         </div>
       </div>
@@ -1793,8 +1090,7 @@ function renderBundles() {
         <button onclick="openBundleModal('${b.id}')" class="flex-1 text-xs bg-gray-100 text-gray-600 font-bold px-3 py-2 rounded-xl">تعديل</button>
         <button onclick="deleteBundle('${b.id}')"    class="text-xs bg-red-50 text-red-500 font-bold px-3 py-2 rounded-xl">حذف</button>
       </div>
-    </div>`
-  }).join('')
+    </div>`).join('')
 }
 function openBundleModal(id = null) {
   document.getElementById('bm-id').value = id || ''
@@ -1802,18 +1098,6 @@ function openBundleModal(id = null) {
   document.getElementById('bm-image-preview-wrap').classList.add('hidden')
   const container = document.getElementById('bm-products-checkboxes')
   container.innerHTML = state.products.map(p => `<label class="flex items-center gap-3 py-1 cursor-pointer"><input type="checkbox" value="${p.id}" class="bundle-product-check w-4 h-4 accent-orange-500" onchange="updateBundleSelectedCount()" /><span class="text-sm text-gray-700">${p.name}</span><span class="text-xs text-gray-400 mr-auto">${Number(p.price).toFixed(2)} ج.م</span></label>`).join('')
-
-  // قسم الفروع — يظهر فقط لو فيه أكثر من فرع وصلاحية أدمن
-  const branchSection = document.getElementById('bm-branches-section')
-  const branchContainer = document.getElementById('bm-branches-checkboxes')
-  if (state.branches.length > 1 && _role === 'admin') {
-    branchContainer.innerHTML = `<label class="flex items-center gap-3 py-1 cursor-pointer"><input type="checkbox" id="bm-branch-all" class="bundle-branch-check w-4 h-4 accent-orange-500" onchange="toggleAllBundleBranches(this)" /><span class="text-sm font-bold text-gray-700">كل الفروع</span></label>`
-      + state.branches.map(br => `<label class="flex items-center gap-3 py-1 cursor-pointer"><input type="checkbox" value="${br.id}" class="bundle-branch-item w-4 h-4 accent-orange-500" onchange="updateBranchAllCheckbox()" /><span class="text-sm text-gray-700">🏬 ${br.name}</span></label>`).join('')
-    branchSection.classList.remove('hidden')
-  } else {
-    branchSection.classList.add('hidden')
-  }
-
   if (id) {
     const b = state.bundles.find(x => x.id === id)
     document.getElementById('bm-name').value     = b.name
@@ -1825,33 +1109,14 @@ function openBundleModal(id = null) {
     if (b.image_url) { document.getElementById('bm-image-preview').src = b.image_url; document.getElementById('bm-image-preview-wrap').classList.remove('hidden') }
     const selectedIds = (b.items || []).map(i => i.product_id)
     container.querySelectorAll('.bundle-product-check').forEach(cb => { if (selectedIds.includes(cb.value)) cb.checked = true })
-    // تعبئة فروع العرض
-    if (state.branches.length > 1 && _role === 'admin') {
-      const bBranchIds = b.branch_ids || []
-      document.querySelectorAll('.bundle-branch-item').forEach(cb => { cb.checked = bBranchIds.length === 0 || bBranchIds.includes(cb.value) })
-      updateBranchAllCheckbox()
-    }
   } else {
     ;['bm-name','bm-desc','bm-price','bm-image'].forEach(fid => document.getElementById(fid).value = '')
     document.getElementById('bm-active').checked = true
     document.getElementById('bundle-modal-title').textContent = 'عرض مجمع جديد'
-    // كل الفروع محددة بشكل افتراضي عند الإنشاء
-    if (state.branches.length > 1 && _role === 'admin') {
-      document.querySelectorAll('.bundle-branch-item').forEach(cb => { cb.checked = true })
-      const allCb = document.getElementById('bm-branch-all'); if (allCb) allCb.checked = true
-    }
   }
   updateBundleSelectedCount()
   document.getElementById('modal-bundle').classList.remove('hidden')
   pushModal('bundle', closeBundleModal)
-}
-function toggleAllBundleBranches(allCb) {
-  document.querySelectorAll('.bundle-branch-item').forEach(cb => { cb.checked = allCb.checked })
-}
-function updateBranchAllCheckbox() {
-  const items  = [...document.querySelectorAll('.bundle-branch-item')]
-  const allCb  = document.getElementById('bm-branch-all')
-  if (allCb) allCb.checked = items.length > 0 && items.every(cb => cb.checked)
 }
 function updateBundleSelectedCount() {
   const n = document.querySelectorAll('.bundle-product-check:checked').length
@@ -1879,142 +1144,47 @@ async function saveBundle() {
   errEl.classList.add('hidden')
   const items   = selectedProducts.map(pid => { const p = state.products.find(x => x.id === pid); return { product_id: pid, name: p?.name||'', price: p?.price||0, quantity: 1 } })
   const payload = { name, description: document.getElementById('bm-desc').value.trim() || null, price, items, image_url: document.getElementById('bm-image').value.trim() || null, is_active: document.getElementById('bm-active').checked, restaurant_id: state.restaurant.id }
-
-  let bundleId = id
-  if (id) {
-    const { error } = await db.from('bundles').update(payload).eq('id', id)
-    if (error) { errEl.textContent = 'خطأ: ' + error.message; errEl.classList.remove('hidden'); return }
-  } else {
-    const { data: nb, error } = await db.from('bundles').insert(payload).select('id').single()
-    if (error || !nb) { errEl.textContent = 'خطأ: ' + (error?.message || 'insert failed'); errEl.classList.remove('hidden'); return }
-    bundleId = nb.id
-  }
-
-  // حفظ ربط الفروع
-  if (state.branches.length > 1 && _role === 'admin') {
-    const selectedBranches = [...document.querySelectorAll('.bundle-branch-item:checked')].map(cb => cb.value)
-    await db.from('bundle_branches').delete().eq('bundle_id', bundleId)
-    // لو كل الفروع محددة = لا نحفظ أي قيد (يعني العرض لكل الفروع افتراضياً)
-    if (selectedBranches.length > 0 && selectedBranches.length < state.branches.length) {
-      await db.from('bundle_branches').insert(selectedBranches.map(bid => ({ bundle_id: bundleId, branch_id: bid })))
-    }
-  }
-
+  if (id) { const { error } = await db.from('bundles').update(payload).eq('id', id); if (error) { errEl.textContent = 'خطأ: ' + error.message; errEl.classList.remove('hidden'); return } }
+  else    { const { error } = await db.from('bundles').insert(payload); if (error) { errEl.textContent = 'خطأ: ' + error.message; errEl.classList.remove('hidden'); return } }
   closeBundleModal(); await loadBundles(); showToast(id ? 'تم تعديل العرض ✅' : 'تم إضافة العرض ✅')
 }
 async function toggleBundle(id, current) { await db.from('bundles').update({ is_active: !current }).eq('id', id); await loadBundles(); showToast(!current ? 'تم تفعيل العرض' : 'تم إيقاف العرض') }
 async function deleteBundle(id) { const ok = await showConfirm('هل تريد حذف هذا العرض؟', 'حذف'); if (!ok) return; await db.from('bundles').delete().eq('id', id); await loadBundles(); showToast('تم حذف العرض') }
 
-// ── CUSTOMERS TAB ─────────────────────────────────────────────────────
-let _allCustomers = []
-async function loadCustomers() {
-  const { data: custs } = await db.from('customers')
-    .select('id,name,email,phone,coins_balance,referral_code,created_at,welcome_coins_claimed')
-    .eq('restaurant_id', state.restaurant.id)
-    .order('created_at', { ascending: false })
-    .limit(200)
-  _allCustomers = custs || []
-
-  // إحصائيات
-  document.getElementById('cust-stat-total').textContent  = _allCustomers.length
-  const totalCoins = _allCustomers.reduce((s, c) => s + (c.coins_balance || 0), 0)
-  document.getElementById('cust-stat-coins').textContent  = (totalCoins / 1000).toFixed(0) + ' ج'
-  const { count } = await db.from('orders').select('id', { count: 'exact', head: true })
-    .eq('restaurant_id', state.restaurant.id).not('customer_id', 'is', null)
-  document.getElementById('cust-stat-orders').textContent = count || 0
-
-  renderCustomers(_allCustomers)
-}
-
-function filterCustomers() {
-  const q = document.getElementById('cust-search').value.trim().toLowerCase()
-  if (!q) { renderCustomers(_allCustomers); return }
-  renderCustomers(_allCustomers.filter(c =>
-    (c.name || '').toLowerCase().includes(q) || (c.email || '').toLowerCase().includes(q) || (c.phone || '').includes(q)
-  ))
-}
-
-function renderCustomers(custs) {
-  const el = document.getElementById('customers-list')
-  if (!custs.length) { el.innerHTML = `<p class="text-center text-gray-400 text-sm py-8">لا يوجد عملاء بعد</p>`; return }
-  el.innerHTML = custs.map(c => `
-    <div class="bg-white rounded-2xl p-4 shadow-sm">
-      <div class="flex items-center justify-between">
-        <div>
-          <p class="font-extrabold text-gray-800 text-sm">${c.name || '(بدون اسم)'}</p>
-          <p class="text-xs text-gray-400">${c.email || ''} ${c.phone ? '· ' + c.phone : ''}</p>
-          <p class="text-xs text-gray-400">${new Date(c.created_at).toLocaleDateString('ar-EG')}</p>
-        </div>
-        <div class="text-left">
-          <p class="text-sm font-extrabold text-orange-500">${(c.coins_balance || 0).toLocaleString('ar-EG')} 🪙</p>
-          <p class="text-xs text-gray-400">= ${((c.coins_balance || 0) / 1000).toFixed(2)} ج.م</p>
-        </div>
-      </div>
-      <div class="flex gap-2 mt-3">
-        <button onclick="giftCoins('${c.id}','${(c.name||'العميل').replace(/'/g,'')}')"
-                class="flex-1 text-xs bg-orange-50 text-orange-600 font-bold px-3 py-2 rounded-xl">🎀 إهداء كوينز</button>
-        <span class="text-xs text-gray-300 px-2 py-2">كود: ${c.referral_code || '—'}</span>
-      </div>
-    </div>`).join('')
-}
-
-async function giftCoins(customerId, customerName) {
-  const amount = prompt(`كم كوين تريد إهداء لـ ${customerName}؟\n(مثال: 5000 = 5 ج.م)`)
-  if (!amount || isNaN(parseInt(amount))) return
-  const coins = Math.abs(parseInt(amount))
-  const { data: cust } = await db.from('customers').select('coins_balance').eq('id', customerId).single()
-  if (!cust) return
-  const newBalance = (cust.coins_balance || 0) + coins
-  await db.from('customers').update({ coins_balance: newBalance }).eq('id', customerId)
-  await db.from('coin_transactions').insert({
-    customer_id: customerId, restaurant_id: state.restaurant.id,
-    type: 'gift', amount: coins, note: `هدية من المطعم`
-  })
-  showToast(`تم إهداء ${coins.toLocaleString('ar-EG')} كوين ✅`)
-  loadCustomers()
-}
+// ── ORDERS ────────────────────────────────────────────────────────────
 async function loadOrders() {
-  let q = db.from('orders').select('*').eq('restaurant_id', state.restaurant.id).order('created_at', { ascending: false }).limit(50)
-  if (_role === 'branch' && _activeBranchId) q = q.eq('branch_id', _activeBranchId)
-  const { data } = await q
+  const { data } = await db.from('orders').select('*').eq('restaurant_id', state.restaurant.id).order('created_at', { ascending: false }).limit(50)
   state.orders = data || []
   renderOrders(); updateOrdersBadge(state.orders)
 }
 function renderOrders() {
   const el = document.getElementById('orders-list')
   if (!state.orders.length) { el.innerHTML = `<p class="text-center text-gray-400 text-sm py-8">لا توجد طلبات بعد</p>`; return }
-  const statusLabel = { pending:'جديد', confirmed:'جاري التجهيز', ready:'جاهز', delivering:'جاري التوصيل', delivered:'تم التسليم', cancelled:'ملغي' }
-  const statusColor = { pending:'bg-yellow-50 text-yellow-600', confirmed:'bg-blue-50 text-blue-600', ready:'bg-purple-50 text-purple-600', delivering:'bg-indigo-50 text-indigo-600', delivered:'bg-green-50 text-green-600', cancelled:'bg-red-50 text-red-500' }
-  // الزر التالي المناسب لكل حالة (يدفع الطلب للمرحلة التالية في تدفق واحد بسيط)
-  const nextActionBtn = {
-    confirmed:  `<button onclick="updateOrderStatus('{ID}','ready')" class="text-xs font-bold bg-purple-500 text-white px-3 py-1.5 rounded-xl">📦 تم التجهيز</button>`,
-    ready:      `<button onclick="updateOrderStatus('{ID}','delivering')" class="text-xs font-bold bg-indigo-500 text-white px-3 py-1.5 rounded-xl">🛵 جاري التوصيل</button>`,
-    delivering: `<button onclick="updateOrderStatus('{ID}','delivered')" class="text-xs font-bold bg-green-500 text-white px-3 py-1.5 rounded-xl">✅ تم التسليم</button>`
-  }
+  const statusLabel = { pending:'جديد', confirmed:'مؤكد', done:'منتهي', cancelled:'ملغي' }
+  const statusColor = { pending:'bg-yellow-50 text-yellow-600', confirmed:'bg-blue-50 text-blue-600', done:'bg-green-50 text-green-600', cancelled:'bg-red-50 text-red-500' }
   el.innerHTML = state.orders.map(o => `
     <div class="bg-white rounded-2xl p-4 shadow-sm">
       <div class="flex items-center justify-between mb-3">
         <div><p class="font-extrabold text-gray-800">${o.order_number}</p>${o.table_number ? `<p class="text-xs text-gray-400">طاولة ${o.table_number}</p>` : ''}</div>
-        <span class="text-xs font-bold px-3 py-1 rounded-full ${statusColor[o.status]}">${statusLabel[o.status]}</span>
+        <div class="flex items-center gap-2">
+          <span class="text-xs font-bold px-3 py-1 rounded-full ${statusColor[o.status]}">${statusLabel[o.status]}</span>
+          <select onchange="updateOrderStatus('${o.id}',this.value)" class="text-xs border border-gray-200 rounded-xl px-2 py-1 bg-white focus:outline-none">
+            <option value="pending"   ${o.status==='pending'   ?'selected':''}>جديد</option>
+            <option value="confirmed" ${o.status==='confirmed' ?'selected':''}>مؤكد</option>
+            <option value="done"      ${o.status==='done'      ?'selected':''}>منتهي</option>
+            <option value="cancelled" ${o.status==='cancelled' ?'selected':''}>ملغي</option>
+          </select>
+        </div>
       </div>
       <div class="space-y-1 border-t border-gray-50 pt-3">
         ${o.items.map(i => `<div class="flex justify-between text-sm"><span class="text-gray-600">${i.name} × ${i.qty}</span><span class="font-bold text-gray-800">${Number(i.subtotal).toFixed(2)} ج.م</span></div>`).join('')}
-        ${o.delivery_fee ? `<div class="flex justify-between text-sm"><span class="text-gray-500">🛵 رسوم التوصيل</span><span class="font-bold text-gray-700">${Number(o.delivery_fee).toFixed(2)} ج.م</span></div>` : ''}
         <div class="flex justify-between text-sm font-extrabold pt-2 border-t border-gray-100"><span>الإجمالي</span><span class="text-orange-500">${Number(o.total).toFixed(2)} ج.م</span></div>
       </div>
       ${o.status === 'cancelled' && o.cancel_reason ? `<p class="text-xs text-red-500 bg-red-50 rounded-xl px-3 py-2 mt-2 font-bold">سبب الرفض: ${o.cancel_reason}</p>` : ''}
-      ${nextActionBtn[o.status] ? `<div class="mt-3">${nextActionBtn[o.status].replace('{ID}', o.id)}</div>` : ''}
       <p class="text-xs text-gray-300 mt-2">${new Date(o.created_at).toLocaleString('ar-EG')}</p>
     </div>`).join('')
 }
-async function updateOrderStatus(id, status) {
-  const timestampField = { ready: 'ready_at', delivering: 'delivering_at', delivered: 'delivered_at' }[status]
-  const payload = { status }
-  if (timestampField) payload[timestampField] = new Date().toISOString()
-  await db.from('orders').update(payload).eq('id', id)
-  await loadOrders()
-  showToast('تم تحديث حالة الطلب')
-}
+async function updateOrderStatus(id, status) { await db.from('orders').update({ status }).eq('id', id); await loadOrders(); showToast('تم تحديث حالة الطلب') }
 
 // ── ANALYTICS ─────────────────────────────────────────────────────────
 async function loadAnalytics() {
@@ -2069,8 +1239,6 @@ async function saveSettings() {
   const logo_url = document.getElementById('set-logo').value.trim()  || null
   const cover_url= document.getElementById('set-cover').value.trim() || null
   const primary  = document.getElementById('set-color').value
-  const pricePerKmRaw = document.getElementById('set-price-per-km').value
-  const price_per_km  = pricePerKmRaw !== '' ? parseFloat(pricePerKmRaw) : null
   const msgEl    = document.getElementById('settings-msg')
   if (!name||!whatsappRaw) { msgEl.textContent='الاسم ورقم التواصل مطلوبان'; msgEl.className='text-center text-sm text-red-500'; msgEl.classList.remove('hidden'); return }
 
@@ -2080,9 +1248,9 @@ async function saveSettings() {
   document.getElementById('set-whatsapp').value = whatsapp
 
   settingsSnapshot = { name, whatsapp, logo_url, primary }
-  const { error } = await db.from('restaurants').update({ name, whatsapp, logo_url, cover_url, theme: { primary, secondary:'#1A1A1A' }, price_per_km: price_per_km ?? null }).eq('id', state.restaurant.id)
+  const { error } = await db.from('restaurants').update({ name, whatsapp, logo_url, cover_url, theme: { primary, secondary:'#1A1A1A' } }).eq('id', state.restaurant.id)
   if (error) { msgEl.textContent='حدث خطأ أثناء الحفظ'; msgEl.className='text-center text-sm text-red-500' }
-  else { state.restaurant.name=name; state.restaurant.price_per_km=price_per_km; document.getElementById('dash-restaurant-name').textContent=name; document.getElementById('undo-settings-btn').classList.remove('hidden'); msgEl.textContent='تم الحفظ بنجاح ✅'; msgEl.className='text-center text-sm text-green-500'; showToast('تم حفظ الإعدادات ✅') }
+  else { state.restaurant.name=name; document.getElementById('dash-restaurant-name').textContent=name; document.getElementById('undo-settings-btn').classList.remove('hidden'); msgEl.textContent='تم الحفظ بنجاح ✅'; msgEl.className='text-center text-sm text-green-500'; showToast('تم حفظ الإعدادات ✅') }
   msgEl.classList.remove('hidden')
   setTimeout(() => msgEl.classList.add('hidden'), 3000)
 }
@@ -2100,57 +1268,25 @@ function undoSettings() {
 // ── REALTIME ORDERS ───────────────────────────────────────────────────
 function startRealtimeOrders() {
   if (_realtimeChannel) return
-  // لو role=branch، نفلتر بالـ branch_id بدل restaurant_id لتقليل الأحداث غير المعنية
-  // ملاحظة: الفلترة بـ branch_id في Supabase Realtime تعمل على القيم الموجودة في وقت الحدث فقط
-  // لذا نحتاج INSERT filter بـ restaurant_id دايماً (INSERT الجديد يكون عنده branch_id صح)
-  // لكن UPDATE (تحويل الفرع) نستقبله دايماً ونفلتر يدوياً في handleOrderUpdatedElsewhere
-  const insertFilter = _role === 'branch' && _activeBranchId
-    ? `branch_id=eq.${_activeBranchId}`
-    : `restaurant_id=eq.${state.restaurant.id}`
   _realtimeChannel = db
     .channel('new-orders-' + state.restaurant.id)
-    .on('postgres_changes', { event:'INSERT', schema:'public', table:'orders', filter: insertFilter }, p => handleIncomingOrder(p.new))
+    .on('postgres_changes', { event:'INSERT', schema:'public', table:'orders', filter:`restaurant_id=eq.${state.restaurant.id}` }, p => handleIncomingOrder(p.new))
     .on('postgres_changes', { event:'UPDATE', schema:'public', table:'orders', filter:`restaurant_id=eq.${state.restaurant.id}` }, p => handleOrderUpdatedElsewhere(p.new))
     .subscribe()
 }
-// طابور الطلبات الجديدة المعلّقة — كل طلب جديد يُضاف للطابور، ولا يُفقد أي طلب
-// لو وصلت طلبات متعددة في نفس اللحظة. الـ popup يعرض طلب واحد بالترتيب، وينتقل للتالي تلقائياً.
-let _pendingOrdersQueue = []
-
-function handleIncomingOrder(order) {
-  _pendingOrdersQueue.push(order)
-  startAlarmLoop()
-  updateOrdersBadge([...state.orders, order])
-  if (_pendingOrdersQueue.length === 1) {
-    showNewOrderPopup(order) // مفيش طلب معروض حالياً، نعرض هذا فوراً
-  } else {
-    updateQueueCounter() // فيه طلب معروض بالفعل، نضيف الجديد للطابور بصمت ونحدّث العداد فقط
-  }
-}
+function handleIncomingOrder(order) { _pendingOrder = order; startAlarmLoop(); showNewOrderPopup(order); updateOrdersBadge([...state.orders, order]) }
 // لو التاجر له أكتر من تبويب/جهاز مفتوح، وتم قبول/رفض الطلب من تبويب آخر،
-// نوقف الصوت والبطاقة المنبثقة في هذا التبويب تلقائياً (التزامن بين كل النسخ المفتوحة).
-// كذلك يُستخدم لاستقبال الطلبات المحوَّلة تلقائياً من فرع آخر رفضها (ترجع لحالة pending من جديد).
+// نوقف الصوت والبطاقة المنبثقة في هذا التبويب تلقائياً (التزامن بين كل النسخ المفتوحة)
 function handleOrderUpdatedElsewhere(order) {
-  if (order.status === 'pending') {
-    // تحويل تلقائي من فرع آخر رفض الطلب — يُعامل كطلب جديد تماماً عند هذا الفرع
-    // لو role=branch، نتحقق إن الطلب المحوَّل هو لفرعنا فعلاً
-    if (_role === 'branch' && _activeBranchId && order.branch_id !== _activeBranchId) return
-    const alreadyQueued = _pendingOrdersQueue.some(o => o.id === order.id)
-    if (!alreadyQueued) handleIncomingOrder(order)
-    return
+  if (_pendingOrder && _pendingOrder.id === order.id && order.status !== 'pending') {
+    stopAlarmLoop()
+    dismissNewOrderPopup()
+    loadOrders()
   }
-  const idx = _pendingOrdersQueue.findIndex(o => o.id === order.id)
-  if (idx === -1) return
-  const wasCurrentlyShown = idx === 0
-  _pendingOrdersQueue.splice(idx, 1)
-  if (wasCurrentlyShown) advanceToNextPendingOrder()
-  else updateQueueCounter()
-  loadOrders()
 }
 function showNewOrderPopup(order) {
   document.getElementById('nop-order-num').textContent = order.order_number
   document.getElementById('nop-items').innerHTML = (order.items||[]).map(i => `<div class="flex justify-between text-sm"><span class="text-gray-600 font-bold">${i.name} × ${i.qty}</span><span class="font-extrabold text-gray-800">${Number(i.subtotal).toFixed(2)} ج.م</span></div>`).join('')
-  + (order.delivery_fee ? `<div class="flex justify-between text-sm border-t border-gray-100 pt-1.5 mt-1"><span class="text-gray-500 font-bold">🛵 رسوم التوصيل</span><span class="font-extrabold text-gray-700">${Number(order.delivery_fee).toFixed(2)} ج.م</span></div>` : '')
   document.getElementById('nop-total').textContent = Number(order.total).toFixed(2) + ' ج.م'
   const meta = []
   if (order.table_number)     meta.push(`🪑 طاولة: ${order.table_number}`)
@@ -2159,42 +1295,21 @@ function showNewOrderPopup(order) {
   if (order.customer_address) meta.push(`🏠 ${order.customer_address}`)
   document.getElementById('nop-meta').innerHTML = meta.map(m => `<p>${m}</p>`).join('')
   document.getElementById('new-order-popup').classList.remove('hidden')
-  updateQueueCounter()
-}
-// يحدّث شارة "+X طلبات أخرى في الانتظار" فوق البطاقة المنبثقة
-function updateQueueCounter() {
-  const remaining = _pendingOrdersQueue.length - 1 // الطلب الحالي المعروض لا يُحسب كـ"متبقي"
-  const el = document.getElementById('nop-queue-counter')
-  if (!el) return
-  if (remaining > 0) { el.textContent = `+${remaining} طلب آخر في الانتظار`; el.classList.remove('hidden') }
-  else el.classList.add('hidden')
-}
-// بعد قبول/رفض الطلب المعروض، ينقل للطلب التالي في الطابور تلقائياً (أو يقفل لو الطابور فاضي)
-function advanceToNextPendingOrder() {
-  if (_pendingOrdersQueue.length > 0) {
-    showNewOrderPopup(_pendingOrdersQueue[0]) // يعرض أقدم طلب متبقي في الطابور
-  } else {
-    document.getElementById('new-order-popup').classList.add('hidden')
-    stopAlarmLoop()
-  }
 }
 async function confirmNewOrder() {
-  if (!_pendingOrdersQueue.length) return
-  const id = _pendingOrdersQueue[0].id
-  await db.from('orders').update({ status:'confirmed', confirmed_at: new Date().toISOString() }).eq('id', id)
+  if (!_pendingOrder) return
+  stopAlarmLoop()
+  const id = _pendingOrder.id
+  await db.from('orders').update({ status:'confirmed' }).eq('id', id)
   showToast('✅ تم قبول الطلب')
-  _pendingOrdersQueue.shift()
-  advanceToNextPendingOrder()
+  dismissNewOrderPopup()
   loadOrders()
 }
 function rejectNewOrder() {
-  if (!_pendingOrdersQueue.length) return
+  if (!_pendingOrder) return
   openRejectReasonModal()
 }
-function dismissNewOrderPopup() {
-  // ملاحظة: لا يُستخدم هذا لإغلاق popup الطلب الإجباري بدون قرار — فقط كجزء من تدفق التأكيد/الرفض
-  document.getElementById('new-order-popup').classList.add('hidden')
-}
+function dismissNewOrderPopup() { document.getElementById('new-order-popup').classList.add('hidden'); _pendingOrder = null }
 
 // ── REJECT REASON ────────────────────────────────────────────────────
 const REJECT_REASONS = ['غير متوفر حالياً', 'المطعم مغلق الآن', 'تأخير كبير في التحضير']
@@ -2215,48 +1330,14 @@ function submitRejectCustomReason() {
   submitRejectReason(txt)
 }
 async function submitRejectReason(reason) {
-  if (!_pendingOrdersQueue.length) return
-  const order = _pendingOrdersQueue[0]
-  const transferred = await tryTransferToNextBranch(order, reason)
-  if (!transferred) {
-    await db.from('orders').update({ status:'cancelled', cancel_reason: reason }).eq('id', order.id)
-    showToast('❌ تم رفض الطلب')
-  }
+  if (!_pendingOrder) return
+  stopAlarmLoop()
+  const id = _pendingOrder.id
+  await db.from('orders').update({ status:'cancelled', cancel_reason: reason }).eq('id', id)
+  showToast('❌ تم رفض الطلب')
   closeRejectReasonModal()
-  _pendingOrdersQueue.shift()
-  advanceToNextPendingOrder()
+  dismissNewOrderPopup()
   loadOrders()
-}
-// عند رفض الفرع للطلب، يبحث عن أقرب فرع تالٍ لم يُجرَّب بعد لنفس الطلب، ويحوّل الطلب إليه تلقائياً
-// بنفس البيانات الأصلية، فيبدأ تنبيه جديد عند هذا الفرع كطلب جديد عادي. يعيد true لو تم التحويل بنجاح.
-async function tryTransferToNextBranch(order, reason) {
-  if (!order.customer_lat || !order.customer_lng) return false
-  const { data: branches } = await db.from('branches').select('id,lat,lng').eq('restaurant_id', state.restaurant.id).eq('is_active', true)
-  if (!branches || branches.length < 2) return false
-
-  const alreadyRejected = [...(order.rejected_branch_ids || []), order.branch_id].filter(Boolean)
-  const candidates = branches.filter(b => !alreadyRejected.includes(b.id))
-  if (!candidates.length) return false
-
-  let nearest = null, minDist = Infinity
-  candidates.forEach(b => {
-    const R = 6371
-    const dLat = (b.lat - order.customer_lat) * Math.PI / 180
-    const dLng = (b.lng - order.customer_lng) * Math.PI / 180
-    const a = Math.sin(dLat/2)**2 + Math.cos(order.customer_lat*Math.PI/180) * Math.cos(b.lat*Math.PI/180) * Math.sin(dLng/2)**2
-    const d = R * 2 * Math.atan2(Math.sqrt(a), Math.sqrt(1-a))
-    if (d < minDist) { minDist = d; nearest = b }
-  })
-  if (!nearest) return false
-
-  await db.from('orders').update({
-    branch_id: nearest.id,
-    rejected_branch_ids: [...alreadyRejected],
-    status: 'pending',
-    cancel_reason: null
-  }).eq('id', order.id)
-  showToast(`تم تحويل الطلب لفرع آخر بعد الرفض (السبب: ${reason})`)
-  return true
 }
 
 // ── ALARM (يتكرر لحد ما التاجر يقرر) ────────────────────────────────────
@@ -2304,12 +1385,12 @@ async function uploadBundleImage(input) { const f = input.files[0]; if (!f) retu
 async function uploadBannerImage(input) { const f = input.files[0]; if (!f) return; const u = await _uploadImage(f,'banners','bnm-image-preview','bnm-image-preview-wrap','banner-upload-msg'); if (u) document.getElementById('bnm-image').value = u }
 
 // ── UI HELPERS ────────────────────────────────────────────────────────
-function showScreen(name) { ['login','passcode','dashboard'].forEach(s => document.getElementById('screen-'+s).classList.add('hidden')); document.getElementById('screen-'+name).classList.remove('hidden') }
+function showScreen(name) { ['login','dashboard'].forEach(s => document.getElementById('screen-'+s).classList.add('hidden')); document.getElementById('screen-'+name).classList.remove('hidden') }
 function showMoreMenu()   { document.getElementById('more-menu').classList.remove('hidden') }
 function hideMoreMenu()   { document.getElementById('more-menu').classList.add('hidden') }
 
 function showTab(name) {
-  const tabs = ['products','categories','bundles','banners','orders','customers','analytics','branches','settings']
+  const tabs = ['products','categories','bundles','banners','orders','analytics','settings']
   tabs.forEach(t => {
     document.getElementById('tab-content-' + t).classList.add('hidden')
     const d = document.getElementById('tab-' + t + '-top'); if (d) { d.classList.remove('tab-active'); d.classList.add('text-gray-400') }
@@ -2317,13 +1398,11 @@ function showTab(name) {
   document.getElementById('tab-content-' + name).classList.remove('hidden')
   const da = document.getElementById('tab-' + name + '-top'); if (da) { da.classList.add('tab-active'); da.classList.remove('text-gray-400') }
   ;['products','orders','settings'].forEach(t => { const b = document.getElementById('bnav-'+t); if (b) b.classList.toggle('active', t===name) })
-  const moreBtn = document.getElementById('bnav-more'); if (moreBtn) moreBtn.classList.toggle('active', ['categories','bundles','banners','analytics','branches','customers'].includes(name))
+  const moreBtn = document.getElementById('bnav-more'); if (moreBtn) moreBtn.classList.toggle('active', ['categories','bundles','banners','analytics'].includes(name))
   if (name === 'orders')    loadOrders()
   if (name === 'bundles')   loadBundles()
   if (name === 'analytics') loadAnalytics()
-  if (name === 'customers') loadCustomers()
   if (name === 'banners')   loadBanners()
-  if (name === 'branches')  loadBranches()
 }
 
 function showToast(msg) { const t=document.getElementById('toast'); t.textContent=msg; t.classList.remove('hidden'); setTimeout(()=>t.classList.add('hidden'),2500) }
