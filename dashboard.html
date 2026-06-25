@@ -280,6 +280,36 @@
         <hr class="border-gray-100" />
         <button onclick="switchRole()" class="w-full bg-gray-100 text-gray-600 font-bold rounded-xl py-2.5 text-sm">🔄 تبديل وضع الدخول (دخول كفرع)</button>
       </div>
+
+      <!-- إعدادات الولاء والكوينز -->
+      <div id="loyalty-section" class="hidden bg-white rounded-2xl p-5 shadow-sm space-y-4 mt-4">
+        <div class="flex items-center justify-between">
+          <h3 class="font-bold text-gray-700">🪙 نظام الكوينز</h3>
+          <div class="flex items-center gap-2">
+            <span class="text-xs text-gray-400">تفعيل</span>
+            <input id="set-loyalty-enabled" type="checkbox" class="w-5 h-5 accent-orange-500" onchange="toggleLoyaltySection()" />
+          </div>
+        </div>
+        <div id="loyalty-fields" class="hidden space-y-3">
+          <p class="text-xs text-gray-400">1,000 كوين = 1 ج.م — القيم أدناه بالكوين</p>
+          <div><label class="text-xs font-bold text-gray-500 mb-1 block">🎁 بونص الترحيب عند أول تسجيل (كوين)</label>
+            <input id="set-welcome-coins" type="number" min="0" placeholder="10000" class="w-full border border-gray-200 rounded-xl px-4 py-3 text-sm focus:outline-none focus:ring-2 focus:ring-orange-400" /></div>
+          <div><label class="text-xs font-bold text-gray-500 mb-1 block">🔗 بونص الإحالة للمُحيل (كوين)</label>
+            <input id="set-referral-coins" type="number" min="0" placeholder="5000" class="w-full border border-gray-200 rounded-xl px-4 py-3 text-sm focus:outline-none focus:ring-2 focus:ring-orange-400" /></div>
+          <div><label class="text-xs font-bold text-gray-500 mb-1 block">⬇️ الحد الأدنى للاسترداد (كوين) — مثال: 100,000 = 100 ج.م</label>
+            <input id="set-min-redeem" type="number" min="0" placeholder="100000" class="w-full border border-gray-200 rounded-xl px-4 py-3 text-sm focus:outline-none focus:ring-2 focus:ring-orange-400" /></div>
+          <button onclick="saveLoyaltySettings()" class="w-full bg-orange-500 text-white font-bold rounded-xl py-3">حفظ إعدادات الكوينز</button>
+        </div>
+      </div>
+
+      <!-- أكواد الخصم -->
+      <div id="discount-codes-section" class="hidden bg-white rounded-2xl p-5 shadow-sm space-y-4 mt-4">
+        <div class="flex items-center justify-between">
+          <h3 class="font-bold text-gray-700">🏷️ أكواد الخصم</h3>
+          <button onclick="openDiscountCodeModal()" class="bg-orange-500 text-white text-xs font-bold px-4 py-2 rounded-xl">+ كود جديد</button>
+        </div>
+        <div id="discount-codes-list" class="space-y-2"></div>
+      </div>
     </div>
 
     <!-- Branches Tab -->
@@ -358,8 +388,11 @@
       <span class="bg-orange-500 text-white text-xs font-bold px-2 py-0.5 rounded-full" id="dp-percent"></span>
     </div>
     <div><label class="text-xs font-bold text-gray-500 mb-1 block">⏱️ وقت التجهيز التقديري (بالدقائق)</label>
-      <input id="pm-prep-minutes" type="number" step="1" min="1" placeholder="مثال: 10" enterkeyhint="done" onkeydown="focusNextField(event, null, saveProduct)" class="w-full border border-gray-200 rounded-xl px-4 py-3 text-sm focus:outline-none focus:ring-2 focus:ring-orange-400" />
+      <input id="pm-prep-minutes" type="number" step="1" min="1" placeholder="مثال: 10" enterkeyhint="next" onkeydown="focusNextField(event, 'pm-loyalty-coins', saveProduct)" class="w-full border border-gray-200 rounded-xl px-4 py-3 text-sm focus:outline-none focus:ring-2 focus:ring-orange-400" />
       <p class="text-[11px] text-gray-400 mt-1">يُستخدم لحساب الوقت التقديري الذي يظهر للعميل بعد تأكيد طلبه</p></div>
+    <div id="pm-loyalty-coins-wrap" class="hidden"><label class="text-xs font-bold text-gray-500 mb-1 block">🪙 كوينز ولاء على هذا المنتج (لو نظام الكوينز مفعّل)</label>
+      <input id="pm-loyalty-coins" type="number" step="100" min="0" placeholder="مثال: 500 = 0.5 ج.م" enterkeyhint="done" onkeydown="focusNextField(event, null, saveProduct)" class="w-full border border-gray-200 rounded-xl px-4 py-3 text-sm focus:outline-none focus:ring-2 focus:ring-orange-400" />
+      <p class="text-[11px] text-gray-400 mt-1">العميل يكسب هذا العدد من الكوينز عند شراء المنتج</p></div>
     <div><label class="text-xs font-bold text-gray-500 mb-1 block">التصنيف <span class="text-red-400">*</span></label>
       <select id="pm-category" class="w-full border border-gray-200 rounded-xl px-4 py-3 text-sm focus:outline-none focus:ring-2 focus:ring-orange-400 bg-white"><option value="" disabled selected>اختر تصنيف للمنتج...</option></select></div>
     <div>
@@ -480,10 +513,48 @@
       <input id="bm-active" type="checkbox" checked class="w-5 h-5 accent-orange-500 rounded" />
       <label class="text-sm font-bold text-gray-700">العرض نشط</label>
     </div>
+    <!-- ربط الفروع — يظهر فقط لو فيه أكثر من فرع -->
+    <div id="bm-branches-section" class="hidden">
+      <label class="text-xs font-bold text-gray-500 mb-2 block">إتاحة العرض لـ</label>
+      <div id="bm-branches-checkboxes" class="space-y-2 border border-gray-100 rounded-xl p-3"></div>
+    </div>
     <p id="bm-error" class="text-red-500 text-xs hidden"></p>
     <div class="flex gap-3 pt-2">
       <button onclick="saveBundle()"       class="flex-1 bg-orange-500 text-white font-bold rounded-xl py-3">حفظ</button>
       <button onclick="closeBundleModal()" class="flex-1 bg-gray-100 text-gray-600 font-bold rounded-xl py-3">إلغاء</button>
+    </div>
+  </div>
+</div>
+
+<!-- ══ DISCOUNT CODE MODAL ══ -->
+<div id="modal-discount-code" class="hidden fixed inset-0 z-50 flex items-end justify-center">
+  <div class="absolute inset-0 bg-black/50" onclick="closeDiscountCodeModal()"></div>
+  <div class="relative bg-white rounded-t-3xl w-full max-w-lg p-6 space-y-4 max-h-[90vh] overflow-y-auto">
+    <h3 id="dcm-title" class="text-lg font-extrabold text-gray-800">كود خصم جديد</h3>
+    <input type="hidden" id="dcm-id" />
+    <div><label class="text-xs font-bold text-gray-500 mb-1 block">الكود *</label>
+      <input id="dcm-code" type="text" placeholder="مثال: WELCOME50" style="text-transform:uppercase"
+             class="w-full border border-gray-200 rounded-xl px-4 py-3 text-sm focus:outline-none focus:ring-2 focus:ring-orange-400 uppercase" /></div>
+    <div><label class="text-xs font-bold text-gray-500 mb-1 block">قيمة الخصم (ج.م) *</label>
+      <input id="dcm-discount" type="number" step="0.5" min="0" placeholder="مثال: 50"
+             class="w-full border border-gray-200 rounded-xl px-4 py-3 text-sm focus:outline-none focus:ring-2 focus:ring-orange-400" /></div>
+    <div><label class="text-xs font-bold text-gray-500 mb-1 block">عدد مرات الاستخدام (اتركه فارغاً = غير محدود)</label>
+      <input id="dcm-max-uses" type="number" min="1" placeholder="مثال: 100"
+             class="w-full border border-gray-200 rounded-xl px-4 py-3 text-sm focus:outline-none focus:ring-2 focus:ring-orange-400" /></div>
+    <div class="flex gap-3">
+      <div class="flex-1"><label class="text-xs font-bold text-gray-500 mb-1 block">صالح من</label>
+        <input id="dcm-from" type="datetime-local" class="w-full border border-gray-200 rounded-xl px-3 py-2.5 text-sm focus:outline-none focus:ring-2 focus:ring-orange-400" /></div>
+      <div class="flex-1"><label class="text-xs font-bold text-gray-500 mb-1 block">صالح حتى</label>
+        <input id="dcm-until" type="datetime-local" class="w-full border border-gray-200 rounded-xl px-3 py-2.5 text-sm focus:outline-none focus:ring-2 focus:ring-orange-400" /></div>
+    </div>
+    <div class="flex items-center gap-3">
+      <input id="dcm-active" type="checkbox" checked class="w-5 h-5 accent-orange-500" />
+      <label class="text-sm font-bold text-gray-700">الكود نشط</label>
+    </div>
+    <p id="dcm-error" class="text-red-500 text-xs hidden"></p>
+    <div class="flex gap-3 pt-2">
+      <button onclick="saveDiscountCode()"       class="flex-1 bg-orange-500 text-white font-bold rounded-xl py-3">حفظ</button>
+      <button onclick="closeDiscountCodeModal()" class="flex-1 bg-gray-100 text-gray-600 font-bold rounded-xl py-3">إلغاء</button>
     </div>
   </div>
 </div>
@@ -649,7 +720,8 @@ const state = {
   orders:     [],
   banners:    [],
   bundles:    [],
-  branches:   []
+  branches:   [],
+  discountCodes: []
 }
 
 let pickrInstance    = null
@@ -896,6 +968,12 @@ function applyRoleUI() {
   // قسم admin-passcode في الإعدادات
   const apSection = document.getElementById('admin-passcode-section')
   if (apSection) apSection.classList.toggle('hidden', !isAdmin)
+  const loySection = document.getElementById('loyalty-section')
+  if (loySection) loySection.classList.toggle('hidden', !isAdmin)
+  const dcSection = document.getElementById('discount-codes-section')
+  if (dcSection) dcSection.classList.toggle('hidden', !isAdmin)
+  const pmLoyWrap = document.getElementById('pm-loyalty-coins-wrap')
+  if (pmLoyWrap) pmLoyWrap.classList.toggle('hidden', !isAdmin || !state.restaurant?.loyalty_enabled)
   // لو مش أدمن وكان في settings → نحوله لـ orders
   if (!isAdmin) {
     const activeTab = document.querySelector('.tab-btn.tab-active')
@@ -940,7 +1018,7 @@ async function loadDashboard(r, branches) {
   document.getElementById('share-menu-link').value = MENU_BASE_URL + '?r=' + r.slug
   initPushUI()
 
-  await Promise.all([loadCategories(), loadProducts(), loadOrders(), loadBanners(), loadBundles(), loadBranches()])
+  await Promise.all([loadCategories(), loadProducts(), loadOrders(), loadBanners(), loadBundles(), loadBranches(), loadDiscountCodes()])
 
   // Populate settings
   document.getElementById('set-name').value     = r.name
@@ -949,6 +1027,15 @@ async function loadDashboard(r, branches) {
   document.getElementById('set-cover').value    = r.cover_url || ''
   document.getElementById('set-admin-passcode').value = r.admin_passcode || ''
   document.getElementById('set-price-per-km').value   = r.price_per_km  ?? ''
+  // إعدادات الولاء
+  const loyEl = document.getElementById('set-loyalty-enabled')
+  if (loyEl) {
+    loyEl.checked = r.loyalty_enabled || false
+    document.getElementById('set-welcome-coins').value  = r.welcome_coins  ?? 10000
+    document.getElementById('set-referral-coins').value = r.referral_coins ?? 5000
+    document.getElementById('set-min-redeem').value     = r.min_redeem_coins ?? 100000
+    document.getElementById('loyalty-fields').classList.toggle('hidden', !r.loyalty_enabled)
+  }
   const primary = r.theme?.primary || '#FF6B00'
   document.getElementById('set-color').value     = primary
   document.getElementById('set-color-hex').value = primary
@@ -979,6 +1066,112 @@ async function saveAdminPasscode() {
   await db.from('restaurants').update({ admin_passcode: pass || null }).eq('id', state.restaurant.id)
   state.restaurant.admin_passcode = pass || null
   showToast(pass ? 'تم حفظ كلمة سر الأدمن ✅' : 'تم إزالة كلمة سر الأدمن')
+}
+
+// ── LOYALTY SETTINGS ──────────────────────────────────────────────────
+function toggleLoyaltySection() {
+  const enabled = document.getElementById('set-loyalty-enabled').checked
+  document.getElementById('loyalty-fields').classList.toggle('hidden', !enabled)
+}
+
+async function saveLoyaltySettings() {
+  const enabled    = document.getElementById('set-loyalty-enabled').checked
+  const welcome    = parseInt(document.getElementById('set-welcome-coins').value)  || 10000
+  const referral   = parseInt(document.getElementById('set-referral-coins').value) || 5000
+  const minRedeem  = parseInt(document.getElementById('set-min-redeem').value)     || 100000
+  await db.from('restaurants').update({
+    loyalty_enabled: enabled,
+    welcome_coins:   welcome,
+    referral_coins:  referral,
+    min_redeem_coins: minRedeem
+  }).eq('id', state.restaurant.id)
+  state.restaurant.loyalty_enabled  = enabled
+  state.restaurant.welcome_coins    = welcome
+  state.restaurant.referral_coins   = referral
+  state.restaurant.min_redeem_coins = minRedeem
+  showToast('تم حفظ إعدادات الكوينز ✅')
+}
+
+// ── DISCOUNT CODES ────────────────────────────────────────────────────
+async function loadDiscountCodes() {
+  const { data } = await db.from('discount_codes')
+    .select('*').eq('restaurant_id', state.restaurant.id).order('created_at', { ascending: false })
+  renderDiscountCodes(data || [])
+}
+
+function renderDiscountCodes(codes) {
+  const el = document.getElementById('discount-codes-list')
+  if (!el) return
+  if (!codes.length) { el.innerHTML = `<p class="text-center text-gray-400 text-sm py-4">لا توجد أكواد بعد</p>`; return }
+  el.innerHTML = codes.map(c => {
+    const exp = c.valid_until ? new Date(c.valid_until) < new Date() : false
+    return `<div class="flex items-center justify-between bg-gray-50 rounded-xl p-3 ${exp ? 'opacity-50' : ''}">
+      <div>
+        <p class="font-extrabold text-gray-800 text-sm tracking-widest">${c.code}</p>
+        <p class="text-xs text-gray-400">خصم ${Number(c.discount_egp).toFixed(2)} ج.م · استُخدم ${c.used_count}${c.max_uses ? '/' + c.max_uses : ''} مرة</p>
+        ${c.valid_until ? `<p class="text-xs text-gray-400">حتى ${new Date(c.valid_until).toLocaleDateString('ar-EG')}</p>` : ''}
+      </div>
+      <div class="flex gap-2 items-center">
+        <span class="text-xs px-2 py-0.5 rounded-full ${c.is_active && !exp ? 'bg-green-50 text-green-500' : 'bg-gray-100 text-gray-400'}">${c.is_active && !exp ? 'نشط' : 'متوقف'}</span>
+        <button onclick="openDiscountCodeModal('${c.id}')" class="text-xs bg-gray-100 text-gray-600 font-bold px-3 py-1.5 rounded-lg">تعديل</button>
+        <button onclick="deleteDiscountCode('${c.id}')" class="text-xs bg-red-50 text-red-400 font-bold px-3 py-1.5 rounded-lg">حذف</button>
+      </div>
+    </div>`
+  }).join('')
+}
+
+function openDiscountCodeModal(id = null) {
+  document.getElementById('dcm-id').value    = id || ''
+  document.getElementById('dcm-error').classList.add('hidden')
+  document.getElementById('dcm-title').textContent = id ? 'تعديل الكود' : 'كود خصم جديد'
+  if (id) {
+    const code = state.discountCodes?.find(c => c.id === id)
+    if (code) {
+      document.getElementById('dcm-code').value      = code.code
+      document.getElementById('dcm-discount').value  = code.discount_egp
+      document.getElementById('dcm-max-uses').value  = code.max_uses || ''
+      document.getElementById('dcm-from').value      = code.valid_from ? code.valid_from.slice(0,16) : ''
+      document.getElementById('dcm-until').value     = code.valid_until ? code.valid_until.slice(0,16) : ''
+      document.getElementById('dcm-active').checked  = code.is_active
+    }
+  } else {
+    ;['dcm-code','dcm-discount','dcm-max-uses','dcm-from','dcm-until'].forEach(id => { const el = document.getElementById(id); if(el) el.value = '' })
+    document.getElementById('dcm-active').checked = true
+  }
+  document.getElementById('modal-discount-code').classList.remove('hidden')
+  pushModal('discountcode', closeDiscountCodeModal)
+}
+function closeDiscountCodeModal(fromPopstate) {
+  document.getElementById('modal-discount-code').classList.add('hidden')
+  if (!fromPopstate) popModalSilently('discountcode')
+}
+
+async function saveDiscountCode() {
+  const id       = document.getElementById('dcm-id').value
+  const code     = document.getElementById('dcm-code').value.trim().toUpperCase()
+  const discount = parseFloat(document.getElementById('dcm-discount').value)
+  const maxUses  = parseInt(document.getElementById('dcm-max-uses').value) || null
+  const from     = document.getElementById('dcm-from').value || null
+  const until    = document.getElementById('dcm-until').value || null
+  const active   = document.getElementById('dcm-active').checked
+  const errEl    = document.getElementById('dcm-error')
+  if (!code)         { errEl.textContent = 'الكود مطلوب';          errEl.classList.remove('hidden'); return }
+  if (isNaN(discount)) { errEl.textContent = 'قيمة الخصم غير صحيحة'; errEl.classList.remove('hidden'); return }
+  errEl.classList.add('hidden')
+  const payload = { code, discount_egp: discount, max_uses: maxUses, valid_from: from || null, valid_until: until || null, is_active: active, restaurant_id: state.restaurant.id }
+  if (id) await db.from('discount_codes').update(payload).eq('id', id)
+  else    await db.from('discount_codes').insert(payload)
+  closeDiscountCodeModal()
+  await loadDiscountCodes()
+  showToast(id ? 'تم تعديل الكود ✅' : 'تم إنشاء الكود ✅')
+}
+
+async function deleteDiscountCode(id) {
+  const ok = await showConfirm('حذف هذا الكود؟', 'حذف')
+  if (!ok) return
+  await db.from('discount_codes').delete().eq('id', id)
+  await loadDiscountCodes()
+  showToast('تم الحذف')
 }
 
 // ── PICKR (Color Picker) ──────────────────────────────────────────────
@@ -1348,6 +1541,7 @@ function openProductModal(id = null) {
     document.getElementById('pm-badge').value        = p.offer_badge    || ''
     document.getElementById('pm-available').checked  = p.is_available
     document.getElementById('pm-prep-minutes').value  = p.prep_minutes || 10
+    document.getElementById('pm-loyalty-coins').value = p.loyalty_coins || 0
     document.getElementById('product-modal-title').textContent = 'تعديل منتج'
     setUnitField(p.unit || 'قطعة')
     updateDiscountPreview()
@@ -1361,6 +1555,7 @@ function openProductModal(id = null) {
     document.getElementById('pm-availability').value = 'available'
     document.getElementById('pm-available').checked  = true
     document.getElementById('pm-prep-minutes').value  = 10
+    document.getElementById('pm-loyalty-coins').value = 0
     document.getElementById('pm-image-preview-wrap').classList.add('hidden')
     document.getElementById('discount-preview').classList.add('hidden')
     document.getElementById('product-modal-title').textContent = 'إضافة منتج'
@@ -1516,6 +1711,7 @@ async function saveProduct() {
     offer_badge:     document.getElementById('pm-badge').value.trim()       || null,
     unit:            document.getElementById('pm-unit').value.trim()        || 'قطعة',
     prep_minutes:    parseInt(document.getElementById('pm-prep-minutes').value) || 10,
+    loyalty_coins:   parseInt(document.getElementById('pm-loyalty-coins').value) || 0,
     product_options: getOptionsData().length ? getOptionsData()             : null,
     also_with:       _alsoWith.length        ? [..._alsoWith]               : null
   }
@@ -1542,20 +1738,31 @@ async function toggleAvailability(id, current){ await db.from('products').update
 
 // ── BUNDLES ───────────────────────────────────────────────────────────
 async function loadBundles() {
-  const { data } = await db.from('bundles').select('*').eq('restaurant_id', state.restaurant.id).order('created_at', { ascending: false })
-  state.bundles = data || []
+  const { data: bundles } = await db.from('bundles').select('*').eq('restaurant_id', state.restaurant.id).order('created_at', { ascending: false })
+  if (!bundles) { state.bundles = []; renderBundles(); return }
+  // جلب الفروع المرتبطة بكل bundle
+  const { data: bb } = await db.from('bundle_branches').select('bundle_id,branch_id')
+    .in('bundle_id', bundles.map(b => b.id))
+  const bbMap = {}
+  ;(bb || []).forEach(r => { if (!bbMap[r.bundle_id]) bbMap[r.bundle_id] = []; bbMap[r.bundle_id].push(r.branch_id) })
+  state.bundles = bundles.map(b => ({ ...b, branch_ids: bbMap[b.id] || [] }))
   renderBundles()
 }
 function renderBundles() {
   const el = document.getElementById('bundles-list')
   if (!state.bundles.length) { el.innerHTML = `<p class="text-center text-gray-400 text-sm py-8">لا توجد عروض بعد</p>`; return }
-  el.innerHTML = state.bundles.map(b => `
+  el.innerHTML = state.bundles.map(b => {
+    const branchTags = b.branch_ids && b.branch_ids.length && state.branches.length > 1
+      ? `<p class="text-xs text-blue-500 mt-1">🏬 ${b.branch_ids.length === state.branches.length ? 'كل الفروع' : b.branch_ids.map(id => state.branches.find(br => br.id === id)?.name || '').filter(Boolean).join('، ')}</p>`
+      : (state.branches.length > 1 ? `<p class="text-xs text-gray-400 mt-1">🏬 كل الفروع</p>` : '')
+    return `
     <div class="bg-white rounded-2xl p-4 shadow-sm border border-gray-100">
       <div class="flex items-start justify-between">
         <div>
           <div class="flex items-center gap-2"><p class="font-bold text-gray-800">🎁 ${b.name}</p>
             <span class="text-xs px-2 py-0.5 rounded-full ${b.is_active ? 'bg-green-50 text-green-500' : 'bg-gray-100 text-gray-400'}">${b.is_active ? 'نشط' : 'متوقف'}</span></div>
           ${b.description ? `<p class="text-xs text-gray-400 mt-1">${b.description}</p>` : ''}
+          ${branchTags}
           <p class="font-extrabold text-orange-500 mt-2">${Number(b.price).toFixed(2)} ج.م</p>
         </div>
       </div>
@@ -1564,7 +1771,8 @@ function renderBundles() {
         <button onclick="openBundleModal('${b.id}')" class="flex-1 text-xs bg-gray-100 text-gray-600 font-bold px-3 py-2 rounded-xl">تعديل</button>
         <button onclick="deleteBundle('${b.id}')"    class="text-xs bg-red-50 text-red-500 font-bold px-3 py-2 rounded-xl">حذف</button>
       </div>
-    </div>`).join('')
+    </div>`
+  }).join('')
 }
 function openBundleModal(id = null) {
   document.getElementById('bm-id').value = id || ''
@@ -1572,6 +1780,18 @@ function openBundleModal(id = null) {
   document.getElementById('bm-image-preview-wrap').classList.add('hidden')
   const container = document.getElementById('bm-products-checkboxes')
   container.innerHTML = state.products.map(p => `<label class="flex items-center gap-3 py-1 cursor-pointer"><input type="checkbox" value="${p.id}" class="bundle-product-check w-4 h-4 accent-orange-500" onchange="updateBundleSelectedCount()" /><span class="text-sm text-gray-700">${p.name}</span><span class="text-xs text-gray-400 mr-auto">${Number(p.price).toFixed(2)} ج.م</span></label>`).join('')
+
+  // قسم الفروع — يظهر فقط لو فيه أكثر من فرع وصلاحية أدمن
+  const branchSection = document.getElementById('bm-branches-section')
+  const branchContainer = document.getElementById('bm-branches-checkboxes')
+  if (state.branches.length > 1 && _role === 'admin') {
+    branchContainer.innerHTML = `<label class="flex items-center gap-3 py-1 cursor-pointer"><input type="checkbox" id="bm-branch-all" class="bundle-branch-check w-4 h-4 accent-orange-500" onchange="toggleAllBundleBranches(this)" /><span class="text-sm font-bold text-gray-700">كل الفروع</span></label>`
+      + state.branches.map(br => `<label class="flex items-center gap-3 py-1 cursor-pointer"><input type="checkbox" value="${br.id}" class="bundle-branch-item w-4 h-4 accent-orange-500" onchange="updateBranchAllCheckbox()" /><span class="text-sm text-gray-700">🏬 ${br.name}</span></label>`).join('')
+    branchSection.classList.remove('hidden')
+  } else {
+    branchSection.classList.add('hidden')
+  }
+
   if (id) {
     const b = state.bundles.find(x => x.id === id)
     document.getElementById('bm-name').value     = b.name
@@ -1583,14 +1803,33 @@ function openBundleModal(id = null) {
     if (b.image_url) { document.getElementById('bm-image-preview').src = b.image_url; document.getElementById('bm-image-preview-wrap').classList.remove('hidden') }
     const selectedIds = (b.items || []).map(i => i.product_id)
     container.querySelectorAll('.bundle-product-check').forEach(cb => { if (selectedIds.includes(cb.value)) cb.checked = true })
+    // تعبئة فروع العرض
+    if (state.branches.length > 1 && _role === 'admin') {
+      const bBranchIds = b.branch_ids || []
+      document.querySelectorAll('.bundle-branch-item').forEach(cb => { cb.checked = bBranchIds.length === 0 || bBranchIds.includes(cb.value) })
+      updateBranchAllCheckbox()
+    }
   } else {
     ;['bm-name','bm-desc','bm-price','bm-image'].forEach(fid => document.getElementById(fid).value = '')
     document.getElementById('bm-active').checked = true
     document.getElementById('bundle-modal-title').textContent = 'عرض مجمع جديد'
+    // كل الفروع محددة بشكل افتراضي عند الإنشاء
+    if (state.branches.length > 1 && _role === 'admin') {
+      document.querySelectorAll('.bundle-branch-item').forEach(cb => { cb.checked = true })
+      const allCb = document.getElementById('bm-branch-all'); if (allCb) allCb.checked = true
+    }
   }
   updateBundleSelectedCount()
   document.getElementById('modal-bundle').classList.remove('hidden')
   pushModal('bundle', closeBundleModal)
+}
+function toggleAllBundleBranches(allCb) {
+  document.querySelectorAll('.bundle-branch-item').forEach(cb => { cb.checked = allCb.checked })
+}
+function updateBranchAllCheckbox() {
+  const items  = [...document.querySelectorAll('.bundle-branch-item')]
+  const allCb  = document.getElementById('bm-branch-all')
+  if (allCb) allCb.checked = items.length > 0 && items.every(cb => cb.checked)
 }
 function updateBundleSelectedCount() {
   const n = document.querySelectorAll('.bundle-product-check:checked').length

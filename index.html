@@ -502,6 +502,12 @@
         </svg>
         <span class="cart-mini-badge" id="cart-mini-badge" style="display:none"></span>
       </button>
+      <!-- زر المحفظة/تسجيل الدخول -->
+      <button id="wallet-mini-btn" onclick="openWalletOrLogin()"
+              style="display:flex;align-items:center;justify-content:center;width:34px;height:34px;border-radius:50%;background:rgba(255,255,255,0.18);position:relative;flex-shrink:0">
+        <span style="font-size:16px">🪙</span>
+        <span id="wallet-mini-badge" style="display:none;position:absolute;top:-3px;left:-3px;background:#22c55e;color:#fff;font-size:9px;font-weight:900;border-radius:10px;padding:1px 5px;min-width:18px;text-align:center"></span>
+      </button>
     </div>
 
     <!-- Search bar -->
@@ -649,12 +655,48 @@
                   onkeydown="focusNextField(event, null, sendOrder)"
                   style="width:100%;border:1.5px solid #eee;border-radius:14px;padding:12px 14px;font-size:13px;color:#444;outline:none;font-family:'Rubik',sans-serif;resize:none;margin-bottom:10px"></textarea>
 
+        <!-- كود الخصم + الكوينز -->
+        <div id="cart-coins-section" style="margin-bottom:10px">
+          <!-- كود خصم -->
+          <div style="display:flex;gap:8px;margin-bottom:8px">
+            <input id="cart-discount-code" type="text" placeholder="كود الخصم (اختياري)" style="text-transform:uppercase;flex:1;border:1.5px solid #eee;border-radius:12px;padding:10px 12px;font-size:13px;color:#333;outline:none;font-family:'Rubik',sans-serif" />
+            <button onclick="applyDiscountCode()" style="background:var(--brand);color:#fff;font-size:13px;font-weight:800;border-radius:12px;padding:10px 16px;white-space:nowrap">تطبيق</button>
+          </div>
+          <p id="cart-discount-msg" style="font-size:11px;margin-bottom:6px;display:none"></p>
+          <!-- استخدام الكوينز — يظهر فقط للمسجّلين وعندهم رصيد كافي -->
+          <div id="cart-coins-row" style="display:none;background:#fff8f0;border:1.5px solid #ffe0c0;border-radius:14px;padding:12px 14px">
+            <div style="display:flex;justify-content:space-between;align-items:center;margin-bottom:8px">
+              <span style="font-size:13px;font-weight:800;color:#cc4a00">🪙 استخدم كوينزك</span>
+              <span id="cart-coins-available" style="font-size:12px;color:#888"></span>
+            </div>
+            <div style="display:flex;gap:8px;align-items:center">
+              <input id="cart-coins-input" type="number" min="0" placeholder="كم كوين تستخدم؟"
+                     oninput="updateCoinsDiscount()"
+                     style="flex:1;border:1.5px solid #eee;border-radius:10px;padding:9px 12px;font-size:13px;outline:none;font-family:'Rubik',sans-serif" />
+              <button onclick="useMaxCoins()" style="background:#ff6b00;color:#fff;font-size:12px;font-weight:800;border-radius:10px;padding:9px 12px;white-space:nowrap">الكل</button>
+            </div>
+            <p id="cart-coins-discount-preview" style="font-size:12px;color:#cc4a00;font-weight:700;margin-top:6px;display:none"></p>
+          </div>
+        </div>
+
         <!-- Total -->
         <div style="display:flex;align-items:center;justify-content:space-between;margin-bottom:4px;padding:0 2px">
           <span style="font-size:14px;font-weight:600;color:#999">المنتجات</span>
           <span id="cart-grand-total" style="font-size:20px;font-weight:900;color:var(--brand)">0 ج.م</span>
         </div>
         <div id="cart-delivery-row" style="display:none;align-items:center;justify-content:space-between;margin-bottom:6px;padding:0 2px"></div>
+        <div id="cart-discount-row" style="display:none;align-items:center;justify-content:space-between;margin-bottom:4px;padding:0 2px">
+          <span style="font-size:13px;font-weight:700;color:#22c55e">🏷️ خصم</span>
+          <span id="cart-discount-val" style="font-size:14px;font-weight:800;color:#22c55e"></span>
+        </div>
+        <div id="cart-coins-disc-row" style="display:none;align-items:center;justify-content:space-between;margin-bottom:4px;padding:0 2px">
+          <span style="font-size:13px;font-weight:700;color:#f97316">🪙 خصم الكوينز</span>
+          <span id="cart-coins-disc-val" style="font-size:14px;font-weight:800;color:#f97316"></span>
+        </div>
+        <div id="cart-final-row" style="display:none;align-items:center;justify-content:space-between;margin-bottom:6px;padding:6px 4px 0;border-top:1.5px dashed #eee">
+          <span style="font-size:14px;font-weight:900;color:#1a1a1a">الإجمالي بعد الخصم</span>
+          <span id="cart-final-total" style="font-size:20px;font-weight:900;color:#1a1a1a"></span>
+        </div>
 
         <!-- Send button -->
         <button id="send-order-btn" onclick="sendOrder()"
@@ -744,9 +786,89 @@
   </div>
 </div>
 
-<!-- ══════════════════════════════════════════
-     JAVASCRIPT
-══════════════════════════════════════════ -->
+<!-- ══ CUSTOMER AUTH MODAL ══ -->
+<div id="cust-auth-modal" class="hidden fixed inset-0 z-[70] flex items-end justify-center" style="background:rgba(0,0,0,0.55);backdrop-filter:blur(5px)">
+  <div class="bg-white rounded-t-3xl w-full max-w-lg p-6 sheet space-y-4" style="max-height:92vh;overflow-y:auto">
+    <div style="width:40px;height:4px;background:#e8e8e8;border-radius:4px;margin:0 auto 4px"></div>
+    <div id="cauth-step-login">
+      <h3 style="font-size:18px;font-weight:900;color:#1a1a1a;margin-bottom:2px">🪙 سجّل دخولك واكسب كوينز</h3>
+      <p style="font-size:12px;color:#aaa;margin-bottom:16px">تتبع طلباتك، اكسب كوينز واستبدلها بخصومات</p>
+      <input id="cauth-email" type="email" placeholder="البريد الإلكتروني" inputmode="email" autocomplete="email"
+             style="width:100%;border:1.5px solid #eee;border-radius:12px;padding:12px 14px;font-size:14px;color:#333;outline:none;font-family:'Rubik',sans-serif;margin-bottom:8px" />
+      <input id="cauth-pass" type="password" placeholder="كلمة السر (6 أحرف على الأقل)"
+             style="width:100%;border:1.5px solid #eee;border-radius:12px;padding:12px 14px;font-size:14px;color:#333;outline:none;font-family:'Rubik',sans-serif;margin-bottom:8px" />
+      <div id="cauth-extra" class="hidden space-y-2" style="margin-bottom:8px">
+        <input id="cauth-name"  type="text" placeholder="اسمك (اختياري)"
+               style="width:100%;border:1.5px solid #eee;border-radius:12px;padding:11px 14px;font-size:14px;color:#333;outline:none;font-family:'Rubik',sans-serif" />
+        <input id="cauth-phone" type="tel"  placeholder="رقم موبايلك (اختياري)"
+               style="width:100%;border:1.5px solid #eee;border-radius:12px;padding:11px 14px;font-size:14px;color:#333;outline:none;font-family:'Rubik',sans-serif" />
+        <input id="cauth-ref"   type="text" placeholder="كود إحالة صديقك (اختياري)" style="text-transform:uppercase"
+               style="width:100%;border:1.5px solid #eee;border-radius:12px;padding:11px 14px;font-size:14px;color:#333;outline:none;font-family:'Rubik',sans-serif" />
+      </div>
+      <p id="cauth-error" class="hidden" style="font-size:12px;color:#ef4444;margin-bottom:8px;font-weight:700"></p>
+      <button id="cauth-main-btn" onclick="custAuthSubmit()"
+              style="width:100%;background:var(--brand);color:#fff;font-size:15px;font-weight:900;border-radius:16px;padding:14px;margin-bottom:10px">دخول</button>
+      <button onclick="toggleCauthMode()"
+              style="width:100%;background:#f5f5f5;color:#555;font-size:13px;font-weight:700;border-radius:14px;padding:12px;margin-bottom:8px" id="cauth-toggle-btn">مش عندك حساب؟ سجّل دلوقتي 🎁</button>
+      <button onclick="closeCustAuth()" style="width:100%;color:#bbb;font-size:12px;font-weight:600;padding:6px">إغلاق</button>
+    </div>
+  </div>
+</div>
+
+<!-- ══ WALLET MODAL ══ -->
+<div id="wallet-modal" class="hidden fixed inset-0 z-[70] flex items-end justify-center" style="background:rgba(0,0,0,0.55);backdrop-filter:blur(5px)">
+  <div class="bg-white rounded-t-3xl w-full max-w-lg sheet" style="max-height:92vh;overflow-y:auto">
+    <div style="padding:20px 20px 0">
+      <div style="width:40px;height:4px;background:#e8e8e8;border-radius:4px;margin:0 auto 16px"></div>
+      <!-- رصيد الكوينز -->
+      <div style="background:linear-gradient(135deg,#FF6B00,#ff9a3c);border-radius:20px;padding:20px;color:#fff;margin-bottom:16px;position:relative;overflow:hidden">
+        <div style="position:absolute;top:-20px;left:-20px;width:100px;height:100px;background:rgba(255,255,255,0.08);border-radius:50%"></div>
+        <div style="position:absolute;bottom:-30px;right:-10px;width:130px;height:130px;background:rgba(255,255,255,0.06);border-radius:50%"></div>
+        <p style="font-size:12px;font-weight:700;opacity:0.85;margin-bottom:4px">محفظة الكوينز 🪙</p>
+        <p id="wallet-balance" style="font-size:36px;font-weight:900;margin-bottom:2px">0</p>
+        <p id="wallet-balance-egp" style="font-size:13px;opacity:0.75">= 0.00 ج.م</p>
+        <p id="wallet-min-redeem-note" style="font-size:11px;opacity:0.65;margin-top:6px"></p>
+      </div>
+      <!-- كود الإحالة -->
+      <div style="background:#f9f9f9;border-radius:16px;padding:14px;margin-bottom:16px">
+        <p style="font-size:12px;font-weight:800;color:#888;margin-bottom:8px">🔗 شارك المنيو واكسب كوينز</p>
+        <div style="display:flex;gap:8px;align-items:center">
+          <p id="wallet-ref-code" style="font-size:18px;font-weight:900;color:var(--brand);letter-spacing:3px;flex:1"></p>
+          <button onclick="copyReferralLink()" style="background:var(--brand);color:#fff;font-size:12px;font-weight:800;border-radius:10px;padding:8px 14px">نسخ الرابط</button>
+        </div>
+        <p style="font-size:11px;color:#bbb;margin-top:6px">عند أول شراء لصديقك تكسب <span id="wallet-ref-reward"></span> كوين 🪙</p>
+      </div>
+      <!-- تاريخ الطلبات -->
+      <p style="font-size:14px;font-weight:900;color:#1a1a1a;margin-bottom:8px">📋 طلباتي السابقة</p>
+      <div id="wallet-orders-list" style="margin-bottom:12px"></div>
+      <!-- سجل الكوينز -->
+      <p style="font-size:14px;font-weight:900;color:#1a1a1a;margin-bottom:8px">🪙 سجل الكوينز</p>
+      <div id="wallet-tx-list" style="margin-bottom:20px"></div>
+    </div>
+    <div style="padding:0 20px 20px;position:sticky;bottom:0;background:#fff">
+      <button onclick="custLogout()" style="width:100%;background:#f5f5f5;color:#888;font-size:13px;font-weight:700;border-radius:14px;padding:13px;margin-bottom:8px">تسجيل خروج</button>
+      <button onclick="closeWalletModal()" style="width:100%;background:var(--brand);color:#fff;font-size:15px;font-weight:900;border-radius:16px;padding:14px">إغلاق</button>
+    </div>
+  </div>
+</div>
+
+<!-- ══ CELEBRATION OVERLAY ══ -->
+<div id="celebration-overlay" class="hidden fixed inset-0 z-[80] flex flex-col items-center justify-center" style="background:rgba(0,0,0,0.75);backdrop-filter:blur(4px)">
+  <canvas id="confetti-canvas" class="absolute inset-0" style="pointer-events:none;width:100%;height:100%"></canvas>
+  <div style="position:relative;text-align:center;padding:32px 28px;background:#fff;border-radius:28px;max-width:320px;width:90%;animation:successPop 0.5s cubic-bezier(0.34,1.5,0.64,1) both">
+    <div style="font-size:64px;margin-bottom:8px">🎉</div>
+    <h2 style="font-size:22px;font-weight:900;color:#1a1a1a;margin-bottom:6px">أهلاً بيك! 🎊</h2>
+    <p style="font-size:14px;color:#666;margin-bottom:12px">هديتك جاهزة عند أول طلب</p>
+    <div style="background:linear-gradient(135deg,#FF6B00,#ff9a3c);border-radius:16px;padding:16px;color:#fff;margin-bottom:16px">
+      <p style="font-size:13px;font-weight:700;opacity:0.85">🪙 بونص الترحيب</p>
+      <p id="celeb-coins" style="font-size:32px;font-weight:900">10,000</p>
+      <p style="font-size:12px;opacity:0.8">كوين في انتظارك عند أول شراء</p>
+    </div>
+    <button onclick="closeCelebration()" style="width:100%;background:var(--brand);color:#fff;font-size:15px;font-weight:900;border-radius:16px;padding:14px">يلا نطلب! 🛒</button>
+  </div>
+</div>
+
+<!-- ══ JAVASCRIPT ══ -->
 <script>
 // ── CONFIG ────────────────────────────────────────────────────────────
 const SUPABASE_URL  = 'https://pcmyugeqveyjnappulng.supabase.co'
@@ -762,10 +884,13 @@ const S = {
   products:      [],
   bundles:       [],
   banners:       [],
+  branches:      [],
   cart:          [],
   activeCat:     null,
   search:        '',
-  currentBanner: 0
+  currentBanner: 0,
+  customer:      null,   // بيانات العميل المسجّل
+  coinTxs:       [],     // حركات المحفظة
 }
 
 // ── CART PERSISTENCE ──────────────────────────────────────────────────
@@ -856,6 +981,8 @@ async function boot() {
     showState('app')
     initScrollBehavior()
     initScrollSpy()
+    await initCustomerSession()
+    handleReferralParam()
 
     // إظهار شريط المعاينة فقط لو الرابط الحالي فعلياً يحتوي على preview=1 (فحص مزدوج للتأكيد)
     const previewBar = document.getElementById('back-to-dash')
@@ -877,7 +1004,7 @@ function retryLoad() {
 async function loadData(slug) {
   const { data: r, error: rErr } = await db
     .from('restaurants')
-    .select('id,name,logo_url,cover_url,whatsapp,theme,slug,announcement_text,announcement_active,order_receive_method,price_per_km')
+    .select('id,name,logo_url,cover_url,whatsapp,theme,slug,announcement_text,announcement_active,order_receive_method,price_per_km,loyalty_enabled,welcome_coins,referral_coins,min_redeem_coins,coins_per_egp')
     .eq('slug', slug).eq('is_active', true).single()
 
   if (rErr || !r) throw new Error('المطعم غير موجود أو غير نشط')
@@ -1629,6 +1756,32 @@ function renderCartItems() {
       } else deliveryRow.style.display = 'none'
     } else deliveryRow.style.display = 'none'
   }
+
+  // خصم الكود
+  const discRow = document.getElementById('cart-discount-row')
+  const discVal  = document.getElementById('cart-discount-val')
+  if (_appliedDiscount > 0) {
+    discRow.style.display = 'flex'; discVal.textContent = '- ' + fmt(_appliedDiscount)
+  } else { discRow.style.display = 'none' }
+
+  // خصم الكوينز
+  const coinsDiscRow = document.getElementById('cart-coins-disc-row')
+  const coinsDiscVal  = document.getElementById('cart-coins-disc-val')
+  const coinsPerEgp  = S.restaurant?.coins_per_egp ?? 1000
+  const coinsDiscount = _coinsToRedeem > 0 ? _coinsToRedeem / coinsPerEgp : 0
+  if (coinsDiscount > 0) {
+    coinsDiscRow.style.display = 'flex'; coinsDiscVal.textContent = '- ' + fmt(coinsDiscount)
+  } else { coinsDiscRow.style.display = 'none' }
+
+  // الإجمالي النهائي
+  const finalRow = document.getElementById('cart-final-row')
+  const finalTot  = document.getElementById('cart-final-total')
+  const totalDiscount = _appliedDiscount + coinsDiscount
+  if (totalDiscount > 0) {
+    const rawTotal = cartTotal()
+    const final    = Math.max(0, rawTotal - totalDiscount)
+    finalRow.style.display = 'flex'; finalTot.textContent = fmt(final)
+  } else { finalRow.style.display = 'none' }
 }
 
 // ── TOAST ─────────────────────────────────────────────────────────────
@@ -1737,6 +1890,11 @@ async function sendOrder() {
   }
   const grandTotal = Math.round((cartTotal() + deliveryFee) * 100) / 100
 
+  // الخصومات
+  const coinsPerEgp    = S.restaurant?.coins_per_egp ?? 1000
+  const coinsDiscountEgp = _coinsToRedeem > 0 ? Math.round(_coinsToRedeem / coinsPerEgp * 100) / 100 : 0
+  const finalTotal     = Math.max(0, Math.round((grandTotal - _appliedDiscount - coinsDiscountEgp) * 100) / 100)
+
   // Save order to DB — the merchant receives it live in the dashboard (no WhatsApp)
   let orderId, orderNumber
   try {
@@ -1747,10 +1905,10 @@ async function sendOrder() {
       .insert({
         restaurant_id:    S.restaurant.id,
         order_number:     rpc,
-        items, total:     grandTotal,
+        items, total:     finalTotal,
         table_number:     table     || null,
-        customer_name:    custName  || null,
-        customer_phone:   custPhone || null,
+        customer_name:    custName  || S.customer?.name || null,
+        customer_phone:   custPhone || S.customer?.phone || null,
         customer_address: custAddr  || null,
         customer_location:custLoc   || null,
         customer_lat:     custLat   ? parseFloat(custLat) : null,
@@ -1758,13 +1916,41 @@ async function sendOrder() {
         note:             note      || null,
         estimated_prep_minutes: estimatedPrepMinutes,
         branch_id:        nearestBranchId,
-        delivery_fee:     deliveryFee > 0 ? deliveryFee : null
+        delivery_fee:     deliveryFee > 0 ? deliveryFee : null,
+        customer_id:      S.customer?.id || null,
+        coins_redeemed:   _coinsToRedeem > 0 ? _coinsToRedeem : null,
+        coins_discount:   coinsDiscountEgp > 0 ? coinsDiscountEgp : null,
+        discount_code:    _appliedCode ? document.getElementById('cart-discount-code').value.trim().toUpperCase() : null,
+        discount_code_amount: _appliedDiscount > 0 ? _appliedDiscount : null
       })
       .select('id,order_number').single()
 
     if (ie || !od?.order_number) throw new Error(ie?.message || 'insert failed')
     orderId     = od.id
     orderNumber = od.order_number
+
+    // خصم الكوينز المستخدمة من المحفظة
+    if (_coinsToRedeem > 0 && S.customer) {
+      const newBal = Math.max(0, (S.customer.coins_balance || 0) - _coinsToRedeem)
+      await db.from('customers').update({ coins_balance: newBal }).eq('id', S.customer.id)
+      await db.from('coin_transactions').insert({
+        customer_id: S.customer.id, restaurant_id: S.restaurant.id,
+        type: 'redeem', amount: -_coinsToRedeem, order_id: orderId,
+        note: `استخدام في طلب ${orderNumber}`
+      })
+      S.customer.coins_balance = newBal
+    }
+
+    // تحديث عداد الكود المستخدم
+    if (_appliedCode) {
+      await db.from('discount_codes').update({ used_count: db.rpc }).eq('id', _appliedCode)
+      // increment used_count
+      const { data: codeRow } = await db.from('discount_codes').select('used_count').eq('id', _appliedCode).single()
+      if (codeRow) await db.from('discount_codes').update({ used_count: (codeRow.used_count || 0) + 1 }).eq('id', _appliedCode)
+    }
+
+    // منح كوينز الولاء بعد الطلب
+    await awardLoyaltyAndWelcome(orderId, items, S.customer?.id)
   } catch(e) {
     console.error('Order save failed:', e)
     btn.style.opacity = '1'
@@ -1774,12 +1960,15 @@ async function sendOrder() {
   }
 
   clearCart(); updateCartUI(); closeCartSheet()
-  ;['order-name', 'order-phone', 'order-address', 'order-location', 'order-note', 'table-number-input']
+  ;['order-name', 'order-phone', 'order-address', 'order-location', 'order-note', 'table-number-input', 'cart-discount-code']
     .forEach(id => { const el = document.getElementById(id); if (el) el.value = '' })
   document.getElementById('order-location-lat').value = ''
   document.getElementById('order-location-lng').value = ''
+  const coinsInput = document.getElementById('cart-coins-input'); if (coinsInput) coinsInput.value = ''
+  document.getElementById('cart-discount-msg').style.display = 'none'
+  _appliedDiscount = 0; _appliedCode = null; _coinsToRedeem = 0
   resetBtn()
-  showOrderSuccess(orderNumber, orderId, grandTotal, deliveryFee)
+  showOrderSuccess(orderNumber, orderId, finalTotal, deliveryFee)
   trackOrderStatus(orderId)
 }
 
@@ -2008,6 +2197,406 @@ function confirmLocation() {
   closeMapPicker()
   // تحديث عرض رسوم التوصيل في السلة فور تحديد الموقع
   renderCartItems()
+}
+
+// ── CUSTOMER AUTH & WALLET ─────────────────────────────────────────────────
+let _custAuthMode  = 'login'  // 'login' | 'signup'
+let _appliedDiscount = 0      // خصم الكود بالجنيه
+let _appliedCode     = null   // الكود المطبّق
+let _coinsToRedeem   = 0      // كوينز سيتم استخدامها في الطلب
+
+async function initCustomerSession() {
+  const { data: { session } } = await db.auth.getSession()
+  if (!session) return
+  await loadCustomerProfile()
+}
+
+async function loadCustomerProfile() {
+  const { data: { user } } = await db.auth.getUser()
+  if (!user || !S.restaurant) return
+  const { data } = await db.from('customers')
+    .select('*')
+    .eq('user_id', user.id)
+    .eq('restaurant_id', S.restaurant.id)
+    .single()
+  S.customer = data || null
+  updateWalletBadge()
+  updateCoinsRowInCart()
+}
+
+function updateWalletBadge() {
+  const badge = document.getElementById('wallet-mini-badge')
+  if (!badge) return
+  if (S.customer && S.customer.coins_balance > 0) {
+    const egp = (S.customer.coins_balance / 1000).toFixed(0)
+    badge.textContent = egp + 'ج'
+    badge.style.display = 'block'
+  } else {
+    badge.style.display = 'none'
+  }
+}
+
+function openWalletOrLogin() {
+  if (S.customer) openWalletModal()
+  else openCustAuth()
+}
+
+function openCustAuth() {
+  _custAuthMode = 'login'
+  syncCauthUI()
+  document.getElementById('cust-auth-modal').classList.remove('hidden')
+  document.body.style.overflow = 'hidden'
+  pushModal('custauth', closeCustAuth)
+  setTimeout(() => document.getElementById('cauth-email').focus(), 200)
+}
+function closeCustAuth(fromPopstate) {
+  document.getElementById('cust-auth-modal').classList.add('hidden')
+  document.body.style.overflow = ''
+  if (!fromPopstate) popModalSilently('custauth')
+}
+
+function toggleCauthMode() {
+  _custAuthMode = _custAuthMode === 'login' ? 'signup' : 'login'
+  syncCauthUI()
+}
+function syncCauthUI() {
+  const isSignup = _custAuthMode === 'signup'
+  document.getElementById('cauth-extra').classList.toggle('hidden', !isSignup)
+  document.getElementById('cauth-main-btn').textContent = isSignup ? 'إنشاء حساب 🎁' : 'دخول'
+  document.getElementById('cauth-toggle-btn').textContent = isSignup ? 'عندك حساب؟ سجّل دخولك' : 'مش عندك حساب؟ سجّل دلوقتي 🎁'
+  document.getElementById('cauth-error').classList.add('hidden')
+}
+
+async function custAuthSubmit() {
+  const email = document.getElementById('cauth-email').value.trim()
+  const pass  = document.getElementById('cauth-pass').value
+  const errEl = document.getElementById('cauth-error')
+  errEl.classList.add('hidden')
+  if (!email || !pass) { errEl.textContent = 'البريد وكلمة السر مطلوبان'; errEl.classList.remove('hidden'); return }
+  if (pass.length < 6)  { errEl.textContent = 'كلمة السر 6 أحرف على الأقل'; errEl.classList.remove('hidden'); return }
+
+  document.getElementById('cauth-main-btn').textContent = '...'
+
+  if (_custAuthMode === 'login') {
+    const { error } = await db.auth.signInWithPassword({ email, password: pass })
+    if (error) { errEl.textContent = 'البيانات غير صحيحة أو الحساب غير موجود'; errEl.classList.remove('hidden'); document.getElementById('cauth-main-btn').textContent = 'دخول'; return }
+    await loadCustomerProfile()
+    closeCustAuth()
+    updateCoinsRowInCart()
+  } else {
+    const name  = document.getElementById('cauth-name').value.trim()
+    const phone = document.getElementById('cauth-phone').value.trim()
+    const ref   = document.getElementById('cauth-ref').value.trim().toUpperCase()
+    const { data: signData, error: signErr } = await db.auth.signUp({ email, password: pass })
+    if (signErr) { errEl.textContent = signErr.message; errEl.classList.remove('hidden'); document.getElementById('cauth-main-btn').textContent = 'إنشاء حساب 🎁'; return }
+    // إنشاء بروفايل العميل
+    const refCode = await genUniqueReferralCode()
+    let referredBy = null
+    if (ref) {
+      const { data: refCustomer } = await db.from('customers').select('id').eq('referral_code', ref).eq('restaurant_id', S.restaurant.id).single()
+      if (refCustomer) referredBy = refCustomer.id
+    }
+    const welcomeCoins = S.restaurant.welcome_coins ?? 10000
+    const { data: newCust } = await db.from('customers').insert({
+      user_id: signData.user.id, restaurant_id: S.restaurant.id,
+      name: name || null, phone: phone || null, email,
+      coins_balance: welcomeCoins,
+      referral_code: refCode,
+      referred_by: referredBy,
+      welcome_coins_claimed: false
+    }).select('*').single()
+    // تسجيل حركة البونص الترحيبي
+    if (newCust) {
+      await db.from('coin_transactions').insert({
+        customer_id: newCust.id, restaurant_id: S.restaurant.id,
+        type: 'welcome', amount: welcomeCoins,
+        note: `بونص الترحيب — يُستلم عند أول طلب`
+      })
+    }
+    S.customer = newCust
+    closeCustAuth()
+    updateWalletBadge()
+    updateCoinsRowInCart()
+    // احتفال
+    showCelebration(welcomeCoins)
+  }
+}
+
+async function genUniqueReferralCode() {
+  const chars = 'ABCDEFGHJKLMNPQRSTUVWXYZ23456789'
+  for (let i = 0; i < 10; i++) {
+    let code = ''
+    for (let j = 0; j < 6; j++) code += chars[Math.floor(Math.random() * chars.length)]
+    const { data } = await db.from('customers').select('id').eq('referral_code', code).eq('restaurant_id', S.restaurant.id).maybeSingle()
+    if (!data) return code
+  }
+  return 'REF' + Date.now().toString(36).toUpperCase().slice(-3)
+}
+
+async function custLogout() {
+  await db.auth.signOut()
+  S.customer = null
+  _coinsToRedeem = 0
+  _appliedDiscount = 0
+  _appliedCode = null
+  updateWalletBadge()
+  updateCoinsRowInCart()
+  closeWalletModal()
+  renderCartItems()
+}
+
+// ── WALLET MODAL ──────────────────────────────────────────────────────
+async function openWalletModal() {
+  if (!S.customer) { openCustAuth(); return }
+  // تحديث البيانات
+  await loadCustomerProfile()
+  const c = S.customer
+  const coinsPerEgp = S.restaurant.coins_per_egp ?? 1000
+  const minRedeem   = S.restaurant.min_redeem_coins ?? 100000
+  document.getElementById('wallet-balance').textContent     = c.coins_balance.toLocaleString('ar-EG')
+  document.getElementById('wallet-balance-egp').textContent = `= ${(c.coins_balance / coinsPerEgp).toFixed(2)} ج.م`
+  document.getElementById('wallet-min-redeem-note').textContent = c.coins_balance >= minRedeem
+    ? `✅ يمكنك استخدام كوينزك الآن!`
+    : `تحتاج ${(minRedeem - c.coins_balance).toLocaleString('ar-EG')} كوين للوصول للحد الأدنى`
+  document.getElementById('wallet-ref-code').textContent    = c.referral_code || '---'
+  document.getElementById('wallet-ref-reward').textContent  = (S.restaurant.referral_coins ?? 5000).toLocaleString('ar-EG')
+
+  // طلبات العميل
+  const { data: orders } = await db.from('orders')
+    .select('id,order_number,total,status,created_at,coins_redeemed,loyalty_coins_earned')
+    .eq('customer_id', c.id)
+    .order('created_at', { ascending: false })
+    .limit(10)
+  const statusLabel = { pending:'⏳ قيد المراجعة', confirmed:'✅ مؤكد', ready:'📦 جاهز', delivering:'🛵 في الطريق', delivered:'✅ تم التسليم', cancelled:'❌ ملغي' }
+  const ordersEl = document.getElementById('wallet-orders-list')
+  ordersEl.innerHTML = orders && orders.length ? orders.map(o => `
+    <div style="background:#f9f9f9;border-radius:14px;padding:12px 14px;margin-bottom:8px;display:flex;justify-content:space-between;align-items:center">
+      <div>
+        <p style="font-size:13px;font-weight:800;color:#1a1a1a">${o.order_number}</p>
+        <p style="font-size:11px;color:#aaa">${new Date(o.created_at).toLocaleDateString('ar-EG')}</p>
+        ${o.loyalty_coins_earned ? `<p style="font-size:11px;color:#f97316">+${o.loyalty_coins_earned.toLocaleString('ar-EG')} 🪙</p>` : ''}
+      </div>
+      <div style="text-align:left">
+        <p style="font-size:14px;font-weight:900;color:var(--brand)">${Number(o.total).toFixed(2)} ج.م</p>
+        <p style="font-size:11px;color:#888">${statusLabel[o.status] || o.status}</p>
+      </div>
+    </div>`).join('') : `<p style="font-size:13px;color:#aaa;text-align:center;padding:12px 0">لا توجد طلبات بعد</p>`
+
+  // سجل الكوينز
+  const { data: txs } = await db.from('coin_transactions')
+    .select('*').eq('customer_id', c.id).order('created_at', { ascending: false }).limit(20)
+  const txLabel = { welcome:'🎁 بونص ترحيبي', referral_reward:'🔗 إحالة صديق', loyalty:'⭐ ولاء', redeem:'🛒 استخدام في طلب', gift:'🎀 هدية', discount_code:'🏷️ كود خصم' }
+  const txEl = document.getElementById('wallet-tx-list')
+  txEl.innerHTML = txs && txs.length ? txs.map(t => `
+    <div style="display:flex;justify-content:space-between;align-items:center;padding:10px 0;border-bottom:1px solid #f0f0f0">
+      <div>
+        <p style="font-size:13px;font-weight:700;color:#333">${txLabel[t.type] || t.type}</p>
+        <p style="font-size:11px;color:#bbb">${new Date(t.created_at).toLocaleDateString('ar-EG')} ${t.note ? '· ' + t.note : ''}</p>
+      </div>
+      <p style="font-size:15px;font-weight:900;color:${t.amount > 0 ? '#22c55e' : '#ef4444'}">${t.amount > 0 ? '+' : ''}${t.amount.toLocaleString('ar-EG')}</p>
+    </div>`).join('') : `<p style="font-size:13px;color:#aaa;text-align:center;padding:12px 0">لا توجد حركات بعد</p>`
+
+  document.getElementById('wallet-modal').classList.remove('hidden')
+  document.body.style.overflow = 'hidden'
+  pushModal('wallet', closeWalletModal)
+}
+function closeWalletModal(fromPopstate) {
+  document.getElementById('wallet-modal').classList.add('hidden')
+  document.body.style.overflow = ''
+  if (!fromPopstate) popModalSilently('wallet')
+}
+
+function copyReferralLink() {
+  if (!S.customer?.referral_code || !S.restaurant?.slug) return
+  const link = `${location.origin}${location.pathname}?r=${S.restaurant.slug}&ref=${S.customer.referral_code}`
+  navigator.clipboard.writeText(link).then(() => {
+    const btn = document.querySelector('#wallet-modal button[onclick="copyReferralLink()"]')
+    if (btn) { const orig = btn.textContent; btn.textContent = 'تم النسخ ✅'; setTimeout(() => btn.textContent = orig, 2000) }
+  })
+}
+
+// ── CELEBRATION ────────────────────────────────────────────────────────
+function showCelebration(coins) {
+  document.getElementById('celeb-coins').textContent = coins.toLocaleString('ar-EG')
+  document.getElementById('celebration-overlay').classList.remove('hidden')
+  document.body.style.overflow = 'hidden'
+  startConfetti()
+}
+function closeCelebration() {
+  document.getElementById('celebration-overlay').classList.add('hidden')
+  document.body.style.overflow = ''
+  stopConfetti()
+}
+
+let _confettiAnim = null
+let _confettiParts = []
+function startConfetti() {
+  const canvas = document.getElementById('confetti-canvas')
+  canvas.width  = window.innerWidth
+  canvas.height = window.innerHeight
+  const ctx = canvas.getContext('2d')
+  const colors = ['#FF6B00','#FFD700','#22c55e','#3b82f6','#ec4899','#f97316','#a855f7']
+  _confettiParts = Array.from({ length: 80 }, () => ({
+    x: Math.random() * canvas.width, y: Math.random() * canvas.height - canvas.height,
+    r: Math.random() * 8 + 4, color: colors[Math.floor(Math.random() * colors.length)],
+    speed: Math.random() * 3 + 1, angle: Math.random() * 360, spin: (Math.random() - 0.5) * 6
+  }))
+  function draw() {
+    ctx.clearRect(0, 0, canvas.width, canvas.height)
+    _confettiParts.forEach(p => {
+      ctx.save(); ctx.translate(p.x, p.y); ctx.rotate(p.angle * Math.PI / 180)
+      ctx.fillStyle = p.color; ctx.fillRect(-p.r / 2, -p.r / 2, p.r, p.r * 0.5); ctx.restore()
+      p.y += p.speed; p.angle += p.spin
+      if (p.y > canvas.height) { p.y = -10; p.x = Math.random() * canvas.width }
+    })
+    _confettiAnim = requestAnimationFrame(draw)
+  }
+  draw()
+}
+function stopConfetti() {
+  if (_confettiAnim) { cancelAnimationFrame(_confettiAnim); _confettiAnim = null }
+  const canvas = document.getElementById('confetti-canvas')
+  if (canvas) canvas.getContext('2d').clearRect(0, 0, canvas.width, canvas.height)
+}
+
+// ── DISCOUNT CODE ──────────────────────────────────────────────────────
+async function applyDiscountCode() {
+  const code  = document.getElementById('cart-discount-code').value.trim().toUpperCase()
+  const msgEl = document.getElementById('cart-discount-msg')
+  if (!code) return
+  msgEl.style.display = 'block'
+  msgEl.style.color = '#aaa'; msgEl.textContent = 'جاري التحقق...'
+
+  const now = new Date().toISOString()
+  const { data } = await db.from('discount_codes')
+    .select('*')
+    .eq('restaurant_id', S.restaurant.id)
+    .eq('code', code)
+    .eq('is_active', true)
+    .single()
+
+  if (!data) { msgEl.style.color = '#ef4444'; msgEl.textContent = '❌ الكود غير صحيح أو منتهي'; return }
+  if (data.valid_from && now < data.valid_from) { msgEl.style.color = '#ef4444'; msgEl.textContent = '❌ الكود لم يبدأ بعد'; return }
+  if (data.valid_until && now > data.valid_until) { msgEl.style.color = '#ef4444'; msgEl.textContent = '❌ الكود انتهت صلاحيته'; return }
+  if (data.max_uses !== null && data.used_count >= data.max_uses) { msgEl.style.color = '#ef4444'; msgEl.textContent = '❌ الكود استُنفد'; return }
+
+  _appliedDiscount = Number(data.discount_egp)
+  _appliedCode     = data.id
+  msgEl.style.color = '#22c55e'
+  msgEl.textContent = `✅ تم تطبيق خصم ${_appliedDiscount.toFixed(2)} ج.م`
+  renderCartItems()
+}
+
+// ── COINS IN CART ──────────────────────────────────────────────────────
+function updateCoinsRowInCart() {
+  const row = document.getElementById('cart-coins-row')
+  if (!row) return
+  const minRedeem = S.restaurant?.min_redeem_coins ?? 100000
+  if (S.customer && S.customer.coins_balance >= minRedeem && (S.restaurant?.loyalty_enabled)) {
+    const coinsPerEgp = S.restaurant.coins_per_egp ?? 1000
+    document.getElementById('cart-coins-available').textContent =
+      `رصيدك: ${S.customer.coins_balance.toLocaleString('ar-EG')} 🪙 = ${(S.customer.coins_balance / coinsPerEgp).toFixed(2)} ج.م`
+    row.style.display = 'block'
+  } else {
+    row.style.display = 'none'
+  }
+}
+
+function updateCoinsDiscount() {
+  const input = document.getElementById('cart-coins-input')
+  const preview = document.getElementById('cart-coins-discount-preview')
+  const val = parseInt(input.value) || 0
+  const coinsPerEgp = S.restaurant?.coins_per_egp ?? 1000
+  const maxCoins = Math.min(S.customer?.coins_balance || 0, val)
+  _coinsToRedeem = Math.max(0, Math.min(maxCoins, S.customer?.coins_balance || 0))
+  const disc = _coinsToRedeem / coinsPerEgp
+  if (_coinsToRedeem > 0) {
+    preview.textContent = `خصم ${disc.toFixed(2)} ج.م مقابل ${_coinsToRedeem.toLocaleString('ar-EG')} كوين`
+    preview.style.display = 'block'
+  } else {
+    preview.style.display = 'none'
+  }
+  renderCartItems()
+}
+
+function useMaxCoins() {
+  const bal = S.customer?.coins_balance || 0
+  const coinsPerEgp = S.restaurant?.coins_per_egp ?? 1000
+  const cartVal = cartTotal()
+  // لا تتجاوز قيمة الطلب
+  const maxByCart = Math.floor(cartVal * coinsPerEgp)
+  _coinsToRedeem = Math.min(bal, maxByCart)
+  document.getElementById('cart-coins-input').value = _coinsToRedeem
+  updateCoinsDiscount()
+}
+
+// ── REFERRAL PARAM ON LOAD ──────────────────────────────────────────────
+async function handleReferralParam() {
+  const ref = new URLSearchParams(location.search).get('ref')
+  if (!ref) return
+  // خزّن كود الإحالة مؤقتاً في localStorage لاستخدامه عند التسجيل
+  try { localStorage.setItem('pending_ref_code_' + S.restaurant.id, ref.toUpperCase()) } catch(e) {}
+}
+
+// ── AWARD LOYALTY COINS AFTER ORDER ────────────────────────────────────
+async function awardLoyaltyAndWelcome(orderId, orderItems, customerId) {
+  if (!S.restaurant?.loyalty_enabled) return
+  const coinsPerEgp = S.restaurant.coins_per_egp ?? 1000
+  let totalLoyalty = 0
+
+  // كوينز الولاء من المنتجات
+  for (const item of orderItems) {
+    if (item.type === 'bundle') continue
+    const prod = S.products.find(p => p.id === item.id)
+    if (prod?.loyalty_coins > 0) totalLoyalty += prod.loyalty_coins * item.qty
+  }
+
+  const cust = S.customer
+  if (!cust) return
+
+  let balanceDelta = 0
+  const txs = []
+
+  // بونص الترحيب عند أول طلب
+  if (!cust.welcome_coins_claimed) {
+    const welcomeCoins = S.restaurant.welcome_coins ?? 10000
+    txs.push({ customer_id: cust.id, restaurant_id: S.restaurant.id, type: 'welcome', amount: welcomeCoins, order_id: orderId, note: 'بونص الترحيب عند أول شراء' })
+    // welcome_coins كانت أُضيفت لحظة التسجيل كـ "معلّقة" — لا نضيفها مرة تانية
+    // كل اللي بنعمله هو نحدد claimed=true
+    await db.from('customers').update({ welcome_coins_claimed: true }).eq('id', cust.id)
+    S.customer.welcome_coins_claimed = true
+  }
+
+  // كوينز الولاء من المنتجات
+  if (totalLoyalty > 0) {
+    txs.push({ customer_id: cust.id, restaurant_id: S.restaurant.id, type: 'loyalty', amount: totalLoyalty, order_id: orderId, note: 'كوينز ولاء من الطلب' })
+    balanceDelta += totalLoyalty
+  }
+
+  // بونص إحالة — لو العميل أُحيل من شخص ولم يسبق منحه البونص
+  if (cust.referred_by && !cust.welcome_coins_claimed) {
+    const referralCoins = S.restaurant.referral_coins ?? 5000
+    txs.push({ customer_id: cust.referred_by, restaurant_id: S.restaurant.id, type: 'referral_reward', amount: referralCoins, order_id: orderId, note: `إحالة ناجحة` })
+    await db.from('customers').update({ coins_balance: db.rpc('increment', { row_id: cust.referred_by, amount: referralCoins }) }).eq('id', cust.referred_by)
+  }
+
+  if (txs.length) await db.from('coin_transactions').insert(txs)
+  if (balanceDelta > 0) {
+    const newBalance = (cust.coins_balance || 0) + balanceDelta
+    await db.from('customers').update({ coins_balance: newBalance }).eq('id', cust.id)
+    S.customer.coins_balance = newBalance
+  }
+
+  // تحديث loyalty_coins_earned في الطلب
+  if (totalLoyalty > 0) await db.from('orders').update({ loyalty_coins_earned: totalLoyalty }).eq('id', orderId)
+  updateWalletBadge()
+}
+
+// ── INCREMENT FUNCTION FOR REFERRAL ────────────────────────────────────
+// Supabase لا يدعم atomic increment بدون stored procedure — نستخدم RLS + select+update
+async function incrementCustomerCoins(customerId, amount) {
+  const { data } = await db.from('customers').select('coins_balance').eq('id', customerId).single()
+  if (data) await db.from('customers').update({ coins_balance: (data.coins_balance || 0) + amount }).eq('id', customerId)
 }
 
 // ── START ─────────────────────────────────────────────────────────────
