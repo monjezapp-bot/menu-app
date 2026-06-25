@@ -37,6 +37,11 @@
     @keyframes cartBounce { 0%, 100% { transform: scale(1); } 40% { transform: scale(1.04); } }
     @keyframes successPop { 0% { transform: scale(0.5); opacity: 0; } 70% { transform: scale(1.1); } 100% { transform: scale(1); opacity: 1; } }
 
+    #confirm-dialog { position:fixed; inset:0; z-index:90; background:rgba(0,0,0,0.5); backdrop-filter:blur(4px); align-items:flex-end; justify-content:center; }
+    #confirm-dialog.hidden { display:none !important; }
+    #confirm-dialog:not(.hidden) { display:flex; }
+    #confirm-dialog-inner { background:#fff; border-radius:24px 24px 0 0; width:100%; max-width:480px; padding:20px 20px 24px; animation:slideUp .28s cubic-bezier(0.34,1.1,0.64,1) both; }
+
     .fade-up    { animation: fadeUp   0.3s  ease both; }
     .sheet      { animation: slideUp  0.32s cubic-bezier(0.34, 1.1, 0.64, 1) both; }
     .page-in    { animation: pageIn   0.25s cubic-bezier(0.25, 0.46, 0.45, 0.94) both; }
@@ -497,6 +502,12 @@
         </svg>
         <span class="cart-mini-badge" id="cart-mini-badge" style="display:none"></span>
       </button>
+      <!-- زر المحفظة/تسجيل الدخول -->
+      <button id="wallet-mini-btn" onclick="openWalletOrLogin()"
+              style="display:flex;align-items:center;justify-content:center;width:34px;height:34px;border-radius:50%;background:rgba(255,255,255,0.18);position:relative;flex-shrink:0">
+        <span style="font-size:16px">🪙</span>
+        <span id="wallet-mini-badge" style="display:none;position:absolute;top:-3px;left:-3px;background:#22c55e;color:#fff;font-size:9px;font-weight:900;border-radius:10px;padding:1px 5px;min-width:18px;text-align:center"></span>
+      </button>
     </div>
 
     <!-- Search bar -->
@@ -630,6 +641,8 @@
                  style="width:100%;border:1.5px solid #eee;border-radius:12px;padding:10px 12px;font-size:13px;color:#444;outline:none;font-family:'Rubik',sans-serif;margin-bottom:7px;background:#fff" />
           <!-- Hidden location value + map picker button -->
           <input type="hidden" id="order-location" />
+          <input type="hidden" id="order-location-lat" />
+          <input type="hidden" id="order-location-lng" />
           <button id="map-pick-btn" onclick="openMapPicker()"
                   style="width:100%;border:1.5px solid #eee;border-radius:12px;padding:10px 12px;font-size:13px;color:#888;font-family:'Rubik',sans-serif;background:#fff;text-align:right;cursor:pointer;display:flex;align-items:center;gap:8px">
             <span style="font-size:16px">📍</span>
@@ -642,12 +655,48 @@
                   onkeydown="focusNextField(event, null, sendOrder)"
                   style="width:100%;border:1.5px solid #eee;border-radius:14px;padding:12px 14px;font-size:13px;color:#444;outline:none;font-family:'Rubik',sans-serif;resize:none;margin-bottom:10px"></textarea>
 
-        <!-- Total -->
-        <div style="display:flex;align-items:center;justify-content:space-between;margin-bottom:6px;padding:0 2px">
-          <span style="font-size:14px;font-weight:600;color:#999">الإجمالي</span>
-          <span id="cart-grand-total" style="font-size:24px;font-weight:900;color:var(--brand)">0 ج.م</span>
+        <!-- كود الخصم + الكوينز -->
+        <div id="cart-coins-section" style="margin-bottom:10px">
+          <!-- كود خصم -->
+          <div style="display:flex;gap:8px;margin-bottom:8px">
+            <input id="cart-discount-code" type="text" placeholder="كود الخصم (اختياري)" style="text-transform:uppercase;flex:1;border:1.5px solid #eee;border-radius:12px;padding:10px 12px;font-size:13px;color:#333;outline:none;font-family:'Rubik',sans-serif" />
+            <button onclick="applyDiscountCode()" style="background:var(--brand);color:#fff;font-size:13px;font-weight:800;border-radius:12px;padding:10px 16px;white-space:nowrap">تطبيق</button>
+          </div>
+          <p id="cart-discount-msg" style="font-size:11px;margin-bottom:6px;display:none"></p>
+          <!-- استخدام الكوينز — يظهر فقط للمسجّلين وعندهم رصيد كافي -->
+          <div id="cart-coins-row" style="display:none;background:#fff8f0;border:1.5px solid #ffe0c0;border-radius:14px;padding:12px 14px">
+            <div style="display:flex;justify-content:space-between;align-items:center;margin-bottom:8px">
+              <span style="font-size:13px;font-weight:800;color:#cc4a00">🪙 استخدم كوينزك</span>
+              <span id="cart-coins-available" style="font-size:12px;color:#888"></span>
+            </div>
+            <div style="display:flex;gap:8px;align-items:center">
+              <input id="cart-coins-input" type="number" min="0" placeholder="كم كوين تستخدم؟"
+                     oninput="updateCoinsDiscount()"
+                     style="flex:1;border:1.5px solid #eee;border-radius:10px;padding:9px 12px;font-size:13px;outline:none;font-family:'Rubik',sans-serif" />
+              <button onclick="useMaxCoins()" style="background:#ff6b00;color:#fff;font-size:12px;font-weight:800;border-radius:10px;padding:9px 12px;white-space:nowrap">الكل</button>
+            </div>
+            <p id="cart-coins-discount-preview" style="font-size:12px;color:#cc4a00;font-weight:700;margin-top:6px;display:none"></p>
+          </div>
         </div>
-        <p style="font-size:11px;color:#bbb;text-align:center;margin-bottom:10px">⚠️ السعر لا يشمل رسوم التوصيل</p>
+
+        <!-- Total -->
+        <div style="display:flex;align-items:center;justify-content:space-between;margin-bottom:4px;padding:0 2px">
+          <span style="font-size:14px;font-weight:600;color:#999">المنتجات</span>
+          <span id="cart-grand-total" style="font-size:20px;font-weight:900;color:var(--brand)">0 ج.م</span>
+        </div>
+        <div id="cart-delivery-row" style="display:none;align-items:center;justify-content:space-between;margin-bottom:6px;padding:0 2px"></div>
+        <div id="cart-discount-row" style="display:none;align-items:center;justify-content:space-between;margin-bottom:4px;padding:0 2px">
+          <span style="font-size:13px;font-weight:700;color:#22c55e">🏷️ خصم</span>
+          <span id="cart-discount-val" style="font-size:14px;font-weight:800;color:#22c55e"></span>
+        </div>
+        <div id="cart-coins-disc-row" style="display:none;align-items:center;justify-content:space-between;margin-bottom:4px;padding:0 2px">
+          <span style="font-size:13px;font-weight:700;color:#f97316">🪙 خصم الكوينز</span>
+          <span id="cart-coins-disc-val" style="font-size:14px;font-weight:800;color:#f97316"></span>
+        </div>
+        <div id="cart-final-row" style="display:none;align-items:center;justify-content:space-between;margin-bottom:6px;padding:6px 4px 0;border-top:1.5px dashed #eee">
+          <span style="font-size:14px;font-weight:900;color:#1a1a1a">الإجمالي بعد الخصم</span>
+          <span id="cart-final-total" style="font-size:20px;font-weight:900;color:#1a1a1a"></span>
+        </div>
 
         <!-- Send button -->
         <button id="send-order-btn" onclick="sendOrder()"
@@ -706,9 +755,18 @@
   <div class="bg-white rounded-3xl shadow-2xl mx-4 w-full max-w-sm p-8 text-center fade-up">
     <div class="success-icon text-6xl mb-4">⏳</div>
     <h2 id="success-title" style="font-size:22px;font-weight:900;color:#1a1a1a;margin-bottom:6px">تم استلام طلبك!</h2>
-    <p id="success-order-num" style="font-size:15px;font-weight:700;color:#FF6B00;margin-bottom:6px"></p>
+    <p id="success-order-num" style="font-size:15px;font-weight:700;color:#FF6B00;margin-bottom:4px"></p>
+    <p id="success-delivery-fee" style="display:none;font-size:12px;color:#888;font-weight:600;margin-bottom:6px"></p>
     <p id="success-sub-msg"   style="font-size:13px;color:#aaa;margin-bottom:8px">🔔 في انتظار تأكيد المطعم...</p>
+    <div id="success-tracking-steps" class="hidden" style="align-items:flex-start;margin:18px 0 8px"></div>
     <p id="success-cancel-reason" class="hidden" style="font-size:13px;color:#ef4444;background:#fef2f2;border-radius:12px;padding:10px 14px;margin-bottom:16px;font-weight:700"></p>
+    <div id="success-delay-warning" class="hidden" style="font-size:12px;color:#92660a;background:#fff8e1;border-radius:12px;padding:10px 14px;margin-bottom:16px;text-align:right">
+      ⏱️ المطعم بياخد وقت أطول من المعتاد للرد، طلبك لسه محفوظ وموجود — جرّب تتواصل مع المطعم مباشرة لو حابب تستفسر.
+    </div>
+    <button id="confirm-receipt-btn" onclick="confirmOrderReceipt()" class="hidden"
+            style="width:100%;background:#22c55e;color:#fff;font-size:14px;font-weight:900;border-radius:16px;padding:13px;margin-bottom:8px">
+      ✅ تم استلام طلبي
+    </button>
     <button onclick="closeSuccessModal()"
             style="width:100%;background:var(--brand);color:#fff;font-size:15px;font-weight:900;border-radius:16px;padding:14px;margin-top:8px">
       تمام 👍
@@ -716,9 +774,101 @@
   </div>
 </div>
 
-<!-- ══════════════════════════════════════════
-     JAVASCRIPT
-══════════════════════════════════════════ -->
+<!-- Confirm Dialog (يُستخدم لتأكيد الخروج من التطبيق وغيرها) -->
+<div id="confirm-dialog" class="hidden">
+  <div id="confirm-dialog-inner">
+    <div style="width:40px;height:4px;background:#e8e8e8;border-radius:4px;margin:0 auto 20px"></div>
+    <p id="confirm-msg" style="font-size:15px;font-weight:700;color:#1a1a1a;text-align:center;margin-bottom:24px;line-height:1.6"></p>
+    <div style="display:flex;gap:12px">
+      <button onclick="closeConfirm()" style="flex:1;background:#f5f5f5;color:#666;font-weight:700;border-radius:14px;padding:14px;font-size:14px;font-family:'Rubik',sans-serif">إلغاء</button>
+      <button id="confirm-yes-btn"     style="flex:1;background:#ef4444;color:#fff;font-weight:700;border-radius:14px;padding:14px;font-size:14px;font-family:'Rubik',sans-serif">تأكيد</button>
+    </div>
+  </div>
+</div>
+
+<!-- ══ CUSTOMER AUTH MODAL ══ -->
+<div id="cust-auth-modal" class="hidden fixed inset-0 z-[70] flex items-end justify-center" style="background:rgba(0,0,0,0.55);backdrop-filter:blur(5px)">
+  <div class="bg-white rounded-t-3xl w-full max-w-lg p-6 sheet space-y-4" style="max-height:92vh;overflow-y:auto">
+    <div style="width:40px;height:4px;background:#e8e8e8;border-radius:4px;margin:0 auto 4px"></div>
+    <div id="cauth-step-login">
+      <h3 style="font-size:18px;font-weight:900;color:#1a1a1a;margin-bottom:2px">🪙 سجّل دخولك واكسب كوينز</h3>
+      <p style="font-size:12px;color:#aaa;margin-bottom:16px">تتبع طلباتك، اكسب كوينز واستبدلها بخصومات</p>
+      <input id="cauth-email" type="email" placeholder="البريد الإلكتروني" inputmode="email" autocomplete="email"
+             style="width:100%;border:1.5px solid #eee;border-radius:12px;padding:12px 14px;font-size:14px;color:#333;outline:none;font-family:'Rubik',sans-serif;margin-bottom:8px" />
+      <input id="cauth-pass" type="password" placeholder="كلمة السر (6 أحرف على الأقل)"
+             style="width:100%;border:1.5px solid #eee;border-radius:12px;padding:12px 14px;font-size:14px;color:#333;outline:none;font-family:'Rubik',sans-serif;margin-bottom:8px" />
+      <div id="cauth-extra" class="hidden space-y-2" style="margin-bottom:8px">
+        <input id="cauth-name"  type="text" placeholder="اسمك (اختياري)"
+               style="width:100%;border:1.5px solid #eee;border-radius:12px;padding:11px 14px;font-size:14px;color:#333;outline:none;font-family:'Rubik',sans-serif" />
+        <input id="cauth-phone" type="tel"  placeholder="رقم موبايلك (اختياري)"
+               style="width:100%;border:1.5px solid #eee;border-radius:12px;padding:11px 14px;font-size:14px;color:#333;outline:none;font-family:'Rubik',sans-serif" />
+        <input id="cauth-ref"   type="text" placeholder="كود إحالة صديقك (اختياري)" style="text-transform:uppercase"
+               style="width:100%;border:1.5px solid #eee;border-radius:12px;padding:11px 14px;font-size:14px;color:#333;outline:none;font-family:'Rubik',sans-serif" />
+      </div>
+      <p id="cauth-error" class="hidden" style="font-size:12px;color:#ef4444;margin-bottom:8px;font-weight:700"></p>
+      <button id="cauth-main-btn" onclick="custAuthSubmit()"
+              style="width:100%;background:var(--brand);color:#fff;font-size:15px;font-weight:900;border-radius:16px;padding:14px;margin-bottom:10px">دخول</button>
+      <button onclick="toggleCauthMode()"
+              style="width:100%;background:#f5f5f5;color:#555;font-size:13px;font-weight:700;border-radius:14px;padding:12px;margin-bottom:8px" id="cauth-toggle-btn">مش عندك حساب؟ سجّل دلوقتي 🎁</button>
+      <button onclick="closeCustAuth()" style="width:100%;color:#bbb;font-size:12px;font-weight:600;padding:6px">إغلاق</button>
+    </div>
+  </div>
+</div>
+
+<!-- ══ WALLET MODAL ══ -->
+<div id="wallet-modal" class="hidden fixed inset-0 z-[70] flex items-end justify-center" style="background:rgba(0,0,0,0.55);backdrop-filter:blur(5px)">
+  <div class="bg-white rounded-t-3xl w-full max-w-lg sheet" style="max-height:92vh;overflow-y:auto">
+    <div style="padding:20px 20px 0">
+      <div style="width:40px;height:4px;background:#e8e8e8;border-radius:4px;margin:0 auto 16px"></div>
+      <!-- رصيد الكوينز -->
+      <div style="background:linear-gradient(135deg,#FF6B00,#ff9a3c);border-radius:20px;padding:20px;color:#fff;margin-bottom:16px;position:relative;overflow:hidden">
+        <div style="position:absolute;top:-20px;left:-20px;width:100px;height:100px;background:rgba(255,255,255,0.08);border-radius:50%"></div>
+        <div style="position:absolute;bottom:-30px;right:-10px;width:130px;height:130px;background:rgba(255,255,255,0.06);border-radius:50%"></div>
+        <p style="font-size:12px;font-weight:700;opacity:0.85;margin-bottom:4px">محفظة الكوينز 🪙</p>
+        <p id="wallet-balance" style="font-size:36px;font-weight:900;margin-bottom:2px">0</p>
+        <p id="wallet-balance-egp" style="font-size:13px;opacity:0.75">= 0.00 ج.م</p>
+        <p id="wallet-min-redeem-note" style="font-size:11px;opacity:0.65;margin-top:6px"></p>
+      </div>
+      <!-- كود الإحالة -->
+      <div style="background:#f9f9f9;border-radius:16px;padding:14px;margin-bottom:16px">
+        <p style="font-size:12px;font-weight:800;color:#888;margin-bottom:8px">🔗 شارك المنيو واكسب كوينز</p>
+        <div style="display:flex;gap:8px;align-items:center">
+          <p id="wallet-ref-code" style="font-size:18px;font-weight:900;color:var(--brand);letter-spacing:3px;flex:1"></p>
+          <button onclick="copyReferralLink()" style="background:var(--brand);color:#fff;font-size:12px;font-weight:800;border-radius:10px;padding:8px 14px">نسخ الرابط</button>
+        </div>
+        <p style="font-size:11px;color:#bbb;margin-top:6px">عند أول شراء لصديقك تكسب <span id="wallet-ref-reward"></span> كوين 🪙</p>
+      </div>
+      <!-- تاريخ الطلبات -->
+      <p style="font-size:14px;font-weight:900;color:#1a1a1a;margin-bottom:8px">📋 طلباتي السابقة</p>
+      <div id="wallet-orders-list" style="margin-bottom:12px"></div>
+      <!-- سجل الكوينز -->
+      <p style="font-size:14px;font-weight:900;color:#1a1a1a;margin-bottom:8px">🪙 سجل الكوينز</p>
+      <div id="wallet-tx-list" style="margin-bottom:20px"></div>
+    </div>
+    <div style="padding:0 20px 20px;position:sticky;bottom:0;background:#fff">
+      <button onclick="custLogout()" style="width:100%;background:#f5f5f5;color:#888;font-size:13px;font-weight:700;border-radius:14px;padding:13px;margin-bottom:8px">تسجيل خروج</button>
+      <button onclick="closeWalletModal()" style="width:100%;background:var(--brand);color:#fff;font-size:15px;font-weight:900;border-radius:16px;padding:14px">إغلاق</button>
+    </div>
+  </div>
+</div>
+
+<!-- ══ CELEBRATION OVERLAY ══ -->
+<div id="celebration-overlay" class="hidden fixed inset-0 z-[80] flex flex-col items-center justify-center" style="background:rgba(0,0,0,0.75);backdrop-filter:blur(4px)">
+  <canvas id="confetti-canvas" class="absolute inset-0" style="pointer-events:none;width:100%;height:100%"></canvas>
+  <div style="position:relative;text-align:center;padding:32px 28px;background:#fff;border-radius:28px;max-width:320px;width:90%;animation:successPop 0.5s cubic-bezier(0.34,1.5,0.64,1) both">
+    <div style="font-size:64px;margin-bottom:8px">🎉</div>
+    <h2 style="font-size:22px;font-weight:900;color:#1a1a1a;margin-bottom:6px">أهلاً بيك! 🎊</h2>
+    <p style="font-size:14px;color:#666;margin-bottom:12px">هديتك جاهزة عند أول طلب</p>
+    <div style="background:linear-gradient(135deg,#FF6B00,#ff9a3c);border-radius:16px;padding:16px;color:#fff;margin-bottom:16px">
+      <p style="font-size:13px;font-weight:700;opacity:0.85">🪙 بونص الترحيب</p>
+      <p id="celeb-coins" style="font-size:32px;font-weight:900">10,000</p>
+      <p style="font-size:12px;opacity:0.8">كوين في انتظارك عند أول شراء</p>
+    </div>
+    <button onclick="closeCelebration()" style="width:100%;background:var(--brand);color:#fff;font-size:15px;font-weight:900;border-radius:16px;padding:14px">يلا نطلب! 🛒</button>
+  </div>
+</div>
+
+<!-- ══ JAVASCRIPT ══ -->
 <script>
 // ── CONFIG ────────────────────────────────────────────────────────────
 const SUPABASE_URL  = 'https://pcmyugeqveyjnappulng.supabase.co'
@@ -734,10 +884,13 @@ const S = {
   products:      [],
   bundles:       [],
   banners:       [],
+  branches:      [],
   cart:          [],
   activeCat:     null,
   search:        '',
-  currentBanner: 0
+  currentBanner: 0,
+  customer:      null,   // بيانات العميل المسجّل
+  coinTxs:       [],     // حركات المحفظة
 }
 
 // ── CART PERSISTENCE ──────────────────────────────────────────────────
@@ -767,9 +920,45 @@ function popModalSilently(name) {
   _modalStack.splice(idx, 1)
   if (history.state && history.state._modalName === name) history.back()
 }
-window.addEventListener('popstate', () => {
+
+// طبقة أمان أساسية تمنع خروج العميل من التطبيق بالكامل بضغطة رجوع واحدة بالغلط
+// وهو واقف على الصفحة الرئيسية (بدون أي مودال مفتوح فوقها)
+let _confirmResolve = null
+function showConfirm(msg, btnLabel='تأكيد') {
+  return new Promise(resolve => {
+    _confirmResolve = resolve
+    document.getElementById('confirm-msg').textContent     = msg
+    document.getElementById('confirm-yes-btn').textContent = btnLabel
+    document.getElementById('confirm-yes-btn').onclick = () => { closeConfirm(); resolve(true) }
+    document.getElementById('confirm-dialog').classList.remove('hidden')
+  })
+}
+function closeConfirm() {
+  document.getElementById('confirm-dialog').classList.add('hidden')
+  if (_confirmResolve) { _confirmResolve(false); _confirmResolve = null }
+}
+
+let _exitConfirmOpen = false
+let _exitConfirmedByUser = false
+history.pushState({ _appBase: true }, '') // طبقة حماية فوق صفحة الدخول الأصلية
+
+window.addEventListener('popstate', async () => {
   const top = _modalStack.pop()
-  if (top) top.closeFn(true) // true = استُدعيت من popstate، لا تستدعي history.back() مرة أخرى
+  if (top) { top.closeFn(true); return } // true = استُدعيت من popstate، لا تستدعي history.back() مرة أخرى
+
+  // لو العميل أكّد الخروج بالفعل، نسمح بهذا الرجوع يكتمل طبيعياً (يعيده لصفحة الدخول الأصلية للموقع)
+  if (_exitConfirmedByUser) { _exitConfirmedByUser = false; return }
+
+  // الـ stack فاضي = العميل واقف على الصفحة الرئيسية وضغط رجوع
+  history.pushState({ _appBase: true }, '') // نعيد إضافة طبقة الحماية فوراً لمنع الخروج الفعلي
+  if (_exitConfirmOpen) return // تجاهل ضغطات متكررة وقت ظهور السؤال بالفعل
+  _exitConfirmOpen = true
+  const confirmed = await showConfirm('هل أنت متأكد من الخروج؟', 'نعم، خروج')
+  _exitConfirmOpen = false
+  if (confirmed) {
+    _exitConfirmedByUser = true
+    history.back() // رجوع طبيعي واحد فقط — هذه المرة لن يُعاد إضافة طبقة الحماية (بسبب العلم أعلاه)
+  }
 })
 
 // ── BOOT ──────────────────────────────────────────────────────────────
@@ -792,6 +981,8 @@ async function boot() {
     showState('app')
     initScrollBehavior()
     initScrollSpy()
+    await initCustomerSession()
+    handleReferralParam()
 
     // إظهار شريط المعاينة فقط لو الرابط الحالي فعلياً يحتوي على preview=1 (فحص مزدوج للتأكيد)
     const previewBar = document.getElementById('back-to-dash')
@@ -813,19 +1004,20 @@ function retryLoad() {
 async function loadData(slug) {
   const { data: r, error: rErr } = await db
     .from('restaurants')
-    .select('id,name,logo_url,cover_url,whatsapp,theme,slug,announcement_text,announcement_active,order_receive_method')
+    .select('id,name,logo_url,cover_url,whatsapp,theme,slug,announcement_text,announcement_active,order_receive_method,price_per_km,loyalty_enabled,welcome_coins,referral_coins,min_redeem_coins,coins_per_egp')
     .eq('slug', slug).eq('is_active', true).single()
 
   if (rErr || !r) throw new Error('المطعم غير موجود أو غير نشط')
   S.restaurant = r
 
-  const [catRes, prodRes, bundleRes, bannerRes] = await Promise.all([
+  const [catRes, prodRes, bundleRes, bannerRes, branchRes] = await Promise.all([
     db.from('categories').select('id,name,sort_order,icon_url').eq('restaurant_id', r.id).order('sort_order'),
     db.from('products')
-      .select('id,category_id,name,description,price,discount_price,offer_badge,discount_active,discount_starts_at,discount_ends_at,image_url,sort_order,is_available,status,availability,unit,product_options,also_with')
+      .select('id,category_id,name,description,price,discount_price,offer_badge,discount_active,discount_starts_at,discount_ends_at,image_url,sort_order,is_available,status,availability,unit,product_options,also_with,prep_minutes,loyalty_coins')
       .eq('restaurant_id', r.id).neq('status', 'hidden').order('sort_order'),
     db.from('bundles').select('id,name,description,price,image_url,items,sort_order').eq('restaurant_id', r.id).eq('is_active', true).order('sort_order'),
-    db.from('banners').select('id,image_url,link_type,link_value,sort_order').eq('restaurant_id', r.id).order('sort_order')
+    db.from('banners').select('id,image_url,link_type,link_value,sort_order').eq('restaurant_id', r.id).order('sort_order'),
+    db.from('branches').select('id,name,lat,lng').eq('restaurant_id', r.id).eq('is_active', true)
   ])
 
   if (catRes.error)  throw new Error('فشل تحميل التصنيفات')
@@ -833,8 +1025,17 @@ async function loadData(slug) {
 
   S.categories = catRes.data
   S.products   = prodRes.data
-  S.bundles    = bundleRes.data ?? []
+  S.branches   = branchRes.data ?? []
   S.banners    = bannerRes.data ?? []
+
+  // جلب bundle_branches مفلترة بالـ ids بتاعة bundles هذا المطعم
+  const bundleIds = (bundleRes.data ?? []).map(b => b.id)
+  const bbMap = {}
+  if (bundleIds.length) {
+    const { data: bbData } = await db.from('bundle_branches').select('bundle_id,branch_id').in('bundle_id', bundleIds)
+    ;(bbData || []).forEach(row => { if (!bbMap[row.bundle_id]) bbMap[row.bundle_id] = []; bbMap[row.bundle_id].push(row.branch_id) })
+  }
+  S.bundles    = (bundleRes.data ?? []).map(b => ({ ...b, branch_ids: bbMap[b.id] || [] }))
   S.activeCat  = catRes.data[0]?.id ?? null
 }
 
@@ -1119,11 +1320,26 @@ function renderAllSections(filtered) {
     </div>`
   }).join('')
 
-  const bundlesHTML = S.bundles.length && !filtered ? `
-    <div id="sec-bundles" class="fade-up" style="margin-top:4px">
+  const bundlesHTML = S.bundles.length && !filtered ? (() => {
+    // فلتر البنادل حسب أقرب فرع لو محدد
+    const custLat = parseFloat(document.getElementById('order-location-lat')?.value)
+    const custLng = parseFloat(document.getElementById('order-location-lng')?.value)
+    let nearestBranchId = null
+    if (!isNaN(custLat) && !isNaN(custLng) && S.branches.length) {
+      const r = findNearestBranch(custLat, custLng)
+      if (r) nearestBranchId = r.branch.id
+    }
+    const visibleBundles = S.bundles.filter(b => {
+      if (!b.branch_ids || b.branch_ids.length === 0) return true // كل الفروع
+      if (!nearestBranchId) return true // موقع العميل غير محدد → اعرض الكل
+      return b.branch_ids.includes(nearestBranchId)
+    })
+    if (!visibleBundles.length) return ''
+    return `<div id="sec-bundles" class="fade-up" style="margin-top:4px">
       <p class="section-title">🎁 العروض والباقات</p>
-      ${S.bundles.map(b => bundleCardHTML(b)).join('')}
-    </div>` : ''
+      ${visibleBundles.map(b => bundleCardHTML(b)).join('')}
+    </div>`
+  })() : ''
 
   const uncatItems = prods.filter(p => !p.category_id)
   const uncatHTML  = uncatItems.length ? `
@@ -1196,6 +1412,26 @@ function isDiscountActive(p) {
   return Number(p.discount_price) < Number(p.price)
 }
 function fmt(v)          { return `${Number(v).toFixed(0)} ج.م` }
+
+// المسافة بالكيلومتر بين نقطتين (صيغة Haversine)
+function distanceKm(lat1, lng1, lat2, lng2) {
+  const R = 6371
+  const dLat = (lat2 - lat1) * Math.PI / 180
+  const dLng = (lng2 - lng1) * Math.PI / 180
+  const a = Math.sin(dLat/2)**2 + Math.cos(lat1*Math.PI/180) * Math.cos(lat2*Math.PI/180) * Math.sin(dLng/2)**2
+  return R * 2 * Math.atan2(Math.sqrt(a), Math.sqrt(1-a))
+}
+// أقرب فرع نشط لموقع العميل، باستثناء الفروع المرفوضة مسبقاً لهذا الطلب (للتحويل التلقائي عند الرفض)
+function findNearestBranch(custLat, custLng, excludeIds = []) {
+  const candidates = (S.branches || []).filter(b => !excludeIds.includes(b.id))
+  if (!candidates.length) return null
+  let nearest = null, minDist = Infinity
+  candidates.forEach(b => {
+    const d = distanceKm(custLat, custLng, b.lat, b.lng)
+    if (d < minDist) { minDist = d; nearest = b }
+  })
+  return { branch: nearest, distanceKm: minDist }
+}
 // تنضيف رقم تواصل المطعم لصيغة دولية موحدة قبل استخدامه في رابط tel:
 // (يغطي صيغ مختلفة: 0 محلي / + / مسافات / بدون كود دولة)
 function normalizeWhatsAppNumber(raw) {
@@ -1527,6 +1763,48 @@ function renderCartItems() {
     </div>`).join('')
 
   tot.textContent = fmt(cartTotal())
+
+  // عرض رسوم التوصيل التقديرية لو العميل حدد موقعه
+  const deliveryRow = document.getElementById('cart-delivery-row')
+  const custLat = document.getElementById('order-location-lat')?.value
+  const custLng = document.getElementById('order-location-lng')?.value
+  const pricePerKm = parseFloat(S.restaurant?.price_per_km) || 0
+  if (deliveryRow) {
+    if (custLat && custLng && pricePerKm > 0 && S.branches.length) {
+      const result = findNearestBranch(parseFloat(custLat), parseFloat(custLng))
+      if (result) {
+        const fee = Math.round(result.distanceKm * pricePerKm * 100) / 100
+        deliveryRow.innerHTML = `<span style="font-size:13px;color:#888">🛵 رسوم التوصيل (${result.distanceKm.toFixed(1)} كم)</span><span style="font-size:13px;font-weight:900;color:#555">${fmt(fee)}</span>`
+        deliveryRow.style.display = 'flex'
+      } else deliveryRow.style.display = 'none'
+    } else deliveryRow.style.display = 'none'
+  }
+
+  // خصم الكود
+  const discRow = document.getElementById('cart-discount-row')
+  const discVal  = document.getElementById('cart-discount-val')
+  if (_appliedDiscount > 0) {
+    discRow.style.display = 'flex'; discVal.textContent = '- ' + fmt(_appliedDiscount)
+  } else { discRow.style.display = 'none' }
+
+  // خصم الكوينز
+  const coinsDiscRow = document.getElementById('cart-coins-disc-row')
+  const coinsDiscVal  = document.getElementById('cart-coins-disc-val')
+  const coinsPerEgp  = S.restaurant?.coins_per_egp ?? 1000
+  const coinsDiscount = _coinsToRedeem > 0 ? _coinsToRedeem / coinsPerEgp : 0
+  if (coinsDiscount > 0) {
+    coinsDiscRow.style.display = 'flex'; coinsDiscVal.textContent = '- ' + fmt(coinsDiscount)
+  } else { coinsDiscRow.style.display = 'none' }
+
+  // الإجمالي النهائي
+  const finalRow = document.getElementById('cart-final-row')
+  const finalTot  = document.getElementById('cart-final-total')
+  const totalDiscount = _appliedDiscount + coinsDiscount
+  if (totalDiscount > 0) {
+    const rawTotal = cartTotal()
+    const final    = Math.max(0, rawTotal - totalDiscount)
+    finalRow.style.display = 'flex'; finalTot.textContent = fmt(final)
+  } else { finalRow.style.display = 'none' }
 }
 
 // ── TOAST ─────────────────────────────────────────────────────────────
@@ -1550,7 +1828,7 @@ function markFieldError(id) {
   if (el) { el.style.borderColor = '#ef4444'; el.addEventListener('input', () => { el.style.borderColor = '#eee' }, { once: true }) }
 }
 function clearFieldErrors() {
-  ;['order-phone', 'order-address'].forEach(id => { const el = document.getElementById(id); if (el) el.style.borderColor = '#eee' })
+  ;['order-phone', 'map-pick-btn'].forEach(id => { const el = document.getElementById(id); if (el) el.style.borderColor = '#eee' })
 }
 
 // تفاعل لوحة المفاتيح: الضغط على "تم/Next" ينقل التركيز للحقل التالي،
@@ -1579,17 +1857,20 @@ async function sendOrder() {
   const custPhone= document.getElementById('order-phone').value.trim()
   const custAddr = document.getElementById('order-address').value.trim()
   const custLoc  = document.getElementById('order-location').value.trim()
+  const custLat  = document.getElementById('order-location-lat').value
+  const custLng  = document.getElementById('order-location-lng').value
   const note     = document.getElementById('order-note').value.trim()
 
-  // تحقق إجباري: لو الطلب توصيل (مفيش رقم طاولة)، لازم رقم تواصل + (عنوان أو موقع على الخريطة)
+  // تحقق إجباري: لو الطلب توصيل (مفيش رقم طاولة)، لازم رقم تواصل + تحديد الموقع على الخريطة
+  // (الموقع إجباري وليس بديلاً اختيارياً للعنوان، لأنه أساس حساب أقرب فرع وتكلفة التوصيل)
   clearFieldErrors()
   if (!table) {
     const missing = []
     if (!custPhone) missing.push('order-phone')
-    if (!custAddr && !custLoc) missing.push('order-address')
+    if (!custLat) missing.push('map-pick-btn')
     if (missing.length) {
       missing.forEach(id => markFieldError(id))
-      showToast('من فضلك اكتب رقم تواصلك وعنوانك (أو حدد موقعك) لإتمام التوصيل')
+      showToast('من فضلك اكتب رقم تواصلك وحدد موقعك على الخريطة لإتمام التوصيل')
       document.getElementById(missing[0]).scrollIntoView({ behavior: 'smooth', block: 'center' })
       return
     }
@@ -1607,6 +1888,36 @@ async function sendOrder() {
   }))
   const total = cartTotal()
 
+  // الوقت التقديري الكلي للطلب = أكبر وقت تجهيز بين كل المنتجات (تُجهَّز بالتوازي لا بالتتابع)
+  const estimatedPrepMinutes = Math.max(
+    10, // حد أدنى افتراضي لو مفيش بيانات وقت تجهيز
+    ...S.cart.map(c => {
+      if (c.type === 'bundle') return 10 // العروض المجمّعة: قيمة افتراضية (لا يوجد وقت تجهيز مخصص لها حالياً)
+      const product = S.products.find(p => p.id === c.id)
+      return product?.prep_minutes || 10
+    })
+  )
+
+  // أقرب فرع نشط لموقع العميل (لو الطلب توصيل ومفيش طاولة) — أساس توجيه الطلب وحساب التوصيل
+  let nearestBranchId = null
+  let deliveryFee     = 0
+  if (!table && custLat && custLng && S.branches.length) {
+    const result = findNearestBranch(parseFloat(custLat), parseFloat(custLng))
+    if (result) {
+      nearestBranchId = result.branch.id
+      const pricePerKm = parseFloat(S.restaurant.price_per_km) || 0
+      if (pricePerKm > 0) {
+        deliveryFee = Math.round(result.distanceKm * pricePerKm * 100) / 100
+      }
+    }
+  }
+  const grandTotal = Math.round((cartTotal() + deliveryFee) * 100) / 100
+
+  // الخصومات
+  const coinsPerEgp    = S.restaurant?.coins_per_egp ?? 1000
+  const coinsDiscountEgp = _coinsToRedeem > 0 ? Math.round(_coinsToRedeem / coinsPerEgp * 100) / 100 : 0
+  const finalTotal     = Math.max(0, Math.round((grandTotal - _appliedDiscount - coinsDiscountEgp) * 100) / 100)
+
   // Save order to DB — the merchant receives it live in the dashboard (no WhatsApp)
   let orderId, orderNumber
   try {
@@ -1617,19 +1928,52 @@ async function sendOrder() {
       .insert({
         restaurant_id:    S.restaurant.id,
         order_number:     rpc,
-        items, total,
+        items, total:     finalTotal,
         table_number:     table     || null,
-        customer_name:    custName  || null,
-        customer_phone:   custPhone || null,
+        customer_name:    custName  || S.customer?.name || null,
+        customer_phone:   custPhone || S.customer?.phone || null,
         customer_address: custAddr  || null,
         customer_location:custLoc   || null,
-        note:             note      || null
+        customer_lat:     custLat   ? parseFloat(custLat) : null,
+        customer_lng:     custLng   ? parseFloat(custLng) : null,
+        note:             note      || null,
+        estimated_prep_minutes: estimatedPrepMinutes,
+        branch_id:        nearestBranchId,
+        delivery_fee:     deliveryFee > 0 ? deliveryFee : null,
+        customer_id:      S.customer?.id || null,
+        coins_redeemed:   _coinsToRedeem > 0 ? _coinsToRedeem : null,
+        coins_discount:   coinsDiscountEgp > 0 ? coinsDiscountEgp : null,
+        discount_code:    _appliedCode ? document.getElementById('cart-discount-code').value.trim().toUpperCase() : null,
+        discount_code_amount: _appliedDiscount > 0 ? _appliedDiscount : null
       })
       .select('id,order_number').single()
 
     if (ie || !od?.order_number) throw new Error(ie?.message || 'insert failed')
     orderId     = od.id
     orderNumber = od.order_number
+
+    // خصم الكوينز المستخدمة من المحفظة
+    if (_coinsToRedeem > 0 && S.customer) {
+      const newBal = Math.max(0, (S.customer.coins_balance || 0) - _coinsToRedeem)
+      await db.from('menu_customers').update({ coins_balance: newBal }).eq('id', S.customer.id)
+      await db.from('coin_transactions').insert({
+        customer_id: S.customer.id, restaurant_id: S.restaurant.id,
+        type: 'redeem', amount: -_coinsToRedeem, order_id: orderId,
+        note: `استخدام في طلب ${orderNumber}`
+      })
+      S.customer.coins_balance = newBal
+    }
+
+    // تحديث عداد الكود المستخدم
+    if (_appliedCode) {
+      await db.from('discount_codes').update({ used_count: db.rpc }).eq('id', _appliedCode)
+      // increment used_count
+      const { data: codeRow } = await db.from('discount_codes').select('used_count').eq('id', _appliedCode).single()
+      if (codeRow) await db.from('discount_codes').update({ used_count: (codeRow.used_count || 0) + 1 }).eq('id', _appliedCode)
+    }
+
+    // منح كوينز الولاء بعد الطلب
+    await awardLoyaltyAndWelcome(orderId, items, S.customer?.id)
   } catch(e) {
     console.error('Order save failed:', e)
     btn.style.opacity = '1'
@@ -1639,50 +1983,91 @@ async function sendOrder() {
   }
 
   clearCart(); updateCartUI(); closeCartSheet()
-  ;['order-name', 'order-phone', 'order-address', 'order-location', 'order-note', 'table-number-input']
+  ;['order-name', 'order-phone', 'order-address', 'order-location', 'order-note', 'table-number-input', 'cart-discount-code']
     .forEach(id => { const el = document.getElementById(id); if (el) el.value = '' })
+  document.getElementById('order-location-lat').value = ''
+  document.getElementById('order-location-lng').value = ''
+  const coinsInput = document.getElementById('cart-coins-input'); if (coinsInput) coinsInput.value = ''
+  document.getElementById('cart-discount-msg').style.display = 'none'
+  _appliedDiscount = 0; _appliedCode = null; _coinsToRedeem = 0
   resetBtn()
-  showOrderSuccess(orderNumber)
+  showOrderSuccess(orderNumber, orderId, finalTotal, deliveryFee)
   trackOrderStatus(orderId)
 }
 
 // ── ORDER STATUS TRACKING (live) ────────────────────────────────────────
 let _orderTrackChannel = null
+let _orderDelayTimeout  = null
+const ORDER_DELAY_WARNING_SECONDS = 300 // 5 دقائق بدون استجابة من المطعم = تنبيه للعميل
+
 function trackOrderStatus(orderId) {
   if (_orderTrackChannel) { db.removeChannel(_orderTrackChannel); _orderTrackChannel = null }
   _orderTrackChannel = db
     .channel('order-status-' + orderId)
     .on('postgres_changes', { event: 'UPDATE', schema: 'public', table: 'orders', filter: `id=eq.${orderId}` }, p => handleOrderStatusChange(p.new))
     .subscribe()
+
+  clearTimeout(_orderDelayTimeout)
+  _orderDelayTimeout = setTimeout(() => showOrderDelayWarning(), ORDER_DELAY_WARNING_SECONDS * 1000)
+}
+// تنبيه العميل لو الطلب فضل بدون استجابة من المطعم لفترة غير طبيعية —
+// لا يعني هذا فقدان الطلب، فقط تنبيه بوجود تأخير مع تأكيد أن الطلب لم يُفقد
+function showOrderDelayWarning() {
+  const msgEl = document.getElementById('success-sub-msg')
+  if (!msgEl || msgEl.dataset.state !== 'pending') return // الطلب أُكِّد أو اترفض بالفعل، التحذير غير مطلوب
+  const warnEl = document.getElementById('success-delay-warning')
+  if (warnEl) warnEl.classList.remove('hidden')
 }
 function handleOrderStatusChange(order) {
-  if (order.status === 'confirmed') {
-    updateSuccessModalState('confirmed')
-  } else if (order.status === 'cancelled') {
-    updateSuccessModalState('cancelled', order.cancel_reason)
+  if (['confirmed', 'ready', 'delivering', 'delivered', 'cancelled'].includes(order.status)) {
+    updateSuccessModalState(order.status, order.cancel_reason, order)
   }
 }
 
-function showOrderSuccess(orderNumber) {
+function showOrderSuccess(orderNumber, orderId, total, deliveryFee) {
   document.getElementById('success-order-num').textContent = `رقم الطلب: ${orderNumber}`
+  // عرض رسوم التوصيل في مودال النجاح
+  const dfEl = document.getElementById('success-delivery-fee')
+  if (dfEl) {
+    if (deliveryFee > 0) {
+      dfEl.textContent = `🛵 رسوم التوصيل: ${fmt(deliveryFee)} — الإجمالي: ${fmt(total)}`
+      dfEl.style.display = 'block'
+    } else dfEl.style.display = 'none'
+  }
+  document.getElementById('order-success-modal').dataset.orderId = orderId
   setSuccessModalVisual('pending')
   document.getElementById('order-success-modal').classList.remove('hidden')
   document.body.style.overflow = 'hidden'
   pushModal('success', closeSuccessModal)
 }
-function updateSuccessModalState(state, cancelReason) {
+function updateSuccessModalState(state, cancelReason, order) {
   // لو المستخدم قفل المودال بالفعل، نفتحه تاني عشان يشوف نتيجة طلبه أكيد
   document.getElementById('order-success-modal').classList.remove('hidden')
   document.body.style.overflow = 'hidden'
-  setSuccessModalVisual(state, cancelReason)
-  if (_orderTrackChannel) { db.removeChannel(_orderTrackChannel); _orderTrackChannel = null }
+  setSuccessModalVisual(state, cancelReason, order)
+  // الاشتراك يستمر طوال مراحل التتبع، ويُلغى فقط عند الوصول لحالة نهائية (تم التسليم أو الرفض)
+  if ((state === 'delivered' || state === 'cancelled') && _orderTrackChannel) {
+    db.removeChannel(_orderTrackChannel); _orderTrackChannel = null
+  }
 }
-function setSuccessModalVisual(state, cancelReason) {
+function setSuccessModalVisual(state, cancelReason, order) {
   const iconEl  = document.querySelector('#order-success-modal .success-icon')
   const titleEl = document.getElementById('success-title')
   const msgEl   = document.getElementById('success-sub-msg')
   const reasonEl= document.getElementById('success-cancel-reason')
+  const stepsEl = document.getElementById('success-tracking-steps')
+  const delayEl = document.getElementById('success-delay-warning')
   reasonEl.classList.add('hidden')
+  stepsEl.classList.add('hidden')
+  msgEl.dataset.state = state
+  if (state !== 'pending') { delayEl.classList.add('hidden'); clearTimeout(_orderDelayTimeout) }
+
+  const TRACKING_STATES = ['confirmed', 'ready', 'delivering', 'delivered']
+  if (TRACKING_STATES.includes(state)) {
+    stepsEl.classList.remove('hidden')
+    stepsEl.style.display = 'flex'
+    renderTrackingSteps(state)
+  }
 
   if (state === 'pending') {
     iconEl.textContent = '⏳'
@@ -1690,10 +2075,30 @@ function setSuccessModalVisual(state, cancelReason) {
     msgEl.textContent = '🔔 في انتظار تأكيد المطعم...'
     msgEl.style.color = '#aaa'
   } else if (state === 'confirmed') {
-    iconEl.textContent = '✅'
+    iconEl.textContent = '👨‍🍳'
     titleEl.textContent = 'تم تأكيد طلبك!'
-    msgEl.textContent = 'المطعم بيجهز طلبك دلوقتي 🎉'
+    const prepMin = order?.estimated_prep_minutes
+    msgEl.textContent = prepMin ? `جاري التجهيز — تقريباً ${prepMin} دقيقة 🎉` : 'المطعم بيجهز طلبك دلوقتي 🎉'
     msgEl.style.color = '#22c55e'
+  } else if (state === 'ready') {
+    iconEl.textContent = '📦'
+    titleEl.textContent = 'طلبك جاهز!'
+    msgEl.textContent = 'في انتظار استلام مندوب التوصيل'
+    msgEl.style.color = '#a855f7'
+  } else if (state === 'delivering') {
+    iconEl.textContent = '🛵'
+    titleEl.textContent = 'الطلب في الطريق إليك!'
+    msgEl.textContent = 'المندوب في الطريق الآن'
+    msgEl.style.color = '#6366f1'
+    document.getElementById('confirm-receipt-btn').classList.remove('hidden')
+    startAutoConfirmTimer(order?.id)
+  } else if (state === 'delivered') {
+    iconEl.textContent = '🎉'
+    titleEl.textContent = 'تم التسليم!'
+    msgEl.textContent = 'بالعافية، نتمنى أن تكون استمتعت بطلبك'
+    msgEl.style.color = '#22c55e'
+    document.getElementById('confirm-receipt-btn').classList.add('hidden')
+    clearTimeout(_autoConfirmTimeout)
   } else if (state === 'cancelled') {
     iconEl.textContent = '❌'
     titleEl.textContent = 'تعذّر قبول الطلب'
@@ -1703,7 +2108,50 @@ function setSuccessModalVisual(state, cancelReason) {
       reasonEl.textContent = `السبب: ${cancelReason}`
       reasonEl.classList.remove('hidden')
     }
+  } else {
+    document.getElementById('confirm-receipt-btn').classList.add('hidden')
   }
+}
+// تأكيد استلام يدوي من العميل (زر "تم استلام طلبي")
+async function confirmOrderReceipt() {
+  const orderId = document.getElementById('order-success-modal').dataset.orderId
+  if (!orderId) return
+  await db.from('orders').update({ status: 'delivered', delivered_at: new Date().toISOString() }).eq('id', orderId)
+  document.getElementById('confirm-receipt-btn').classList.add('hidden')
+}
+// تأكيد استلام تلقائي لو العميل لم يضغط الزر بنفسه بعد مدة معقولة من بدء التوصيل
+let _autoConfirmTimeout = null
+const AUTO_CONFIRM_MINUTES_AFTER_DELIVERING = 30
+function startAutoConfirmTimer(orderId) {
+  clearTimeout(_autoConfirmTimeout)
+  if (!orderId) return
+  _autoConfirmTimeout = setTimeout(async () => {
+    await db.from('orders').update({ status: 'delivered', delivered_at: new Date().toISOString() }).eq('id', orderId)
+  }, AUTO_CONFIRM_MINUTES_AFTER_DELIVERING * 60 * 1000)
+}
+// يعرض شريط مراحل بصري (4 نقاط متصلة) يوضّح موقع الطلب الحالي ضمن رحلة التجهيز والتوصيل
+function renderTrackingSteps(currentState) {
+  const steps = [
+    { key: 'confirmed',  icon: '👨‍🍳', label: 'التجهيز' },
+    { key: 'ready',      icon: '📦',   label: 'جاهز' },
+    { key: 'delivering', icon: '🛵',   label: 'التوصيل' },
+    { key: 'delivered',  icon: '🎉',   label: 'التسليم' }
+  ]
+  const currentIdx = steps.findIndex(s => s.key === currentState)
+  const el = document.getElementById('success-tracking-steps')
+  el.innerHTML = steps.map((s, i) => {
+    const isDone   = i < currentIdx
+    const isActive = i === currentIdx
+    const color = isDone || isActive ? 'var(--brand)' : '#e5e5e5'
+    const textColor = isDone || isActive ? '#1a1a1a' : '#bbb'
+    return `
+      <div style="display:flex;flex-direction:column;align-items:center;flex:1">
+        <div style="width:32px;height:32px;border-radius:50%;background:${color};display:flex;align-items:center;justify-content:center;font-size:14px;${isActive ? 'box-shadow:0 0 0 4px ' + color + '33' : ''}">${isDone || isActive ? s.icon : ''}</div>
+        <p style="font-size:10px;font-weight:700;color:${textColor};margin-top:4px">${s.label}</p>
+      </div>
+      ${i < steps.length - 1 ? `<div style="flex:0.5;height:2px;background:${i < currentIdx ? 'var(--brand)' : '#e5e5e5'};margin-top:16px"></div>` : ''}
+    `
+  }).join('')
 }
 function closeSuccessModal(fromPopstate) {
   document.getElementById('order-success-modal').classList.add('hidden')
@@ -1763,11 +2211,415 @@ function useMyLocation() {
 function confirmLocation() {
   if (_pickedLat === null) { closeMapPicker(); return }
   const url = `https://www.google.com/maps?q=${_pickedLat},${_pickedLng}`
-  document.getElementById('order-location').value = url
+  document.getElementById('order-location').value     = url
+  document.getElementById('order-location-lat').value = _pickedLat
+  document.getElementById('order-location-lng').value = _pickedLng
   document.getElementById('map-pick-label').textContent = `✅ تم تحديد الموقع (${_pickedLat.toFixed(4)}, ${_pickedLng.toFixed(4)})`
   document.getElementById('map-pick-btn').style.borderColor = 'var(--brand)'
   document.getElementById('map-pick-btn').style.color       = 'var(--brand)'
   closeMapPicker()
+  // تحديث عرض رسوم التوصيل في السلة فور تحديد الموقع
+  renderCartItems()
+}
+
+// ── CUSTOMER AUTH & WALLET ─────────────────────────────────────────────────
+let _custAuthMode  = 'login'  // 'login' | 'signup'
+let _appliedDiscount = 0      // خصم الكود بالجنيه
+let _appliedCode     = null   // الكود المطبّق
+let _coinsToRedeem   = 0      // كوينز سيتم استخدامها في الطلب
+
+async function initCustomerSession() {
+  const { data: { session } } = await db.auth.getSession()
+  if (!session) return
+  await loadCustomerProfile()
+}
+
+async function loadCustomerProfile() {
+  const { data: { user } } = await db.auth.getUser()
+  if (!user || !S.restaurant) return
+  const { data } = await db.from('menu_customers')
+    .select('*')
+    .eq('user_id', user.id)
+    .eq('restaurant_id', S.restaurant.id)
+    .single()
+  S.customer = data || null
+  updateWalletBadge()
+  updateCoinsRowInCart()
+}
+
+function updateWalletBadge() {
+  const badge = document.getElementById('wallet-mini-badge')
+  if (!badge) return
+  if (S.customer && S.customer.coins_balance > 0) {
+    const egp = (S.customer.coins_balance / 1000).toFixed(0)
+    badge.textContent = egp + 'ج'
+    badge.style.display = 'block'
+  } else {
+    badge.style.display = 'none'
+  }
+}
+
+function openWalletOrLogin() {
+  if (S.customer) openWalletModal()
+  else openCustAuth()
+}
+
+function openCustAuth() {
+  _custAuthMode = 'login'
+  syncCauthUI()
+  document.getElementById('cust-auth-modal').classList.remove('hidden')
+  document.body.style.overflow = 'hidden'
+  pushModal('custauth', closeCustAuth)
+  setTimeout(() => document.getElementById('cauth-email').focus(), 200)
+}
+function closeCustAuth(fromPopstate) {
+  document.getElementById('cust-auth-modal').classList.add('hidden')
+  document.body.style.overflow = ''
+  if (!fromPopstate) popModalSilently('custauth')
+}
+
+function toggleCauthMode() {
+  _custAuthMode = _custAuthMode === 'login' ? 'signup' : 'login'
+  syncCauthUI()
+}
+function syncCauthUI() {
+  const isSignup = _custAuthMode === 'signup'
+  document.getElementById('cauth-extra').classList.toggle('hidden', !isSignup)
+  document.getElementById('cauth-main-btn').textContent = isSignup ? 'إنشاء حساب 🎁' : 'دخول'
+  document.getElementById('cauth-toggle-btn').textContent = isSignup ? 'عندك حساب؟ سجّل دخولك' : 'مش عندك حساب؟ سجّل دلوقتي 🎁'
+  document.getElementById('cauth-error').classList.add('hidden')
+}
+
+async function custAuthSubmit() {
+  const email = document.getElementById('cauth-email').value.trim()
+  const pass  = document.getElementById('cauth-pass').value
+  const errEl = document.getElementById('cauth-error')
+  errEl.classList.add('hidden')
+  if (!email || !pass) { errEl.textContent = 'البريد وكلمة السر مطلوبان'; errEl.classList.remove('hidden'); return }
+  if (pass.length < 6)  { errEl.textContent = 'كلمة السر 6 أحرف على الأقل'; errEl.classList.remove('hidden'); return }
+
+  document.getElementById('cauth-main-btn').textContent = '...'
+
+  if (_custAuthMode === 'login') {
+    const { error } = await db.auth.signInWithPassword({ email, password: pass })
+    if (error) { errEl.textContent = 'البيانات غير صحيحة أو الحساب غير موجود'; errEl.classList.remove('hidden'); document.getElementById('cauth-main-btn').textContent = 'دخول'; return }
+    await loadCustomerProfile()
+    closeCustAuth()
+    updateCoinsRowInCart()
+  } else {
+    const name  = document.getElementById('cauth-name').value.trim()
+    const phone = document.getElementById('cauth-phone').value.trim()
+    const ref   = document.getElementById('cauth-ref').value.trim().toUpperCase()
+    const { data: signData, error: signErr } = await db.auth.signUp({ email, password: pass })
+    if (signErr) { errEl.textContent = signErr.message; errEl.classList.remove('hidden'); document.getElementById('cauth-main-btn').textContent = 'إنشاء حساب 🎁'; return }
+    // إنشاء بروفايل العميل
+    const refCode = await genUniqueReferralCode()
+    let referredBy = null
+    if (ref) {
+      const { data: refCustomer } = await db.from('menu_customers').select('id').eq('referral_code', ref).eq('restaurant_id', S.restaurant.id).single()
+      if (refCustomer) referredBy = refCustomer.id
+    }
+    const welcomeCoins = S.restaurant.welcome_coins ?? 10000
+    const { data: newCust } = await db.from('menu_customers').insert({
+      user_id: signData.user.id, restaurant_id: S.restaurant.id,
+      name: name || null, phone: phone || null, email,
+      coins_balance: welcomeCoins,
+      referral_code: refCode,
+      referred_by: referredBy,
+      welcome_coins_claimed: false
+    }).select('*').single()
+    // تسجيل حركة البونص الترحيبي
+    if (newCust) {
+      await db.from('coin_transactions').insert({
+        customer_id: newCust.id, restaurant_id: S.restaurant.id,
+        type: 'welcome', amount: welcomeCoins,
+        note: `بونص الترحيب — يُستلم عند أول طلب`
+      })
+    }
+    S.customer = newCust
+    closeCustAuth()
+    updateWalletBadge()
+    updateCoinsRowInCart()
+    // احتفال
+    showCelebration(welcomeCoins)
+  }
+}
+
+async function genUniqueReferralCode() {
+  const chars = 'ABCDEFGHJKLMNPQRSTUVWXYZ23456789'
+  for (let i = 0; i < 10; i++) {
+    let code = ''
+    for (let j = 0; j < 6; j++) code += chars[Math.floor(Math.random() * chars.length)]
+    const { data } = await db.from('menu_customers').select('id').eq('referral_code', code).eq('restaurant_id', S.restaurant.id).maybeSingle()
+    if (!data) return code
+  }
+  return 'REF' + Date.now().toString(36).toUpperCase().slice(-3)
+}
+
+async function custLogout() {
+  await db.auth.signOut()
+  S.customer = null
+  _coinsToRedeem = 0
+  _appliedDiscount = 0
+  _appliedCode = null
+  updateWalletBadge()
+  updateCoinsRowInCart()
+  closeWalletModal()
+  renderCartItems()
+}
+
+// ── WALLET MODAL ──────────────────────────────────────────────────────
+async function openWalletModal() {
+  if (!S.customer) { openCustAuth(); return }
+  // تحديث البيانات
+  await loadCustomerProfile()
+  const c = S.customer
+  const coinsPerEgp = S.restaurant.coins_per_egp ?? 1000
+  const minRedeem   = S.restaurant.min_redeem_coins ?? 100000
+  document.getElementById('wallet-balance').textContent     = c.coins_balance.toLocaleString('ar-EG')
+  document.getElementById('wallet-balance-egp').textContent = `= ${(c.coins_balance / coinsPerEgp).toFixed(2)} ج.م`
+  document.getElementById('wallet-min-redeem-note').textContent = c.coins_balance >= minRedeem
+    ? `✅ يمكنك استخدام كوينزك الآن!`
+    : `تحتاج ${(minRedeem - c.coins_balance).toLocaleString('ar-EG')} كوين للوصول للحد الأدنى`
+  document.getElementById('wallet-ref-code').textContent    = c.referral_code || '---'
+  document.getElementById('wallet-ref-reward').textContent  = (S.restaurant.referral_coins ?? 5000).toLocaleString('ar-EG')
+
+  // طلبات العميل
+  const { data: orders } = await db.from('orders')
+    .select('id,order_number,total,status,created_at,coins_redeemed,loyalty_coins_earned')
+    .eq('customer_id', c.id)
+    .order('created_at', { ascending: false })
+    .limit(10)
+  const statusLabel = { pending:'⏳ قيد المراجعة', confirmed:'✅ مؤكد', ready:'📦 جاهز', delivering:'🛵 في الطريق', delivered:'✅ تم التسليم', cancelled:'❌ ملغي' }
+  const ordersEl = document.getElementById('wallet-orders-list')
+  ordersEl.innerHTML = orders && orders.length ? orders.map(o => `
+    <div style="background:#f9f9f9;border-radius:14px;padding:12px 14px;margin-bottom:8px;display:flex;justify-content:space-between;align-items:center">
+      <div>
+        <p style="font-size:13px;font-weight:800;color:#1a1a1a">${o.order_number}</p>
+        <p style="font-size:11px;color:#aaa">${new Date(o.created_at).toLocaleDateString('ar-EG')}</p>
+        ${o.loyalty_coins_earned ? `<p style="font-size:11px;color:#f97316">+${o.loyalty_coins_earned.toLocaleString('ar-EG')} 🪙</p>` : ''}
+      </div>
+      <div style="text-align:left">
+        <p style="font-size:14px;font-weight:900;color:var(--brand)">${Number(o.total).toFixed(2)} ج.م</p>
+        <p style="font-size:11px;color:#888">${statusLabel[o.status] || o.status}</p>
+      </div>
+    </div>`).join('') : `<p style="font-size:13px;color:#aaa;text-align:center;padding:12px 0">لا توجد طلبات بعد</p>`
+
+  // سجل الكوينز
+  const { data: txs } = await db.from('coin_transactions')
+    .select('*').eq('customer_id', c.id).order('created_at', { ascending: false }).limit(20)
+  const txLabel = { welcome:'🎁 بونص ترحيبي', referral_reward:'🔗 إحالة صديق', loyalty:'⭐ ولاء', redeem:'🛒 استخدام في طلب', gift:'🎀 هدية', discount_code:'🏷️ كود خصم' }
+  const txEl = document.getElementById('wallet-tx-list')
+  txEl.innerHTML = txs && txs.length ? txs.map(t => `
+    <div style="display:flex;justify-content:space-between;align-items:center;padding:10px 0;border-bottom:1px solid #f0f0f0">
+      <div>
+        <p style="font-size:13px;font-weight:700;color:#333">${txLabel[t.type] || t.type}</p>
+        <p style="font-size:11px;color:#bbb">${new Date(t.created_at).toLocaleDateString('ar-EG')} ${t.note ? '· ' + t.note : ''}</p>
+      </div>
+      <p style="font-size:15px;font-weight:900;color:${t.amount > 0 ? '#22c55e' : '#ef4444'}">${t.amount > 0 ? '+' : ''}${t.amount.toLocaleString('ar-EG')}</p>
+    </div>`).join('') : `<p style="font-size:13px;color:#aaa;text-align:center;padding:12px 0">لا توجد حركات بعد</p>`
+
+  document.getElementById('wallet-modal').classList.remove('hidden')
+  document.body.style.overflow = 'hidden'
+  pushModal('wallet', closeWalletModal)
+}
+function closeWalletModal(fromPopstate) {
+  document.getElementById('wallet-modal').classList.add('hidden')
+  document.body.style.overflow = ''
+  if (!fromPopstate) popModalSilently('wallet')
+}
+
+function copyReferralLink() {
+  if (!S.customer?.referral_code || !S.restaurant?.slug) return
+  const link = `${location.origin}${location.pathname}?r=${S.restaurant.slug}&ref=${S.customer.referral_code}`
+  navigator.clipboard.writeText(link).then(() => {
+    const btn = document.querySelector('#wallet-modal button[onclick="copyReferralLink()"]')
+    if (btn) { const orig = btn.textContent; btn.textContent = 'تم النسخ ✅'; setTimeout(() => btn.textContent = orig, 2000) }
+  })
+}
+
+// ── CELEBRATION ────────────────────────────────────────────────────────
+function showCelebration(coins) {
+  document.getElementById('celeb-coins').textContent = coins.toLocaleString('ar-EG')
+  document.getElementById('celebration-overlay').classList.remove('hidden')
+  document.body.style.overflow = 'hidden'
+  startConfetti()
+}
+function closeCelebration() {
+  document.getElementById('celebration-overlay').classList.add('hidden')
+  document.body.style.overflow = ''
+  stopConfetti()
+}
+
+let _confettiAnim = null
+let _confettiParts = []
+function startConfetti() {
+  const canvas = document.getElementById('confetti-canvas')
+  canvas.width  = window.innerWidth
+  canvas.height = window.innerHeight
+  const ctx = canvas.getContext('2d')
+  const colors = ['#FF6B00','#FFD700','#22c55e','#3b82f6','#ec4899','#f97316','#a855f7']
+  _confettiParts = Array.from({ length: 80 }, () => ({
+    x: Math.random() * canvas.width, y: Math.random() * canvas.height - canvas.height,
+    r: Math.random() * 8 + 4, color: colors[Math.floor(Math.random() * colors.length)],
+    speed: Math.random() * 3 + 1, angle: Math.random() * 360, spin: (Math.random() - 0.5) * 6
+  }))
+  function draw() {
+    ctx.clearRect(0, 0, canvas.width, canvas.height)
+    _confettiParts.forEach(p => {
+      ctx.save(); ctx.translate(p.x, p.y); ctx.rotate(p.angle * Math.PI / 180)
+      ctx.fillStyle = p.color; ctx.fillRect(-p.r / 2, -p.r / 2, p.r, p.r * 0.5); ctx.restore()
+      p.y += p.speed; p.angle += p.spin
+      if (p.y > canvas.height) { p.y = -10; p.x = Math.random() * canvas.width }
+    })
+    _confettiAnim = requestAnimationFrame(draw)
+  }
+  draw()
+}
+function stopConfetti() {
+  if (_confettiAnim) { cancelAnimationFrame(_confettiAnim); _confettiAnim = null }
+  const canvas = document.getElementById('confetti-canvas')
+  if (canvas) canvas.getContext('2d').clearRect(0, 0, canvas.width, canvas.height)
+}
+
+// ── DISCOUNT CODE ──────────────────────────────────────────────────────
+async function applyDiscountCode() {
+  const code  = document.getElementById('cart-discount-code').value.trim().toUpperCase()
+  const msgEl = document.getElementById('cart-discount-msg')
+  if (!code) return
+  msgEl.style.display = 'block'
+  msgEl.style.color = '#aaa'; msgEl.textContent = 'جاري التحقق...'
+
+  const now = new Date().toISOString()
+  const { data } = await db.from('discount_codes')
+    .select('*')
+    .eq('restaurant_id', S.restaurant.id)
+    .eq('code', code)
+    .eq('is_active', true)
+    .single()
+
+  if (!data) { msgEl.style.color = '#ef4444'; msgEl.textContent = '❌ الكود غير صحيح أو منتهي'; return }
+  if (data.valid_from && now < data.valid_from) { msgEl.style.color = '#ef4444'; msgEl.textContent = '❌ الكود لم يبدأ بعد'; return }
+  if (data.valid_until && now > data.valid_until) { msgEl.style.color = '#ef4444'; msgEl.textContent = '❌ الكود انتهت صلاحيته'; return }
+  if (data.max_uses !== null && data.used_count >= data.max_uses) { msgEl.style.color = '#ef4444'; msgEl.textContent = '❌ الكود استُنفد'; return }
+
+  _appliedDiscount = Number(data.discount_egp)
+  _appliedCode     = data.id
+  msgEl.style.color = '#22c55e'
+  msgEl.textContent = `✅ تم تطبيق خصم ${_appliedDiscount.toFixed(2)} ج.م`
+  renderCartItems()
+}
+
+// ── COINS IN CART ──────────────────────────────────────────────────────
+function updateCoinsRowInCart() {
+  const row = document.getElementById('cart-coins-row')
+  if (!row) return
+  const minRedeem = S.restaurant?.min_redeem_coins ?? 100000
+  if (S.customer && S.customer.coins_balance >= minRedeem && (S.restaurant?.loyalty_enabled)) {
+    const coinsPerEgp = S.restaurant.coins_per_egp ?? 1000
+    document.getElementById('cart-coins-available').textContent =
+      `رصيدك: ${S.customer.coins_balance.toLocaleString('ar-EG')} 🪙 = ${(S.customer.coins_balance / coinsPerEgp).toFixed(2)} ج.م`
+    row.style.display = 'block'
+  } else {
+    row.style.display = 'none'
+  }
+}
+
+function updateCoinsDiscount() {
+  const input = document.getElementById('cart-coins-input')
+  const preview = document.getElementById('cart-coins-discount-preview')
+  const val = parseInt(input.value) || 0
+  const coinsPerEgp = S.restaurant?.coins_per_egp ?? 1000
+  const maxCoins = Math.min(S.customer?.coins_balance || 0, val)
+  _coinsToRedeem = Math.max(0, Math.min(maxCoins, S.customer?.coins_balance || 0))
+  const disc = _coinsToRedeem / coinsPerEgp
+  if (_coinsToRedeem > 0) {
+    preview.textContent = `خصم ${disc.toFixed(2)} ج.م مقابل ${_coinsToRedeem.toLocaleString('ar-EG')} كوين`
+    preview.style.display = 'block'
+  } else {
+    preview.style.display = 'none'
+  }
+  renderCartItems()
+}
+
+function useMaxCoins() {
+  const bal = S.customer?.coins_balance || 0
+  const coinsPerEgp = S.restaurant?.coins_per_egp ?? 1000
+  const cartVal = cartTotal()
+  // لا تتجاوز قيمة الطلب
+  const maxByCart = Math.floor(cartVal * coinsPerEgp)
+  _coinsToRedeem = Math.min(bal, maxByCart)
+  document.getElementById('cart-coins-input').value = _coinsToRedeem
+  updateCoinsDiscount()
+}
+
+// ── REFERRAL PARAM ON LOAD ──────────────────────────────────────────────
+async function handleReferralParam() {
+  const ref = new URLSearchParams(location.search).get('ref')
+  if (!ref) return
+  // خزّن كود الإحالة مؤقتاً في localStorage لاستخدامه عند التسجيل
+  try { localStorage.setItem('pending_ref_code_' + S.restaurant.id, ref.toUpperCase()) } catch(e) {}
+}
+
+// ── AWARD LOYALTY COINS AFTER ORDER ────────────────────────────────────
+async function awardLoyaltyAndWelcome(orderId, orderItems, customerId) {
+  if (!S.restaurant?.loyalty_enabled) return
+  const coinsPerEgp = S.restaurant.coins_per_egp ?? 1000
+  let totalLoyalty = 0
+
+  // كوينز الولاء من المنتجات
+  for (const item of orderItems) {
+    if (item.type === 'bundle') continue
+    const prod = S.products.find(p => p.id === item.id)
+    if (prod?.loyalty_coins > 0) totalLoyalty += prod.loyalty_coins * item.qty
+  }
+
+  const cust = S.customer
+  if (!cust) return
+
+  let balanceDelta = 0
+  const txs = []
+
+  // بونص الترحيب عند أول طلب
+  if (!cust.welcome_coins_claimed) {
+    const welcomeCoins = S.restaurant.welcome_coins ?? 10000
+    txs.push({ customer_id: cust.id, restaurant_id: S.restaurant.id, type: 'welcome', amount: welcomeCoins, order_id: orderId, note: 'بونص الترحيب عند أول شراء' })
+    // welcome_coins كانت أُضيفت لحظة التسجيل كـ "معلّقة" — لا نضيفها مرة تانية
+    // كل اللي بنعمله هو نحدد claimed=true
+    await db.from('menu_customers').update({ welcome_coins_claimed: true }).eq('id', cust.id)
+    S.customer.welcome_coins_claimed = true
+  }
+
+  // كوينز الولاء من المنتجات
+  if (totalLoyalty > 0) {
+    txs.push({ customer_id: cust.id, restaurant_id: S.restaurant.id, type: 'loyalty', amount: totalLoyalty, order_id: orderId, note: 'كوينز ولاء من الطلب' })
+    balanceDelta += totalLoyalty
+  }
+
+  // بونص إحالة — لو العميل أُحيل من شخص ولم يسبق منحه البونص
+  if (cust.referred_by && !cust.welcome_coins_claimed) {
+    const referralCoins = S.restaurant.referral_coins ?? 5000
+    txs.push({ customer_id: cust.referred_by, restaurant_id: S.restaurant.id, type: 'referral_reward', amount: referralCoins, order_id: orderId, note: `إحالة ناجحة` })
+    await db.from('menu_customers').update({ coins_balance: db.rpc('increment', { row_id: cust.referred_by, amount: referralCoins }) }).eq('id', cust.referred_by)
+  }
+
+  if (txs.length) await db.from('coin_transactions').insert(txs)
+  if (balanceDelta > 0) {
+    const newBalance = (cust.coins_balance || 0) + balanceDelta
+    await db.from('menu_customers').update({ coins_balance: newBalance }).eq('id', cust.id)
+    S.customer.coins_balance = newBalance
+  }
+
+  // تحديث loyalty_coins_earned في الطلب
+  if (totalLoyalty > 0) await db.from('orders').update({ loyalty_coins_earned: totalLoyalty }).eq('id', orderId)
+  updateWalletBadge()
+}
+
+// ── INCREMENT FUNCTION FOR REFERRAL ────────────────────────────────────
+// Supabase لا يدعم atomic increment بدون stored procedure — نستخدم RLS + select+update
+async function incrementCustomerCoins(customerId, amount) {
+  const { data } = await db.from('menu_customers').select('coins_balance').eq('id', customerId).single()
+  if (data) await db.from('menu_customers').update({ coins_balance: (data.coins_balance || 0) + amount }).eq('id', customerId)
 }
 
 // ── START ─────────────────────────────────────────────────────────────
