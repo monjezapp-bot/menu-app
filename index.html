@@ -1734,11 +1734,21 @@ function renderCartItems() {
   const custLng = document.getElementById('order-location-lng')?.value
   const pricePerKm = parseFloat(S.restaurant?.price_per_km) || 0
   if (deliveryRow) {
-    if (custLat && custLng && pricePerKm > 0 && S.branches.length) {
-      const result = findNearestBranch(parseFloat(custLat), parseFloat(custLng))
-      if (result) {
-        const fee = Math.round(result.distanceKm * pricePerKm * 100) / 100
-        deliveryRow.innerHTML = `<span style="font-size:13px;color:#888">🛵 رسوم التوصيل (${result.distanceKm.toFixed(1)} كم)</span><span style="font-size:13px;font-weight:900;color:#555">${fmt(fee)}</span>`
+    // استخدم الفروع أو موقع المطعم كـ fallback
+    const restLat = parseFloat(S.restaurant?.lat)
+    const restLng = parseFloat(S.restaurant?.lng)
+    const hasOrigin = S.branches.length > 0 || (!isNaN(restLat) && !isNaN(restLng))
+    if (custLat && custLng && pricePerKm > 0 && hasOrigin) {
+      let distKm = null
+      if (S.branches.length > 0) {
+        const result = findNearestBranch(parseFloat(custLat), parseFloat(custLng))
+        if (result) distKm = result.distanceKm
+      } else {
+        distKm = distanceKm(parseFloat(custLat), parseFloat(custLng), restLat, restLng)
+      }
+      if (distKm !== null) {
+        const fee = Math.round(distKm * pricePerKm * 100) / 100
+        deliveryRow.innerHTML = `<span style="font-size:13px;color:#888">🛵 رسوم التوصيل (${distKm.toFixed(1)} كم)</span><span style="font-size:13px;font-weight:900;color:#555">${fmt(fee)}</span>`
         deliveryRow.style.display = 'flex'
       } else deliveryRow.style.display = 'none'
     } else deliveryRow.style.display = 'none'
@@ -1865,13 +1875,21 @@ async function sendOrder() {
   // أقرب فرع نشط لموقع العميل (لو الطلب توصيل ومفيش طاولة) — أساس توجيه الطلب وحساب التوصيل
   let nearestBranchId = null
   let deliveryFee     = 0
-  if (!table && custLat && custLng && S.branches.length) {
-    const result = findNearestBranch(parseFloat(custLat), parseFloat(custLng))
-    if (result) {
-      nearestBranchId = result.branch.id
-      const pricePerKm = parseFloat(S.restaurant.price_per_km) || 0
-      if (pricePerKm > 0) {
-        deliveryFee = Math.round(result.distanceKm * pricePerKm * 100) / 100
+  if (!table && custLat && custLng) {
+    const pricePerKm = parseFloat(S.restaurant.price_per_km) || 0
+    if (S.branches.length > 0) {
+      const result = findNearestBranch(parseFloat(custLat), parseFloat(custLng))
+      if (result) {
+        nearestBranchId = result.branch.id
+        if (pricePerKm > 0) deliveryFee = Math.round(result.distanceKm * pricePerKm * 100) / 100
+      }
+    } else {
+      // fallback: موقع المطعم مباشرة
+      const restLat = parseFloat(S.restaurant.lat)
+      const restLng = parseFloat(S.restaurant.lng)
+      if (!isNaN(restLat) && !isNaN(restLng) && pricePerKm > 0) {
+        const d = distanceKm(parseFloat(custLat), parseFloat(custLng), restLat, restLng)
+        deliveryFee = Math.round(d * pricePerKm * 100) / 100
       }
     }
   }

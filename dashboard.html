@@ -51,10 +51,7 @@
     .bnav-orders-badge { position:absolute; top:6px; right:calc(50% - 18px); background:#ff3b30; color:#fff; font-size:9px; font-weight:900; min-width:16px; height:16px; border-radius:50%; display:none; align-items:center; justify-content:center; border:2px solid #fff; }
 
     /* ── Confirm Dialog ── */
-    #confirm-dialog { position:fixed; inset:0; z-index:70; background:rgba(0,0,0,0.5); backdrop-filter:blur(4px); align-items:flex-end; justify-content:center; }
-    #confirm-dialog.hidden { display:none !important; }
-    #confirm-dialog:not(.hidden) { display:flex; }
-    #confirm-dialog-inner { background:#fff; border-radius:24px 24px 0 0; width:100%; max-width:480px; padding:20px 20px 24px; animation:slideUp .28s cubic-bezier(0.34,1.1,0.64,1) both; }
+
 
     .tab-active { border-bottom:3px solid #FF6B00; color:#FF6B00; }
   </style>
@@ -257,6 +254,15 @@
           <input id="set-price-per-km" type="number" step="0.5" min="0" placeholder="مثال: 5 — اتركه 0 أو فارغاً لعدم احتساب رسوم توصيل" class="w-full border border-gray-200 rounded-xl px-4 py-3 text-sm focus:outline-none focus:ring-2 focus:ring-orange-400" />
           <p class="text-[11px] text-gray-400 mt-1">تُضاف رسوم التوصيل تلقائياً للفاتورة بناءً على المسافة بين موقع العميل وأقرب فرع</p></div>
         <div>
+          <label class="text-xs font-bold text-gray-500 mb-1 block">📍 موقع المطعم على الخريطة</label>
+          <button onclick="openRestaurantMapPicker()" id="set-location-btn" class="w-full border border-gray-200 rounded-xl px-4 py-3 text-sm text-gray-500 text-right flex items-center gap-2">
+            <span>📍</span><span id="set-location-label">اضغط لتحديد موقع المطعم</span>
+          </button>
+          <input type="hidden" id="set-restaurant-lat" />
+          <input type="hidden" id="set-restaurant-lng" />
+          <p class="text-[11px] text-gray-400 mt-1">يُستخدم كنقطة انطلاق لحساب مسافة التوصيل لو لم تُضف فروعاً منفصلة</p>
+        </div>
+        <div>
           <label class="text-xs font-bold text-gray-500 mb-1 block">اللون الرئيسي</label>
           <div class="flex items-center gap-3">
             <div id="pickr-container"></div>
@@ -363,6 +369,26 @@
     </div>
     <p id="bm-error" class="text-red-500 text-xs text-center hidden"></p>
     <button onclick="saveBranch()" class="w-full bg-orange-500 text-white font-bold rounded-xl py-3">حفظ الفرع</button>
+  </div>
+</div>
+
+<!-- ══ RESTAURANT MAP PICKER ══ -->
+<div id="restaurant-map-modal" class="hidden fixed inset-0 z-[60] flex flex-col" style="background:#fff">
+  <div style="display:flex;align-items:center;justify-content:space-between;padding:14px 16px;border-bottom:1px solid #f0f0f0;flex-shrink:0">
+    <p style="font-size:16px;font-weight:900;color:#1a1a1a">📍 حدد موقع المطعم</p>
+    <button onclick="closeRestaurantMapPicker()" style="width:36px;height:36px;border-radius:50%;background:#f5f5f5;color:#555;font-size:20px;font-weight:700;display:flex;align-items:center;justify-content:center">&times;</button>
+  </div>
+  <div id="restaurant-leaflet-map" style="flex:1;width:100%;min-height:0"></div>
+  <button onclick="useRestaurantMyLocation()"
+          style="position:absolute;bottom:90px;left:16px;z-index:1000;background:#fff;border:none;border-radius:12px;padding:10px 14px;font-size:13px;font-weight:800;color:#1a1a1a;box-shadow:0 2px 12px rgba(0,0,0,0.15);display:flex;align-items:center;gap:6px;font-family:'Rubik',sans-serif;cursor:pointer">
+    🎯 موقعي الحالي
+  </button>
+  <div style="padding:12px 16px;border-top:1px solid #f0f0f0;background:#fff;flex-shrink:0">
+    <p id="restaurant-map-coords-label" style="font-size:12px;color:#aaa;text-align:center;margin-bottom:10px">لم يتم تحديد موقع بعد</p>
+    <button onclick="confirmRestaurantLocation()"
+            style="width:100%;background:#FF6B00;color:#fff;font-size:15px;font-weight:900;border-radius:16px;padding:14px;font-family:'Rubik',sans-serif">
+      ✅ تأكيد الموقع
+    </button>
   </div>
 </div>
 
@@ -782,28 +808,14 @@ function popModalSilently(name) {
   _modalStack.splice(idx, 1)
   if (history.state && history.state._modalName === name) history.back()
 }
-// طبقة أمان أساسية تمنع خروج التاجر من لوحة التحكم بالكامل بضغطة رجوع واحدة بالغلط
-// وهو واقف على أي تاب رئيسي (بدون أي مودال مفتوح فوقه)
-let _exitConfirmOpen = false
-let _exitConfirmedByUser = false
 history.pushState({ _appBase: true }, '') // طبقة حماية فوق صفحة الدخول الأصلية
 
-window.addEventListener('popstate', async () => {
+window.addEventListener('popstate', () => {
   const top = _modalStack.pop()
   if (top) { top.closeFn(true); return }
 
-  // لو التاجر أكّد الخروج بالفعل، نسمح بهذا الرجوع يكتمل طبيعياً
-  if (_exitConfirmedByUser) { _exitConfirmedByUser = false; return }
-
-  history.pushState({ _appBase: true }, '') // نعيد إضافة طبقة الحماية فوراً لمنع الخروج الفعلي
-  if (_exitConfirmOpen) return
-  _exitConfirmOpen = true
-  const confirmed = await showConfirm('هل أنت متأكد من الخروج؟', 'نعم، خروج')
-  _exitConfirmOpen = false
-  if (confirmed) {
-    _exitConfirmedByUser = true
-    history.back()
-  }
+  // الـ stack فاضي = التاجر على صفحة رئيسية وضغط رجوع — خروج مباشر
+  history.back()
 })
 
 // تفاعل لوحة المفاتيح: الضغط على "تم/Next" ينقل التركيز للحقل التالي،
@@ -1060,6 +1072,14 @@ async function loadDashboard(r, branches) {
   document.getElementById('set-cover').value    = r.cover_url || ''
   document.getElementById('set-admin-passcode').value = r.admin_passcode || ''
   document.getElementById('set-price-per-km').value   = r.price_per_km  ?? ''
+  // تحميل موقع المطعم
+  if (r.lat != null && r.lng != null) {
+    _restPickedLat = parseFloat(r.lat)
+    _restPickedLng = parseFloat(r.lng)
+    document.getElementById('set-restaurant-lat').value = r.lat
+    document.getElementById('set-restaurant-lng').value = r.lng
+    document.getElementById('set-location-label').textContent = `✅ تم تحديد الموقع (${_restPickedLat.toFixed(4)}, ${_restPickedLng.toFixed(4)})`
+  }
   // إعدادات الولاء
   const loyEl = document.getElementById('set-loyalty-enabled')
   if (loyEl) {
@@ -1556,6 +1576,61 @@ function useBranchMyLocation() {
 function confirmBranchLocation() {
   document.getElementById('bm-map-pick-label').textContent = `✅ تم تحديد الموقع (${_branchPickedLat.toFixed(4)}, ${_branchPickedLng.toFixed(4)})`
   closeBranchMapPicker()
+}
+
+// ── RESTAURANT MAP PICKER ─────────────────────────────────────────────
+let _restMap = null, _restMarker = null
+let _restPickedLat = null, _restPickedLng = null
+
+function openRestaurantMapPicker() {
+  // ابدأ من الموقع المحفوظ أو القاهرة كـ fallback
+  const startLat = _restPickedLat ?? (parseFloat(document.getElementById('set-restaurant-lat').value) || 30.0444)
+  const startLng = _restPickedLng ?? (parseFloat(document.getElementById('set-restaurant-lng').value) || 31.2357)
+  document.getElementById('restaurant-map-modal').classList.remove('hidden')
+  pushModal('restaurant-map', closeRestaurantMapPicker)
+  if (!_restMap) {
+    _restMap = L.map('restaurant-leaflet-map', { zoomControl: true }).setView([startLat, startLng], 13)
+    L.tileLayer('https://{s}.tile.openstreetmap.org/{z}/{x}/{y}.png', { attribution: '© OpenStreetMap', maxZoom: 19 }).addTo(_restMap)
+    _restMarker = L.marker([startLat, startLng], { draggable: true }).addTo(_restMap)
+    _restMarker.on('dragend', e => {
+      const pos = e.target.getLatLng()
+      _restPickedLat = pos.lat; _restPickedLng = pos.lng; updateRestCoordsLabel()
+    })
+    _restMap.on('click', e => {
+      _restPickedLat = e.latlng.lat; _restPickedLng = e.latlng.lng
+      _restMarker.setLatLng([_restPickedLat, _restPickedLng]); updateRestCoordsLabel()
+    })
+  } else {
+    _restMap.setView([startLat, startLng], 13)
+    _restMarker.setLatLng([startLat, startLng])
+  }
+  if (_restPickedLat === null) { _restPickedLat = startLat; _restPickedLng = startLng }
+  updateRestCoordsLabel()
+  setTimeout(() => _restMap.invalidateSize(), 150)
+}
+function closeRestaurantMapPicker(fromPopstate) {
+  document.getElementById('restaurant-map-modal').classList.add('hidden')
+  if (!fromPopstate) popModalSilently('restaurant-map')
+}
+function updateRestCoordsLabel() {
+  if (_restPickedLat === null) return
+  document.getElementById('restaurant-map-coords-label').textContent = `📍 ${_restPickedLat.toFixed(5)}, ${_restPickedLng.toFixed(5)}`
+}
+function useRestaurantMyLocation() {
+  if (!navigator.geolocation) { showToast('متصفحك لا يدعم تحديد الموقع'); return }
+  navigator.geolocation.getCurrentPosition(pos => {
+    _restPickedLat = pos.coords.latitude; _restPickedLng = pos.coords.longitude
+    _restMap.setView([_restPickedLat, _restPickedLng], 16)
+    _restMarker.setLatLng([_restPickedLat, _restPickedLng])
+    updateRestCoordsLabel()
+  }, () => showToast('تعذّر تحديد موقعك — تأكد من إذن الموقع'))
+}
+function confirmRestaurantLocation() {
+  if (_restPickedLat === null) { showToast('حدد الموقع أولاً'); return }
+  document.getElementById('set-restaurant-lat').value = _restPickedLat
+  document.getElementById('set-restaurant-lng').value = _restPickedLng
+  document.getElementById('set-location-label').textContent = `✅ تم تحديد الموقع (${_restPickedLat.toFixed(4)}, ${_restPickedLng.toFixed(4)})`
+  closeRestaurantMapPicker()
 }
 
 // ── PRODUCT MODAL ─────────────────────────────────────────────────────
@@ -2083,6 +2158,8 @@ async function saveSettings() {
   const primary  = document.getElementById('set-color').value
   const pricePerKmRaw = document.getElementById('set-price-per-km').value
   const price_per_km  = pricePerKmRaw !== '' ? parseFloat(pricePerKmRaw) : null
+  const restLat  = _restPickedLat !== null ? _restPickedLat : null
+  const restLng  = _restPickedLng !== null ? _restPickedLng : null
   const msgEl    = document.getElementById('settings-msg')
   if (!name||!whatsappRaw) { msgEl.textContent='الاسم ورقم التواصل مطلوبان'; msgEl.className='text-center text-sm text-red-500'; msgEl.classList.remove('hidden'); return }
 
@@ -2092,9 +2169,9 @@ async function saveSettings() {
   document.getElementById('set-whatsapp').value = whatsapp
 
   settingsSnapshot = { name, whatsapp, logo_url, primary }
-  const { error } = await db.from('restaurants').update({ name, whatsapp, logo_url, cover_url, theme: { primary, secondary:'#1A1A1A' }, price_per_km: price_per_km ?? null }).eq('id', state.restaurant.id)
+  const { error } = await db.from('restaurants').update({ name, whatsapp, logo_url, cover_url, theme: { primary, secondary:'#1A1A1A' }, price_per_km: price_per_km ?? null, lat: restLat, lng: restLng }).eq('id', state.restaurant.id)
   if (error) { msgEl.textContent='حدث خطأ أثناء الحفظ'; msgEl.className='text-center text-sm text-red-500' }
-  else { state.restaurant.name=name; state.restaurant.price_per_km=price_per_km; document.getElementById('dash-restaurant-name').textContent=name; document.getElementById('undo-settings-btn').classList.remove('hidden'); msgEl.textContent='تم الحفظ بنجاح ✅'; msgEl.className='text-center text-sm text-green-500'; showToast('تم حفظ الإعدادات ✅') }
+  else { state.restaurant.name=name; state.restaurant.price_per_km=price_per_km; state.restaurant.lat=restLat; state.restaurant.lng=restLng; document.getElementById('dash-restaurant-name').textContent=name; document.getElementById('undo-settings-btn').classList.remove('hidden'); msgEl.textContent='تم الحفظ بنجاح ✅'; msgEl.className='text-center text-sm text-green-500'; showToast('تم حفظ الإعدادات ✅') }
   msgEl.classList.remove('hidden')
   setTimeout(() => msgEl.classList.add('hidden'), 3000)
 }
