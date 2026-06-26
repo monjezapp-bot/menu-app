@@ -1955,10 +1955,9 @@ async function sendOrder() {
     // منح كوينز الولاء بعد الطلب
     await awardLoyaltyAndWelcome(orderId, items, S.customer?.id)
   } catch(e) {
-    console.error('Order save failed:', e)
     btn.style.opacity = '1'
-    btn.innerHTML = '<span>⚠️ فشل الحفظ — اضغط مجدداً</span>'
-    setTimeout(resetBtn, 3000)
+    btn.innerHTML = `<span>⚠️ ${e.message || 'خطأ غير معروف'}</span>`
+    setTimeout(resetBtn, 5000)
     return
   }
 
