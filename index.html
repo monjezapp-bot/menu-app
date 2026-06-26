@@ -1011,7 +1011,7 @@ function retryLoad() {
 async function loadData(slug) {
   const { data: r, error: rErr } = await db
     .from('restaurants')
-    .select('id,name,logo_url,cover_url,whatsapp,theme,slug,announcement_text,announcement_active,order_receive_method,price_per_km,loyalty_enabled,welcome_coins,referral_coins,min_redeem_coins,coins_per_egp')
+    .select('*')
     .eq('slug', slug).eq('is_active', true).single()
 
   if (rErr || !r) throw new Error('المطعم غير موجود أو غير نشط')
@@ -1020,7 +1020,7 @@ async function loadData(slug) {
   const [catRes, prodRes, bundleRes, bannerRes, branchRes] = await Promise.all([
     db.from('categories').select('id,name,sort_order,icon_url').eq('restaurant_id', r.id).order('sort_order'),
     db.from('products')
-      .select('id,category_id,name,description,price,discount_price,offer_badge,discount_active,discount_starts_at,discount_ends_at,image_url,sort_order,is_available,status,availability,unit,product_options,also_with,prep_minutes,loyalty_coins')
+      .select('*')
       .eq('restaurant_id', r.id).neq('status', 'hidden').order('sort_order'),
     db.from('bundles').select('id,name,description,price,image_url,items,sort_order').eq('restaurant_id', r.id).eq('is_active', true).order('sort_order'),
     db.from('banners').select('id,image_url,link_type,link_value,sort_order').eq('restaurant_id', r.id).order('sort_order'),
