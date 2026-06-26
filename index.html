@@ -37,10 +37,6 @@
     @keyframes cartBounce { 0%, 100% { transform: scale(1); } 40% { transform: scale(1.04); } }
     @keyframes successPop { 0% { transform: scale(0.5); opacity: 0; } 70% { transform: scale(1.1); } 100% { transform: scale(1); opacity: 1; } }
 
-    #confirm-dialog { position:fixed; inset:0; z-index:90; background:rgba(0,0,0,0.5); backdrop-filter:blur(4px); align-items:flex-end; justify-content:center; }
-    #confirm-dialog.hidden { display:none !important; }
-    #confirm-dialog:not(.hidden) { display:flex; }
-    #confirm-dialog-inner { background:#fff; border-radius:24px 24px 0 0; width:100%; max-width:480px; padding:20px 20px 24px; animation:slideUp .28s cubic-bezier(0.34,1.1,0.64,1) both; }
 
     .fade-up    { animation: fadeUp   0.3s  ease both; }
     .sheet      { animation: slideUp  0.32s cubic-bezier(0.34, 1.1, 0.64, 1) both; }
@@ -774,17 +770,6 @@
   </div>
 </div>
 
-<!-- Confirm Dialog (يُستخدم لتأكيد الخروج من التطبيق وغيرها) -->
-<div id="confirm-dialog" class="hidden">
-  <div id="confirm-dialog-inner">
-    <div style="width:40px;height:4px;background:#e8e8e8;border-radius:4px;margin:0 auto 20px"></div>
-    <p id="confirm-msg" style="font-size:15px;font-weight:700;color:#1a1a1a;text-align:center;margin-bottom:24px;line-height:1.6"></p>
-    <div style="display:flex;gap:12px">
-      <button onclick="closeConfirm()" style="flex:1;background:#f5f5f5;color:#666;font-weight:700;border-radius:14px;padding:14px;font-size:14px;font-family:'Rubik',sans-serif">إلغاء</button>
-      <button id="confirm-yes-btn"     style="flex:1;background:#ef4444;color:#fff;font-weight:700;border-radius:14px;padding:14px;font-size:14px;font-family:'Rubik',sans-serif">تأكيد</button>
-    </div>
-  </div>
-</div>
 
 <!-- ══ CUSTOMER AUTH MODAL ══ -->
 <div id="cust-auth-modal" class="hidden fixed inset-0 z-[70] flex items-end justify-center" style="background:rgba(0,0,0,0.55);backdrop-filter:blur(5px)">
@@ -928,44 +913,14 @@ function popModalSilently(name) {
   if (history.state && history.state._modalName === name) history.back()
 }
 
-// طبقة أمان أساسية تمنع خروج العميل من التطبيق بالكامل بضغطة رجوع واحدة بالغلط
-// وهو واقف على الصفحة الرئيسية (بدون أي مودال مفتوح فوقها)
-let _confirmResolve = null
-function showConfirm(msg, btnLabel='تأكيد') {
-  return new Promise(resolve => {
-    _confirmResolve = resolve
-    document.getElementById('confirm-msg').textContent     = msg
-    document.getElementById('confirm-yes-btn').textContent = btnLabel
-    document.getElementById('confirm-yes-btn').onclick = () => { closeConfirm(); resolve(true) }
-    document.getElementById('confirm-dialog').classList.remove('hidden')
-  })
-}
-function closeConfirm() {
-  document.getElementById('confirm-dialog').classList.add('hidden')
-  if (_confirmResolve) { _confirmResolve(false); _confirmResolve = null }
-}
-
-let _exitConfirmOpen = false
-let _exitConfirmedByUser = false
 history.pushState({ _appBase: true }, '') // طبقة حماية فوق صفحة الدخول الأصلية
 
-window.addEventListener('popstate', async () => {
+window.addEventListener('popstate', () => {
   const top = _modalStack.pop()
-  if (top) { top.closeFn(true); return } // true = استُدعيت من popstate، لا تستدعي history.back() مرة أخرى
+  if (top) { top.closeFn(true); return }
 
-  // لو العميل أكّد الخروج بالفعل، نسمح بهذا الرجوع يكتمل طبيعياً (يعيده لصفحة الدخول الأصلية للموقع)
-  if (_exitConfirmedByUser) { _exitConfirmedByUser = false; return }
-
-  // الـ stack فاضي = العميل واقف على الصفحة الرئيسية وضغط رجوع
-  history.pushState({ _appBase: true }, '') // نعيد إضافة طبقة الحماية فوراً لمنع الخروج الفعلي
-  if (_exitConfirmOpen) return // تجاهل ضغطات متكررة وقت ظهور السؤال بالفعل
-  _exitConfirmOpen = true
-  const confirmed = await showConfirm('هل أنت متأكد من الخروج؟', 'نعم، خروج')
-  _exitConfirmOpen = false
-  if (confirmed) {
-    _exitConfirmedByUser = true
-    history.back() // رجوع طبيعي واحد فقط — هذه المرة لن يُعاد إضافة طبقة الحماية (بسبب العلم أعلاه)
-  }
+  // الـ stack فاضي = العميل على الصفحة الرئيسية وضغط رجوع — خروج مباشر
+  history.back()
 })
 
 // ── BOOT ──────────────────────────────────────────────────────────────
