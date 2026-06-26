@@ -875,7 +875,14 @@ const SUPABASE_URL  = 'https://pcmyugeqveyjnappulng.supabase.co'
 const SUPABASE_ANON = 'eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6InBjbXl1Z2VxdmV5am5hcHB1bG5nIiwicm9sZSI6ImFub24iLCJpYXQiOjE3ODExNjU0NDAsImV4cCI6MjA5Njc0MTQ0MH0.uwn0X4CvNRW38FGh_0rYD9KjBRM19CydXucfBsCDYeo'
 
 const { createClient } = supabase
-const db = createClient(SUPABASE_URL, SUPABASE_ANON)
+const db = createClient(SUPABASE_URL, SUPABASE_ANON, {
+  auth: {
+    storageKey: 'menu-customer-auth',
+    autoRefreshToken: true,
+    persistSession: true,
+    detectSessionInUrl: false
+  }
+})
 
 // ── STATE ─────────────────────────────────────────────────────────────
 const S = {

@@ -731,7 +731,14 @@ const SUPPORT_WHATSAPP = '20XXXXXXXXXX' // ⚠️ غيّر هذا الرقم ل�
 const VAPID_PUBLIC_KEY = 'BHpeyTZ57ZxBaWldVJ2qNWqrwWZMUSsLFIzOGvtl0suELxgRqoiZ8oLXNQNQEoTIv_4dYzelHMGG3llLWV_FMaE'
 
 const { createClient } = supabase
-const db = createClient(SUPABASE_URL, SUPABASE_ANON)
+const db = createClient(SUPABASE_URL, SUPABASE_ANON, {
+  auth: {
+    storageKey: 'menu-dashboard-auth',
+    autoRefreshToken: true,
+    persistSession: true,
+    detectSessionInUrl: false
+  }
+})
 
 // ── STATE ─────────────────────────────────────────────────────────────
 const state = {
