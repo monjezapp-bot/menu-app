@@ -988,7 +988,7 @@ async function boot() {
     showState('app')
     initScrollBehavior()
     initScrollSpy()
-    await initCustomerSession()
+    await initCustomerSession().catch(() => {})
     handleReferralParam()
 
     // إظهار شريط المعاينة فقط لو الرابط الحالي فعلياً يحتوي على preview=1 (فحص مزدوج للتأكيد)
@@ -1024,7 +1024,7 @@ async function loadData(slug) {
       .eq('restaurant_id', r.id).neq('status', 'hidden').order('sort_order'),
     db.from('bundles').select('id,name,description,price,image_url,items,sort_order').eq('restaurant_id', r.id).eq('is_active', true).order('sort_order'),
     db.from('banners').select('id,image_url,link_type,link_value,sort_order').eq('restaurant_id', r.id).order('sort_order'),
-    db.from('branches').select('id,name,lat,lng').eq('restaurant_id', r.id).eq('is_active', true)
+    db.from('branches').select('id,name,lat,lng').eq('restaurant_id', r.id).eq('is_active', true).catch(() => ({ data: [] }))
   ])
 
   if (catRes.error)  throw new Error('فشل تحميل التصنيفات')
@@ -1039,8 +1039,10 @@ async function loadData(slug) {
   const bundleIds = (bundleRes.data ?? []).map(b => b.id)
   const bbMap = {}
   if (bundleIds.length) {
-    const { data: bbData } = await db.from('bundle_branches').select('bundle_id,branch_id').in('bundle_id', bundleIds)
-    ;(bbData || []).forEach(row => { if (!bbMap[row.bundle_id]) bbMap[row.bundle_id] = []; bbMap[row.bundle_id].push(row.branch_id) })
+    try {
+      const { data: bbData } = await db.from('bundle_branches').select('bundle_id,branch_id').in('bundle_id', bundleIds)
+      ;(bbData || []).forEach(row => { if (!bbMap[row.bundle_id]) bbMap[row.bundle_id] = []; bbMap[row.bundle_id].push(row.branch_id) })
+    } catch(e) { /* bundle_branches اختياري */ }
   }
   S.bundles    = (bundleRes.data ?? []).map(b => ({ ...b, branch_ids: bbMap[b.id] || [] }))
   S.activeCat  = catRes.data[0]?.id ?? null
@@ -1973,8 +1975,6 @@ async function sendOrder() {
 
     // تحديث عداد الكود المستخدم
     if (_appliedCode) {
-      await db.from('discount_codes').update({ used_count: db.rpc }).eq('id', _appliedCode)
-      // increment used_count
       const { data: codeRow } = await db.from('discount_codes').select('used_count').eq('id', _appliedCode).single()
       if (codeRow) await db.from('discount_codes').update({ used_count: (codeRow.used_count || 0) + 1 }).eq('id', _appliedCode)
     }
