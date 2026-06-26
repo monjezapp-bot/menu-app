@@ -999,7 +999,7 @@ async function boot() {
   } catch(e) {
     // أخطاء "المطعم غير موجود" نهائية (لا تحتاج إعادة محاولة)، وأي خطأ آخر (شبكة/تقني) مؤقت وقابل لإعادة المحاولة
     const isNotFound = e.message === 'المطعم غير موجود أو غير نشط'
-    showError(isNotFound ? e.message : 'تعذّر تحميل الصفحة. تأكد من اتصالك بالإنترنت وحاول مرة أخرى.', !isNotFound)
+    showError(isNotFound ? e.message : ('خطأ: ' + (e.message || e)), !isNotFound)
   }
 }
 function retryLoad() {

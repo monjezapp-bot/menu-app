@@ -851,8 +851,8 @@ async function boot() {
 // بعد التحقق من الجلسة — نقرر هل نذهب لشاشة الـ passcode أم مباشرة للداشبورد
 async function afterLogin() {
   const { data: { user } } = await db.auth.getUser()
-  const { data: r }        = await db.from('restaurants').select('*').eq('owner_id', user.id).single()
-  if (!r) { showToast('لم يتم العثور على مطعم مرتبط بهذا الحساب'); return }
+  const { data: r, error: rErr } = await db.from('restaurants').select('*').eq('owner_id', user.id).single()
+  if (!r) { showToast('لم يتم العثور على مطعم — ' + (rErr?.message || 'خطأ غير معروف')); return }
 
   // اقرأ الفروع أولاً لتحديد إذا كان فيه أكثر من فرع
   const { data: branches } = await db.from('branches').select('id,name,passcode').eq('restaurant_id', r.id).order('created_at')
