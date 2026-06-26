@@ -1024,7 +1024,7 @@ async function loadData(slug) {
       .eq('restaurant_id', r.id).neq('status', 'hidden').order('sort_order'),
     db.from('bundles').select('id,name,description,price,image_url,items,sort_order').eq('restaurant_id', r.id).eq('is_active', true).order('sort_order'),
     db.from('banners').select('id,image_url,link_type,link_value,sort_order').eq('restaurant_id', r.id).order('sort_order'),
-    db.from('branches').select('id,name,lat,lng').eq('restaurant_id', r.id).eq('is_active', true).catch(() => ({ data: [] }))
+    db.from('branches').select('id,name,lat,lng').eq('restaurant_id', r.id).eq('is_active', true)
   ])
 
   if (catRes.error)  throw new Error('فشل تحميل التصنيفات')
