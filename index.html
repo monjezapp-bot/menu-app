@@ -22,9 +22,6 @@
        BASE
     ══════════════════════════════════════════ */
     * { font-family: 'Rubik', sans-serif; box-sizing: border-box; user-select: none; -webkit-user-select: none; }
-    /* الأرقام دايماً بالإنجليزي حتى لو النص بالعربي */
-    * { font-feature-settings: "lnum" 1; unicode-bidi: plaintext; }
-    :lang(ar), [dir="rtl"] { -webkit-locale: "en"; }
     input, textarea { user-select: text; -webkit-user-select: text; }
     .no-scroll::-webkit-scrollbar { display: none; }
     .no-scroll { -ms-overflow-style: none; scrollbar-width: none; }
@@ -354,12 +351,11 @@
        CART BAR (floating bottom)
     ══════════════════════════════════════════ */
     .cart-bar {
-      position: fixed;
-      bottom: calc(65px + env(safe-area-inset-bottom));
-      left: 50%; right: auto; z-index: 30;
+      position: fixed; bottom: 0; left: 50%; right: auto; z-index: 30;
       transform: translateX(-50%);
       width: 100%; max-width: 480px;
-      padding: 0 16px 10px;
+      padding: 10px 16px;
+      padding-bottom: calc(14px + env(safe-area-inset-bottom));
     }
     .cart-bar-btn {
       background: var(--brand); color: #fff;
@@ -377,15 +373,13 @@
        BACK TO TOP BUTTON
     ══════════════════════════════════════════ */
     .back-to-top {
-      position: fixed;
-      bottom: calc(80px + env(safe-area-inset-bottom));
-      left: 50%; transform: translateX(-50%);
+      position: fixed; bottom: 84px; left: 50%; transform: translateX(-50%);
       background: #1a1a1a; color: #fff;
       border: none; border-radius: 100px;
       padding: 10px 20px; font-size: 13px; font-weight: 700;
       display: flex; align-items: center; gap: 7px;
       box-shadow: 0 4px 16px rgba(0,0,0,0.2);
-      cursor: pointer; z-index: 29;
+      cursor: pointer; z-index: 28;
       transition: opacity 0.3s, transform 0.3s;
       font-family: 'Rubik', sans-serif;
       white-space: nowrap;
@@ -1083,6 +1077,10 @@
       <!-- Footer: inputs + send button -->
       <div style="padding:14px 16px 8px;border-top:1px solid #f0f0f0;background:#fff;margin-top:auto">
 
+        <!-- Table number -->
+        <input id="table-number-input" type="text" placeholder="رقم الطاولة (اختياري)"
+               style="width:100%;border:1.5px solid #eee;border-radius:14px;padding:12px 14px;font-size:13px;color:#444;outline:none;font-family:'Rubik',sans-serif;margin-bottom:10px" />
+
         <!-- Delivery info -->
         <div style="background:#f9f9f9;border-radius:16px;padding:12px 14px;margin-bottom:10px">
           <p style="font-size:12px;font-weight:800;color:#888;margin-bottom:8px">بيانات التوصيل <span style="color:#bbb;font-weight:600">(مطلوبة لو الطلب توصيل)</span></p>
@@ -1156,7 +1154,7 @@
 
         <!-- Send button -->
         <button id="send-order-btn" onclick="sendOrder()"
-                style="width:100%;background:var(--brand);color:#fff;font-size:15px;font-weight:900;border-radius:18px;padding:16px;display:flex;align-items:center;justify-content:center;gap:10px;margin-top:4px;margin-bottom:calc(16px + env(safe-area-inset-bottom))">
+                style="width:100%;background:var(--brand);color:#fff;font-size:15px;font-weight:900;border-radius:18px;padding:16px;display:flex;align-items:center;justify-content:center;gap:10px;margin-bottom:calc(8px + env(safe-area-inset-bottom))">
           <span>إرسال الطلب</span><span style="font-size:20px">✅</span>
         </button>
       </div>
@@ -1167,30 +1165,25 @@
 <!-- ══════════════════════════════════════════
      MAP PICKER MODAL
 ══════════════════════════════════════════ -->
-<!-- Map modal: overlay كامل الشاشة + inner container محدود بالـ 480px -->
-<div id="map-modal" class="hidden" style="position:fixed;inset:0;z-index:200;display:flex;flex-direction:column;align-items:center;background:#fff">
-  <div style="width:100%;max-width:480px;height:100%;display:flex;flex-direction:column">
-    <div style="display:flex;align-items:center;justify-content:space-between;padding:14px 16px;border-bottom:1px solid #f0f0f0;flex-shrink:0">
-      <p style="font-size:16px;font-weight:900;color:#1a1a1a">📍 حدد موقعك</p>
-      <button onclick="closeMapPicker()" style="width:36px;height:36px;border-radius:50%;background:#f5f5f5;color:#555;font-size:20px;font-weight:700;display:flex;align-items:center;justify-content:center">&times;</button>
-    </div>
-    <div style="padding:10px 16px;background:#fff8f3;border-bottom:1px solid #ffe0c8;flex-shrink:0">
-      <p style="font-size:12px;color:#7a3c00;font-weight:600">اسحب الخريطة أو اضغط على موقعك بالضبط — ثم اضغط "تأكيد"</p>
-    </div>
-    <div style="position:relative;flex:1;min-height:0;width:100%">
-      <div id="leaflet-map" style="width:100%;height:100%;position:absolute;inset:0;z-index:1"></div>
-      <button onclick="useMyLocation()"
-              style="position:absolute;bottom:16px;left:16px;z-index:9999;background:#fff;border:2px solid #e8e8e8;border-radius:12px;padding:10px 14px;font-size:13px;font-weight:800;color:#1a1a1a;box-shadow:0 4px 16px rgba(0,0,0,0.2);display:flex;align-items:center;gap:6px;font-family:'Rubik',sans-serif;cursor:pointer;pointer-events:all">
-        🎯 موقعي الحالي
-      </button>
-    </div>
-    <div style="padding:12px 16px;border-top:1px solid #f0f0f0;background:#fff;flex-shrink:0;padding-bottom:max(16px,env(safe-area-inset-bottom))">
-      <p id="map-coords-label" style="font-size:12px;color:#aaa;text-align:center;margin-bottom:10px">لم يتم تحديد موقع بعد</p>
-      <button onclick="confirmLocation()"
-              style="width:100%;background:var(--brand);color:#fff;font-size:15px;font-weight:900;border-radius:16px;padding:14px;font-family:'Rubik',sans-serif">
-        ✅ تأكيد الموقع
-      </button>
-    </div>
+<div id="map-modal" class="hidden fixed inset-0 z-50 flex flex-col" style="background:#fff">
+  <div style="display:flex;align-items:center;justify-content:space-between;padding:14px 16px;border-bottom:1px solid #f0f0f0;flex-shrink:0">
+    <p style="font-size:16px;font-weight:900;color:#1a1a1a">📍 حدد موقعك</p>
+    <button onclick="closeMapPicker()" style="width:36px;height:36px;border-radius:50%;background:#f5f5f5;color:#555;font-size:20px;font-weight:700;display:flex;align-items:center;justify-content:center">&times;</button>
+  </div>
+  <div style="padding:10px 16px;background:#fff8f3;border-bottom:1px solid #ffe0c8;flex-shrink:0">
+    <p style="font-size:12px;color:#7a3c00;font-weight:600">اسحب الخريطة أو اضغط على موقعك بالضبط — ثم اضغط "تأكيد"</p>
+  </div>
+  <div id="leaflet-map" style="flex:1;width:100%;min-height:0"></div>
+  <button onclick="useMyLocation()"
+          style="position:absolute;bottom:90px;left:16px;z-index:1000;background:#fff;border:none;border-radius:12px;padding:10px 14px;font-size:13px;font-weight:800;color:#1a1a1a;box-shadow:0 2px 12px rgba(0,0,0,0.15);display:flex;align-items:center;gap:6px;font-family:'Rubik',sans-serif;cursor:pointer">
+    🎯 موقعي الحالي
+  </button>
+  <div style="padding:12px 16px;border-top:1px solid #f0f0f0;background:#fff;flex-shrink:0">
+    <p id="map-coords-label" style="font-size:12px;color:#aaa;text-align:center;margin-bottom:10px">لم يتم تحديد موقع بعد</p>
+    <button onclick="confirmLocation()"
+            style="width:100%;background:var(--brand);color:#fff;font-size:15px;font-weight:900;border-radius:16px;padding:14px;font-family:'Rubik',sans-serif">
+      ✅ تأكيد الموقع
+    </button>
   </div>
 </div>
 
@@ -2316,6 +2309,7 @@ function focusNextField(event, nextFieldId, submitFn) {
 async function sendOrder() {
   if (!S.cart.length) return
 
+  const table    = document.getElementById('table-number-input').value.trim()
   const custName = document.getElementById('order-name').value.trim()
   const custPhone= document.getElementById('order-phone').value.trim()
   const custAddr = document.getElementById('order-address').value.trim()
@@ -2324,16 +2318,19 @@ async function sendOrder() {
   const custLng  = document.getElementById('order-location-lng').value
   const note     = document.getElementById('order-note').value.trim()
 
-  // تحقق: لازم رقم تواصل + تحديد الموقع على الخريطة
+  // تحقق إجباري: لو الطلب توصيل (مفيش رقم طاولة)، لازم رقم تواصل + تحديد الموقع على الخريطة
+  // (الموقع إجباري وليس بديلاً اختيارياً للعنوان، لأنه أساس حساب أقرب فرع وتكلفة التوصيل)
   clearFieldErrors()
-  const missing = []
-  if (!custPhone) missing.push('order-phone')
-  if (!custLat) missing.push('map-pick-btn')
-  if (missing.length) {
-    missing.forEach(id => markFieldError(id))
-    showToast('من فضلك اكتب رقم تواصلك وحدد موقعك على الخريطة لإتمام التوصيل')
-    document.getElementById(missing[0]).scrollIntoView({ behavior: 'smooth', block: 'center' })
-    return
+  if (!table) {
+    const missing = []
+    if (!custPhone) missing.push('order-phone')
+    if (!custLat) missing.push('map-pick-btn')
+    if (missing.length) {
+      missing.forEach(id => markFieldError(id))
+      showToast('من فضلك اكتب رقم تواصلك وحدد موقعك على الخريطة لإتمام التوصيل')
+      document.getElementById(missing[0]).scrollIntoView({ behavior: 'smooth', block: 'center' })
+      return
+    }
   }
 
   const btn      = document.getElementById('send-order-btn')
@@ -2361,7 +2358,7 @@ async function sendOrder() {
   // أقرب فرع نشط لموقع العميل (لو الطلب توصيل ومفيش طاولة) — أساس توجيه الطلب وحساب التوصيل
   let nearestBranchId = null
   let deliveryFee     = 0
-  if (custLat && custLng) {
+  if (!table && custLat && custLng) {
     const pricePerKm = parseFloat(S.restaurant.price_per_km) || 0
     if (S.branches.length > 0) {
       const result = findNearestBranch(parseFloat(custLat), parseFloat(custLng))
@@ -2397,6 +2394,7 @@ async function sendOrder() {
         restaurant_id:    S.restaurant.id,
         order_number:     rpc,
         items, total:     finalTotal,
+        table_number:     table     || null,
         customer_name:    custName  || S.customer?.name || null,
         customer_phone:   custPhone || S.customer?.phone || null,
         customer_address: custAddr  || null,
@@ -2447,7 +2445,7 @@ async function sendOrder() {
   }
 
   clearCart(); updateCartUI(); closeCartSheet()
-  ;['order-name', 'order-phone', 'order-address', 'order-location', 'order-note', 'cart-discount-code']
+  ;['order-name', 'order-phone', 'order-address', 'order-location', 'order-note', 'table-number-input', 'cart-discount-code']
     .forEach(id => { const el = document.getElementById(id); if (el) el.value = '' })
   document.getElementById('order-location-lat').value = ''
   document.getElementById('order-location-lng').value = ''
@@ -2935,13 +2933,13 @@ async function openWalletModal() {
   const c = S.customer
   const coinsPerEgp = S.restaurant.coins_per_egp ?? 1000
   const minRedeem   = S.restaurant.min_redeem_coins ?? 100000
-  document.getElementById('wallet-balance').textContent     = c.coins_balance.toLocaleString('en-US')
+  document.getElementById('wallet-balance').textContent     = c.coins_balance.toLocaleString('ar-EG')
   document.getElementById('wallet-balance-egp').textContent = `= ${(c.coins_balance / coinsPerEgp).toFixed(2)} ج.م`
   document.getElementById('wallet-min-redeem-note').textContent = c.coins_balance >= minRedeem
     ? `✅ يمكنك استخدام كوينزك الآن!`
-    : `تحتاج ${(minRedeem - c.coins_balance).toLocaleString('en-US')} كوين للوصول للحد الأدنى`
+    : `تحتاج ${(minRedeem - c.coins_balance).toLocaleString('ar-EG')} كوين للوصول للحد الأدنى`
   document.getElementById('wallet-ref-code').textContent    = c.referral_code || '---'
-  document.getElementById('wallet-ref-reward').textContent  = (S.restaurant.referral_coins ?? 5000).toLocaleString('en-US')
+  document.getElementById('wallet-ref-reward').textContent  = (S.restaurant.referral_coins ?? 5000).toLocaleString('ar-EG')
 
   // طلبات العميل
   const { data: orders } = await db.from('orders')
@@ -2956,7 +2954,7 @@ async function openWalletModal() {
       <div>
         <p style="font-size:13px;font-weight:800;color:#1a1a1a">${o.order_number}</p>
         <p style="font-size:11px;color:#aaa">${new Date(o.created_at).toLocaleDateString('ar-EG')}</p>
-        ${o.loyalty_coins_earned ? `<p style="font-size:11px;color:#f97316">+${o.loyalty_coins_earned.toLocaleString('en-US')} 🪙</p>` : ''}
+        ${o.loyalty_coins_earned ? `<p style="font-size:11px;color:#f97316">+${o.loyalty_coins_earned.toLocaleString('ar-EG')} 🪙</p>` : ''}
       </div>
       <div style="text-align:left">
         <p style="font-size:14px;font-weight:900;color:var(--brand)">${Number(o.total).toFixed(2)} ج.م</p>
@@ -2975,7 +2973,7 @@ async function openWalletModal() {
         <p style="font-size:13px;font-weight:700;color:#333">${txLabel[t.type] || t.type}</p>
         <p style="font-size:11px;color:#bbb">${new Date(t.created_at).toLocaleDateString('ar-EG')} ${t.note ? '· ' + t.note : ''}</p>
       </div>
-      <p style="font-size:15px;font-weight:900;color:${t.amount > 0 ? '#22c55e' : '#ef4444'}">${t.amount > 0 ? '+' : ''}${t.amount.toLocaleString('en-US')}</p>
+      <p style="font-size:15px;font-weight:900;color:${t.amount > 0 ? '#22c55e' : '#ef4444'}">${t.amount > 0 ? '+' : ''}${t.amount.toLocaleString('ar-EG')}</p>
     </div>`).join('') : `<p style="font-size:13px;color:#aaa;text-align:center;padding:12px 0">لا توجد حركات بعد</p>`
 
   document.getElementById('wallet-modal').classList.remove('hidden')
@@ -3009,12 +3007,9 @@ function switchPage(page) {
 function showBottomNav(show) {
   const nav = document.getElementById('bottom-nav')
   if (nav) nav.style.display = show ? 'block' : 'none'
-  // لما الـ bottom nav ظاهر: padding = ارتفاع الـ nav (~65px) + ارتفاع الـ cart bar (~82px) + مسافة
-  const app = document.getElementById('state-app')
-  if (app) {
-    app.classList.remove('pb-36')
-    app.style.paddingBottom = show ? '160px' : '90px'
-  }
+  // لو في bottom nav، زوّد الـ padding السفلي للصفحة الرئيسية
+  document.getElementById('state-app')?.classList.toggle('pb-36', !show)
+  if (show) document.getElementById('state-app')?.style.setProperty('padding-bottom', '100px')
 }
 
 // ── صفحة طلباتك ──────────────────────────────────────────────────────
@@ -3064,7 +3059,7 @@ async function loadOrdersPage() {
     const statCoins = document.getElementById('orders-stat-coins')
     if(statTotal) statTotal.textContent = orders.filter(o=>o.status!=='cancelled').length
     if(statSpend) statSpend.textContent = totalSpend.toFixed(0)
-    if(statCoins) statCoins.textContent = totalCoins.toLocaleString('en-US')
+    if(statCoins) statCoins.textContent = totalCoins.toLocaleString('ar-EG')
 
     // Active order tracker
     const active = orders.find(o => !['delivered','cancelled'].includes(o.status))
@@ -3087,7 +3082,7 @@ async function loadOrdersPage() {
         <div style="display:flex;justify-content:space-between;align-items:center;border-top:1px solid #f5f5f5;padding-top:10px">
           <span style="font-size:16px;font-weight:900;color:var(--brand)">${Number(o.total||0).toFixed(2)} ج.م</span>
           <div style="display:flex;align-items:center;gap:10px">
-            ${o.loyalty_coins_earned ? `<span style="font-size:11px;color:#f97316;font-weight:700">+${Number(o.loyalty_coins_earned).toLocaleString('en-US')} 🪙</span>` : ''}
+            ${o.loyalty_coins_earned ? `<span style="font-size:11px;color:#f97316;font-weight:700">+${Number(o.loyalty_coins_earned).toLocaleString('ar-EG')} 🪙</span>` : ''}
             <svg width="14" height="14" fill="none" stroke="#bbb" stroke-width="2.5" viewBox="0 0 24 24"><path d="M15 18l-6-6 6-6"/></svg>
           </div>
         </div>
@@ -3184,7 +3179,7 @@ async function openOrderDetail(orderId) {
           <span style="font-size:15px;font-weight:900;color:#1a1a1a">الإجمالي</span>
           <span style="font-size:15px;font-weight:900;color:var(--brand)">${Number(o.total||0).toFixed(2)} ج.م</span>
         </div>
-        ${o.loyalty_coins_earned ? `<div style="margin-top:10px;background:#fff8f3;border-radius:10px;padding:8px 12px;text-align:center"><span style="font-size:12px;font-weight:800;color:var(--brand)">+${Number(o.loyalty_coins_earned).toLocaleString('en-US')} 🪙 كوينز كسبتها من هذا الطلب</span></div>` : ''}
+        ${o.loyalty_coins_earned ? `<div style="margin-top:10px;background:#fff8f3;border-radius:10px;padding:8px 12px;text-align:center"><span style="font-size:12px;font-weight:800;color:var(--brand)">+${Number(o.loyalty_coins_earned).toLocaleString('ar-EG')} 🪙 كوينز كسبتها من هذا الطلب</span></div>` : ''}
       </div>
       ${o.notes ? `<div style="margin-top:12px;background:#f9f9f9;border-radius:12px;padding:12px 14px"><p style="font-size:12px;color:#888;font-weight:600">ملاحظات: ${o.notes}</p></div>` : ''}
       <button onclick="closeOrderDetail();switchPage('home')" style="width:100%;margin-top:16px;background:linear-gradient(135deg,var(--brand),#ff8c38);color:#fff;font-size:14px;font-weight:900;border-radius:14px;padding:14px;border:none;cursor:pointer;font-family:'Rubik',sans-serif">
@@ -3213,11 +3208,11 @@ async function loadWalletPage() {
   const balEl  = document.getElementById('wpage-balance')
   const egpEl  = document.getElementById('wpage-balance-egp')
   const noteEl = document.getElementById('wpage-min-note')
-  if (balEl)  balEl.textContent  = (c.coins_balance || 0).toLocaleString('en-US')
+  if (balEl)  balEl.textContent  = (c.coins_balance || 0).toLocaleString('ar-EG')
   if (egpEl)  egpEl.textContent  = `= ${((c.coins_balance||0) / cpE).toFixed(2)} ج.م متاح للشراء`
   if (noteEl) noteEl.textContent = c.coins_balance >= minRed
     ? '✅ يمكنك تحويل كوينزك الآن!'
-    : `تحتاج ${(minRed - (c.coins_balance||0)).toLocaleString('en-US')} كوين للحد الأدنى`
+    : `تحتاج ${(minRed - (c.coins_balance||0)).toLocaleString('ar-EG')} كوين للحد الأدنى`
 
   // رصيد المحفظة النقدي
   const cashEl = document.getElementById('wpage-cash-balance')
@@ -3231,7 +3226,7 @@ async function loadWalletPage() {
     if (canConvert) {
       const convEl  = document.getElementById('wpage-convertable')
       const egpConv = document.getElementById('wpage-convert-egp')
-      if (convEl)  convEl.textContent  = (c.coins_balance || 0).toLocaleString('en-US') + ' 🪙'
+      if (convEl)  convEl.textContent  = (c.coins_balance || 0).toLocaleString('ar-EG') + ' 🪙'
       if (egpConv) egpConv.textContent = `= ${((c.coins_balance||0) / cpE).toFixed(2)} ج.م`
     }
   }
@@ -3276,7 +3271,7 @@ async function loadWalletPage() {
           <p style="font-size:13px;font-weight:800;color:#1a1a1a;margin-bottom:2px">${type.label}</p>
           <p style="font-size:11px;color:#bbb">${new Date(t.created_at).toLocaleDateString('ar-EG',{day:'numeric',month:'short',hour:'2-digit',minute:'2-digit'})}${t.note?' · '+t.note:''}</p>
         </div>
-        <p style="font-size:16px;font-weight:900;color:${plus?'#22c55e':'#ef4444'}">${plus?'+':''}${Number(t.amount).toLocaleString('en-US')} 🪙</p>
+        <p style="font-size:16px;font-weight:900;color:${plus?'#22c55e':'#ef4444'}">${plus?'+':''}${Number(t.amount).toLocaleString('ar-EG')} 🪙</p>
       </div>`
     }).join('')
   } catch(e) {
@@ -3294,7 +3289,7 @@ async function convertCoinsToBalance() {
   showConfirmSheet(
     'تحويل الكوينز لرصيد 💳',
     `<div style="text-align:center;padding:10px 0">
-      <p style="font-size:36px;font-weight:900;color:var(--brand);margin-bottom:4px">${coins.toLocaleString('en-US')} 🪙</p>
+      <p style="font-size:36px;font-weight:900;color:var(--brand);margin-bottom:4px">${coins.toLocaleString('ar-EG')} 🪙</p>
       <p style="font-size:16px;color:#888;margin-bottom:16px">= ${amount.toFixed(2)} ج.م</p>
       <div style="background:#f0fdf4;border-radius:14px;padding:14px;border:1.5px solid #bbf7d0">
         <p style="font-size:13px;color:#16a34a;font-weight:700;line-height:1.6">سيتم تحويل الكوينز لرصيد نقدي في محفظتك ويُستخدم للشراء من المتجر فقط 🛒</p>
@@ -3306,7 +3301,7 @@ async function convertCoinsToBalance() {
         await db.from('menu_customers').update({ coins_balance: 0, wallet_balance: newBalance }).eq('id', S.customer.id)
         await db.from('coin_transactions').insert({
           customer_id: S.customer.id, restaurant_id: S.restaurant.id,
-          type: 'convert', amount: -coins, note: `تحويل ${coins.toLocaleString('en-US')} كوين = ${amount.toFixed(2)} ج.م`
+          type: 'convert', amount: -coins, note: `تحويل ${coins.toLocaleString('ar-EG')} كوين = ${amount.toFixed(2)} ج.م`
         })
         S.customer.coins_balance = 0
         S.customer.wallet_balance = newBalance
@@ -3429,7 +3424,7 @@ async function saveEditProfile() {
       const newBal = (S.customer.coins_balance || 0) + bonusCoins
       await db.from('menu_customers').update({ coins_balance: newBal }).eq('id', S.customer.id)
       S.customer.coins_balance = newBal
-      showToast(`+${bonusCoins.toLocaleString('en-US')} 🪙 كوينز على إكمال ملفك!`)
+      showToast(`+${bonusCoins.toLocaleString('ar-EG')} 🪙 كوينز على إكمال ملفك!`)
       playSuccessSound()
     }
     Object.assign(S.customer, updates)
@@ -3455,7 +3450,7 @@ function updateSettingsDisplay() {
   const refEl = document.getElementById('ref-code-display')
   if (refEl) refEl.textContent = c.referral_code || '------'
   const refRew = document.getElementById('ref-reward-display')
-  if (refRew) refRew.textContent = `عند أول شراء لصديقك تكسب ${(S.restaurant?.referral_coins ?? 5000).toLocaleString('en-US')} كوين 🪙`
+  if (refRew) refRew.textContent = `عند أول شراء لصديقك تكسب ${(S.restaurant?.referral_coins ?? 5000).toLocaleString('ar-EG')} كوين 🪙`
 }
 
 
@@ -3533,7 +3528,7 @@ function renderAccountPage() {
   const emailEl = document.getElementById('acc-logged-email')
   if (emailEl) emailEl.textContent = c.email || ''
   const coinsEl = document.getElementById('acc-coins-display')
-  if (coinsEl) coinsEl.textContent = (c.coins_balance || 0).toLocaleString('en-US')
+  if (coinsEl) coinsEl.textContent = (c.coins_balance || 0).toLocaleString('ar-EG')
 
   // تحديث الإعدادات
   updateSettingsDisplay()
@@ -3628,7 +3623,7 @@ async function submitEditField(field, value) {
         note: `إكمال بيانات: ${field}`
       })
       S.customer.coins_balance = (S.customer.coins_balance || 0) + coins
-      showToast(`+${coins.toLocaleString('en-US')} 🪙 كوينز على إكمال ملفك!`)
+      showToast(`+${coins.toLocaleString('ar-EG')} 🪙 كوينز على إكمال ملفك!`)
       playSuccessSound()
     }
     renderAccountPage()
@@ -3810,7 +3805,7 @@ async function redeemVoucher() {
     await db.from('discount_codes').update({ used_count: (dc.used_count || 0) + 1 }).eq('id', dc.id)
 
     S.customer.coins_balance = (S.customer.coins_balance || 0) + coins
-    showMsg(`✅ تم! +${coins.toLocaleString('en-US')} 🪙 أُضيفت لمحفظتك`, true)
+    showMsg(`✅ تم! +${coins.toLocaleString('ar-EG')} 🪙 أُضيفت لمحفظتك`, true)
     document.getElementById('voucher-input').value = ''
     playSuccessSound()
     updateWalletBadge()
@@ -4085,7 +4080,7 @@ function triggerInstall() {
 }
 
 function showCelebration(coins) {
-  document.getElementById('celeb-coins').textContent = coins.toLocaleString('en-US')
+  document.getElementById('celeb-coins').textContent = coins.toLocaleString('ar-EG')
   document.getElementById('celebration-overlay').classList.remove('hidden')
   document.body.style.overflow = 'hidden'
   startConfetti()
@@ -4163,7 +4158,7 @@ function updateCoinsRowInCart() {
   if (S.customer && S.customer.coins_balance >= minRedeem && (S.restaurant?.loyalty_enabled)) {
     const coinsPerEgp = S.restaurant.coins_per_egp ?? 1000
     document.getElementById('cart-coins-available').textContent =
-      `رصيدك: ${S.customer.coins_balance.toLocaleString('en-US')} 🪙 = ${(S.customer.coins_balance / coinsPerEgp).toFixed(2)} ج.م`
+      `رصيدك: ${S.customer.coins_balance.toLocaleString('ar-EG')} 🪙 = ${(S.customer.coins_balance / coinsPerEgp).toFixed(2)} ج.م`
     row.style.display = 'block'
   } else {
     row.style.display = 'none'
@@ -4179,7 +4174,7 @@ function updateCoinsDiscount() {
   _coinsToRedeem = Math.max(0, Math.min(maxCoins, S.customer?.coins_balance || 0))
   const disc = _coinsToRedeem / coinsPerEgp
   if (_coinsToRedeem > 0) {
-    preview.textContent = `خصم ${disc.toFixed(2)} ج.م مقابل ${_coinsToRedeem.toLocaleString('en-US')} كوين`
+    preview.textContent = `خصم ${disc.toFixed(2)} ج.م مقابل ${_coinsToRedeem.toLocaleString('ar-EG')} كوين`
     preview.style.display = 'block'
   } else {
     preview.style.display = 'none'
