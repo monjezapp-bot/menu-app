@@ -15,69 +15,119 @@
 
   <style>
     /* ══════════════════════════════════════════
-       BASE
+       BASE — Mobile First
     ══════════════════════════════════════════ */
-    * { font-family: 'Rubik', sans-serif; box-sizing: border-box; user-select: none; -webkit-user-select: none; }
-    input, textarea { user-select: text; -webkit-user-select: text; }
+    *, *::before, *::after {
+      font-family: 'Rubik', sans-serif;
+      box-sizing: border-box;
+      user-select: none;
+      -webkit-user-select: none;
+      -webkit-tap-highlight-color: transparent;
+      margin: 0; padding: 0;
+    }
+    input, textarea, select { user-select: text; -webkit-user-select: text; }
     .no-scroll::-webkit-scrollbar { display: none; }
     .no-scroll { -ms-overflow-style: none; scrollbar-width: none; }
 
-    :root { --brand: #FF6B00; --brand2: #1A1A1A; --bg: #F5F5F5; }
+    :root {
+      --brand: #FF6B00;
+      --brand2: #1A1A1A;
+      --bg: #F5F5F5;
+      --max: 480px;
+      --nav-h: 64px;
+    }
 
     html {
-      background: #e5e5e5; /* لون خلفية خارج الـ container على الـ desktop */
+      background: #d0d0d0;
       height: 100%;
+      overflow-x: hidden;
     }
 
     body {
       background: var(--bg);
       margin: 0 auto;
       padding: 0;
-      min-height: 100vh;
+      min-height: 100%;
       width: 100%;
-      max-width: 480px;
+      max-width: var(--max);
       overflow-x: hidden;
+      overflow-y: auto;
       position: relative;
-      /* shadow على الجانبين للـ desktop */
-      box-shadow: 0 0 40px rgba(0,0,0,0.12);
+      box-shadow: 0 0 60px rgba(0,0,0,0.15);
+      -webkit-overflow-scrolling: touch;
     }
 
-    /* Bottom Nav — محصور جوة الـ body بالظبط */
+    /* ── كل الصفحات تأخذ عرض كامل ── */
+    #state-app,
+    #page-orders,
+    #page-wallet,
+    #page-account {
+      width: 100%;
+    }
+
+    /* ── Bottom Nav ── */
     #bottom-nav {
       position: fixed;
       bottom: 0;
       left: 50%;
       transform: translateX(-50%);
       width: 100%;
-      max-width: 480px;
-      padding-bottom: env(safe-area-inset-bottom, 0px);
+      max-width: var(--max);
+      height: var(--nav-h);
       background: #fff;
+      border-top: 1px solid #f0f0f0;
+      z-index: 60;
+      padding-bottom: env(safe-area-inset-bottom, 0px);
     }
 
-    /* prod-add-bar — نفس الـ bottom-nav */
-    .prod-add-bar {
-      left: 50% !important;
-      right: auto !important;
-      transform: translateX(-50%) !important;
-      width: 100% !important;
-      max-width: 480px !important;
-    }
-
-    /* Cart bar */
-    #cart-bar {
-      max-width: 480px;
+    /* ── Cart bar ── */
+    .cart-bar {
+      position: fixed;
+      bottom: 0;
       left: 50%;
       right: auto;
       transform: translateX(-50%);
+      width: 100%;
+      max-width: var(--max);
+      z-index: 30;
     }
 
-    /* كل الـ fixed elements تتمركز */
-    .fixed-center {
+    /* ── prod-add-bar ── */
+    .prod-add-bar {
       position: fixed;
+      bottom: 0;
       left: 50%;
+      right: auto;
       transform: translateX(-50%);
       width: 100%;
-      max-width: 480px;
+      max-width: var(--max);
+      background: #fff;
+      padding: 12px 16px max(16px, env(safe-area-inset-bottom));
+      border-top: 1px solid #f0f0f0;
+      display: flex;
+      align-items: center;
+      gap: 10px;
+      z-index: 60;
+    }
+
+    /* ── كل الـ fixed modals ── */
+    #cart-sheet,
+    #order-success-modal,
+    #cust-auth-modal,
+    #wallet-modal,
+    #celebration-overlay,
+    #confirm-sheet,
+    #order-detail-sheet {
+      max-width: var(--max);
+      left: 50%;
+      right: auto;
+      transform: translateX(-50%);
+      width: 100%;
+    }
+
+    /* ── Toast ── */
+    #mnio-toast {
+      max-width: calc(var(--max) - 32px) !important;
     }
 
     /* ══════════════════════════════════════════
@@ -1041,7 +1091,7 @@
 <!-- ══════════════════════════════════════════
      CART SHEET (bottom sheet)
 ══════════════════════════════════════════ -->
-<div id="cart-sheet" class="hidden fixed inset-0 z-40 flex flex-col justify-end">
+<div id="cart-sheet" class="hidden fixed inset-y-0 z-40 flex flex-col justify-end">
   <div class="absolute inset-0 bg-black/50 backdrop-blur-sm" onclick="closeCartSheet()"></div>
   <div class="sheet relative bg-white rounded-t-3xl shadow-2xl" style="max-height:88vh;display:flex;flex-direction:column">
 
@@ -1192,7 +1242,7 @@
 <!-- ══════════════════════════════════════════
      ORDER SUCCESS MODAL
 ══════════════════════════════════════════ -->
-<div id="order-success-modal" class="hidden fixed inset-0 z-[60] flex items-center justify-center" style="background:rgba(0,0,0,0.6);backdrop-filter:blur(6px)">
+<div id="order-success-modal" class="hidden fixed inset-y-0 z-[60] flex items-center justify-center" style="background:rgba(0,0,0,0.6);backdrop-filter:blur(6px)">
   <div class="bg-white rounded-3xl shadow-2xl mx-4 w-full max-w-sm p-8 text-center fade-up">
     <div class="success-icon text-6xl mb-4">⏳</div>
     <h2 id="success-title" style="font-size:22px;font-weight:900;color:#1a1a1a;margin-bottom:6px">تم استلام طلبك!</h2>
@@ -1217,7 +1267,7 @@
 
 
 <!-- ══ CUSTOMER AUTH MODAL ══ -->
-<div id="cust-auth-modal" class="hidden fixed inset-0 z-[70] flex items-end justify-center" style="background:rgba(0,0,0,0.55);backdrop-filter:blur(5px)">
+<div id="cust-auth-modal" class="hidden fixed inset-y-0 z-[70] flex items-end justify-center" style="background:rgba(0,0,0,0.55);backdrop-filter:blur(5px)">
   <div class="bg-white rounded-t-3xl w-full max-w-lg p-6 sheet space-y-4" style="max-height:92vh;overflow-y:auto">
     <div style="width:40px;height:4px;background:#e8e8e8;border-radius:4px;margin:0 auto 4px"></div>
     <div id="cauth-step-login">
@@ -1246,7 +1296,7 @@
 </div>
 
 <!-- ══ WALLET MODAL ══ -->
-<div id="wallet-modal" class="hidden fixed inset-0 z-[70] flex items-end justify-center" style="background:rgba(0,0,0,0.55);backdrop-filter:blur(5px)">
+<div id="wallet-modal" class="hidden fixed inset-y-0 z-[70] flex items-end justify-center" style="background:rgba(0,0,0,0.55);backdrop-filter:blur(5px)">
   <div class="bg-white rounded-t-3xl w-full max-w-lg sheet" style="max-height:92vh;overflow-y:auto">
     <div style="padding:20px 20px 0">
       <div style="width:40px;height:4px;background:#e8e8e8;border-radius:4px;margin:0 auto 16px"></div>
@@ -1283,7 +1333,7 @@
 </div>
 
 <!-- ══ CELEBRATION OVERLAY ══ -->
-<div id="celebration-overlay" class="hidden fixed inset-0 z-[80] flex flex-col items-center justify-center" style="background:rgba(0,0,0,0.75);backdrop-filter:blur(4px)">
+<div id="celebration-overlay" class="hidden fixed inset-y-0 z-[80] flex flex-col items-center justify-center" style="background:rgba(0,0,0,0.75);backdrop-filter:blur(4px)">
   <canvas id="confetti-canvas" class="absolute inset-0" style="pointer-events:none;width:100%;height:100%"></canvas>
   <div style="position:relative;text-align:center;padding:32px 28px;background:#fff;border-radius:28px;max-width:320px;width:90%;animation:successPop 0.5s cubic-bezier(0.34,1.5,0.64,1) both">
     <div style="font-size:64px;margin-bottom:8px">🎉</div>
@@ -2815,8 +2865,8 @@ function updateWalletBadge() {
 }
 
 function openWalletOrLogin() {
-  if (S.customer) openWalletModal()
-  else openCustAuth()
+  if (S.customer) switchPage('wallet')
+  else switchPage('account')
 }
 
 function openCustAuth() {
