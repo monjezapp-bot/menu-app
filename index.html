@@ -1408,7 +1408,23 @@ window.addEventListener('popstate', () => {
 // ── BOOT ──────────────────────────────────────────────────────────────
 let _lastSlug = null
 async function boot() {
-  const slug = new URLSearchParams(location.search).get('r')
+  let slug = new URLSearchParams(location.search).get('r')
+
+  // لو مفيش slug في URL (بعد Google redirect)، جيبه من localStorage
+  if (!slug) {
+    slug = localStorage.getItem('mnio_last_slug')
+  }
+  if (slug) {
+    // احفظه دايماً عشان بعد أي redirect
+    localStorage.setItem('mnio_last_slug', slug)
+    // لو الـ URL مش فيه r، أضفه بدون reload
+    if (!new URLSearchParams(location.search).get('r')) {
+      const url = new URL(location.href)
+      url.searchParams.set('r', slug)
+      history.replaceState({}, '', url.toString())
+    }
+  }
+
   _lastSlug = slug
   if (!slug) return showError('لم يتم تحديد المطعم. تأكد من الرابط الذي تستخدمه.', false)
 
@@ -3421,9 +3437,13 @@ async function signInWithGoogle() {
   const errEl = document.getElementById('acc-error')
   if (errEl) errEl.style.display = 'none'
   try {
+    // احفظ الـ slug قبل الـ redirect
+    if (_lastSlug) localStorage.setItem('mnio_last_slug', _lastSlug)
+    const redirectTo = window.location.origin + window.location.pathname +
+                       (_lastSlug ? '?r=' + _lastSlug : '')
     const { error } = await db.auth.signInWithOAuth({
       provider: 'google',
-      options: { redirectTo: window.location.href }
+      options: { redirectTo }
     })
     if (error) throw error
   } catch(e) {
