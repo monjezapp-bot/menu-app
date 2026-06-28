@@ -2905,7 +2905,7 @@ async function custLogout() {
 
 // ── WALLET MODAL ──────────────────────────────────────────────────────
 async function openWalletModal() {
-  if (!S.customer) { openCustAuth(); return }
+  if (!S.customer) { switchPage('account'); return }
   // تحديث البيانات
   await loadCustomerProfile()
   const c = S.customer
