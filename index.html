@@ -1244,6 +1244,24 @@
 
 <!-- ══ JAVASCRIPT ══ -->
 <script>
+// ── GLOBAL ERROR HANDLER (debug) ─────────────────────────────────────
+window.onerror = function(msg, src, line, col, err) {
+  const el = document.getElementById('state-error') || document.body
+  el.innerHTML = `<div style="padding:20px;font-family:monospace;background:#fff;color:#c00;font-size:12px;direction:ltr;word-break:break-all;position:fixed;inset:0;z-index:9999;overflow:auto">
+    <b>JS Error:</b><br>${msg}<br><br>
+    <b>Line:</b> ${line}:${col}<br><br>
+    <b>Stack:</b><br><pre>${err?.stack || 'N/A'}</pre>
+  </div>`
+  return false
+}
+window.addEventListener('unhandledrejection', e => {
+  const el = document.getElementById('state-error') || document.body
+  el.innerHTML = `<div style="padding:20px;font-family:monospace;background:#fff;color:#c00;font-size:12px;direction:ltr;word-break:break-all;position:fixed;inset:0;z-index:9999;overflow:auto">
+    <b>Unhandled Promise Rejection:</b><br>${e.reason?.message || e.reason}<br><br>
+    <b>Stack:</b><br><pre>${e.reason?.stack || 'N/A'}</pre>
+  </div>`
+})
+
 // ── CONFIG ────────────────────────────────────────────────────────────
 const SUPABASE_URL  = 'https://pcmyugeqveyjnappulng.supabase.co'
 const SUPABASE_ANON = 'eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6InBjbXl1Z2VxdmV5am5hcHB1bG5nIiwicm9sZSI6ImFub24iLCJpYXQiOjE3ODExNjU0NDAsImV4cCI6MjA5Njc0MTQ0MH0.uwn0X4CvNRW38FGh_0rYD9KjBRM19CydXucfBsCDYeo'
