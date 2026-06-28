@@ -2,7 +2,11 @@
 <html lang="ar" dir="rtl">
 <head>
   <meta charset="UTF-8" />
-  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no, viewport-fit=cover" />
+  <meta name="mobile-web-app-capable" content="yes" />
+  <meta name="apple-mobile-web-app-capable" content="yes" />
+  <meta name="apple-mobile-web-app-status-bar-style" content="black-translucent" />
+  <meta name="theme-color" content="#1A1A1A" />
   <title>المنيو</title>
 
   <!-- ── Libraries ── -->
@@ -23,9 +27,26 @@
     .no-scroll { -ms-overflow-style: none; scrollbar-width: none; }
 
     :root { --brand: #FF6B00; --brand2: #1A1A1A; --bg: #F5F5F5; }
-    html, body { background: var(--bg); margin: 0; padding: 0; }
-    body { max-width: 480px; margin: 0 auto; position: relative; min-height: 100vh; overflow-x: hidden; }
-    #bottom-nav { max-width: 480px !important; left: 50% !important; right: auto !important; transform: translateX(-50%); }
+    html { background: #e8e8e8; margin: 0; padding: 0; overflow-x: hidden; }
+    body {
+      background: var(--bg);
+      margin: 0 auto;
+      padding: 0;
+      position: relative;
+      min-height: 100vh;
+      overflow-x: hidden;
+      max-width: 480px;
+      /* Shadow so the app "floats" on desktop */
+      box-shadow: 0 0 40px rgba(0,0,0,0.18);
+    }
+    /* Bottom nav stays aligned to the body container on all screens */
+    #bottom-nav {
+      max-width: 480px !important;
+      left: 50% !important;
+      right: auto !important;
+      transform: translateX(-50%) !important;
+      width: 100% !important;
+    }
 
     /* ══════════════════════════════════════════
        ANIMATIONS
@@ -154,7 +175,13 @@
     .search-wrap input:focus { box-shadow: 0 4px 24px rgba(0,0,0,0.14), 0 0 0 2px var(--brand); }
     .search-wrap .search-ico { position: absolute; right: 16px; top: 50%; transform: translateY(-50%); color: #bbb; pointer-events: none; }
 
-    /* Search overlay (mini mode) */
+    /* Mobile-first: منع الـ tap highlight على كل العناصر التفاعلية */
+    button, a, [onclick] { -webkit-tap-highlight-color: transparent; }
+
+    /* Touch action على الـ body لمنع الـ pull-to-refresh */
+    body { touch-action: pan-y; }
+
+    /* Search overlay: مقيّدة بعرض الـ container */
     .search-overlay {
       position: fixed; inset: 0; z-index: 50;
       background: rgba(0,0,0,0.5);
@@ -162,6 +189,12 @@
       padding: 60px 16px 0;
       animation: fadeIn 0.2s ease;
     }
+
+    /* Notification panel: مقيّدة بالـ body */
+    #notif-panel { position: absolute; }
+
+    /* Safe area padding للـ bottom nav */
+    #bottom-nav { padding-bottom: max(8px, env(safe-area-inset-bottom)) !important; }
     .search-overlay input {
       width: 100%; background: #fff; border: none;
       border-radius: 16px; padding: 15px 48px 15px 16px;
@@ -318,7 +351,9 @@
        CART BAR (floating bottom)
     ══════════════════════════════════════════ */
     .cart-bar {
-      position: fixed; bottom: 0; left: 0; right: 0; z-index: 30;
+      position: fixed; bottom: 0; left: 50%; right: auto; z-index: 30;
+      transform: translateX(-50%);
+      width: 100%; max-width: 480px;
       padding: 10px 16px;
       padding-bottom: calc(14px + env(safe-area-inset-bottom));
     }
@@ -347,6 +382,7 @@
       cursor: pointer; z-index: 28;
       transition: opacity 0.3s, transform 0.3s;
       font-family: 'Rubik', sans-serif;
+      white-space: nowrap;
     }
     .back-to-top.hidden-btn { opacity: 0; pointer-events: none; transform: translateX(-50%) translateY(10px); }
     .back-to-top:active     { transform: translateX(-50%) scale(0.96); }
@@ -395,7 +431,7 @@
     .also-check { position: absolute; top: 5px; left: 5px; width: 20px; height: 20px; border-radius: 50%; background: var(--brand); color: #fff; font-size: 11px; font-weight: 900; display: flex; align-items: center; justify-content: center; }
 
     /* Add-to-cart bar (bottom of product page) */
-    .prod-add-bar { position: fixed; bottom: 0; left: 0; right: 0; background: #fff; padding: 12px 18px 20px; border-top: 1px solid #f0f0f0; display: flex; align-items: center; gap: 10px; z-index: 60; max-width: 480px; margin: 0 auto; }
+    .prod-add-bar { position: fixed; bottom: 0; left: 50%; right: auto; transform: translateX(-50%); width: 100%; max-width: 480px; background: #fff; padding: 12px 18px 20px; border-top: 1px solid #f0f0f0; display: flex; align-items: center; gap: 10px; z-index: 60; box-sizing: border-box; }
     .prod-qty         { display: flex; align-items: center; gap: 6px; background: #f5f5f5; border-radius: 12px; padding: 6px 10px; }
     .prod-qty-btn     { width: 28px; height: 28px; border-radius: 8px; border: none; font-size: 18px; font-weight: 900; cursor: pointer; display: flex; align-items: center; justify-content: center; font-family: 'Rubik', sans-serif; }
     .prod-qty-minus   { background: #fff; color: #333; box-shadow: 0 1px 4px rgba(0,0,0,0.1); }
@@ -432,6 +468,37 @@
     .order-card:active { transform:scale(0.98);box-shadow:0 1px 4px rgba(0,0,0,0.08) }
 
     .tx-row { display:flex;align-items:center;gap:10px;background:#fff;border-radius:14px;padding:14px;border:1.5px solid #f5f5f5 }
+
+    /* ══════════════════════════════════════════
+       MOBILE-FIRST FINAL RULES
+    ══════════════════════════════════════════ */
+
+    /* الـ prod-page (صفحة المنتج) — مقيّدة بالـ 480px */
+    .prod-page { max-width: 480px; width: 100%; margin: 0 auto; padding-bottom: 90px; animation: pageIn 0.25s ease both; }
+
+    /* كل الصفحات الـ full-screen تورث الـ max-width من الـ body */
+    #page-orders, #page-wallet, #page-account { box-sizing: border-box; }
+
+    /* Padding موحّد على الأطراف في كل مكان = 16px */
+    .announcement-bar { margin: 12px 16px 0; }
+    .ad-banner-wrap    { margin: 12px 16px 0; }
+    .section-title     { padding: 20px 16px 12px; }
+    .products-grid     { padding: 0 16px; }
+    .bundle-card       { margin: 0 16px 10px; }
+
+    /* منع أي عنصر داخلي يسبب overflow أفقي */
+    #state-app, #page-orders, #page-wallet, #page-account, #state-loading {
+      overflow-x: hidden;
+    }
+
+    /* على الشاشات الكبيرة: خلّي الخلفية رمادية والـ app يطفو في المنتصف */
+    @media (min-width: 481px) {
+      html { background: #d0d0d0; }
+      body {
+        box-shadow: 0 0 60px rgba(0,0,0,0.25), 0 0 0 1px rgba(0,0,0,0.08);
+        border-radius: 0;
+      }
+    }
   </style>
 </head>
 <body>
@@ -616,7 +683,7 @@
 ══════════════════════════════════════════ -->
 
 <!-- صفحة: طلباتك -->
-<div id="page-orders" class="hidden pb-28" style="min-height:100vh;background:#f7f7f7">
+<div id="page-orders" class="hidden pb-28" style="min-height:100vh;background:#f7f7f7;max-width:480px;margin:0 auto">
 
   <!-- Hero Header -->
   <div style="background:linear-gradient(160deg,#1a1a1a 0%,#2d1200 55%,#FF6B00 100%);padding:32px 20px 28px;position:relative;overflow:hidden">
@@ -703,7 +770,7 @@
 </div>
 
 <!-- صفحة: محفظتك -->
-<div id="page-wallet" class="hidden pb-28" style="min-height:100vh;background:#f7f7f7">
+<div id="page-wallet" class="hidden pb-28" style="min-height:100vh;background:#f7f7f7;max-width:480px;margin:0 auto">
 
   <!-- Hero Header -->
   <div style="background:linear-gradient(160deg,#FF6B00 0%,#ff9a3c 50%,#ffb347 100%);padding:32px 20px 28px;position:relative;overflow:hidden">
@@ -771,7 +838,7 @@
 </div>
 
 <!-- صفحة: حسابك -->
-<div id="page-account" class="hidden pb-28" style="min-height:100vh;background:var(--bg)">
+<div id="page-account" class="hidden pb-28" style="min-height:100vh;background:var(--bg);max-width:480px;margin:0 auto">
   <!-- حالة: غير مسجّل -->
   <div id="account-guest">
     <!-- Hero -->
@@ -919,7 +986,7 @@
 <!-- ══════════════════════════════════════════
      BOTTOM NAV (للمسجّلين فقط)
 ══════════════════════════════════════════ -->
-<nav id="bottom-nav" style="display:none;position:fixed;bottom:0;left:0;right:0;background:#fff;border-top:1px solid #f0f0f0;z-index:60;max-width:480px;margin:0 auto;padding:8px 0 max(8px, env(safe-area-inset-bottom))">
+<nav id="bottom-nav" style="display:none;position:fixed;bottom:0;left:50%;right:auto;transform:translateX(-50%);background:#fff;border-top:1px solid #f0f0f0;z-index:60;width:100%;max-width:480px;padding:8px 0 max(8px, env(safe-area-inset-bottom))">
   <div style="display:flex;justify-content:space-around;align-items:center">
     <!-- الرئيسية -->
     <button id="bnav-home" onclick="switchPage('home')" style="display:flex;flex-direction:column;align-items:center;gap:3px;background:none;border:none;cursor:pointer;padding:4px 16px;min-width:64px">
