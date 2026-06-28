@@ -23,7 +23,9 @@
     .no-scroll { -ms-overflow-style: none; scrollbar-width: none; }
 
     :root { --brand: #FF6B00; --brand2: #1A1A1A; --bg: #F5F5F5; }
-    body  { background: var(--bg); }
+    html, body { background: var(--bg); margin: 0; padding: 0; }
+    body { max-width: 480px; margin: 0 auto; position: relative; min-height: 100vh; overflow-x: hidden; }
+    #bottom-nav { max-width: 480px !important; left: 50% !important; right: auto !important; transform: translateX(-50%); }
 
     /* ══════════════════════════════════════════
        ANIMATIONS
@@ -614,7 +616,7 @@
 ══════════════════════════════════════════ -->
 
 <!-- صفحة: طلباتك -->
-<div id="page-orders" class="hidden max-w-[480px] mx-auto pb-28" style="min-height:100vh;background:#f7f7f7">
+<div id="page-orders" class="hidden pb-28" style="min-height:100vh;background:#f7f7f7">
 
   <!-- Hero Header -->
   <div style="background:linear-gradient(160deg,#1a1a1a 0%,#2d1200 55%,#FF6B00 100%);padding:32px 20px 28px;position:relative;overflow:hidden">
@@ -701,7 +703,7 @@
 </div>
 
 <!-- صفحة: محفظتك -->
-<div id="page-wallet" class="hidden max-w-[480px] mx-auto pb-28" style="min-height:100vh;background:#f7f7f7">
+<div id="page-wallet" class="hidden pb-28" style="min-height:100vh;background:#f7f7f7">
 
   <!-- Hero Header -->
   <div style="background:linear-gradient(160deg,#FF6B00 0%,#ff9a3c 50%,#ffb347 100%);padding:32px 20px 28px;position:relative;overflow:hidden">
@@ -769,7 +771,7 @@
 </div>
 
 <!-- صفحة: حسابك -->
-<div id="page-account" class="hidden max-w-[480px] mx-auto pb-28" style="min-height:100vh;background:var(--bg)">
+<div id="page-account" class="hidden pb-28" style="min-height:100vh;background:var(--bg)">
   <!-- حالة: غير مسجّل -->
   <div id="account-guest">
     <!-- Hero -->
