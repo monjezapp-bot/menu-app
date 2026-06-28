@@ -1334,6 +1334,7 @@ async function boot() {
     initScrollSpy()
     await initCustomerSession().catch(() => {})
     handleReferralParam()
+    initAuthListener()
     renderInfoStrip()
     showBottomNav(!!S.customer)
     setAccTab('login')
@@ -2602,23 +2603,116 @@ let _appliedDiscount = 0      // خصم الكود بالجنيه
 let _appliedCode     = null   // الكود المطبّق
 let _coinsToRedeem   = 0      // كوينز سيتم استخدامها في الطلب
 
-async function initCustomerSession() {
+async function initCustomerSession(forceCreate, extraData) {
   const { data: { session } } = await db.auth.getSession()
   if (!session) return
-  await loadCustomerProfile()
+  await loadCustomerProfile(forceCreate, extraData)
 }
 
-async function loadCustomerProfile() {
+async function loadCustomerProfile(forceCreate, extraData) {
   const { data: { user } } = await db.auth.getUser()
   if (!user || !S.restaurant) return
+
   const { data } = await db.from('menu_customers')
     .select('*')
     .eq('user_id', user.id)
     .eq('restaurant_id', S.restaurant.id)
-    .single()
-  S.customer = data || null
+    .maybeSingle()
+
+  if (data) {
+    S.customer = data
+  } else if (forceCreate || user.app_metadata?.provider === 'google') {
+    // أنشئ profile جديد لهذا المتجر
+    const refCode    = await genUniqueReferralCode()
+    const welcomeCoins = S.restaurant.welcome_coins ?? 10000
+    const name       = extraData?.name || user.user_metadata?.full_name || null
+    const avatarUrl  = user.user_metadata?.avatar_url || null
+
+    // تحقق من كود الإحالة
+    let referredBy = null
+    if (extraData?.referral_code_used) {
+      try {
+        const { data: refCust } = await db.from('menu_customers')
+          .select('id').eq('referral_code', extraData.referral_code_used)
+          .eq('restaurant_id', S.restaurant.id).maybeSingle()
+        if (refCust) referredBy = refCust.id
+      } catch(e) {}
+    }
+
+    try {
+      const { data: newCust } = await db.from('menu_customers').insert({
+        user_id:     user.id,
+        restaurant_id: S.restaurant.id,
+        email:       user.email,
+        name,
+        avatar_url:  avatarUrl,
+        phone:       extraData?.phone     || null,
+        birthdate:   extraData?.birthdate || null,
+        gender:      extraData?.gender    || null,
+        area:        extraData?.area      || null,
+        coins_balance: welcomeCoins,
+        referral_code: refCode,
+        referred_by: referredBy,
+        welcome_coins_claimed: false
+      }).select('*').maybeSingle()
+
+      if (newCust) {
+        S.customer = newCust
+        // سجّل معاملة الترحيب
+        await db.from('coin_transactions').insert({
+          customer_id:   newCust.id,
+          restaurant_id: S.restaurant.id,
+          type:   'welcome',
+          amount: welcomeCoins,
+          note:   'بونص الترحيب — يُستلم عند أول طلب'
+        }).catch(() => {})
+        // كوينز الإحالة للمُحيل
+        if (referredBy && S.restaurant.referral_coins) {
+          const rc = S.restaurant.referral_coins
+          await db.from('menu_customers')
+            .update({ coins_balance: db.rpc ? undefined : 0 })
+            .eq('id', referredBy).catch(() => {})
+          await db.from('coin_transactions').insert({
+            customer_id:   referredBy,
+            restaurant_id: S.restaurant.id,
+            type:   'referral_reward',
+            amount: rc,
+            note:   `إحالة: ${user.email}`
+          }).catch(() => {})
+        }
+      }
+    } catch(e) {
+      // لو فشل الـ insert (race condition)، جرب تجيب الـ profile تاني
+      const { data: retry } = await db.from('menu_customers')
+        .select('*').eq('user_id', user.id).eq('restaurant_id', S.restaurant.id).maybeSingle()
+      if (retry) S.customer = retry
+    }
+  }
+
   updateWalletBadge()
   updateCoinsRowInCart()
+}
+
+// ── مراقبة تغيير الـ Auth State (Google redirect) ─────────────────────
+function initAuthListener() {
+  db.auth.onAuthStateChange(async (event, session) => {
+    if (event === 'SIGNED_IN' && session && !S.customer) {
+      await loadCustomerProfile(true)
+      renderAccountPage()
+      showBottomNav(true)
+      loadNotifications().catch(() => {})
+      // لو أول مرة (Google)
+      if (event === 'SIGNED_IN') {
+        const savedPage = sessionStorage.getItem('mnio_page')
+        if (!savedPage || savedPage === 'account') switchPage('account')
+      }
+    } else if (event === 'SIGNED_OUT') {
+      S.customer = null
+      showBottomNav(false)
+      renderAccountPage()
+      updateWalletBadge()
+    }
+  })
 }
 
 function updateWalletBadge() {
