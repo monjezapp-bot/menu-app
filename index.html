@@ -1460,16 +1460,18 @@ async function boot() {
     handleReferralParam()
     initAuthListener()
     renderInfoStrip()
+    renderAccountPage()
     showBottomNav(!!S.customer)
-    setAccTab('login')
+    updateWalletBadge()
     if (S.customer) loadNotifications().catch(() => {})
     window._bootDone = true
-    // استعادة الصفحة بعد refresh
+    // استعادة الصفحة بعد refresh أو Google redirect
     const savedPage = sessionStorage.getItem('mnio_page')
     if (savedPage && savedPage !== 'home' && S.customer) {
       switchPage(savedPage)
+    } else if (S.customer && new URLSearchParams(location.search).get('ref')) {
+      switchPage('account')
     }
-
 
   } catch(e) {
     // أخطاء "المطعم غير موجود" نهائية (لا تحتاج إعادة محاولة)، وأي خطأ آخر (شبكة/تقني) مؤقت وقابل لإعادة المحاولة
@@ -2822,19 +2824,20 @@ async function loadCustomerProfile(forceCreate, extraData) {
 // ── مراقبة تغيير الـ Auth State (Google redirect) ─────────────────────
 function initAuthListener() {
   db.auth.onAuthStateChange(async (event, session) => {
-    if (event === 'SIGNED_IN' && session && !S.customer) {
-      await loadCustomerProfile(true)
-      renderAccountPage()
-      showBottomNav(true)
-      loadNotifications().catch(() => {})
-      // لو أول مرة (Google)
-      if (event === 'SIGNED_IN') {
-        const savedPage = sessionStorage.getItem('mnio_page')
-        if (!savedPage || savedPage === 'account') switchPage('account')
+    if (event === 'SIGNED_IN' && session) {
+      // لو مش عنده customer بعد (Google redirect جديد)
+      if (!S.customer && S.restaurant) {
+        await loadCustomerProfile(true)
+        renderAccountPage()
+        showBottomNav(true)
+        updateWalletBadge()
+        loadNotifications().catch(() => {})
+        switchPage('account')
       }
     } else if (event === 'SIGNED_OUT') {
       S.customer = null
       showBottomNav(false)
+      switchPage('home')
       renderAccountPage()
       updateWalletBadge()
     }
