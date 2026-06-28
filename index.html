@@ -1347,7 +1347,7 @@ const db = createClient(SUPABASE_URL, SUPABASE_ANON, {
     storageKey: 'menu-customer-auth',
     autoRefreshToken: true,
     persistSession: true,
-    detectSessionInUrl: false
+    detectSessionInUrl: true   // ← لازم true: ده اللي بيقرأ access_token/code من الـ URL بعد رجوع Google
   }
 })
 
@@ -1441,9 +1441,9 @@ async function boot() {
     showState('app')
     initScrollBehavior()
     initScrollSpy()
+    initAuthListener()   // ← لازم تتسجل قبل أي قراءة session، عشان ما نفوّتش SIGNED_IN لو جايين من Google redirect
     await initCustomerSession().catch(() => {})
     handleReferralParam()
-    initAuthListener()
     renderInfoStrip()
     renderAccountPage()
     showBottomNav(!!S.customer)
@@ -3176,7 +3176,7 @@ function closeOrderDetail() {
 
 // ── صفحة محفظتك ──────────────────────────────────────────────────────
 async function loadWalletPage() {
-  if (!S.customer || !S.restaurant) return
+  if (!S.customer || !S.restaurant) { switchPage('account'); return }
   await loadCustomerProfile()
   const c      = S.customer
   const cpE    = S.restaurant.coins_per_egp ?? 1000
