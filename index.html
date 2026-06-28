@@ -351,11 +351,12 @@
        CART BAR (floating bottom)
     ══════════════════════════════════════════ */
     .cart-bar {
-      position: fixed; bottom: 0; left: 50%; right: auto; z-index: 30;
+      position: fixed;
+      bottom: calc(65px + env(safe-area-inset-bottom));
+      left: 50%; right: auto; z-index: 30;
       transform: translateX(-50%);
       width: 100%; max-width: 480px;
-      padding: 10px 16px;
-      padding-bottom: calc(14px + env(safe-area-inset-bottom));
+      padding: 0 16px 10px;
     }
     .cart-bar-btn {
       background: var(--brand); color: #fff;
@@ -373,13 +374,15 @@
        BACK TO TOP BUTTON
     ══════════════════════════════════════════ */
     .back-to-top {
-      position: fixed; bottom: 84px; left: 50%; transform: translateX(-50%);
+      position: fixed;
+      bottom: calc(80px + env(safe-area-inset-bottom));
+      left: 50%; transform: translateX(-50%);
       background: #1a1a1a; color: #fff;
       border: none; border-radius: 100px;
       padding: 10px 20px; font-size: 13px; font-weight: 700;
       display: flex; align-items: center; gap: 7px;
       box-shadow: 0 4px 16px rgba(0,0,0,0.2);
-      cursor: pointer; z-index: 28;
+      cursor: pointer; z-index: 29;
       transition: opacity 0.3s, transform 0.3s;
       font-family: 'Rubik', sans-serif;
       white-space: nowrap;
@@ -1077,10 +1080,6 @@
       <!-- Footer: inputs + send button -->
       <div style="padding:14px 16px 8px;border-top:1px solid #f0f0f0;background:#fff;margin-top:auto">
 
-        <!-- Table number -->
-        <input id="table-number-input" type="text" placeholder="رقم الطاولة (اختياري)"
-               style="width:100%;border:1.5px solid #eee;border-radius:14px;padding:12px 14px;font-size:13px;color:#444;outline:none;font-family:'Rubik',sans-serif;margin-bottom:10px" />
-
         <!-- Delivery info -->
         <div style="background:#f9f9f9;border-radius:16px;padding:12px 14px;margin-bottom:10px">
           <p style="font-size:12px;font-weight:800;color:#888;margin-bottom:8px">بيانات التوصيل <span style="color:#bbb;font-weight:600">(مطلوبة لو الطلب توصيل)</span></p>
@@ -1154,7 +1153,7 @@
 
         <!-- Send button -->
         <button id="send-order-btn" onclick="sendOrder()"
-                style="width:100%;background:var(--brand);color:#fff;font-size:15px;font-weight:900;border-radius:18px;padding:16px;display:flex;align-items:center;justify-content:center;gap:10px;margin-bottom:calc(8px + env(safe-area-inset-bottom))">
+                style="width:100%;background:var(--brand);color:#fff;font-size:15px;font-weight:900;border-radius:18px;padding:16px;display:flex;align-items:center;justify-content:center;gap:10px;margin-top:4px;margin-bottom:calc(16px + env(safe-area-inset-bottom))">
           <span>إرسال الطلب</span><span style="font-size:20px">✅</span>
         </button>
       </div>
@@ -1165,7 +1164,7 @@
 <!-- ══════════════════════════════════════════
      MAP PICKER MODAL
 ══════════════════════════════════════════ -->
-<div id="map-modal" class="hidden fixed inset-0 z-50 flex flex-col" style="background:#fff">
+<div id="map-modal" class="hidden fixed inset-0 z-50 flex flex-col" style="background:#fff;max-width:480px;left:50%;transform:translateX(-50%);width:100%">
   <div style="display:flex;align-items:center;justify-content:space-between;padding:14px 16px;border-bottom:1px solid #f0f0f0;flex-shrink:0">
     <p style="font-size:16px;font-weight:900;color:#1a1a1a">📍 حدد موقعك</p>
     <button onclick="closeMapPicker()" style="width:36px;height:36px;border-radius:50%;background:#f5f5f5;color:#555;font-size:20px;font-weight:700;display:flex;align-items:center;justify-content:center">&times;</button>
@@ -1173,11 +1172,13 @@
   <div style="padding:10px 16px;background:#fff8f3;border-bottom:1px solid #ffe0c8;flex-shrink:0">
     <p style="font-size:12px;color:#7a3c00;font-weight:600">اسحب الخريطة أو اضغط على موقعك بالضبط — ثم اضغط "تأكيد"</p>
   </div>
-  <div id="leaflet-map" style="flex:1;width:100%;min-height:0"></div>
-  <button onclick="useMyLocation()"
-          style="position:absolute;bottom:90px;left:16px;z-index:1000;background:#fff;border:none;border-radius:12px;padding:10px 14px;font-size:13px;font-weight:800;color:#1a1a1a;box-shadow:0 2px 12px rgba(0,0,0,0.15);display:flex;align-items:center;gap:6px;font-family:'Rubik',sans-serif;cursor:pointer">
-    🎯 موقعي الحالي
-  </button>
+  <div style="position:relative;flex:1;min-height:0">
+    <div id="leaflet-map" style="width:100%;height:100%"></div>
+    <button onclick="useMyLocation()"
+            style="position:absolute;bottom:16px;left:16px;z-index:1000;background:#fff;border:none;border-radius:12px;padding:10px 14px;font-size:13px;font-weight:800;color:#1a1a1a;box-shadow:0 2px 12px rgba(0,0,0,0.15);display:flex;align-items:center;gap:6px;font-family:'Rubik',sans-serif;cursor:pointer">
+      🎯 موقعي الحالي
+    </button>
+  </div>
   <div style="padding:12px 16px;border-top:1px solid #f0f0f0;background:#fff;flex-shrink:0">
     <p id="map-coords-label" style="font-size:12px;color:#aaa;text-align:center;margin-bottom:10px">لم يتم تحديد موقع بعد</p>
     <button onclick="confirmLocation()"
@@ -2309,7 +2310,6 @@ function focusNextField(event, nextFieldId, submitFn) {
 async function sendOrder() {
   if (!S.cart.length) return
 
-  const table    = document.getElementById('table-number-input').value.trim()
   const custName = document.getElementById('order-name').value.trim()
   const custPhone= document.getElementById('order-phone').value.trim()
   const custAddr = document.getElementById('order-address').value.trim()
@@ -2318,19 +2318,16 @@ async function sendOrder() {
   const custLng  = document.getElementById('order-location-lng').value
   const note     = document.getElementById('order-note').value.trim()
 
-  // تحقق إجباري: لو الطلب توصيل (مفيش رقم طاولة)، لازم رقم تواصل + تحديد الموقع على الخريطة
-  // (الموقع إجباري وليس بديلاً اختيارياً للعنوان، لأنه أساس حساب أقرب فرع وتكلفة التوصيل)
+  // تحقق: لازم رقم تواصل + تحديد الموقع على الخريطة
   clearFieldErrors()
-  if (!table) {
-    const missing = []
-    if (!custPhone) missing.push('order-phone')
-    if (!custLat) missing.push('map-pick-btn')
-    if (missing.length) {
-      missing.forEach(id => markFieldError(id))
-      showToast('من فضلك اكتب رقم تواصلك وحدد موقعك على الخريطة لإتمام التوصيل')
-      document.getElementById(missing[0]).scrollIntoView({ behavior: 'smooth', block: 'center' })
-      return
-    }
+  const missing = []
+  if (!custPhone) missing.push('order-phone')
+  if (!custLat) missing.push('map-pick-btn')
+  if (missing.length) {
+    missing.forEach(id => markFieldError(id))
+    showToast('من فضلك اكتب رقم تواصلك وحدد موقعك على الخريطة لإتمام التوصيل')
+    document.getElementById(missing[0]).scrollIntoView({ behavior: 'smooth', block: 'center' })
+    return
   }
 
   const btn      = document.getElementById('send-order-btn')
@@ -2358,7 +2355,7 @@ async function sendOrder() {
   // أقرب فرع نشط لموقع العميل (لو الطلب توصيل ومفيش طاولة) — أساس توجيه الطلب وحساب التوصيل
   let nearestBranchId = null
   let deliveryFee     = 0
-  if (!table && custLat && custLng) {
+  if (custLat && custLng) {
     const pricePerKm = parseFloat(S.restaurant.price_per_km) || 0
     if (S.branches.length > 0) {
       const result = findNearestBranch(parseFloat(custLat), parseFloat(custLng))
@@ -2394,7 +2391,6 @@ async function sendOrder() {
         restaurant_id:    S.restaurant.id,
         order_number:     rpc,
         items, total:     finalTotal,
-        table_number:     table     || null,
         customer_name:    custName  || S.customer?.name || null,
         customer_phone:   custPhone || S.customer?.phone || null,
         customer_address: custAddr  || null,
@@ -2445,7 +2441,7 @@ async function sendOrder() {
   }
 
   clearCart(); updateCartUI(); closeCartSheet()
-  ;['order-name', 'order-phone', 'order-address', 'order-location', 'order-note', 'table-number-input', 'cart-discount-code']
+  ;['order-name', 'order-phone', 'order-address', 'order-location', 'order-note', 'cart-discount-code']
     .forEach(id => { const el = document.getElementById(id); if (el) el.value = '' })
   document.getElementById('order-location-lat').value = ''
   document.getElementById('order-location-lng').value = ''
@@ -3007,9 +3003,12 @@ function switchPage(page) {
 function showBottomNav(show) {
   const nav = document.getElementById('bottom-nav')
   if (nav) nav.style.display = show ? 'block' : 'none'
-  // لو في bottom nav، زوّد الـ padding السفلي للصفحة الرئيسية
-  document.getElementById('state-app')?.classList.toggle('pb-36', !show)
-  if (show) document.getElementById('state-app')?.style.setProperty('padding-bottom', '100px')
+  // لما الـ bottom nav ظاهر: padding = ارتفاع الـ nav (~65px) + ارتفاع الـ cart bar (~82px) + مسافة
+  const app = document.getElementById('state-app')
+  if (app) {
+    app.classList.remove('pb-36')
+    app.style.paddingBottom = show ? '160px' : '90px'
+  }
 }
 
 // ── صفحة طلباتك ──────────────────────────────────────────────────────
