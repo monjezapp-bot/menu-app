@@ -4010,7 +4010,7 @@ function triggerInstall() {
   _deferredInstallPrompt.userChoice.then(() => { _deferredInstallPrompt = null })
 }
 
-
+function showCelebration(coins) {
   document.getElementById('celeb-coins').textContent = coins.toLocaleString('ar-EG')
   document.getElementById('celebration-overlay').classList.remove('hidden')
   document.body.style.overflow = 'hidden'
