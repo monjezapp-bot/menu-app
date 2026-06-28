@@ -410,6 +410,26 @@
     .suggest-card .sc-info { padding: 5px 7px 7px; }
     .suggest-card .sc-info p    { font-size: 10px; font-weight: 700; color: #1a1a1a; line-height: 1.3; }
     .suggest-card .sc-info span { font-size: 10px; font-weight: 900; color: var(--brand); }
+
+    @keyframes floatCoin {
+      0%,100% { transform: translateY(0px) rotate(0deg); opacity: 0.2; }
+      50%      { transform: translateY(-14px) rotate(15deg); opacity: 0.35; }
+    }
+    #acc-submit-btn:active { transform: scale(0.97); }
+    #acc-submit-btn:hover  { box-shadow: 0 6px 24px rgba(255,107,0,0.5); }
+
+    .tracker-step { display:flex;flex-direction:column;align-items:center;gap:4px;z-index:1;position:relative }
+    .tstep-dot { width:34px;height:34px;border-radius:50%;background:#f0f0f0;display:flex;align-items:center;justify-content:center;font-size:16px;border:2.5px solid #e0e0e0;transition:all 0.4s ease }
+    .tstep-dot.active { background:#fff8f3;border-color:var(--brand);box-shadow:0 0 0 4px rgba(255,107,0,0.15) }
+    .tstep-dot.done   { background:var(--brand);border-color:var(--brand) }
+    .tstep-label { font-size:9px;font-weight:700;color:#bbb;transition:color 0.3s }
+    .tstep-label.active { color:var(--brand) }
+    .tstep-label.done   { color:var(--brand) }
+
+    .order-card { background:#fff;border-radius:18px;padding:16px;margin-bottom:10px;border:1.5px solid #f0f0f0;cursor:pointer;transition:all 0.2s;box-shadow:0 2px 8px rgba(0,0,0,0.04) }
+    .order-card:active { transform:scale(0.98);box-shadow:0 1px 4px rgba(0,0,0,0.08) }
+
+    .tx-row { display:flex;align-items:center;gap:10px;background:#fff;border-radius:14px;padding:14px;border:1.5px solid #f5f5f5 }
   </style>
 </head>
 <body>
@@ -454,11 +474,7 @@
 ══════════════════════════════════════════ -->
 <div id="state-app" class="hidden max-w-[480px] mx-auto pb-36">
 
-  <!-- Preview bar (visible only in ?preview=1) -->
-  <div id="back-to-dash" class="hidden" style="background:#1a1a1a;color:#fff;font-size:12px;font-weight:700;padding:9px 16px;display:flex;align-items:center;justify-content:space-between;position:relative;z-index:40">
-    <span>🔍 وضع المعاينة</span>
-    <a href="./dashboard.html" style="background:#fff;color:#1a1a1a;padding:4px 12px;border-radius:8px;font-weight:700">← لوحة التحكم</a>
-  </div>
+
 
   <!-- ── Hero (sticky, shrinks on scroll) ── -->
   <div class="hero-wrap" id="hero-wrap">
@@ -525,6 +541,45 @@
     </div>
   </div>
 
+  <!-- ── Info Strip ── -->
+  <div id="info-strip" style="display:flex;align-items:center;gap:8px;padding:10px 14px 6px;background:var(--bg);position:relative">
+    <!-- إشعارات -->
+    <button id="notif-btn" onclick="toggleNotifPanel()"
+            style="position:relative;width:36px;height:36px;border-radius:50%;background:#fff;border:1.5px solid #eee;display:flex;align-items:center;justify-content:center;flex-shrink:0;box-shadow:0 1px 6px rgba(0,0,0,0.07)">
+      <svg width="16" height="16" fill="none" stroke="#666" stroke-width="2.2" viewBox="0 0 24 24"><path d="M18 8A6 6 0 006 8c0 7-3 9-3 9h18s-3-2-3-9"/><path d="M13.73 21a2 2 0 01-3.46 0"/></svg>
+      <span id="notif-badge" style="display:none;position:absolute;top:-3px;right:-3px;background:#ef4444;color:#fff;font-size:9px;font-weight:900;border-radius:10px;padding:1px 5px;min-width:16px;text-align:center;border:2px solid var(--bg)"></span>
+    </button>
+    <!-- تقييم -->
+    <div style="display:flex;align-items:center;gap:3px;background:#fff;border-radius:20px;padding:6px 10px;border:1.5px solid #eee;box-shadow:0 1px 6px rgba(0,0,0,0.07);flex-shrink:0">
+      <svg width="12" height="12" fill="#f59e0b" viewBox="0 0 24 24"><path d="M12 2l3.09 6.26L22 9.27l-5 4.87 1.18 6.88L12 17.77l-6.18 3.25L7 14.14 2 9.27l6.91-1.01L12 2z"/></svg>
+      <span id="strip-rating" style="font-size:12px;font-weight:800;color:#1a1a1a">5.0</span>
+    </div>
+    <!-- وقت التوصيل -->
+    <div style="display:flex;align-items:center;gap:3px;background:#fff;border-radius:20px;padding:6px 10px;border:1.5px solid #eee;box-shadow:0 1px 6px rgba(0,0,0,0.07);flex-shrink:0">
+      <svg width="12" height="12" fill="none" stroke="#888" stroke-width="2.2" viewBox="0 0 24 24"><circle cx="12" cy="12" r="10"/><polyline points="12 6 12 12 16 14"/></svg>
+      <span id="strip-time" style="font-size:12px;font-weight:700;color:#555">-- د</span>
+    </div>
+    <!-- spacer -->
+    <div style="flex:1"></div>
+    <!-- زر Install PWA -->
+    <button id="install-btn" onclick="triggerInstall()"
+            style="display:none;align-items:center;gap:5px;background:var(--brand);color:#fff;border:none;border-radius:20px;padding:7px 12px;font-size:11px;font-weight:800;font-family:'Rubik',sans-serif;box-shadow:0 2px 8px rgba(255,107,0,0.3)">
+      <svg width="13" height="13" fill="none" stroke="#fff" stroke-width="2.4" viewBox="0 0 24 24"><path d="M12 2v13M7 11l5 5 5-5"/><rect x="3" y="18" width="18" height="3" rx="1.5"/></svg>
+      أضف للشاشة
+    </button>
+  </div>
+
+  <!-- لوحة الإشعارات -->
+  <div id="notif-panel" style="display:none;position:absolute;top:0;right:14px;left:14px;background:#fff;border-radius:20px;box-shadow:0 8px 32px rgba(0,0,0,0.14);border:1px solid #f0f0f0;z-index:55;max-height:320px;overflow-y:auto">
+    <div style="display:flex;align-items:center;justify-content:space-between;padding:14px 16px 10px;border-bottom:1px solid #f5f5f5;position:sticky;top:0;background:#fff;border-radius:20px 20px 0 0">
+      <p style="font-size:14px;font-weight:900;color:#1a1a1a">الإشعارات</p>
+      <button onclick="markAllNotifsRead()" style="font-size:11px;color:var(--brand);font-weight:700;background:none;border:none;cursor:pointer">تحديد الكل كمقروء</button>
+    </div>
+    <div id="notif-list" style="padding:8px 0">
+      <p style="font-size:13px;color:#bbb;text-align:center;padding:24px 0">لا توجد إشعارات</p>
+    </div>
+  </div>
+
   <!-- Announcement bar -->
   <div id="announcement-bar" class="announcement-bar hidden">
     <span class="ann-icon">📢</span>
@@ -553,6 +608,340 @@
   </div>
 
 </div><!-- /state-app -->
+
+<!-- ══════════════════════════════════════════
+     PAGES: طلباتك / محفظتك / حسابك
+══════════════════════════════════════════ -->
+
+<!-- صفحة: طلباتك -->
+<div id="page-orders" class="hidden max-w-[480px] mx-auto pb-28" style="min-height:100vh;background:#f7f7f7">
+
+  <!-- Hero Header -->
+  <div style="background:linear-gradient(160deg,#1a1a1a 0%,#2d1200 55%,#FF6B00 100%);padding:32px 20px 28px;position:relative;overflow:hidden">
+    <div style="position:absolute;top:-30px;right:-30px;width:130px;height:130px;border-radius:50%;background:rgba(255,255,255,0.05);pointer-events:none"></div>
+    <div style="position:absolute;bottom:-40px;left:-20px;width:160px;height:160px;border-radius:50%;background:rgba(255,107,0,0.08);pointer-events:none"></div>
+    <div style="position:absolute;inset:0;pointer-events:none;overflow:hidden">
+      <span style="position:absolute;top:20%;right:12%;font-size:14px;opacity:0.15;animation:floatCoin 4s ease-in-out infinite">📦</span>
+      <span style="position:absolute;top:50%;left:8%;font-size:12px;opacity:0.12;animation:floatCoin 3.5s ease-in-out infinite 1s">🛵</span>
+      <span style="position:absolute;top:70%;right:20%;font-size:10px;opacity:0.1;animation:floatCoin 5s ease-in-out infinite 0.5s">✅</span>
+    </div>
+    <h2 style="color:#fff;font-size:22px;font-weight:900;margin-bottom:4px;position:relative">طلباتك 📋</h2>
+    <p style="color:rgba(255,255,255,0.6);font-size:13px;position:relative">تتبّع طلباتك ومشترياتك السابقة</p>
+    <!-- stats bar -->
+    <div style="display:flex;gap:10px;margin-top:18px;position:relative">
+      <div style="flex:1;background:rgba(255,255,255,0.1);border-radius:14px;padding:10px 12px;text-align:center;border:1px solid rgba(255,255,255,0.12)">
+        <p id="orders-stat-total" style="font-size:20px;font-weight:900;color:#fff">0</p>
+        <p style="font-size:10px;color:rgba(255,255,255,0.6);font-weight:600;margin-top:2px">إجمالي الطلبات</p>
+      </div>
+      <div style="flex:1;background:rgba(255,255,255,0.1);border-radius:14px;padding:10px 12px;text-align:center;border:1px solid rgba(255,255,255,0.12)">
+        <p id="orders-stat-spend" style="font-size:20px;font-weight:900;color:#fff">0</p>
+        <p style="font-size:10px;color:rgba(255,255,255,0.6);font-weight:600;margin-top:2px">إجمالي المشتريات ج.م</p>
+      </div>
+      <div style="flex:1;background:rgba(255,255,255,0.1);border-radius:14px;padding:10px 12px;text-align:center;border:1px solid rgba(255,255,255,0.12)">
+        <p id="orders-stat-coins" style="font-size:20px;font-weight:900;color:#FF6B00">0</p>
+        <p style="font-size:10px;color:rgba(255,255,255,0.6);font-weight:600;margin-top:2px">كوينز مكتسبة 🪙</p>
+      </div>
+    </div>
+  </div>
+
+  <!-- Active Order Tracker -->
+  <div id="active-order-tracker" style="display:none;margin:16px;background:#fff;border-radius:20px;padding:18px;border:1.5px solid #f0f0f0;box-shadow:0 4px 20px rgba(255,107,0,0.1);border-color:#ffd4a8">
+    <div style="display:flex;align-items:center;justify-content:space-between;margin-bottom:16px">
+      <div>
+        <p style="font-size:12px;color:#888;font-weight:600;margin-bottom:2px">الطلب الحالي</p>
+        <p id="tracker-order-num" style="font-size:15px;font-weight:900;color:#1a1a1a"></p>
+      </div>
+      <div id="tracker-status-badge" style="font-size:11px;font-weight:800;border-radius:12px;padding:5px 12px"></div>
+    </div>
+    <!-- Steps -->
+    <div style="display:flex;align-items:center;justify-content:space-between;position:relative;margin-bottom:8px">
+      <div style="position:absolute;top:16px;left:10%;right:10%;height:3px;background:#f0f0f0;border-radius:2px;z-index:0">
+        <div id="tracker-progress-line" style="height:100%;width:0%;background:linear-gradient(90deg,#FF6B00,#ff9a3c);border-radius:2px;transition:width 0.8s ease"></div>
+      </div>
+      <div class="tracker-step" id="tstep-pending">
+        <div class="tstep-dot">⏳</div>
+        <p class="tstep-label">استلمنا</p>
+      </div>
+      <div class="tracker-step" id="tstep-confirmed">
+        <div class="tstep-dot">👨‍🍳</div>
+        <p class="tstep-label">بنحضّر</p>
+      </div>
+      <div class="tracker-step" id="tstep-ready">
+        <div class="tstep-dot">📦</div>
+        <p class="tstep-label">جاهز</p>
+      </div>
+      <div class="tracker-step" id="tstep-delivering">
+        <div class="tstep-dot">🛵</div>
+        <p class="tstep-label">في الطريق</p>
+      </div>
+      <div class="tracker-step" id="tstep-delivered">
+        <div class="tstep-dot">🎉</div>
+        <p class="tstep-label">وصل!</p>
+      </div>
+    </div>
+    <p id="tracker-eta" style="font-size:12px;color:#888;font-weight:600;text-align:center;margin-top:8px"></p>
+  </div>
+
+  <!-- Orders List -->
+  <div style="padding:0 16px 16px">
+    <div id="orders-page-list"></div>
+  </div>
+
+  <!-- Order Detail Sheet -->
+  <div id="order-detail-sheet" style="display:none;position:fixed;inset:0;z-index:100;background:rgba(0,0,0,0.5);align-items:flex-end;justify-content:center">
+    <div style="background:#fff;border-radius:24px 24px 0 0;padding:24px 20px 40px;width:100%;max-width:480px;max-height:85vh;overflow-y:auto;box-sizing:border-box">
+      <div style="display:flex;justify-content:space-between;align-items:center;margin-bottom:20px">
+        <p style="font-size:16px;font-weight:900;color:#1a1a1a" id="ods-num"></p>
+        <button onclick="closeOrderDetail()" style="width:32px;height:32px;border-radius:50%;background:#f5f5f5;border:none;cursor:pointer;font-size:16px">✕</button>
+      </div>
+      <div id="ods-body"></div>
+    </div>
+  </div>
+
+</div>
+
+<!-- صفحة: محفظتك -->
+<div id="page-wallet" class="hidden max-w-[480px] mx-auto pb-28" style="min-height:100vh;background:#f7f7f7">
+
+  <!-- Hero Header -->
+  <div style="background:linear-gradient(160deg,#FF6B00 0%,#ff9a3c 50%,#ffb347 100%);padding:32px 20px 28px;position:relative;overflow:hidden">
+    <div style="position:absolute;top:-40px;right:-30px;width:160px;height:160px;border-radius:50%;background:rgba(255,255,255,0.08);pointer-events:none"></div>
+    <div style="position:absolute;bottom:-50px;left:-20px;width:180px;height:180px;border-radius:50%;background:rgba(255,255,255,0.06);pointer-events:none"></div>
+    <div style="position:absolute;inset:0;pointer-events:none;overflow:hidden">
+      <span style="position:absolute;top:15%;left:6%;font-size:20px;opacity:0.2;animation:floatCoin 3.5s ease-in-out infinite">🪙</span>
+      <span style="position:absolute;top:30%;right:8%;font-size:14px;opacity:0.15;animation:floatCoin 4.5s ease-in-out infinite 1s">🪙</span>
+      <span style="position:absolute;top:65%;left:12%;font-size:12px;opacity:0.12;animation:floatCoin 5s ease-in-out infinite 0.5s">💰</span>
+      <span style="position:absolute;top:20%;right:25%;font-size:10px;opacity:0.15;animation:floatCoin 3.8s ease-in-out infinite 2s">⭐</span>
+    </div>
+    <p style="color:rgba(255,255,255,0.8);font-size:12px;font-weight:700;margin-bottom:4px;position:relative">رصيد محفظتك 💳</p>
+    <p id="wpage-balance" style="font-size:48px;font-weight:900;color:#fff;position:relative;line-height:1">0</p>
+    <p id="wpage-balance-egp" style="font-size:14px;color:rgba(255,255,255,0.8);font-weight:700;margin-top:4px;position:relative">= 0.00 ج.م متاح للشراء</p>
+    <p id="wpage-min-note" style="font-size:11px;color:rgba(255,255,255,0.65);margin-top:8px;position:relative"></p>
+  </div>
+
+  <div style="padding:16px">
+
+    <!-- تحويل الكوينز لرصيد -->
+    <div id="wpage-convert-card" style="display:none;background:#fff;border-radius:20px;padding:18px;margin-bottom:12px;border:2px solid var(--brand);box-shadow:0 4px 20px rgba(255,107,0,0.15)">
+      <div style="display:flex;align-items:center;gap:10px;margin-bottom:14px">
+        <span style="font-size:24px">🔄</span>
+        <div>
+          <p style="font-size:14px;font-weight:900;color:#1a1a1a">حوّل كوينزك لرصيد!</p>
+          <p style="font-size:12px;color:#888">الرصيد يُستخدم للشراء من المتجر فقط</p>
+        </div>
+      </div>
+      <div style="background:#fff8f3;border-radius:14px;padding:14px;margin-bottom:14px">
+        <p style="font-size:12px;color:#888;margin-bottom:6px">الكوينز المتاحة للتحويل</p>
+        <p id="wpage-convertable" style="font-size:24px;font-weight:900;color:var(--brand)">0 🪙</p>
+        <p id="wpage-convert-egp" style="font-size:12px;color:#cc5500;font-weight:700;margin-top:2px"></p>
+      </div>
+      <button onclick="convertCoinsToBalance()" style="width:100%;background:linear-gradient(135deg,var(--brand),#ff8c38);color:#fff;font-size:15px;font-weight:900;border-radius:14px;padding:14px;border:none;cursor:pointer;font-family:'Rubik',sans-serif;box-shadow:0 4px 16px rgba(255,107,0,0.3)">
+        تحويل الكوينز الآن 🪙→💳
+      </button>
+    </div>
+
+    <!-- رصيد المحفظة النقدي -->
+    <div style="background:#fff;border-radius:20px;padding:18px;margin-bottom:12px;border:1.5px solid #f0f0f0;box-shadow:0 2px 12px rgba(0,0,0,0.04)">
+      <div style="display:flex;align-items:center;justify-content:space-between;margin-bottom:14px">
+        <div style="display:flex;align-items:center;gap:8px">
+          <span style="font-size:20px">💳</span>
+          <p style="font-size:14px;font-weight:900;color:#1a1a1a">رصيدك النقدي</p>
+        </div>
+        <p id="wpage-cash-balance" style="font-size:20px;font-weight:900;color:#22c55e">0.00 ج.م</p>
+      </div>
+      <div style="background:#f0fdf4;border-radius:12px;padding:10px 14px;display:flex;align-items:center;gap:8px">
+        <span style="font-size:14px">ℹ️</span>
+        <p style="font-size:11px;color:#16a34a;font-weight:600;line-height:1.5">الرصيد النقدي يُستخدم كخصم مباشر من قيمة طلبك القادم. لا يمكن سحبه نقداً.</p>
+      </div>
+      <button onclick="switchPage('home')" style="width:100%;margin-top:12px;background:#f0fdf4;color:#16a34a;font-size:13px;font-weight:800;border-radius:12px;padding:11px;border:1.5px solid #bbf7d0;cursor:pointer;font-family:'Rubik',sans-serif">
+        🛒 تسوّق الآن واستخدم رصيدك
+      </button>
+    </div>
+
+    <!-- سجل المعاملات -->
+    <div style="display:flex;align-items:center;justify-content:space-between;margin-bottom:10px">
+      <p style="font-size:15px;font-weight:900;color:#1a1a1a">سجل المعاملات</p>
+      <span style="font-size:11px;color:#aaa;font-weight:600">آخر 20 حركة</span>
+    </div>
+    <div id="wpage-tx-list" style="display:flex;flex-direction:column;gap:8px;margin-bottom:20px"></div>
+
+  </div>
+</div>
+
+<!-- صفحة: حسابك -->
+<div id="page-account" class="hidden max-w-[480px] mx-auto pb-28" style="min-height:100vh;background:var(--bg)">
+  <!-- حالة: غير مسجّل -->
+  <div id="account-guest">
+    <!-- Hero -->
+    <div style="position:relative;overflow:hidden;background:linear-gradient(160deg,#1a1a1a 0%,#2d1200 60%,#FF6B00 100%);padding:52px 24px 40px;text-align:center">
+      <div style="position:absolute;top:-40px;right:-40px;width:180px;height:180px;border-radius:50%;background:rgba(255,107,0,0.15);pointer-events:none"></div>
+      <div style="position:absolute;bottom:-60px;left:-40px;width:220px;height:220px;border-radius:50%;background:rgba(255,107,0,0.08);pointer-events:none"></div>
+      <div style="position:absolute;inset:0;pointer-events:none;overflow:hidden">
+        <span style="position:absolute;top:15%;left:8%;font-size:18px;opacity:0.25;animation:floatCoin 4s ease-in-out infinite">🪙</span>
+        <span style="position:absolute;top:25%;right:10%;font-size:14px;opacity:0.2;animation:floatCoin 3.2s ease-in-out infinite 0.8s">🪙</span>
+        <span style="position:absolute;top:60%;left:5%;font-size:12px;opacity:0.15;animation:floatCoin 5s ease-in-out infinite 1.5s">⭐</span>
+        <span style="position:absolute;top:70%;right:8%;font-size:16px;opacity:0.2;animation:floatCoin 4.5s ease-in-out infinite 0.5s">🎁</span>
+      </div>
+      <div style="position:relative;display:inline-flex;align-items:center;justify-content:center;width:80px;height:80px;border-radius:28px;background:rgba(255,255,255,0.1);backdrop-filter:blur(10px);border:1.5px solid rgba(255,255,255,0.15);margin-bottom:20px;box-shadow:0 8px 32px rgba(0,0,0,0.3)">
+        <span id="auth-hero-logo" style="font-size:40px">🍽️</span>
+      </div>
+      <h1 style="color:#fff;font-size:24px;font-weight:900;margin-bottom:8px">انضم لعالم المكافآت!</h1>
+      <p style="color:rgba(255,255,255,0.65);font-size:13px;line-height:1.7;max-width:260px;margin:0 auto">كوينز على كل طلب، هدية عيد ميلاد، وعروض حصرية لأعضاء المنيو</p>
+      <div style="display:flex;gap:8px;justify-content:center;flex-wrap:wrap;margin-top:18px">
+        <span style="background:rgba(255,255,255,0.1);border:1px solid rgba(255,255,255,0.15);border-radius:20px;padding:5px 12px;font-size:11px;color:#fff;font-weight:700">🪙 كوينز على كل طلب</span>
+        <span style="background:rgba(255,255,255,0.1);border:1px solid rgba(255,255,255,0.15);border-radius:20px;padding:5px 12px;font-size:11px;color:#fff;font-weight:700">🎂 هدية عيد الميلاد</span>
+        <span style="background:rgba(255,255,255,0.1);border:1px solid rgba(255,255,255,0.15);border-radius:20px;padding:5px 12px;font-size:11px;color:#fff;font-weight:700">🔗 اكسب بالإحالة</span>
+      </div>
+    </div>
+    <!-- Auth Buttons -->
+    <div style="padding:28px 24px">
+      <button onclick="signInWithGoogle()"
+              style="width:100%;display:flex;align-items:center;justify-content:center;gap:12px;background:#fff;border:2px solid #e8e8e8;border-radius:16px;padding:15px;cursor:pointer;font-family:'Rubik',sans-serif;box-shadow:0 2px 12px rgba(0,0,0,0.08);transition:all 0.2s;margin-bottom:14px"
+              onmouseover="this.style.borderColor='#4285F4'" onmouseout="this.style.borderColor='#e8e8e8'">
+        <svg width="20" height="20" viewBox="0 0 48 48"><path fill="#4285F4" d="M46.98 24.55c0-1.57-.15-3.09-.38-4.55H24v9.02h12.94c-.58 2.96-2.26 5.48-4.78 7.18l7.73 6c4.51-4.18 7.09-10.36 7.09-17.65z"/><path fill="#34A853" d="M24 48c6.48 0 11.93-2.13 15.89-5.81l-7.73-6c-2.15 1.45-4.92 2.3-8.16 2.3-6.26 0-11.57-4.22-13.47-9.91l-7.98 6.19C6.51 42.62 14.62 48 24 48z"/><path fill="#FBBC05" d="M10.53 28.59c-.48-1.45-.76-2.99-.76-4.59s.27-3.14.76-4.59l-7.98-6.19C.92 16.46 0 20.12 0 24c0 3.88.92 7.54 2.56 10.78l7.97-6.19z"/><path fill="#EA4335" d="M24 9.5c3.54 0 6.71 1.22 9.21 3.6l6.85-6.85C35.9 2.38 30.47 0 24 0 14.62 0 6.51 5.38 2.56 13.22l7.98 6.19C12.43 13.72 17.74 9.5 24 9.5z"/></svg>
+        <span style="font-size:15px;font-weight:800;color:#333">متابعة مع Google</span>
+      </button>
+      <div id="acc-error" style="display:none;font-size:12px;color:#ef4444;font-weight:700;text-align:center;padding:10px 14px;background:#fff0f0;border-radius:12px;border:1px solid #fecaca;margin-bottom:14px"></div>
+      <div style="display:flex;align-items:center;gap:12px;margin-bottom:14px">
+        <div style="flex:1;height:1px;background:#f0f0f0"></div>
+        <span style="font-size:11px;color:#ccc;font-weight:600">أو</span>
+        <div style="flex:1;height:1px;background:#f0f0f0"></div>
+      </div>
+      <button onclick="switchPage('home')" style="width:100%;background:#f5f5f5;color:#888;font-size:13px;font-weight:700;border-radius:14px;padding:13px;border:none;cursor:pointer;font-family:'Rubik',sans-serif">
+        تصفح المنيو بدون تسجيل 👀
+      </button>
+      <p style="font-size:11px;color:#ccc;text-align:center;margin-top:16px;line-height:1.6">بالمتابعة، أنت توافق على شروط الاستخدام وسياسة الخصوصية</p>
+    </div>
+  </div>
+
+  <!-- حالة: مسجّل -->
+  <div id="account-logged" style="display:none">
+    <!-- هيدر -->
+    <div style="background:linear-gradient(160deg,#1a1a1a,#2d1200,#FF6B00);padding:36px 20px 28px;color:#fff;position:relative;overflow:hidden">
+      <div style="position:absolute;top:-30px;right:-30px;width:140px;height:140px;border-radius:50%;background:rgba(255,255,255,0.05);pointer-events:none"></div>
+      <div style="display:flex;align-items:center;gap:14px;margin-bottom:20px">
+        <div id="acc-avatar" style="width:60px;height:60px;border-radius:50%;background:rgba(255,255,255,0.15);border:2px solid rgba(255,255,255,0.3);display:flex;align-items:center;justify-content:center;font-size:26px;font-weight:900;color:#fff;flex-shrink:0;overflow:hidden">👤</div>
+        <div>
+          <p id="acc-logged-name" style="font-size:18px;font-weight:900;margin-bottom:2px">مرحباً!</p>
+          <p id="acc-logged-email" style="font-size:12px;opacity:0.6"></p>
+        </div>
+      </div>
+      <div style="background:rgba(255,255,255,0.1);backdrop-filter:blur(10px);border-radius:16px;padding:14px 16px;display:flex;justify-content:space-between;align-items:center;border:1px solid rgba(255,255,255,0.15)">
+        <div>
+          <p style="font-size:11px;opacity:0.7;margin-bottom:3px">رصيد الكوينز 🪙</p>
+          <p id="acc-coins-display" style="font-size:26px;font-weight:900">0</p>
+        </div>
+        <button onclick="switchPage('wallet')" style="background:var(--brand);color:#fff;border:none;border-radius:12px;padding:9px 18px;font-size:12px;font-weight:800;cursor:pointer;font-family:'Rubik',sans-serif">المحفظة</button>
+      </div>
+    </div>
+    <!-- Profile Completion Bar -->
+    <div id="profile-completion-card" style="margin:16px;background:#fff;border-radius:20px;padding:18px;border:1.5px solid #f0f0f0;box-shadow:0 2px 12px rgba(0,0,0,0.04)">
+      <div style="display:flex;justify-content:space-between;align-items:center;margin-bottom:10px">
+        <p id="profile-completion-msg" style="font-size:13px;font-weight:800;color:#1a1a1a">اكمل ملفك الشخصي 🎁</p>
+        <p id="profile-completion-pct" style="font-size:13px;font-weight:900;color:var(--brand)">0%</p>
+      </div>
+      <div style="background:#f0f0f0;border-radius:10px;height:8px;overflow:hidden;margin-bottom:14px">
+        <div id="profile-progress-bar" style="height:100%;width:0%;background:linear-gradient(90deg,#ef4444,#FF6B00);border-radius:10px;transition:width 0.8s cubic-bezier(0.34,1.56,0.64,1)"></div>
+      </div>
+      <div id="profile-fields-list" style="display:flex;flex-direction:column;gap:8px"></div>
+    </div>
+    <!-- أقسام الصفحة -->
+    <div style="padding:0 16px 16px">
+
+      <!-- إعداداتي -->
+      <div style="background:#fff;border-radius:20px;padding:18px;border:1.5px solid #f0f0f0;margin-bottom:12px;box-shadow:0 2px 12px rgba(0,0,0,0.04)">
+        <div style="display:flex;justify-content:space-between;align-items:center;margin-bottom:14px">
+          <p style="font-size:15px;font-weight:900;color:#1a1a1a">⚙️ إعداداتي</p>
+          <button onclick="openEditProfile()" style="font-size:12px;font-weight:800;color:var(--brand);background:#fff8f3;border:1px solid #ffd4a8;border-radius:10px;padding:5px 12px;cursor:pointer;font-family:'Rubik',sans-serif">تعديل</button>
+        </div>
+        <div style="display:flex;flex-direction:column;gap:0">
+          <div style="display:flex;justify-content:space-between;align-items:center;padding:10px 0;border-bottom:1px solid #f5f5f5">
+            <span style="font-size:12px;color:#aaa;font-weight:600">الاسم</span>
+            <span id="setting-name" style="font-size:13px;font-weight:700;color:#333">—</span>
+          </div>
+          <div style="display:flex;justify-content:space-between;align-items:center;padding:10px 0;border-bottom:1px solid #f5f5f5">
+            <span style="font-size:12px;color:#aaa;font-weight:600">الإيميل</span>
+            <span id="setting-email" style="font-size:11px;font-weight:700;color:#888;direction:ltr">—</span>
+          </div>
+          <div style="display:flex;justify-content:space-between;align-items:center;padding:10px 0;border-bottom:1px solid #f5f5f5">
+            <span style="font-size:12px;color:#aaa;font-weight:600">الموبايل 📱</span>
+            <span id="setting-phone" style="font-size:13px;font-weight:700;color:#333">—</span>
+          </div>
+          <div style="display:flex;justify-content:space-between;align-items:center;padding:10px 0">
+            <span style="font-size:12px;color:#aaa;font-weight:600">المنطقة 📍</span>
+            <span id="setting-area" style="font-size:13px;font-weight:700;color:#333">—</span>
+          </div>
+        </div>
+      </div>
+
+      <!-- روابط سريعة -->
+      <div style="background:#fff;border-radius:18px;overflow:hidden;border:1.5px solid #f0f0f0;margin-bottom:12px">
+        <button onclick="switchPage('orders')" style="width:100%;display:flex;align-items:center;gap:12px;padding:16px;border:none;border-bottom:1px solid #f5f5f5;background:#fff;cursor:pointer;font-family:'Rubik',sans-serif">
+          <span style="font-size:20px">📋</span><span style="font-size:14px;font-weight:700;color:#1a1a1a;flex:1;text-align:right">طلباتي</span>
+          <svg width="14" height="14" fill="none" stroke="#bbb" stroke-width="2.5" viewBox="0 0 24 24"><path d="M15 18l-6-6 6-6"/></svg>
+        </button>
+        <button onclick="switchPage('wallet')" style="width:100%;display:flex;align-items:center;gap:12px;padding:16px;border:none;background:#fff;cursor:pointer;font-family:'Rubik',sans-serif">
+          <span style="font-size:20px">🪙</span><span style="font-size:14px;font-weight:700;color:#1a1a1a;flex:1;text-align:right">محفظة الكوينز</span>
+          <svg width="14" height="14" fill="none" stroke="#bbb" stroke-width="2.5" viewBox="0 0 24 24"><path d="M15 18l-6-6 6-6"/></svg>
+        </button>
+      </div>
+
+      <!-- المكافآت -->
+      <p style="font-size:15px;font-weight:900;color:#1a1a1a;margin-bottom:10px;padding-right:4px">🎁 مكافآتي</p>
+      <div id="rewards-section" style="display:flex;flex-direction:column;gap:10px;margin-bottom:16px"></div>
+
+      <!-- قسيمة شراء -->
+      <p style="font-size:15px;font-weight:900;color:#1a1a1a;margin-bottom:10px;padding-right:4px">🏷️ قسيمة شراء</p>
+      <div id="vouchers-section" style="margin-bottom:16px"></div>
+
+      <!-- شارك واكسب -->
+      <p style="font-size:15px;font-weight:900;color:#1a1a1a;margin-bottom:10px;padding-right:4px">🔗 شارك واكسب كوينز</p>
+      <div style="background:linear-gradient(135deg,#fff8f3,#fff3e6);border:1.5px solid #ffd4a8;border-radius:20px;padding:18px;margin-bottom:16px">
+        <p style="font-size:13px;color:#cc5500;font-weight:700;margin-bottom:12px">شارك المنيو مع أصحابك واكسب كوينز عند كل تسجيل! 🎉</p>
+        <div style="display:flex;align-items:center;gap:8px;background:#fff;border-radius:14px;padding:12px 14px;margin-bottom:12px;border:1px solid #ffd4a8">
+          <span id="ref-code-display" style="font-size:20px;font-weight:900;color:var(--brand);letter-spacing:3px;flex:1">------</span>
+          <button onclick="copyReferralLink()" style="background:var(--brand);color:#fff;border:none;border-radius:10px;padding:8px 14px;font-size:12px;font-weight:800;cursor:pointer;font-family:'Rubik',sans-serif">نسخ الرابط</button>
+        </div>
+        <p id="ref-reward-display" style="font-size:11px;color:#cc5500;font-weight:600">عند أول شراء لصديقك تكسب كوينز 🪙</p>
+      </div>
+
+      <!-- تسجيل خروج -->
+      <button onclick="confirmLogout()" style="width:100%;display:flex;align-items:center;justify-content:center;gap:8px;padding:14px;background:#fff;border-radius:16px;border:1.5px solid #fee2e2;cursor:pointer;font-family:'Rubik',sans-serif">
+        <span style="font-size:18px">🚪</span>
+        <span style="font-size:14px;font-weight:700;color:#ef4444">تسجيل خروج</span>
+      </button>
+    </div>
+  </div>
+</div>
+
+<!-- ══════════════════════════════════════════
+     BOTTOM NAV (للمسجّلين فقط)
+══════════════════════════════════════════ -->
+<nav id="bottom-nav" style="display:none;position:fixed;bottom:0;left:0;right:0;background:#fff;border-top:1px solid #f0f0f0;z-index:60;max-width:480px;margin:0 auto;padding:8px 0 max(8px, env(safe-area-inset-bottom))">
+  <div style="display:flex;justify-content:space-around;align-items:center">
+    <!-- الرئيسية -->
+    <button id="bnav-home" onclick="switchPage('home')" style="display:flex;flex-direction:column;align-items:center;gap:3px;background:none;border:none;cursor:pointer;padding:4px 16px;min-width:64px">
+      <svg id="bnav-home-icon" width="22" height="22" fill="none" stroke="var(--brand)" stroke-width="2.2" viewBox="0 0 24 24"><path d="M3 9l9-7 9 7v11a2 2 0 01-2 2H5a2 2 0 01-2-2z"/><polyline points="9 22 9 12 15 12 15 22"/></svg>
+      <span style="font-size:10px;font-weight:700;color:var(--brand)">الرئيسية</span>
+    </button>
+    <!-- طلباتك -->
+    <button id="bnav-orders" onclick="switchPage('orders')" style="display:flex;flex-direction:column;align-items:center;gap:3px;background:none;border:none;cursor:pointer;padding:4px 16px;min-width:64px;position:relative">
+      <svg id="bnav-orders-icon" width="22" height="22" fill="none" stroke="#bbb" stroke-width="2.2" viewBox="0 0 24 24"><path d="M14 2H6a2 2 0 00-2 2v16a2 2 0 002 2h12a2 2 0 002-2V8z"/><polyline points="14 2 14 8 20 8"/><line x1="16" y1="13" x2="8" y2="13"/><line x1="16" y1="17" x2="8" y2="17"/><polyline points="10 9 9 9 8 9"/></svg>
+      <span id="bnav-orders-txt" style="font-size:10px;font-weight:700;color:#bbb">طلباتك</span>
+      <span id="bnav-orders-badge" style="display:none;position:absolute;top:0;right:10px;background:#ef4444;color:#fff;font-size:9px;font-weight:900;border-radius:10px;padding:1px 5px;min-width:16px;text-align:center"></span>
+    </button>
+    <!-- محفظتك -->
+    <button id="bnav-wallet" onclick="switchPage('wallet')" style="display:flex;flex-direction:column;align-items:center;gap:3px;background:none;border:none;cursor:pointer;padding:4px 16px;min-width:64px">
+      <svg id="bnav-wallet-icon" width="22" height="22" fill="none" stroke="#bbb" stroke-width="2.2" viewBox="0 0 24 24"><rect x="1" y="4" width="22" height="16" rx="2"/><line x1="1" y1="10" x2="23" y2="10"/></svg>
+      <span id="bnav-wallet-txt" style="font-size:10px;font-weight:700;color:#bbb">محفظتك</span>
+    </button>
+    <!-- حسابك -->
+    <button id="bnav-account" onclick="switchPage('account')" style="display:flex;flex-direction:column;align-items:center;gap:3px;background:none;border:none;cursor:pointer;padding:4px 16px;min-width:64px">
+      <svg id="bnav-account-icon" width="22" height="22" fill="none" stroke="#bbb" stroke-width="2.2" viewBox="0 0 24 24"><path d="M20 21v-2a4 4 0 00-4-4H8a4 4 0 00-4 4v2"/><circle cx="12" cy="7" r="4"/></svg>
+      <span id="bnav-account-txt" style="font-size:10px;font-weight:700;color:#bbb">حسابك</span>
+    </button>
+  </div>
+</nav>
 
 <!-- ══════════════════════════════════════════
      SEARCH OVERLAY (mini mode)
@@ -945,12 +1334,18 @@ async function boot() {
     initScrollSpy()
     await initCustomerSession().catch(() => {})
     handleReferralParam()
+    renderInfoStrip()
+    showBottomNav(!!S.customer)
+    setAccTab('login')
+    if (S.customer) loadNotifications().catch(() => {})
+    window._bootDone = true
+    // استعادة الصفحة بعد refresh
+    const savedPage = sessionStorage.getItem('mnio_page')
+    if (savedPage && savedPage !== 'home' && S.customer) {
+      switchPage(savedPage)
+    }
 
-    // إظهار شريط المعاينة فقط لو الرابط الحالي فعلياً يحتوي على preview=1 (فحص مزدوج للتأكيد)
-    const previewBar = document.getElementById('back-to-dash')
-    const isPreviewMode = new URLSearchParams(location.search).get('preview') === '1'
-                        && /[?&]preview=1(&|$)/.test(location.search)
-    previewBar.classList.toggle('hidden', !isPreviewMode)
+
   } catch(e) {
     // أخطاء "المطعم غير موجود" نهائية (لا تحتاج إعادة محاولة)، وأي خطأ آخر (شبكة/تقني) مؤقت وقابل لإعادة المحاولة
     const isNotFound = e.message === 'المطعم غير موجود أو غير نشط'
@@ -2345,6 +2740,8 @@ async function custLogout() {
   updateCoinsRowInCart()
   closeWalletModal()
   renderCartItems()
+  showBottomNav(false)
+  switchPage('home')
 }
 
 // ── WALLET MODAL ──────────────────────────────────────────────────────
@@ -2417,8 +2814,1091 @@ function copyReferralLink() {
   })
 }
 
-// ── CELEBRATION ────────────────────────────────────────────────────────
-function showCelebration(coins) {
+
+// ── BOTTOM NAV & PAGE SWITCHING ─────────────────────────────────────────
+let _currentPage = 'home'
+
+function switchPage(page) {
+  _currentPage = page
+  _switchPageCore(page)
+}
+
+function showBottomNav(show) {
+  const nav = document.getElementById('bottom-nav')
+  if (nav) nav.style.display = show ? 'block' : 'none'
+  // لو في bottom nav، زوّد الـ padding السفلي للصفحة الرئيسية
+  document.getElementById('state-app')?.classList.toggle('pb-36', !show)
+  if (show) document.getElementById('state-app')?.style.setProperty('padding-bottom', '100px')
+}
+
+// ── صفحة طلباتك ──────────────────────────────────────────────────────
+const ORDER_STEPS = ['pending','confirmed','ready','delivering','delivered']
+const ORDER_STATUS = {
+  pending:    { label:'استلمنا طلبك', icon:'⏳', color:'#f59e0b', bg:'#fef9c3' },
+  confirmed:  { label:'بنحضّر',        icon:'👨‍🍳', color:'#3b82f6', bg:'#eff6ff' },
+  ready:      { label:'جاهز للتوصيل', icon:'📦', color:'#8b5cf6', bg:'#f5f3ff' },
+  delivering: { label:'في الطريق إليك',icon:'🛵', color:'#6366f1', bg:'#eef2ff' },
+  delivered:  { label:'تم التسليم 🎉', icon:'✅', color:'#22c55e', bg:'#f0fdf4' },
+  cancelled:  { label:'ملغي',          icon:'❌', color:'#ef4444', bg:'#fff0f0' },
+}
+
+async function loadOrdersPage() {
+  if (!S.customer) return
+  const listEl = document.getElementById('orders-page-list')
+  listEl.innerHTML = `<div style="text-align:center;padding:40px 0"><div style="font-size:40px;animation:floatCoin 1s ease-in-out infinite">⏳</div></div>`
+
+  try {
+    const { data: orders } = await db.from('orders')
+      .select('*')
+      .eq('customer_id', S.customer.id)
+      .order('created_at', { ascending: false })
+      .limit(30)
+
+    if (!orders || !orders.length) {
+      listEl.innerHTML = `
+        <div style="text-align:center;padding:60px 20px">
+          <div style="font-size:72px;margin-bottom:16px;animation:floatCoin 3s ease-in-out infinite">🍽️</div>
+          <p style="font-size:20px;font-weight:900;color:#1a1a1a;margin-bottom:8px">لسه ما طلبتش!</p>
+          <p style="font-size:14px;color:#aaa;margin-bottom:24px;line-height:1.6">اطلب أول وجبة وابدأ تجمع كوينز ومكافآت 🎁</p>
+          <button onclick="switchPage('home')" style="background:linear-gradient(135deg,var(--brand),#ff8c38);color:#fff;font-size:15px;font-weight:900;border-radius:18px;padding:15px 32px;border:none;cursor:pointer;font-family:'Rubik',sans-serif;box-shadow:0 4px 20px rgba(255,107,0,0.4)">
+            اطلب دلوقتي 🛒
+          </button>
+        </div>`
+      // reset stats
+      ;['orders-stat-total','orders-stat-spend','orders-stat-coins'].forEach(id => { const el = document.getElementById(id); if(el) el.textContent = '0' })
+      document.getElementById('active-order-tracker').style.display = 'none'
+      return
+    }
+
+    // Stats
+    const totalSpend = orders.filter(o=>o.status!=='cancelled').reduce((s,o)=>s+Number(o.total||0),0)
+    const totalCoins = orders.reduce((s,o)=>s+Number(o.loyalty_coins_earned||0),0)
+    const statTotal = document.getElementById('orders-stat-total')
+    const statSpend = document.getElementById('orders-stat-spend')
+    const statCoins = document.getElementById('orders-stat-coins')
+    if(statTotal) statTotal.textContent = orders.filter(o=>o.status!=='cancelled').length
+    if(statSpend) statSpend.textContent = totalSpend.toFixed(0)
+    if(statCoins) statCoins.textContent = totalCoins.toLocaleString('ar-EG')
+
+    // Active order tracker
+    const active = orders.find(o => !['delivered','cancelled'].includes(o.status))
+    renderOrderTracker(active)
+
+    // Orders list
+    listEl.innerHTML = orders.map(o => {
+      const st = ORDER_STATUS[o.status] || ORDER_STATUS.pending
+      const items = typeof o.items === 'string' ? JSON.parse(o.items) : (o.items || [])
+      const preview = items.slice(0,2).map(i => i.name || '').filter(Boolean).join('، ')
+      return `<div class="order-card" onclick="openOrderDetail('${o.id}')">
+        <div style="display:flex;justify-content:space-between;align-items:flex-start;margin-bottom:10px">
+          <div>
+            <p style="font-size:14px;font-weight:900;color:#1a1a1a;margin-bottom:2px">${o.order_number || '#' + o.id.slice(-6)}</p>
+            <p style="font-size:11px;color:#aaa">${new Date(o.created_at).toLocaleDateString('ar-EG',{day:'numeric',month:'short',year:'numeric',hour:'2-digit',minute:'2-digit'})}</p>
+          </div>
+          <span style="font-size:11px;font-weight:800;color:${st.color};background:${st.bg};border-radius:10px;padding:4px 10px">${st.icon} ${st.label}</span>
+        </div>
+        ${preview ? `<p style="font-size:12px;color:#888;margin-bottom:10px;line-height:1.5">${preview}${items.length>2?' وأكثر...':''}</p>` : ''}
+        <div style="display:flex;justify-content:space-between;align-items:center;border-top:1px solid #f5f5f5;padding-top:10px">
+          <span style="font-size:16px;font-weight:900;color:var(--brand)">${Number(o.total||0).toFixed(2)} ج.م</span>
+          <div style="display:flex;align-items:center;gap:10px">
+            ${o.loyalty_coins_earned ? `<span style="font-size:11px;color:#f97316;font-weight:700">+${Number(o.loyalty_coins_earned).toLocaleString('ar-EG')} 🪙</span>` : ''}
+            <svg width="14" height="14" fill="none" stroke="#bbb" stroke-width="2.5" viewBox="0 0 24 24"><path d="M15 18l-6-6 6-6"/></svg>
+          </div>
+        </div>
+      </div>`
+    }).join('')
+
+  } catch(e) {
+    listEl.innerHTML = `<p style="text-align:center;color:#ef4444;padding:20px;font-size:13px">خطأ: ${e.message}</p>`
+  }
+}
+
+function renderOrderTracker(order) {
+  const tracker = document.getElementById('active-order-tracker')
+  if (!order || !tracker) { if(tracker) tracker.style.display='none'; return }
+  tracker.style.display = 'block'
+  document.getElementById('tracker-order-num').textContent = order.order_number || '#' + order.id.slice(-6)
+  const st = ORDER_STATUS[order.status] || ORDER_STATUS.pending
+  const badge = document.getElementById('tracker-status-badge')
+  badge.textContent    = st.icon + ' ' + st.label
+  badge.style.color    = st.color
+  badge.style.background = st.bg
+
+  const stepIdx = ORDER_STEPS.indexOf(order.status)
+  const pct     = stepIdx < 0 ? 0 : Math.round((stepIdx / (ORDER_STEPS.length - 1)) * 100)
+  const line    = document.getElementById('tracker-progress-line')
+  if (line) setTimeout(() => line.style.width = pct + '%', 200)
+
+  ORDER_STEPS.forEach((step, i) => {
+    const dot = document.querySelector(`#tstep-${step} .tstep-dot`)
+    const lbl = document.querySelector(`#tstep-${step} .tstep-label`)
+    if (!dot || !lbl) return
+    dot.classList.remove('active','done')
+    lbl.classList.remove('active','done')
+    if (i < stepIdx)      { dot.classList.add('done');   lbl.classList.add('done') }
+    else if (i === stepIdx){ dot.classList.add('active'); lbl.classList.add('active') }
+  })
+
+  // ETA
+  const etaEl = document.getElementById('tracker-eta')
+  if (etaEl) {
+    if (order.status === 'confirmed' && order.estimated_prep_minutes) {
+      etaEl.textContent = `⏱ وقت التحضير المتوقع: ${order.estimated_prep_minutes} دقيقة`
+    } else if (order.status === 'delivering') {
+      etaEl.textContent = `🛵 الطلب في الطريق إليك الآن!`
+    } else {
+      etaEl.textContent = ''
+    }
+  }
+
+  // صوت عند الوصول
+  if (order.status === 'delivered') playSuccessSound()
+}
+
+// ── ORDER DETAIL SHEET ────────────────────────────────────────────────
+let _allOrdersCache = []
+
+async function openOrderDetail(orderId) {
+  const sheet = document.getElementById('order-detail-sheet')
+  if (!sheet) return
+  sheet.style.display = 'flex'
+  document.body.style.overflow = 'hidden'
+  const body = document.getElementById('ods-body')
+  body.innerHTML = '<p style="text-align:center;padding:30px;color:#bbb">جاري التحميل...</p>'
+
+  try {
+    const { data: o } = await db.from('orders').select('*').eq('id', orderId).single()
+    if (!o) throw new Error('الطلب غير موجود')
+    document.getElementById('ods-num').textContent = o.order_number || '#' + o.id.slice(-6)
+    const st    = ORDER_STATUS[o.status] || ORDER_STATUS.pending
+    const items = typeof o.items === 'string' ? JSON.parse(o.items) : (o.items || [])
+    body.innerHTML = `
+      <div style="display:flex;justify-content:center;margin-bottom:20px">
+        <span style="font-size:12px;font-weight:800;color:${st.color};background:${st.bg};border-radius:12px;padding:6px 16px">${st.icon} ${st.label}</span>
+      </div>
+      <div style="background:#f9f9f9;border-radius:16px;padding:14px;margin-bottom:14px">
+        ${items.map(item => `
+          <div style="display:flex;justify-content:space-between;align-items:center;padding:8px 0;border-bottom:1px solid #f0f0f0">
+            <div>
+              <p style="font-size:13px;font-weight:700;color:#1a1a1a">${item.name || ''}</p>
+              ${item.options?.length ? `<p style="font-size:11px;color:#aaa">${item.options.map(op=>op.label||op).join('، ')}</p>` : ''}
+            </div>
+            <div style="text-align:left">
+              <p style="font-size:12px;color:#888">×${item.qty||1}</p>
+              <p style="font-size:13px;font-weight:800;color:var(--brand)">${Number((item.price||0)*(item.qty||1)).toFixed(2)} ج.م</p>
+            </div>
+          </div>`).join('')}
+      </div>
+      <div style="background:#fff;border-radius:16px;padding:14px;border:1.5px solid #f0f0f0">
+        <div style="display:flex;justify-content:space-between;margin-bottom:8px"><span style="font-size:13px;color:#888">المجموع</span><span style="font-size:13px;font-weight:700">${Number(o.subtotal||o.total||0).toFixed(2)} ج.م</span></div>
+        ${o.delivery_fee ? `<div style="display:flex;justify-content:space-between;margin-bottom:8px"><span style="font-size:13px;color:#888">التوصيل</span><span style="font-size:13px;font-weight:700">${Number(o.delivery_fee).toFixed(2)} ج.م</span></div>` : ''}
+        ${o.coins_discount ? `<div style="display:flex;justify-content:space-between;margin-bottom:8px"><span style="font-size:13px;color:#f97316">خصم الكوينز 🪙</span><span style="font-size:13px;font-weight:700;color:#f97316">-${Number(o.coins_discount).toFixed(2)} ج.م</span></div>` : ''}
+        ${o.discount_code_amount ? `<div style="display:flex;justify-content:space-between;margin-bottom:8px"><span style="font-size:13px;color:#22c55e">كود خصم</span><span style="font-size:13px;font-weight:700;color:#22c55e">-${Number(o.discount_code_amount).toFixed(2)} ج.م</span></div>` : ''}
+        <div style="display:flex;justify-content:space-between;padding-top:10px;border-top:1.5px solid #f0f0f0">
+          <span style="font-size:15px;font-weight:900;color:#1a1a1a">الإجمالي</span>
+          <span style="font-size:15px;font-weight:900;color:var(--brand)">${Number(o.total||0).toFixed(2)} ج.م</span>
+        </div>
+        ${o.loyalty_coins_earned ? `<div style="margin-top:10px;background:#fff8f3;border-radius:10px;padding:8px 12px;text-align:center"><span style="font-size:12px;font-weight:800;color:var(--brand)">+${Number(o.loyalty_coins_earned).toLocaleString('ar-EG')} 🪙 كوينز كسبتها من هذا الطلب</span></div>` : ''}
+      </div>
+      ${o.notes ? `<div style="margin-top:12px;background:#f9f9f9;border-radius:12px;padding:12px 14px"><p style="font-size:12px;color:#888;font-weight:600">ملاحظات: ${o.notes}</p></div>` : ''}
+      <button onclick="closeOrderDetail();switchPage('home')" style="width:100%;margin-top:16px;background:linear-gradient(135deg,var(--brand),#ff8c38);color:#fff;font-size:14px;font-weight:900;border-radius:14px;padding:14px;border:none;cursor:pointer;font-family:'Rubik',sans-serif">
+        🔄 اطلب مرة تانية
+      </button>`
+  } catch(e) {
+    body.innerHTML = `<p style="text-align:center;color:#ef4444;padding:20px">خطأ: ${e.message}</p>`
+  }
+}
+
+function closeOrderDetail() {
+  const sheet = document.getElementById('order-detail-sheet')
+  if (sheet) sheet.style.display = 'none'
+  document.body.style.overflow = ''
+}
+
+// ── صفحة محفظتك ──────────────────────────────────────────────────────
+async function loadWalletPage() {
+  if (!S.customer || !S.restaurant) return
+  await loadCustomerProfile()
+  const c      = S.customer
+  const cpE    = S.restaurant.coins_per_egp ?? 1000
+  const minRed = S.restaurant.min_redeem_coins ?? 100000
+
+  // Hero balance (كوينز)
+  const balEl  = document.getElementById('wpage-balance')
+  const egpEl  = document.getElementById('wpage-balance-egp')
+  const noteEl = document.getElementById('wpage-min-note')
+  if (balEl)  balEl.textContent  = (c.coins_balance || 0).toLocaleString('ar-EG')
+  if (egpEl)  egpEl.textContent  = `= ${((c.coins_balance||0) / cpE).toFixed(2)} ج.م متاح للشراء`
+  if (noteEl) noteEl.textContent = c.coins_balance >= minRed
+    ? '✅ يمكنك تحويل كوينزك الآن!'
+    : `تحتاج ${(minRed - (c.coins_balance||0)).toLocaleString('ar-EG')} كوين للحد الأدنى`
+
+  // رصيد المحفظة النقدي
+  const cashEl = document.getElementById('wpage-cash-balance')
+  if (cashEl) cashEl.textContent = Number(c.wallet_balance || 0).toFixed(2) + ' ج.م'
+
+  // بطاقة التحويل
+  const convertCard = document.getElementById('wpage-convert-card')
+  if (convertCard) {
+    const canConvert = (c.coins_balance || 0) >= minRed
+    convertCard.style.display = canConvert ? 'block' : 'none'
+    if (canConvert) {
+      const convEl  = document.getElementById('wpage-convertable')
+      const egpConv = document.getElementById('wpage-convert-egp')
+      if (convEl)  convEl.textContent  = (c.coins_balance || 0).toLocaleString('ar-EG') + ' 🪙'
+      if (egpConv) egpConv.textContent = `= ${((c.coins_balance||0) / cpE).toFixed(2)} ج.م`
+    }
+  }
+
+  // سجل المعاملات
+  const txEl = document.getElementById('wpage-tx-list')
+  if (!txEl) return
+  txEl.innerHTML = '<p style="text-align:center;color:#ccc;padding:20px;font-size:12px">جاري التحميل...</p>'
+
+  try {
+    const { data: txs } = await db.from('coin_transactions')
+      .select('*').eq('customer_id', c.id).order('created_at', { ascending: false }).limit(20)
+
+    const txTypes = {
+      welcome:          { icon:'🎁', label:'بونص الترحيب',    color:'#22c55e' },
+      referral_reward:  { icon:'🔗', label:'إحالة صديق',      color:'#3b82f6' },
+      loyalty:          { icon:'⭐', label:'كوينز ولاء',       color:'#f59e0b' },
+      redeem:           { icon:'🛒', label:'استخدام في طلب',  color:'#ef4444' },
+      gift:             { icon:'🎀', label:'هدية من المتجر',   color:'#8b5cf6' },
+      discount_code:    { icon:'🏷️', label:'كود خصم',         color:'#06b6d4' },
+      profile_complete: { icon:'👤', label:'إكمال الملف',      color:'#10b981' },
+      convert:          { icon:'💳', label:'تحويل لرصيد',      color:'#f97316' },
+      birthday:         { icon:'🎂', label:'هدية عيد الميلاد', color:'#ec4899' },
+    }
+
+    if (!txs || !txs.length) {
+      txEl.innerHTML = `
+        <div style="text-align:center;padding:40px 0">
+          <div style="font-size:48px;margin-bottom:12px">🪙</div>
+          <p style="font-size:14px;font-weight:800;color:#bbb;margin-bottom:8px">لا توجد معاملات بعد</p>
+          <button onclick="switchPage('home')" style="background:linear-gradient(135deg,var(--brand),#ff8c38);color:#fff;font-size:13px;font-weight:800;border-radius:12px;padding:10px 24px;border:none;cursor:pointer;font-family:'Rubik',sans-serif">اطلب الآن واكسب كوينز 🛒</button>
+        </div>`
+      return
+    }
+
+    txEl.innerHTML = txs.map(t => {
+      const type = txTypes[t.type] || { icon:'🪙', label:t.type, color:'#888' }
+      const plus = t.amount > 0
+      return `<div class="tx-row">
+        <div style="width:40px;height:40px;border-radius:14px;background:${type.color}18;display:flex;align-items:center;justify-content:center;font-size:20px;flex-shrink:0">${type.icon}</div>
+        <div style="flex:1">
+          <p style="font-size:13px;font-weight:800;color:#1a1a1a;margin-bottom:2px">${type.label}</p>
+          <p style="font-size:11px;color:#bbb">${new Date(t.created_at).toLocaleDateString('ar-EG',{day:'numeric',month:'short',hour:'2-digit',minute:'2-digit'})}${t.note?' · '+t.note:''}</p>
+        </div>
+        <p style="font-size:16px;font-weight:900;color:${plus?'#22c55e':'#ef4444'}">${plus?'+':''}${Number(t.amount).toLocaleString('ar-EG')} 🪙</p>
+      </div>`
+    }).join('')
+  } catch(e) {
+    txEl.innerHTML = `<p style="text-align:center;color:#ef4444;padding:20px;font-size:12px">خطأ: ${e.message}</p>`
+  }
+}
+
+// ── CONVERT COINS TO BALANCE ──────────────────────────────────────────
+async function convertCoinsToBalance() {
+  if (!S.customer || !S.restaurant) return
+  const cpE    = S.restaurant.coins_per_egp ?? 1000
+  const coins  = S.customer.coins_balance || 0
+  const amount = coins / cpE
+
+  showConfirmSheet(
+    'تحويل الكوينز لرصيد 💳',
+    `<div style="text-align:center;padding:10px 0">
+      <p style="font-size:36px;font-weight:900;color:var(--brand);margin-bottom:4px">${coins.toLocaleString('ar-EG')} 🪙</p>
+      <p style="font-size:16px;color:#888;margin-bottom:16px">= ${amount.toFixed(2)} ج.م</p>
+      <div style="background:#f0fdf4;border-radius:14px;padding:14px;border:1.5px solid #bbf7d0">
+        <p style="font-size:13px;color:#16a34a;font-weight:700;line-height:1.6">سيتم تحويل الكوينز لرصيد نقدي في محفظتك ويُستخدم للشراء من المتجر فقط 🛒</p>
+      </div>
+    </div>`,
+    async () => {
+      try {
+        const newBalance = Number(S.customer.wallet_balance || 0) + amount
+        await db.from('menu_customers').update({ coins_balance: 0, wallet_balance: newBalance }).eq('id', S.customer.id)
+        await db.from('coin_transactions').insert({
+          customer_id: S.customer.id, restaurant_id: S.restaurant.id,
+          type: 'convert', amount: -coins, note: `تحويل ${coins.toLocaleString('ar-EG')} كوين = ${amount.toFixed(2)} ج.م`
+        })
+        S.customer.coins_balance = 0
+        S.customer.wallet_balance = newBalance
+        playSuccessSound()
+        showToast(`✅ تم تحويل ${amount.toFixed(2)} ج.م لمحفظتك!`)
+        loadWalletPage()
+        updateWalletBadge()
+      } catch(e) {
+        showToast('خطأ: ' + e.message)
+      }
+    },
+    'تأكيد التحويل'
+  )
+}
+
+// ── صفحة حسابك ───────────────────────────────────────────────────────
+// ── SESSION PERSISTENCE ───────────────────────────────────────────────
+window._bootDone = false
+
+function _switchPageCore(page) {
+  sessionStorage.setItem('mnio_page', page)
+  const pages = ['home', 'orders', 'wallet', 'account']
+  const brand = 'var(--brand)'
+  document.getElementById('state-app')?.classList.toggle('hidden', page !== 'home')
+  pages.filter(p => p !== 'home').forEach(p => {
+    const el = document.getElementById('page-' + p)
+    if (el) el.classList.toggle('hidden', p !== page)
+  })
+  pages.forEach(p => {
+    const icon = document.getElementById('bnav-' + p + '-icon')
+    const txt  = document.getElementById('bnav-' + p + '-txt')
+    const active = p === page
+    if (icon) icon.setAttribute('stroke', active ? 'var(--brand)' : '#bbb')
+    if (txt)  { txt.style.color = active ? 'var(--brand)' : '#bbb'; txt.style.fontWeight = active ? '800' : '700' }
+  })
+  if (page === 'orders')  loadOrdersPage()
+  if (page === 'wallet')  loadWalletPage()
+  if (page === 'account') renderAccountPage()
+  window.scrollTo({ top: 0, behavior: 'smooth' })
+}
+
+// ── CONFIRM LOGOUT ────────────────────────────────────────────────────
+function confirmLogout() {
+  showConfirmSheet('تسجيل الخروج', '<p style="font-size:14px;color:#555;line-height:1.7">هل أنت متأكد من تسجيل الخروج؟<br>ستظل بياناتك محفوظة وتقدر ترجع في أي وقت.</p>', custLogout, 'تسجيل خروج')
+}
+
+// ── OPEN EDIT PROFILE ─────────────────────────────────────────────────
+function openEditProfile() {
+  if (!S.customer) return
+  const c = S.customer
+  showConfirmSheet('تعديل بياناتي', `
+    <div style="display:flex;flex-direction:column;gap:12px">
+      <div>
+        <label style="font-size:11px;font-weight:800;color:#888;display:block;margin-bottom:5px">الاسم</label>
+        <input id="ep-name" type="text" value="${c.name || ''}" placeholder="اسمك"
+               style="width:100%;background:#f5f5f5;border:1.5px solid #eee;border-radius:12px;padding:12px 14px;font-size:14px;font-family:'Rubik',sans-serif;outline:none;box-sizing:border-box"
+               onfocus="this.style.borderColor='var(--brand)'" onblur="this.style.borderColor='#eee'" />
+      </div>
+      <div>
+        <label style="font-size:11px;font-weight:800;color:#888;display:block;margin-bottom:5px">رقم الموبايل 📱</label>
+        <input id="ep-phone" type="tel" value="${c.phone || ''}" placeholder="01xxxxxxxxx"
+               style="width:100%;background:#f5f5f5;border:1.5px solid #eee;border-radius:12px;padding:12px 14px;font-size:14px;font-family:'Rubik',sans-serif;outline:none;box-sizing:border-box;direction:ltr;text-align:right"
+               onfocus="this.style.borderColor='var(--brand)'" onblur="this.style.borderColor='#eee'" />
+      </div>
+      <div>
+        <label style="font-size:11px;font-weight:800;color:#888;display:block;margin-bottom:5px">تاريخ الميلاد 🎂</label>
+        <input id="ep-birthdate" type="date" value="${c.birthdate || ''}"
+               style="width:100%;background:#f5f5f5;border:1.5px solid #eee;border-radius:12px;padding:12px 14px;font-size:14px;font-family:'Rubik',sans-serif;outline:none;box-sizing:border-box"
+               onfocus="this.style.borderColor='var(--brand)'" onblur="this.style.borderColor='#eee'" />
+      </div>
+      <div>
+        <label style="font-size:11px;font-weight:800;color:#888;display:block;margin-bottom:5px">منطقتك 📍</label>
+        <input id="ep-area" type="text" value="${c.area || ''}" placeholder="مثال: المعادي، الشيخ زايد..."
+               style="width:100%;background:#f5f5f5;border:1.5px solid #eee;border-radius:12px;padding:12px 14px;font-size:14px;font-family:'Rubik',sans-serif;outline:none;box-sizing:border-box"
+               onfocus="this.style.borderColor='var(--brand)'" onblur="this.style.borderColor='#eee'" />
+      </div>
+      <div>
+        <label style="font-size:11px;font-weight:800;color:#888;display:block;margin-bottom:5px">الجنس</label>
+        <div style="display:flex;gap:8px">
+          <button onclick="document.getElementById('ep-gender').value='male';this.style.background='#fff8f3';this.style.borderColor='var(--brand)';document.getElementById('ep-gender-f').style.background='#f5f5f5';document.getElementById('ep-gender-f').style.borderColor='#eee'"
+                  style="flex:1;padding:10px;border-radius:12px;border:1.5px solid ${c.gender==='male'?'var(--brand)':'#eee'};background:${c.gender==='male'?'#fff8f3':'#f5f5f5'};font-size:13px;font-weight:700;cursor:pointer;font-family:'Rubik',sans-serif">👨 ذكر</button>
+          <button id="ep-gender-f" onclick="document.getElementById('ep-gender').value='female';this.style.background='#fff8f3';this.style.borderColor='var(--brand)';this.previousElementSibling.style.background='#f5f5f5';this.previousElementSibling.style.borderColor='#eee'"
+                  style="flex:1;padding:10px;border-radius:12px;border:1.5px solid ${c.gender==='female'?'var(--brand)':'#eee'};background:${c.gender==='female'?'#fff8f3':'#f5f5f5'};font-size:13px;font-weight:700;cursor:pointer;font-family:'Rubik',sans-serif">👩 أنثى</button>
+        </div>
+        <input type="hidden" id="ep-gender" value="${c.gender || ''}" />
+      </div>
+      <p id="ep-error" style="display:none;font-size:12px;color:#ef4444;font-weight:700;padding:8px 12px;background:#fff0f0;border-radius:10px"></p>
+    </div>`,
+    saveEditProfile, 'حفظ التعديلات'
+  )
+}
+
+async function saveEditProfile() {
+  const name      = document.getElementById('ep-name')?.value.trim()
+  const phone     = document.getElementById('ep-phone')?.value.trim()
+  const birthdate = document.getElementById('ep-birthdate')?.value || null
+  const area      = document.getElementById('ep-area')?.value.trim() || null
+  const gender    = document.getElementById('ep-gender')?.value || null
+
+  try {
+    const updates = { name: name||null, phone: phone||null, birthdate, area, gender }
+    const wasEmpty = field => !S.customer[field]
+
+    const { error } = await db.from('menu_customers').update(updates).eq('id', S.customer.id)
+    if (error) throw error
+
+    // منح كوينز للحقول الجديدة
+    const coinsMap = { phone:1500, birthdate:1500, gender:1000, area:1000 }
+    let bonusCoins = 0
+    for (const [f, coins] of Object.entries(coinsMap)) {
+      if (wasEmpty(f) && updates[f]) {
+        bonusCoins += coins
+        await db.from('coin_transactions').insert({
+          customer_id: S.customer.id, restaurant_id: S.restaurant.id,
+          type: 'profile_complete', amount: coins, note: `إكمال: ${f}`
+        })
+      }
+    }
+    if (bonusCoins > 0) {
+      const newBal = (S.customer.coins_balance || 0) + bonusCoins
+      await db.from('menu_customers').update({ coins_balance: newBal }).eq('id', S.customer.id)
+      S.customer.coins_balance = newBal
+      showToast(`+${bonusCoins.toLocaleString('ar-EG')} 🪙 كوينز على إكمال ملفك!`)
+      playSuccessSound()
+    }
+    Object.assign(S.customer, updates)
+    closeConfirmSheet()
+    renderAccountPage()
+    updateWalletBadge()
+  } catch(e) {
+    const errEl = document.getElementById('ep-error')
+    if (errEl) { errEl.textContent = 'خطأ: ' + e.message; errEl.style.display = 'block' }
+  }
+}
+
+// ── UPDATE SETTINGS DISPLAY ────────────────────────────────────────────
+function updateSettingsDisplay() {
+  if (!S.customer) return
+  const c = S.customer
+  const s = (id, val) => { const el = document.getElementById(id); if (el) el.textContent = val || '—' }
+  s('setting-name',  c.name)
+  s('setting-email', c.email)
+  s('setting-phone', c.phone)
+  s('setting-area',  c.area)
+  // referral
+  const refEl = document.getElementById('ref-code-display')
+  if (refEl) refEl.textContent = c.referral_code || '------'
+  const refRew = document.getElementById('ref-reward-display')
+  if (refRew) refRew.textContent = `عند أول شراء لصديقك تكسب ${(S.restaurant?.referral_coins ?? 5000).toLocaleString('ar-EG')} كوين 🪙`
+}
+
+
+// ── GOOGLE SIGN IN ────────────────────────────────────────────────────
+async function signInWithGoogle() {
+  const errEl = document.getElementById('acc-error')
+  if (errEl) errEl.style.display = 'none'
+  try {
+    const { error } = await db.auth.signInWithOAuth({
+      provider: 'google',
+      options: { redirectTo: window.location.href }
+    })
+    if (error) throw error
+  } catch(e) {
+    if (errEl) { errEl.textContent = 'خطأ: ' + e.message; errEl.style.display = 'block' }
+  }
+}
+
+// ── PROFILE SCORE ─────────────────────────────────────────────────────
+const PROFILE_FIELDS = [
+  { key: 'phone',     label: 'رقم الموبايل',    icon: '📱', coins: 1500 },
+  { key: 'birthdate', label: 'تاريخ الميلاد',   icon: '🎂', coins: 1500 },
+  { key: 'gender',    label: 'الجنس',            icon: '👤', coins: 1000 },
+  { key: 'area',      label: 'منطقتك',           icon: '📍', coins: 1000 },
+]
+
+function calcProfileScore(customer) {
+  if (!customer) return 0
+  const filled = PROFILE_FIELDS.filter(f => customer[f.key] && customer[f.key] !== '').length
+  return Math.round((filled / PROFILE_FIELDS.length) * 100)
+}
+
+const PROFILE_MSGS = [
+  { min: 0,   msg: 'ملفك فاضي — ابدأ واكسب مكافآت 🎁' },
+  { min: 1,   msg: 'بداية رائعة! كمّل واكسب أكثر ⭐' },
+  { min: 50,  msg: 'نص الطريق! الهدايا بتستناك 🔥' },
+  { min: 75,  msg: 'تقريباً وصلت! خطوة وخلاص 🚀' },
+  { min: 100, msg: '🎉 ملفك مكتمل! استمتع بكل مزاياك' },
+]
+
+// ── RENDER ACCOUNT PAGE ───────────────────────────────────────────────
+function renderAccountPage() {
+  const guest  = document.getElementById('account-guest')
+  const logged = document.getElementById('account-logged')
+  if (!guest || !logged) return
+
+  if (!S.customer) {
+    guest.style.display  = 'block'
+    logged.style.display = 'none'
+    // لوجو المطعم في hero
+    const logoEl = document.getElementById('auth-hero-logo')
+    if (logoEl && S.restaurant?.logo_url) {
+      logoEl.innerHTML = `<img src="${S.restaurant.logo_url}" style="width:60px;height:60px;border-radius:50%;object-fit:cover">`
+    }
+    return
+  }
+
+  guest.style.display  = 'none'
+  logged.style.display = 'block'
+
+  const c = S.customer
+
+  // صورة / أحرف
+  const avatarEl = document.getElementById('acc-avatar')
+  if (avatarEl) {
+    if (c.avatar_url) {
+      avatarEl.innerHTML = `<img src="${c.avatar_url}" style="width:100%;height:100%;object-fit:cover;border-radius:50%">`
+    } else {
+      const initials = (c.name || c.email || '?').charAt(0).toUpperCase()
+      avatarEl.textContent = initials
+    }
+  }
+  const nameEl = document.getElementById('acc-logged-name')
+  if (nameEl) nameEl.textContent = c.name ? `مرحباً، ${c.name.split(' ')[0]}! 👋` : 'مرحباً! 👋'
+  const emailEl = document.getElementById('acc-logged-email')
+  if (emailEl) emailEl.textContent = c.email || ''
+  const coinsEl = document.getElementById('acc-coins-display')
+  if (coinsEl) coinsEl.textContent = (c.coins_balance || 0).toLocaleString('ar-EG')
+
+  // تحديث الإعدادات
+  updateSettingsDisplay()
+  const score = calcProfileScore(c)
+  const barEl = document.getElementById('profile-progress-bar')
+  const pctEl = document.getElementById('profile-completion-pct')
+  const msgEl = document.getElementById('profile-completion-msg')
+  const listEl = document.getElementById('profile-fields-list')
+
+  if (barEl) setTimeout(() => { barEl.style.width = score + '%' }, 100)
+  if (pctEl) pctEl.textContent = score + '%'
+  if (msgEl) {
+    const m = [...PROFILE_MSGS].reverse().find(x => score >= x.min)
+    msgEl.textContent = m?.msg || PROFILE_MSGS[0].msg
+  }
+  if (listEl) {
+    listEl.innerHTML = PROFILE_FIELDS.map(f => {
+      const done = !!(c[f.key] && c[f.key] !== '')
+      return `<div onclick="${done ? '' : `openEditField('${f.key}')`}"
+                   style="display:flex;align-items:center;gap:10px;padding:10px 12px;background:${done ? '#f0fdf4' : '#fff8f3'};border-radius:12px;border:1.5px solid ${done ? '#bbf7d0' : '#ffe0b2'};cursor:${done ? 'default' : 'pointer'};transition:all 0.2s">
+        <span style="font-size:18px">${f.icon}</span>
+        <span style="flex:1;font-size:13px;font-weight:700;color:${done ? '#16a34a' : '#cc5500'}">${f.label}</span>
+        ${done
+          ? `<svg width="16" height="16" fill="none" stroke="#16a34a" stroke-width="2.5" viewBox="0 0 24 24"><polyline points="20 6 9 17 4 12"/></svg>`
+          : `<span style="font-size:11px;font-weight:800;color:var(--brand)">أضف ←</span>`
+        }
+      </div>`
+    }).join('')
+  }
+
+  // اخفِ البطاقة لو مكتمل 100%
+  const card = document.getElementById('profile-completion-card')
+  if (card) card.style.display = score === 100 ? 'none' : 'block'
+
+  // رندر باقي الأقسام
+  renderRewardsSection()
+  renderVouchersSection()
+}
+
+// ── EDIT PROFILE FIELD ────────────────────────────────────────────────
+function openEditField(field) {
+  const labels = { phone: 'رقم الموبايل 📱', birthdate: 'تاريخ الميلاد 🎂', gender: 'الجنس 👤', area: 'منطقتك 📍' }
+  const types  = { phone: 'tel', birthdate: 'date', gender: 'gender', area: 'text' }
+
+  let inputHTML = ''
+  if (field === 'gender') {
+    inputHTML = `
+      <div style="display:flex;gap:10px;margin-top:8px">
+        <button onclick="submitEditField('gender','male')" style="flex:1;padding:14px;border-radius:14px;border:2px solid #eee;background:#fff;font-size:18px;cursor:pointer;font-family:'Rubik',sans-serif;font-weight:700">👨 ذكر</button>
+        <button onclick="submitEditField('gender','female')" style="flex:1;padding:14px;border-radius:14px;border:2px solid #eee;background:#fff;font-size:18px;cursor:pointer;font-family:'Rubik',sans-serif;font-weight:700">👩 أنثى</button>
+      </div>`
+  } else {
+    inputHTML = `<input id="edit-field-input" type="${types[field]}" value="${S.customer[field] || ''}"
+      style="width:100%;background:#f5f5f5;border:1.5px solid #eee;border-radius:14px;padding:14px;font-size:15px;font-family:'Rubik',sans-serif;outline:none;box-sizing:border-box;margin-top:8px"
+      onfocus="this.style.borderColor='var(--brand)'" onblur="this.style.borderColor='#eee'" />`
+  }
+
+  showConfirmSheet(
+    labels[field],
+    `<div style="padding:4px 0">
+      <p style="font-size:13px;color:#888;margin-bottom:8px">أدخل القيمة الجديدة:</p>
+      ${inputHTML}
+      ${field !== 'gender' ? `<button onclick="submitEditField('${field}',document.getElementById('edit-field-input').value)"
+        style="width:100%;background:linear-gradient(135deg,var(--brand),#ff8c38);color:#fff;font-size:15px;font-weight:900;border-radius:14px;padding:14px;border:none;cursor:pointer;font-family:'Rubik',sans-serif;margin-top:12px">حفظ</button>` : ''}
+    </div>`,
+    null, null, true
+  )
+}
+
+async function submitEditField(field, value) {
+  if (!value || !S.customer) return
+  closeConfirmSheet()
+
+  const coinsMap = { phone: 1500, birthdate: 1500, gender: 1000, area: 1000 }
+  const wasEmpty = !S.customer[field]
+
+  try {
+    const { error } = await db.from('menu_customers')
+      .update({ [field]: value })
+      .eq('id', S.customer.id)
+    if (error) throw error
+
+    S.customer[field] = value
+
+    // منح الكوينز لو أول مرة
+    if (wasEmpty && coinsMap[field]) {
+      const coins = coinsMap[field]
+      await db.from('menu_customers').update({ coins_balance: (S.customer.coins_balance || 0) + coins }).eq('id', S.customer.id)
+      await db.from('coin_transactions').insert({
+        customer_id: S.customer.id, restaurant_id: S.restaurant.id,
+        type: 'profile_complete', amount: coins,
+        note: `إكمال بيانات: ${field}`
+      })
+      S.customer.coins_balance = (S.customer.coins_balance || 0) + coins
+      showToast(`+${coins.toLocaleString('ar-EG')} 🪙 كوينز على إكمال ملفك!`)
+      playSuccessSound()
+    }
+    renderAccountPage()
+    updateWalletBadge()
+  } catch(e) {
+    showToast('خطأ: ' + e.message)
+  }
+}
+
+// ── REWARDS SECTION ───────────────────────────────────────────────────
+function renderRewardsSection() {
+  const el = document.getElementById('rewards-section')
+  if (!el || !S.customer || !S.restaurant) return
+
+  const r   = S.restaurant
+  const c   = S.customer
+  const cpE = r.coins_per_egp ?? 1000
+
+  const rewards = []
+
+  // بونص ترحيبي
+  if (r.welcome_coins) {
+    const coins  = r.welcome_coins
+    const done   = c.welcome_coins_claimed
+    rewards.push({
+      icon: '🎁', title: 'بونص الترحيب',
+      desc: `${(coins / cpE).toFixed(0)} ج.م كوينز عند أول طلب`,
+      progress: done ? 100 : 0,
+      progressLabel: done ? 'تم الاستلام ✅' : 'اطلب أول مرة',
+      done
+    })
+  }
+
+  // ولاء
+  if (r.loyalty_egp) {
+    const type   = r.loyalty_type || 'per_order'
+    const desc   = type === 'per_order'
+      ? `${r.loyalty_egp} ج.م كوينز على كل طلب`
+      : `${r.loyalty_egp} ج.م كوينز لكل ${r.loyalty_per_amount || 100} ج.م مشتريات`
+    rewards.push({
+      icon: '⭐', title: 'كوينز الولاء',
+      desc, progress: 100, progressLabel: 'نشط على كل طلب', done: true
+    })
+  }
+
+  // هدية عيد الميلاد
+  if (r.birthday_coins && c.birthdate) {
+    const today    = new Date()
+    const bday     = new Date(c.birthdate)
+    const isBday   = today.getMonth() === bday.getMonth() && today.getDate() === bday.getDate()
+    rewards.push({
+      icon: '🎂', title: 'هدية عيد الميلاد',
+      desc: `${(r.birthday_coins / cpE).toFixed(0)} ج.م كوينز في يوم ميلادك`,
+      progress: isBday ? 100 : Math.round(((365 - daysToBirthday(c.birthdate)) / 365) * 100),
+      progressLabel: isBday ? '🎉 عيد ميلاد سعيد!' : `بعد ${daysToBirthday(c.birthdate)} يوم`,
+      done: isBday
+    })
+  }
+
+  // إحالة صديق
+  if (r.referral_coins) {
+    rewards.push({
+      icon: '🔗', title: 'شارك واكسب',
+      desc: `${(r.referral_coins / cpE).toFixed(0)} ج.م لكل صديق يشترك`,
+      progress: 0, progressLabel: 'شارك الآن', done: false,
+      action: () => copyReferralLink()
+    })
+  }
+
+  // توصيل مجاني
+  if (r.free_delivery) {
+    const minOrder = r.free_delivery_min_order
+    rewards.push({
+      icon: '🛵', title: 'توصيل مجاني',
+      desc: minOrder ? `للطلبات فوق ${minOrder} ج.م` : 'على جميع الطلبات',
+      progress: 100, progressLabel: 'نشط ✅', done: true
+    })
+  }
+
+  if (!rewards.length) {
+    el.innerHTML = `
+      <div style="text-align:center;padding:32px 16px;background:#fff;border-radius:20px;border:1.5px solid #f0f0f0">
+        <div style="font-size:48px;margin-bottom:12px">🛍️</div>
+        <p style="font-size:14px;font-weight:800;color:#bbb;margin-bottom:8px">لا توجد مكافآت حالياً</p>
+        <p style="font-size:12px;color:#ccc;margin-bottom:16px">اشترِ الآن وابدأ تجمّع كوينز!</p>
+        <button onclick="switchPage('home')" style="background:linear-gradient(135deg,var(--brand),#ff8c38);color:#fff;border:none;border-radius:12px;padding:10px 24px;font-size:13px;font-weight:800;cursor:pointer;font-family:'Rubik',sans-serif">تسوّق الآن 🛒</button>
+      </div>`
+    return
+  }
+
+  el.innerHTML = rewards.map((rew, i) => `
+    <div style="background:#fff;border-radius:20px;padding:18px;border:1.5px solid #f0f0f0;box-shadow:0 2px 12px rgba(0,0,0,0.04);${rew.action ? 'cursor:pointer' : ''}"
+         ${rew.action ? `onclick="copyReferralLink()"` : ''}>
+      <div style="display:flex;align-items:center;gap:12px;margin-bottom:14px">
+        <div style="width:44px;height:44px;border-radius:14px;background:${rew.done ? '#f0fdf4' : '#fff8f3'};display:flex;align-items:center;justify-content:center;font-size:22px;flex-shrink:0">${rew.icon}</div>
+        <div style="flex:1">
+          <p style="font-size:14px;font-weight:900;color:#1a1a1a;margin-bottom:2px">${rew.title}</p>
+          <p style="font-size:12px;color:#888">${rew.desc}</p>
+        </div>
+        ${rew.done ? `<svg width="18" height="18" fill="none" stroke="#22c55e" stroke-width="2.5" viewBox="0 0 24 24"><polyline points="20 6 9 17 4 12"/></svg>` : ''}
+      </div>
+      <!-- Progress Track -->
+      <div style="background:#f0f0f0;border-radius:10px;height:6px;overflow:hidden;margin-bottom:6px">
+        <div style="height:100%;width:${rew.progress}%;background:${rew.done ? 'linear-gradient(90deg,#22c55e,#4ade80)' : 'linear-gradient(90deg,#ef4444,#FF6B00)'};border-radius:10px;transition:width 1s cubic-bezier(0.34,1.56,0.64,1)"></div>
+      </div>
+      <p style="font-size:11px;font-weight:700;color:${rew.done ? '#16a34a' : '#cc5500'}">${rew.progressLabel}</p>
+    </div>`).join('')
+
+  // تحريك الـ progress bars بعد render
+  setTimeout(() => {
+    el.querySelectorAll('[style*="width:"]').forEach(b => {
+      const w = b.style.width; b.style.width = '0%'
+      setTimeout(() => b.style.width = w, 50)
+    })
+  }, 100)
+}
+
+function daysToBirthday(birthdate) {
+  const today = new Date()
+  const bday  = new Date(birthdate)
+  const next  = new Date(today.getFullYear(), bday.getMonth(), bday.getDate())
+  if (next < today) next.setFullYear(today.getFullYear() + 1)
+  return Math.ceil((next - today) / 86400000)
+}
+
+// ── VOUCHERS SECTION ──────────────────────────────────────────────────
+function renderVouchersSection() {
+  const el = document.getElementById('vouchers-section')
+  if (!el || !S.customer) return
+  el.innerHTML = `
+    <div style="background:#fff;border-radius:20px;padding:18px;border:1.5px solid #f0f0f0">
+      <p style="font-size:13px;color:#888;margin-bottom:12px">أدخل كود القسيمة أو كود الخصم</p>
+      <div style="display:flex;gap:8px">
+        <input id="voucher-input" type="text" placeholder="XXXX-XXXX"
+               style="flex:1;background:#f5f5f5;border:1.5px solid #eee;border-radius:12px;padding:12px 14px;font-size:14px;font-family:'Rubik',sans-serif;outline:none;text-transform:uppercase;letter-spacing:2px;font-weight:700"
+               onfocus="this.style.borderColor='var(--brand)'" onblur="this.style.borderColor='#eee'" />
+        <button onclick="redeemVoucher()" style="background:linear-gradient(135deg,var(--brand),#ff8c38);color:#fff;border:none;border-radius:12px;padding:12px 18px;font-size:13px;font-weight:900;cursor:pointer;font-family:'Rubik',sans-serif;white-space:nowrap">استرداد</button>
+      </div>
+      <p id="voucher-msg" style="display:none;font-size:12px;font-weight:700;margin-top:8px;padding:8px 12px;border-radius:10px"></p>
+    </div>`
+}
+
+async function redeemVoucher() {
+  const code  = document.getElementById('voucher-input')?.value.trim().toUpperCase()
+  const msgEl = document.getElementById('voucher-msg')
+  if (!code || !S.customer || !S.restaurant) return
+  msgEl.style.display = 'none'
+
+  const showMsg = (txt, ok) => {
+    msgEl.textContent        = txt
+    msgEl.style.display      = 'block'
+    msgEl.style.background   = ok ? '#f0fdf4' : '#fff0f0'
+    msgEl.style.color        = ok ? '#16a34a' : '#ef4444'
+  }
+
+  try {
+    const { data: dc } = await db.from('discount_codes')
+      .select('*')
+      .eq('code', code)
+      .eq('restaurant_id', S.restaurant.id)
+      .eq('is_active', true)
+      .single()
+
+    if (!dc) return showMsg('الكود غير موجود أو منتهي الصلاحية ❌', false)
+    if (dc.used_count >= dc.max_uses) return showMsg('هذا الكود وصل لأقصى عدد استخدامات ❌', false)
+    if (dc.expires_at && new Date(dc.expires_at) < new Date()) return showMsg('الكود منتهي الصلاحية ❌', false)
+
+    // حوّل قيمة الخصم لكوينز
+    const cpE   = S.restaurant.coins_per_egp ?? 1000
+    const coins = Math.round(dc.amount * cpE)
+
+    await db.from('menu_customers')
+      .update({ coins_balance: (S.customer.coins_balance || 0) + coins })
+      .eq('id', S.customer.id)
+    await db.from('coin_transactions').insert({
+      customer_id: S.customer.id, restaurant_id: S.restaurant.id,
+      type: 'discount_code', amount: coins, note: `كود: ${code}`
+    })
+    await db.from('discount_codes').update({ used_count: (dc.used_count || 0) + 1 }).eq('id', dc.id)
+
+    S.customer.coins_balance = (S.customer.coins_balance || 0) + coins
+    showMsg(`✅ تم! +${coins.toLocaleString('ar-EG')} 🪙 أُضيفت لمحفظتك`, true)
+    document.getElementById('voucher-input').value = ''
+    playSuccessSound()
+    updateWalletBadge()
+    renderAccountPage()
+  } catch(e) {
+    showMsg('خطأ: ' + e.message, false)
+  }
+}
+
+// ── COPY REFERRAL LINK ────────────────────────────────────────────────
+function copyReferralLink() {
+  if (!S.customer?.referral_code) return
+  const url = `${window.location.origin}${window.location.pathname}?r=${S.restaurant?.slug || ''}&ref=${S.customer.referral_code}`
+  navigator.clipboard.writeText(url).then(() => showToast('تم نسخ الرابط! 🔗'))
+}
+
+// ── SIMPLE TOAST ──────────────────────────────────────────────────────
+function showToast(msg) {
+  let t = document.getElementById('mnio-toast')
+  if (!t) {
+    t = document.createElement('div')
+    t.id = 'mnio-toast'
+    t.style.cssText = 'position:fixed;bottom:100px;left:50%;transform:translateX(-50%);background:#1a1a1a;color:#fff;padding:10px 20px;border-radius:20px;font-size:13px;font-weight:700;z-index:999;font-family:Rubik,sans-serif;transition:opacity 0.3s;white-space:nowrap;box-shadow:0 4px 20px rgba(0,0,0,0.3)'
+    document.body.appendChild(t)
+  }
+  t.textContent = msg
+  t.style.opacity = '1'
+  clearTimeout(t._timer)
+  t._timer = setTimeout(() => t.style.opacity = '0', 2500)
+}
+
+// ── CONFIRM SHEET HELPER ──────────────────────────────────────────────
+function showConfirmSheet(title, bodyHTML, onConfirm, confirmLabel, noConfirmBtn) {
+  let sheet = document.getElementById('confirm-sheet')
+  if (!sheet) {
+    sheet = document.createElement('div')
+    sheet.id = 'confirm-sheet'
+    sheet.style.cssText = 'position:fixed;inset:0;z-index:200;display:flex;align-items:flex-end;justify-content:center;background:rgba(0,0,0,0.5)'
+    sheet.innerHTML = `<div style="background:#fff;border-radius:24px 24px 0 0;padding:24px 20px 36px;width:100%;max-width:480px;box-sizing:border-box">
+      <div id="cs-title" style="font-size:16px;font-weight:900;color:#1a1a1a;margin-bottom:16px"></div>
+      <div id="cs-body"></div>
+      <div id="cs-btns" style="display:flex;gap:10px;margin-top:16px">
+        <button onclick="closeConfirmSheet()" style="flex:1;padding:13px;border-radius:14px;border:1.5px solid #eee;background:#f5f5f5;font-size:14px;font-weight:700;color:#888;cursor:pointer;font-family:'Rubik',sans-serif">إلغاء</button>
+        <button id="cs-confirm-btn" style="flex:1;padding:13px;border-radius:14px;border:none;background:linear-gradient(135deg,var(--brand),#ff8c38);color:#fff;font-size:14px;font-weight:900;cursor:pointer;font-family:'Rubik',sans-serif"></button>
+      </div>
+    </div>`
+    document.body.appendChild(sheet)
+  }
+  document.getElementById('cs-title').textContent = title
+  document.getElementById('cs-body').innerHTML    = bodyHTML
+  const btns    = document.getElementById('cs-btns')
+  const cfmBtn  = document.getElementById('cs-confirm-btn')
+  if (noConfirmBtn) { cfmBtn.style.display = 'none' }
+  else {
+    cfmBtn.style.display = 'block'
+    cfmBtn.textContent   = confirmLabel || 'تأكيد'
+    cfmBtn.onclick       = () => { closeConfirmSheet(); if (onConfirm) onConfirm() }
+  }
+  sheet.style.display = 'flex'
+}
+function closeConfirmSheet() {
+  const s = document.getElementById('confirm-sheet')
+  if (s) s.style.display = 'none'
+}
+
+
+let _selectedGender = null
+
+function setGender(g) {
+  _selectedGender = g
+  const male   = document.getElementById('gender-male')
+  const female = document.getElementById('gender-female')
+  if (!male || !female) return
+  male.style.borderColor   = g === 'male'   ? 'var(--brand)' : '#eee'
+  male.style.background    = g === 'male'   ? '#fff8f3'      : '#fff'
+  male.style.color         = g === 'male'   ? 'var(--brand)' : '#555'
+  female.style.borderColor = g === 'female' ? 'var(--brand)' : '#eee'
+  female.style.background  = g === 'female' ? '#fff8f3'      : '#fff'
+  female.style.color       = g === 'female' ? 'var(--brand)' : '#555'
+}
+
+function togglePassVis() {
+  const inp = document.getElementById('acc-pass')
+  const btn = document.getElementById('pass-vis-btn')
+  if (!inp) return
+  if (inp.type === 'password') { inp.type = 'text';     if (btn) btn.textContent = '🙈' }
+  else                         { inp.type = 'password'; if (btn) btn.textContent = '👁️' }
+}
+
+function setAccTab(mode) {
+  const isSignup = mode === 'signup'
+  const extra    = document.getElementById('acc-signup-extra')
+  const nameF    = document.getElementById('field-name')
+  if (extra) extra.style.display = isSignup ? 'flex' : 'none'
+  if (nameF) nameF.style.display = isSignup ? 'block' : 'none'
+  const submitBtn = document.getElementById('acc-submit-btn')
+  if (submitBtn) { submitBtn.textContent = isSignup ? '🎁 إنشاء حسابي' : 'تسجيل الدخول'; submitBtn.dataset.mode = mode }
+  const tLogin  = document.getElementById('acc-tab-login')
+  const tSignup = document.getElementById('acc-tab-signup')
+  if (tLogin)  { tLogin.style.background  = isSignup ? 'transparent' : 'linear-gradient(135deg,var(--brand),#ff8c38)'; tLogin.style.color  = isSignup ? '#999' : '#fff'; tLogin.style.boxShadow  = isSignup ? 'none' : '0 2px 8px rgba(255,107,0,0.3)' }
+  if (tSignup) { tSignup.style.background = isSignup ? 'linear-gradient(135deg,var(--brand),#ff8c38)' : 'transparent'; tSignup.style.color = isSignup ? '#fff' : '#999'; tSignup.style.boxShadow = isSignup ? '0 2px 8px rgba(255,107,0,0.3)' : 'none' }
+  const errEl = document.getElementById('acc-error')
+  if (errEl) errEl.style.display = 'none'
+  try { const ctx = new AudioContext(); const o = ctx.createOscillator(); const g = ctx.createGain(); o.connect(g); g.connect(ctx.destination); o.frequency.value = isSignup ? 600 : 500; g.gain.setValueAtTime(0.05, ctx.currentTime); g.gain.exponentialRampToValueAtTime(0.001, ctx.currentTime + 0.15); o.start(); o.stop(ctx.currentTime + 0.15) } catch(e) {}
+}
+
+async function accAuthSubmit() {
+  const mode    = document.getElementById('acc-submit-btn')?.dataset.mode || 'login'
+  const email   = document.getElementById('acc-email')?.value.trim()
+  const pass    = document.getElementById('acc-pass')?.value
+  const errEl   = document.getElementById('acc-error')
+  const showErr = msg => { if (errEl) { errEl.textContent = msg; errEl.style.display = 'block' } }
+  if (errEl) errEl.style.display = 'none'
+  if (!email) return showErr('البريد الإلكتروني مطلوب')
+  if (!pass || pass.length < 6) return showErr('كلمة المرور 6 أحرف على الأقل')
+  const btn = document.getElementById('acc-submit-btn')
+  const origText = btn.textContent
+  btn.textContent = '⏳'; btn.disabled = true
+  try {
+    if (mode === 'login') {
+      const { error } = await db.auth.signInWithPassword({ email, password: pass })
+      if (error) throw new Error('البريد أو كلمة المرور غير صحيحة')
+      await initCustomerSession()
+      renderAccountPage(); showBottomNav(true); loadNotifications().catch(() => {}); playSuccessSound()
+    } else {
+      const name      = document.getElementById('acc-name')?.value.trim()
+      const phone     = document.getElementById('acc-phone')?.value.trim()
+      const birthdate = document.getElementById('acc-birthdate')?.value || null
+      const area      = document.getElementById('acc-area')?.value.trim() || null
+      const ref       = document.getElementById('acc-ref')?.value.trim().toUpperCase() || null
+      if (!name)  return showErr('الاسم مطلوب')
+      if (!phone) return showErr('رقم الموبايل مطلوب')
+      // حاول تسجيل مستخدم جديد
+      const { data: signData, error: signErr } = await db.auth.signUp({ email, password: pass })
+      if (signErr) {
+        if (signErr.message?.includes('already registered') || signErr.message?.includes('User already registered')) {
+          // الإيميل موجود في auth — حاول تسجيل الدخول (نفس الباسورد = متجر تاني بنفس الإيميل)
+          const { error: loginErr } = await db.auth.signInWithPassword({ email, password: pass })
+          if (loginErr) throw new Error('هذا البريد مسجّل من قبل في منيو. لإنشاء حساب في هذا المتجر، استخدم كلمة مرور مختلفة أو سجّل دخولك مباشرة.')
+          // تسجيل الدخول نجح — سنُنشئ profile جديد لهذا المتجر
+          await initCustomerSession(true, { name, phone, birthdate, area, gender: _selectedGender, referral_code_used: ref })
+        } else throw new Error(signErr.message)
+      } else {
+        await initCustomerSession(true, { name, phone, birthdate, area, gender: _selectedGender, referral_code_used: ref })
+      }
+      renderAccountPage(); showBottomNav(true); loadNotifications().catch(() => {})
+      showCelebration(S.restaurant?.welcome_coins ?? 10000); playSuccessSound()
+    }
+  } catch(e) {
+    showErr(e.message)
+  } finally {
+    btn.textContent = origText; btn.disabled = false
+  }
+}
+
+function playSuccessSound() {
+  try {
+    const ctx = new AudioContext()
+    ;[523, 659, 784, 1047].forEach((freq, i) => {
+      const o = ctx.createOscillator(), g = ctx.createGain()
+      o.connect(g); g.connect(ctx.destination)
+      o.frequency.value = freq; o.type = 'sine'
+      const t = ctx.currentTime + i * 0.1
+      g.gain.setValueAtTime(0, t); g.gain.linearRampToValueAtTime(0.07, t + 0.02); g.gain.exponentialRampToValueAtTime(0.001, t + 0.25)
+      o.start(t); o.stop(t + 0.25)
+    })
+  } catch(e) {}
+}
+
+// ── INFO STRIP ────────────────────────────────────────────────────────
+function renderInfoStrip() {
+  if (!S.restaurant) return
+  // تقييم
+  const rating = S.restaurant.rating ?? 5.0
+  document.getElementById('strip-rating').textContent = Number(rating).toFixed(1)
+  // وقت التوصيل
+  const mins = S.restaurant.avg_prep_minutes ?? S.restaurant.delivery_time_minutes ?? null
+  document.getElementById('strip-time').textContent = mins ? `${mins} د` : '-- د'
+}
+
+// ── NOTIFICATIONS ─────────────────────────────────────────────────────
+let _notifPanelOpen = false
+let _notifications  = []
+
+function toggleNotifPanel() {
+  _notifPanelOpen = !_notifPanelOpen
+  const panel = document.getElementById('notif-panel')
+  panel.style.display = _notifPanelOpen ? 'block' : 'none'
+  if (_notifPanelOpen && S.customer) loadNotifications()
+}
+
+document.addEventListener('click', e => {
+  if (_notifPanelOpen && !document.getElementById('notif-btn')?.contains(e.target) && !document.getElementById('notif-panel')?.contains(e.target)) {
+    _notifPanelOpen = false
+    const panel = document.getElementById('notif-panel')
+    if (panel) panel.style.display = 'none'
+  }
+})
+
+async function loadNotifications() {
+  if (!S.customer) return
+  try {
+    const { data } = await db.from('notifications')
+      .select('*')
+      .eq('customer_id', S.customer.id)
+      .order('created_at', { ascending: false })
+      .limit(20)
+    _notifications = data || []
+    renderNotifList()
+    updateNotifBadge()
+  } catch(e) { /* جدول notifications مش موجود بعد */ }
+}
+
+function renderNotifList() {
+  const el = document.getElementById('notif-list')
+  if (!_notifications.length) {
+    el.innerHTML = `<p style="font-size:13px;color:#bbb;text-align:center;padding:24px 0">لا توجد إشعارات</p>`
+    return
+  }
+  const iconMap = { order_confirmed:'✅', order_ready:'📦', order_delivering:'🛵', order_delivered:'🎉', order_cancelled:'❌', coins:'🪙', promo:'🎁' }
+  el.innerHTML = _notifications.map(n => `
+    <div style="display:flex;align-items:flex-start;gap:10px;padding:12px 16px;border-bottom:1px solid #f5f5f5;${n.is_read ? '' : 'background:#fff8f3'}">
+      <span style="font-size:20px;flex-shrink:0">${iconMap[n.type] || '🔔'}</span>
+      <div style="flex:1">
+        <p style="font-size:13px;font-weight:${n.is_read ? '600' : '800'};color:#1a1a1a;margin-bottom:2px">${n.title || ''}</p>
+        <p style="font-size:11px;color:#888">${n.body || ''}</p>
+        <p style="font-size:10px;color:#ccc;margin-top:3px">${new Date(n.created_at).toLocaleDateString('ar-EG', { day:'numeric', month:'short', hour:'2-digit', minute:'2-digit' })}</p>
+      </div>
+      ${!n.is_read ? '<span style="width:8px;height:8px;border-radius:50%;background:var(--brand);flex-shrink:0;margin-top:4px"></span>' : ''}
+    </div>`).join('')
+}
+
+function updateNotifBadge() {
+  const unread = _notifications.filter(n => !n.is_read).length
+  const badge  = document.getElementById('notif-badge')
+  if (badge) {
+    badge.textContent    = unread > 9 ? '9+' : String(unread)
+    badge.style.display  = unread > 0 ? 'block' : 'none'
+  }
+}
+
+async function markAllNotifsRead() {
+  if (!S.customer || !_notifications.length) return
+  _notifications.forEach(n => n.is_read = true)
+  renderNotifList()
+  updateNotifBadge()
+  try {
+    await db.from('notifications').update({ is_read: true }).eq('customer_id', S.customer.id).eq('is_read', false)
+  } catch(e) {}
+}
+
+// ── PWA INSTALL ───────────────────────────────────────────────────────
+let _deferredInstallPrompt = null
+
+window.addEventListener('beforeinstallprompt', e => {
+  e.preventDefault()
+  _deferredInstallPrompt = e
+  const btn = document.getElementById('install-btn')
+  if (btn) btn.style.display = 'flex'
+})
+
+window.addEventListener('appinstalled', () => {
+  const btn = document.getElementById('install-btn')
+  if (btn) btn.style.display = 'none'
+  _deferredInstallPrompt = null
+})
+
+function triggerInstall() {
+  if (!_deferredInstallPrompt) return
+  _deferredInstallPrompt.prompt()
+  _deferredInstallPrompt.userChoice.then(() => { _deferredInstallPrompt = null })
+}
+
+
   document.getElementById('celeb-coins').textContent = coins.toLocaleString('ar-EG')
   document.getElementById('celebration-overlay').classList.remove('hidden')
   document.body.style.overflow = 'hidden'
