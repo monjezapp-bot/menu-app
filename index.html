@@ -267,7 +267,7 @@
 
     /* Search overlay (mini mode) */
     .search-overlay {
-      position: fixed; inset: 0; z-index: 50;
+      position: fixed; inset: 0; z-index: 65;
       background: rgba(0,0,0,0.5);
       display: flex; align-items: flex-start;
       padding: 60px 16px 0;
@@ -817,8 +817,8 @@
       <span style="position:absolute;top:20%;right:25%;font-size:10px;opacity:0.15;animation:floatCoin 3.8s ease-in-out infinite 2s">⭐</span>
     </div>
     <p style="color:rgba(255,255,255,0.8);font-size:12px;font-weight:700;margin-bottom:4px;position:relative">رصيد محفظتك 💳</p>
-    <p id="wpage-balance" style="font-size:48px;font-weight:900;color:#fff;position:relative;line-height:1">0</p>
-    <p id="wpage-balance-egp" style="font-size:14px;color:rgba(255,255,255,0.8);font-weight:700;margin-top:4px;position:relative">= 0.00 ج.م متاح للشراء</p>
+    <p id="wpage-balance" style="font-size:48px;font-weight:900;color:#fff;position:relative;line-height:1;opacity:0.5">···</p>
+    <p id="wpage-balance-egp" style="font-size:14px;color:rgba(255,255,255,0.8);font-weight:700;margin-top:4px;position:relative;opacity:0.5">جاري التحميل...</p>
     <p id="wpage-min-note" style="font-size:11px;color:rgba(255,255,255,0.65);margin-top:8px;position:relative"></p>
   </div>
 
@@ -1086,7 +1086,7 @@
 <!-- ══════════════════════════════════════════
      CART SHEET (bottom sheet)
 ══════════════════════════════════════════ -->
-<div id="cart-sheet" class="hidden fixed inset-y-0 z-40 flex flex-col justify-end">
+<div id="cart-sheet" class="hidden fixed inset-y-0 z-[65] flex flex-col justify-end">
   <div class="absolute inset-0 bg-black/50 backdrop-blur-sm" onclick="closeCartSheet()"></div>
   <div class="sheet relative bg-white rounded-t-3xl shadow-2xl" style="max-height:88vh;display:flex;flex-direction:column">
 
@@ -1197,7 +1197,7 @@
 <!-- ══════════════════════════════════════════
      MAP PICKER MODAL
 ══════════════════════════════════════════ -->
-<div id="map-modal" class="hidden fixed inset-0 z-50 flex flex-col" style="background:#fff">
+<div id="map-modal" class="hidden fixed inset-0 z-[65] flex flex-col" style="background:#fff">
   <div style="display:flex;align-items:center;justify-content:space-between;padding:14px 16px;border-bottom:1px solid #f0f0f0;flex-shrink:0">
     <p style="font-size:16px;font-weight:900;color:#1a1a1a">📍 حدد موقعك</p>
     <button onclick="closeMapPicker()" style="width:36px;height:36px;border-radius:50%;background:#f5f5f5;color:#555;font-size:20px;font-weight:700;display:flex;align-items:center;justify-content:center">&times;</button>
@@ -1222,14 +1222,14 @@
 <!-- ══════════════════════════════════════════
      PRODUCT PAGE MODAL (full screen)
 ══════════════════════════════════════════ -->
-<div id="product-modal" class="hidden fixed inset-0 z-50 bg-white no-scroll" style="overflow-y:auto">
+<div id="product-modal" class="hidden fixed inset-0 z-[65] bg-white no-scroll" style="overflow-y:auto">
   <div id="modal-inner"></div>
 </div>
 
 <!-- ══════════════════════════════════════════
      BUNDLE MODAL
 ══════════════════════════════════════════ -->
-<div id="bundle-modal" class="hidden fixed inset-0 z-50 flex items-end justify-center">
+<div id="bundle-modal" class="hidden fixed inset-0 z-[65] flex items-end justify-center">
   <div class="absolute inset-0 bg-black/60 backdrop-blur-sm" onclick="closeBundleModal()"></div>
   <div id="bundle-modal-inner" class="modal-in relative bg-white w-full max-w-[480px] rounded-t-3xl shadow-2xl no-scroll" style="max-height:92vh;overflow-y:auto"></div>
 </div>
@@ -1237,7 +1237,7 @@
 <!-- ══════════════════════════════════════════
      ORDER SUCCESS MODAL
 ══════════════════════════════════════════ -->
-<div id="order-success-modal" class="hidden fixed inset-y-0 z-[60] flex items-center justify-center" style="background:rgba(0,0,0,0.6);backdrop-filter:blur(6px)">
+<div id="order-success-modal" class="hidden fixed inset-y-0 z-[65] flex items-center justify-center" style="background:rgba(0,0,0,0.6);backdrop-filter:blur(6px)">
   <div class="bg-white rounded-3xl shadow-2xl mx-4 w-full max-w-sm p-8 text-center fade-up">
     <div class="success-icon text-6xl mb-4">⏳</div>
     <h2 id="success-title" style="font-size:22px;font-weight:900;color:#1a1a1a;margin-bottom:6px">تم استلام طلبك!</h2>
@@ -1265,7 +1265,7 @@
 <!-- cust-auth-modal removed: Google OAuth only -->
 
 <!-- ══ WALLET MODAL ══ -->
-<div id="wallet-modal" class="hidden fixed inset-y-0 z-[70] flex items-end justify-center" style="background:rgba(0,0,0,0.55);backdrop-filter:blur(5px)">
+<div id="wallet-modal" class="hidden fixed inset-y-0 z-[75] flex items-end justify-center" style="background:rgba(0,0,0,0.55);backdrop-filter:blur(5px)">
   <div class="bg-white rounded-t-3xl w-full max-w-lg sheet" style="max-height:92vh;overflow-y:auto">
     <div style="padding:20px 20px 0">
       <div style="width:40px;height:4px;background:#e8e8e8;border-radius:4px;margin:0 auto 16px"></div>
@@ -1302,7 +1302,7 @@
 </div>
 
 <!-- ══ CELEBRATION OVERLAY ══ -->
-<div id="celebration-overlay" class="hidden fixed inset-y-0 z-[80] flex flex-col items-center justify-center" style="background:rgba(0,0,0,0.75);backdrop-filter:blur(4px)">
+<div id="celebration-overlay" class="hidden fixed inset-y-0 z-[85] flex flex-col items-center justify-center" style="background:rgba(0,0,0,0.75);backdrop-filter:blur(4px)">
   <canvas id="confetti-canvas" class="absolute inset-0" style="pointer-events:none;width:100%;height:100%"></canvas>
   <div style="position:relative;text-align:center;padding:32px 28px;background:#fff;border-radius:28px;max-width:320px;width:90%;animation:successPop 0.5s cubic-bezier(0.34,1.5,0.64,1) both">
     <div style="font-size:64px;margin-bottom:8px">🎉</div>
@@ -2777,9 +2777,7 @@ async function loadCustomerProfile(forceCreate, extraData) {
         // كوينز الإحالة للمُحيل
         if (referredBy && S.restaurant.referral_coins) {
           const rc = S.restaurant.referral_coins
-          await db.from('menu_customers')
-            .update({ coins_balance: db.rpc ? undefined : 0 })
-            .eq('id', referredBy).catch(() => {})
+          await incrementCustomerCoins(referredBy, rc).catch(() => {})
           await db.from('coin_transactions').insert({
             customer_id:   referredBy,
             restaurant_id: S.restaurant.id,
@@ -3175,22 +3173,32 @@ function closeOrderDetail() {
 }
 
 // ── صفحة محفظتك ──────────────────────────────────────────────────────
-async function loadWalletPage() {
-  if (!S.customer || !S.restaurant) { switchPage('account'); return }
-  await loadCustomerProfile()
-  const c      = S.customer
+// ── WALLET PAGE: عرض رصيد الكوينز فوراً من الذاكرة (يمنع فلاش الصفر) ──
+function renderWalletBalances(c) {
+  if (!c || !S.restaurant) return
   const cpE    = S.restaurant.coins_per_egp ?? 1000
   const minRed = S.restaurant.min_redeem_coins ?? 100000
-
-  // Hero balance (كوينز)
   const balEl  = document.getElementById('wpage-balance')
   const egpEl  = document.getElementById('wpage-balance-egp')
   const noteEl = document.getElementById('wpage-min-note')
-  if (balEl)  balEl.textContent  = (c.coins_balance || 0).toLocaleString('ar-EG')
-  if (egpEl)  egpEl.textContent  = `= ${((c.coins_balance||0) / cpE).toFixed(2)} ج.م متاح للشراء`
-  if (noteEl) noteEl.textContent = c.coins_balance >= minRed
+  if (balEl)  { balEl.textContent  = (c.coins_balance || 0).toLocaleString('ar-EG'); balEl.style.opacity = '1' }
+  if (egpEl)  { egpEl.textContent  = `= ${((c.coins_balance||0) / cpE).toFixed(2)} ج.م متاح للشراء`; egpEl.style.opacity = '1' }
+  if (noteEl) noteEl.textContent = (c.coins_balance || 0) >= minRed
     ? '✅ يمكنك تحويل كوينزك الآن!'
     : `تحتاج ${(minRed - (c.coins_balance||0)).toLocaleString('ar-EG')} كوين للحد الأدنى`
+}
+
+async function loadWalletPage() {
+  if (!S.customer || !S.restaurant) { switchPage('account'); return }
+
+  // اعرض القيم المعروفة فوراً من الذاكرة (من غير انتظار) عشان مفيش فلاش لصفر أو لودينج فاضي
+  renderWalletBalances(S.customer)
+
+  await loadCustomerProfile()
+  renderWalletBalances(S.customer)
+  const c      = S.customer
+  const cpE    = S.restaurant.coins_per_egp ?? 1000
+  const minRed = S.restaurant.min_redeem_coins ?? 100000
 
   // رصيد المحفظة النقدي
   const cashEl = document.getElementById('wpage-cash-balance')
@@ -4232,7 +4240,7 @@ async function awardLoyaltyAndWelcome(orderId, orderItems, customerId) {
   if (cust.referred_by && !cust.welcome_coins_claimed) {
     const referralCoins = S.restaurant.referral_coins ?? 5000
     txs.push({ customer_id: cust.referred_by, restaurant_id: S.restaurant.id, type: 'referral_reward', amount: referralCoins, order_id: orderId, note: `إحالة ناجحة` })
-    await db.from('menu_customers').update({ coins_balance: db.rpc('increment', { row_id: cust.referred_by, amount: referralCoins }) }).eq('id', cust.referred_by)
+    await incrementCustomerCoins(cust.referred_by, referralCoins).catch(() => {})
   }
 
   if (txs.length) await db.from('coin_transactions').insert(txs)
