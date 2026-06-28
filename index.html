@@ -22,6 +22,9 @@
        BASE
     ══════════════════════════════════════════ */
     * { font-family: 'Rubik', sans-serif; box-sizing: border-box; user-select: none; -webkit-user-select: none; }
+    /* الأرقام دايماً بالإنجليزي حتى لو النص بالعربي */
+    * { font-feature-settings: "lnum" 1; unicode-bidi: plaintext; }
+    :lang(ar), [dir="rtl"] { -webkit-locale: "en"; }
     input, textarea { user-select: text; -webkit-user-select: text; }
     .no-scroll::-webkit-scrollbar { display: none; }
     .no-scroll { -ms-overflow-style: none; scrollbar-width: none; }
@@ -1164,7 +1167,7 @@
 <!-- ══════════════════════════════════════════
      MAP PICKER MODAL
 ══════════════════════════════════════════ -->
-<div id="map-modal" class="hidden fixed inset-0 z-50 flex flex-col" style="background:#fff;max-width:480px;left:50%;transform:translateX(-50%);width:100%">
+<div id="map-modal" class="hidden z-50 flex flex-col" style="background:#fff;position:fixed;top:0;bottom:0;left:50%;transform:translateX(-50%);width:100%;max-width:480px">
   <div style="display:flex;align-items:center;justify-content:space-between;padding:14px 16px;border-bottom:1px solid #f0f0f0;flex-shrink:0">
     <p style="font-size:16px;font-weight:900;color:#1a1a1a">📍 حدد موقعك</p>
     <button onclick="closeMapPicker()" style="width:36px;height:36px;border-radius:50%;background:#f5f5f5;color:#555;font-size:20px;font-weight:700;display:flex;align-items:center;justify-content:center">&times;</button>
@@ -2929,13 +2932,13 @@ async function openWalletModal() {
   const c = S.customer
   const coinsPerEgp = S.restaurant.coins_per_egp ?? 1000
   const minRedeem   = S.restaurant.min_redeem_coins ?? 100000
-  document.getElementById('wallet-balance').textContent     = c.coins_balance.toLocaleString('ar-EG')
+  document.getElementById('wallet-balance').textContent     = c.coins_balance.toLocaleString('en-US')
   document.getElementById('wallet-balance-egp').textContent = `= ${(c.coins_balance / coinsPerEgp).toFixed(2)} ج.م`
   document.getElementById('wallet-min-redeem-note').textContent = c.coins_balance >= minRedeem
     ? `✅ يمكنك استخدام كوينزك الآن!`
-    : `تحتاج ${(minRedeem - c.coins_balance).toLocaleString('ar-EG')} كوين للوصول للحد الأدنى`
+    : `تحتاج ${(minRedeem - c.coins_balance).toLocaleString('en-US')} كوين للوصول للحد الأدنى`
   document.getElementById('wallet-ref-code').textContent    = c.referral_code || '---'
-  document.getElementById('wallet-ref-reward').textContent  = (S.restaurant.referral_coins ?? 5000).toLocaleString('ar-EG')
+  document.getElementById('wallet-ref-reward').textContent  = (S.restaurant.referral_coins ?? 5000).toLocaleString('en-US')
 
   // طلبات العميل
   const { data: orders } = await db.from('orders')
@@ -2950,7 +2953,7 @@ async function openWalletModal() {
       <div>
         <p style="font-size:13px;font-weight:800;color:#1a1a1a">${o.order_number}</p>
         <p style="font-size:11px;color:#aaa">${new Date(o.created_at).toLocaleDateString('ar-EG')}</p>
-        ${o.loyalty_coins_earned ? `<p style="font-size:11px;color:#f97316">+${o.loyalty_coins_earned.toLocaleString('ar-EG')} 🪙</p>` : ''}
+        ${o.loyalty_coins_earned ? `<p style="font-size:11px;color:#f97316">+${o.loyalty_coins_earned.toLocaleString('en-US')} 🪙</p>` : ''}
       </div>
       <div style="text-align:left">
         <p style="font-size:14px;font-weight:900;color:var(--brand)">${Number(o.total).toFixed(2)} ج.م</p>
@@ -2969,7 +2972,7 @@ async function openWalletModal() {
         <p style="font-size:13px;font-weight:700;color:#333">${txLabel[t.type] || t.type}</p>
         <p style="font-size:11px;color:#bbb">${new Date(t.created_at).toLocaleDateString('ar-EG')} ${t.note ? '· ' + t.note : ''}</p>
       </div>
-      <p style="font-size:15px;font-weight:900;color:${t.amount > 0 ? '#22c55e' : '#ef4444'}">${t.amount > 0 ? '+' : ''}${t.amount.toLocaleString('ar-EG')}</p>
+      <p style="font-size:15px;font-weight:900;color:${t.amount > 0 ? '#22c55e' : '#ef4444'}">${t.amount > 0 ? '+' : ''}${t.amount.toLocaleString('en-US')}</p>
     </div>`).join('') : `<p style="font-size:13px;color:#aaa;text-align:center;padding:12px 0">لا توجد حركات بعد</p>`
 
   document.getElementById('wallet-modal').classList.remove('hidden')
@@ -3058,7 +3061,7 @@ async function loadOrdersPage() {
     const statCoins = document.getElementById('orders-stat-coins')
     if(statTotal) statTotal.textContent = orders.filter(o=>o.status!=='cancelled').length
     if(statSpend) statSpend.textContent = totalSpend.toFixed(0)
-    if(statCoins) statCoins.textContent = totalCoins.toLocaleString('ar-EG')
+    if(statCoins) statCoins.textContent = totalCoins.toLocaleString('en-US')
 
     // Active order tracker
     const active = orders.find(o => !['delivered','cancelled'].includes(o.status))
@@ -3081,7 +3084,7 @@ async function loadOrdersPage() {
         <div style="display:flex;justify-content:space-between;align-items:center;border-top:1px solid #f5f5f5;padding-top:10px">
           <span style="font-size:16px;font-weight:900;color:var(--brand)">${Number(o.total||0).toFixed(2)} ج.م</span>
           <div style="display:flex;align-items:center;gap:10px">
-            ${o.loyalty_coins_earned ? `<span style="font-size:11px;color:#f97316;font-weight:700">+${Number(o.loyalty_coins_earned).toLocaleString('ar-EG')} 🪙</span>` : ''}
+            ${o.loyalty_coins_earned ? `<span style="font-size:11px;color:#f97316;font-weight:700">+${Number(o.loyalty_coins_earned).toLocaleString('en-US')} 🪙</span>` : ''}
             <svg width="14" height="14" fill="none" stroke="#bbb" stroke-width="2.5" viewBox="0 0 24 24"><path d="M15 18l-6-6 6-6"/></svg>
           </div>
         </div>
@@ -3178,7 +3181,7 @@ async function openOrderDetail(orderId) {
           <span style="font-size:15px;font-weight:900;color:#1a1a1a">الإجمالي</span>
           <span style="font-size:15px;font-weight:900;color:var(--brand)">${Number(o.total||0).toFixed(2)} ج.م</span>
         </div>
-        ${o.loyalty_coins_earned ? `<div style="margin-top:10px;background:#fff8f3;border-radius:10px;padding:8px 12px;text-align:center"><span style="font-size:12px;font-weight:800;color:var(--brand)">+${Number(o.loyalty_coins_earned).toLocaleString('ar-EG')} 🪙 كوينز كسبتها من هذا الطلب</span></div>` : ''}
+        ${o.loyalty_coins_earned ? `<div style="margin-top:10px;background:#fff8f3;border-radius:10px;padding:8px 12px;text-align:center"><span style="font-size:12px;font-weight:800;color:var(--brand)">+${Number(o.loyalty_coins_earned).toLocaleString('en-US')} 🪙 كوينز كسبتها من هذا الطلب</span></div>` : ''}
       </div>
       ${o.notes ? `<div style="margin-top:12px;background:#f9f9f9;border-radius:12px;padding:12px 14px"><p style="font-size:12px;color:#888;font-weight:600">ملاحظات: ${o.notes}</p></div>` : ''}
       <button onclick="closeOrderDetail();switchPage('home')" style="width:100%;margin-top:16px;background:linear-gradient(135deg,var(--brand),#ff8c38);color:#fff;font-size:14px;font-weight:900;border-radius:14px;padding:14px;border:none;cursor:pointer;font-family:'Rubik',sans-serif">
@@ -3207,11 +3210,11 @@ async function loadWalletPage() {
   const balEl  = document.getElementById('wpage-balance')
   const egpEl  = document.getElementById('wpage-balance-egp')
   const noteEl = document.getElementById('wpage-min-note')
-  if (balEl)  balEl.textContent  = (c.coins_balance || 0).toLocaleString('ar-EG')
+  if (balEl)  balEl.textContent  = (c.coins_balance || 0).toLocaleString('en-US')
   if (egpEl)  egpEl.textContent  = `= ${((c.coins_balance||0) / cpE).toFixed(2)} ج.م متاح للشراء`
   if (noteEl) noteEl.textContent = c.coins_balance >= minRed
     ? '✅ يمكنك تحويل كوينزك الآن!'
-    : `تحتاج ${(minRed - (c.coins_balance||0)).toLocaleString('ar-EG')} كوين للحد الأدنى`
+    : `تحتاج ${(minRed - (c.coins_balance||0)).toLocaleString('en-US')} كوين للحد الأدنى`
 
   // رصيد المحفظة النقدي
   const cashEl = document.getElementById('wpage-cash-balance')
@@ -3225,7 +3228,7 @@ async function loadWalletPage() {
     if (canConvert) {
       const convEl  = document.getElementById('wpage-convertable')
       const egpConv = document.getElementById('wpage-convert-egp')
-      if (convEl)  convEl.textContent  = (c.coins_balance || 0).toLocaleString('ar-EG') + ' 🪙'
+      if (convEl)  convEl.textContent  = (c.coins_balance || 0).toLocaleString('en-US') + ' 🪙'
       if (egpConv) egpConv.textContent = `= ${((c.coins_balance||0) / cpE).toFixed(2)} ج.م`
     }
   }
@@ -3270,7 +3273,7 @@ async function loadWalletPage() {
           <p style="font-size:13px;font-weight:800;color:#1a1a1a;margin-bottom:2px">${type.label}</p>
           <p style="font-size:11px;color:#bbb">${new Date(t.created_at).toLocaleDateString('ar-EG',{day:'numeric',month:'short',hour:'2-digit',minute:'2-digit'})}${t.note?' · '+t.note:''}</p>
         </div>
-        <p style="font-size:16px;font-weight:900;color:${plus?'#22c55e':'#ef4444'}">${plus?'+':''}${Number(t.amount).toLocaleString('ar-EG')} 🪙</p>
+        <p style="font-size:16px;font-weight:900;color:${plus?'#22c55e':'#ef4444'}">${plus?'+':''}${Number(t.amount).toLocaleString('en-US')} 🪙</p>
       </div>`
     }).join('')
   } catch(e) {
@@ -3288,7 +3291,7 @@ async function convertCoinsToBalance() {
   showConfirmSheet(
     'تحويل الكوينز لرصيد 💳',
     `<div style="text-align:center;padding:10px 0">
-      <p style="font-size:36px;font-weight:900;color:var(--brand);margin-bottom:4px">${coins.toLocaleString('ar-EG')} 🪙</p>
+      <p style="font-size:36px;font-weight:900;color:var(--brand);margin-bottom:4px">${coins.toLocaleString('en-US')} 🪙</p>
       <p style="font-size:16px;color:#888;margin-bottom:16px">= ${amount.toFixed(2)} ج.م</p>
       <div style="background:#f0fdf4;border-radius:14px;padding:14px;border:1.5px solid #bbf7d0">
         <p style="font-size:13px;color:#16a34a;font-weight:700;line-height:1.6">سيتم تحويل الكوينز لرصيد نقدي في محفظتك ويُستخدم للشراء من المتجر فقط 🛒</p>
@@ -3300,7 +3303,7 @@ async function convertCoinsToBalance() {
         await db.from('menu_customers').update({ coins_balance: 0, wallet_balance: newBalance }).eq('id', S.customer.id)
         await db.from('coin_transactions').insert({
           customer_id: S.customer.id, restaurant_id: S.restaurant.id,
-          type: 'convert', amount: -coins, note: `تحويل ${coins.toLocaleString('ar-EG')} كوين = ${amount.toFixed(2)} ج.م`
+          type: 'convert', amount: -coins, note: `تحويل ${coins.toLocaleString('en-US')} كوين = ${amount.toFixed(2)} ج.م`
         })
         S.customer.coins_balance = 0
         S.customer.wallet_balance = newBalance
@@ -3423,7 +3426,7 @@ async function saveEditProfile() {
       const newBal = (S.customer.coins_balance || 0) + bonusCoins
       await db.from('menu_customers').update({ coins_balance: newBal }).eq('id', S.customer.id)
       S.customer.coins_balance = newBal
-      showToast(`+${bonusCoins.toLocaleString('ar-EG')} 🪙 كوينز على إكمال ملفك!`)
+      showToast(`+${bonusCoins.toLocaleString('en-US')} 🪙 كوينز على إكمال ملفك!`)
       playSuccessSound()
     }
     Object.assign(S.customer, updates)
@@ -3449,7 +3452,7 @@ function updateSettingsDisplay() {
   const refEl = document.getElementById('ref-code-display')
   if (refEl) refEl.textContent = c.referral_code || '------'
   const refRew = document.getElementById('ref-reward-display')
-  if (refRew) refRew.textContent = `عند أول شراء لصديقك تكسب ${(S.restaurant?.referral_coins ?? 5000).toLocaleString('ar-EG')} كوين 🪙`
+  if (refRew) refRew.textContent = `عند أول شراء لصديقك تكسب ${(S.restaurant?.referral_coins ?? 5000).toLocaleString('en-US')} كوين 🪙`
 }
 
 
@@ -3527,7 +3530,7 @@ function renderAccountPage() {
   const emailEl = document.getElementById('acc-logged-email')
   if (emailEl) emailEl.textContent = c.email || ''
   const coinsEl = document.getElementById('acc-coins-display')
-  if (coinsEl) coinsEl.textContent = (c.coins_balance || 0).toLocaleString('ar-EG')
+  if (coinsEl) coinsEl.textContent = (c.coins_balance || 0).toLocaleString('en-US')
 
   // تحديث الإعدادات
   updateSettingsDisplay()
@@ -3622,7 +3625,7 @@ async function submitEditField(field, value) {
         note: `إكمال بيانات: ${field}`
       })
       S.customer.coins_balance = (S.customer.coins_balance || 0) + coins
-      showToast(`+${coins.toLocaleString('ar-EG')} 🪙 كوينز على إكمال ملفك!`)
+      showToast(`+${coins.toLocaleString('en-US')} 🪙 كوينز على إكمال ملفك!`)
       playSuccessSound()
     }
     renderAccountPage()
@@ -3804,7 +3807,7 @@ async function redeemVoucher() {
     await db.from('discount_codes').update({ used_count: (dc.used_count || 0) + 1 }).eq('id', dc.id)
 
     S.customer.coins_balance = (S.customer.coins_balance || 0) + coins
-    showMsg(`✅ تم! +${coins.toLocaleString('ar-EG')} 🪙 أُضيفت لمحفظتك`, true)
+    showMsg(`✅ تم! +${coins.toLocaleString('en-US')} 🪙 أُضيفت لمحفظتك`, true)
     document.getElementById('voucher-input').value = ''
     playSuccessSound()
     updateWalletBadge()
@@ -4079,7 +4082,7 @@ function triggerInstall() {
 }
 
 function showCelebration(coins) {
-  document.getElementById('celeb-coins').textContent = coins.toLocaleString('ar-EG')
+  document.getElementById('celeb-coins').textContent = coins.toLocaleString('en-US')
   document.getElementById('celebration-overlay').classList.remove('hidden')
   document.body.style.overflow = 'hidden'
   startConfetti()
@@ -4157,7 +4160,7 @@ function updateCoinsRowInCart() {
   if (S.customer && S.customer.coins_balance >= minRedeem && (S.restaurant?.loyalty_enabled)) {
     const coinsPerEgp = S.restaurant.coins_per_egp ?? 1000
     document.getElementById('cart-coins-available').textContent =
-      `رصيدك: ${S.customer.coins_balance.toLocaleString('ar-EG')} 🪙 = ${(S.customer.coins_balance / coinsPerEgp).toFixed(2)} ج.م`
+      `رصيدك: ${S.customer.coins_balance.toLocaleString('en-US')} 🪙 = ${(S.customer.coins_balance / coinsPerEgp).toFixed(2)} ج.م`
     row.style.display = 'block'
   } else {
     row.style.display = 'none'
@@ -4173,7 +4176,7 @@ function updateCoinsDiscount() {
   _coinsToRedeem = Math.max(0, Math.min(maxCoins, S.customer?.coins_balance || 0))
   const disc = _coinsToRedeem / coinsPerEgp
   if (_coinsToRedeem > 0) {
-    preview.textContent = `خصم ${disc.toFixed(2)} ج.م مقابل ${_coinsToRedeem.toLocaleString('ar-EG')} كوين`
+    preview.textContent = `خصم ${disc.toFixed(2)} ج.م مقابل ${_coinsToRedeem.toLocaleString('en-US')} كوين`
     preview.style.display = 'block'
   } else {
     preview.style.display = 'none'
