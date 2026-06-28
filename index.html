@@ -2789,14 +2789,33 @@ async function loadCustomerProfile(forceCreate, extraData) {
 function initAuthListener() {
   db.auth.onAuthStateChange(async (event, session) => {
     if (event === 'SIGNED_IN' && session) {
-      // لو مش عنده customer بعد (Google redirect جديد)
-      if (!S.customer && S.restaurant) {
+      // انتظر لو S.restaurant لسه مش موجود
+      let tries = 0
+      while (!S.restaurant && tries < 20) {
+        await new Promise(r => setTimeout(r, 200))
+        tries++
+      }
+      if (!S.restaurant) return
+
+      if (!S.customer) {
         await loadCustomerProfile(true)
         renderAccountPage()
         showBottomNav(true)
         updateWalletBadge()
         loadNotifications().catch(() => {})
-        switchPage('account')
+        // لو جاي من Google redirect (مش refresh عادي)
+        const isOAuthCallback = window.location.hash.includes('access_token') ||
+                                 window.location.search.includes('code=')
+        if (isOAuthCallback || !sessionStorage.getItem('mnio_page')) {
+          switchPage('account')
+          // احتفال لو أول تسجيل
+          const isNew = !sessionStorage.getItem('was_customer_' + S.restaurant.id)
+          if (isNew && S.customer) {
+            sessionStorage.setItem('was_customer_' + S.restaurant.id, '1')
+            showCelebration(S.restaurant.welcome_coins ?? 10000)
+            playSuccessSound()
+          }
+        }
       }
     } else if (event === 'SIGNED_OUT') {
       S.customer = null
