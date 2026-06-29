@@ -4,9 +4,9 @@
   <meta charset="UTF-8" />
   <meta name="viewport" content="width=device-width, initial-scale=1.0" />
   <title>لوحة التحكم — منيو</title>
-  <link rel="manifest" href="./manifest.json" />
-  <meta name="theme-color" content="#FF6B00" />
-  <link rel="apple-touch-icon" href="./icon-192.png" />
+  <link rel="manifest" href="./dashboard-manifest.json" />
+  <meta name="theme-color" content="#1A1A1A" />
+  <link rel="apple-touch-icon" href="./dash-icon-192.png" />
   <meta name="apple-mobile-web-app-capable" content="yes" />
   <meta name="apple-mobile-web-app-status-bar-style" content="black-translucent" />
   <script src="https://cdn.tailwindcss.com"></script>
@@ -312,18 +312,79 @@
         <div class="flex items-center justify-between">
           <h3 class="font-bold text-gray-700">🪙 نظام الكوينز</h3>
           <div class="flex items-center gap-2">
-            <span class="text-xs text-gray-400">تفعيل</span>
+            <span class="text-xs text-gray-400">تفعيل النظام كله</span>
             <input id="set-loyalty-enabled" type="checkbox" class="w-5 h-5 accent-orange-500" onchange="toggleLoyaltySection()" />
           </div>
         </div>
-        <div id="loyalty-fields" class="hidden space-y-3">
-          <p class="text-xs text-gray-400">1,000 كوين = 1 ج.م — القيم أدناه بالكوين</p>
-          <div><label class="text-xs font-bold text-gray-500 mb-1 block">🎁 بونص الترحيب عند أول تسجيل (كوين)</label>
-            <input id="set-welcome-coins" type="number" min="0" placeholder="10000" class="w-full border border-gray-200 rounded-xl px-4 py-3 text-sm focus:outline-none focus:ring-2 focus:ring-orange-400" /></div>
-          <div><label class="text-xs font-bold text-gray-500 mb-1 block">🔗 بونص الإحالة للمُحيل (كوين)</label>
-            <input id="set-referral-coins" type="number" min="0" placeholder="5000" class="w-full border border-gray-200 rounded-xl px-4 py-3 text-sm focus:outline-none focus:ring-2 focus:ring-orange-400" /></div>
+        <div id="loyalty-fields" class="hidden space-y-4">
+          <p class="text-xs text-gray-400">1,000 كوين = 1 ج.م — كل القيم بالكوين إلا كود الخصم المخصص (بالجنيه)</p>
+
+          <!-- بونص الترحيب -->
+          <div class="border border-gray-100 rounded-xl p-3 space-y-2">
+            <div class="flex items-center justify-between">
+              <label class="text-xs font-bold text-gray-600">🎁 بونص الترحيب عند أول تسجيل</label>
+              <input id="set-welcome-enabled" type="checkbox" class="w-5 h-5 accent-orange-500" onchange="toggleLoyaltySubfield('welcome')" />
+            </div>
+            <input id="set-welcome-coins" type="number" min="0" placeholder="10000" class="hidden w-full border border-gray-200 rounded-xl px-4 py-3 text-sm focus:outline-none focus:ring-2 focus:ring-orange-400" />
+            <p class="text-[11px] text-gray-400">يتحول تلقائياً لرصيد نقدي بالمحفظة فوراً، ليستخدمه العميل في أول أوردر</p>
+          </div>
+
+          <!-- بونص الإحالة -->
+          <div class="border border-gray-100 rounded-xl p-3 space-y-2">
+            <div class="flex items-center justify-between">
+              <label class="text-xs font-bold text-gray-600">🔗 بونص الإحالة للمُحيل</label>
+              <input id="set-referral-enabled" type="checkbox" class="w-5 h-5 accent-orange-500" onchange="toggleLoyaltySubfield('referral')" />
+            </div>
+            <input id="set-referral-coins" type="number" min="0" placeholder="5000" class="hidden w-full border border-gray-200 rounded-xl px-4 py-3 text-sm focus:outline-none focus:ring-2 focus:ring-orange-400" />
+            <p class="text-[11px] text-gray-400">يتحول تلقائياً لرصيد نقدي بالمحفظة فوراً عند نجاح الإحالة</p>
+          </div>
+
+          <!-- هدية عيد الميلاد -->
+          <div class="border border-gray-100 rounded-xl p-3 space-y-2">
+            <div class="flex items-center justify-between">
+              <label class="text-xs font-bold text-gray-600">🎂 هدية عيد الميلاد</label>
+              <input id="set-birthday-enabled" type="checkbox" class="w-5 h-5 accent-orange-500" onchange="toggleLoyaltySubfield('birthday')" />
+            </div>
+            <input id="set-birthday-coins" type="number" min="0" placeholder="3000" class="hidden w-full border border-gray-200 rounded-xl px-4 py-3 text-sm focus:outline-none focus:ring-2 focus:ring-orange-400" />
+          </div>
+
+          <!-- هدية الشراء (الولاء على الطلبات) -->
+          <div class="border border-gray-100 rounded-xl p-3 space-y-2">
+            <div class="flex items-center justify-between">
+              <label class="text-xs font-bold text-gray-600">🛍️ هدية الشراء (مع كل أوردر)</label>
+              <input id="set-purchase-reward-enabled" type="checkbox" class="w-5 h-5 accent-orange-500" onchange="toggleLoyaltySubfield('purchaseReward')" />
+            </div>
+            <div id="purchase-reward-fields" class="hidden space-y-2">
+              <div class="flex gap-2">
+                <label class="flex-1 flex items-center gap-1.5 text-xs border border-gray-200 rounded-lg px-3 py-2 cursor-pointer">
+                  <input type="radio" name="purchase-reward-mode" value="per_product" onchange="togglePurchaseRewardMode()" /> لكل منتج
+                </label>
+                <label class="flex-1 flex items-center gap-1.5 text-xs border border-gray-200 rounded-lg px-3 py-2 cursor-pointer">
+                  <input type="radio" name="purchase-reward-mode" value="per_100_egp" onchange="togglePurchaseRewardMode()" /> لكل 100 ج.م من الفاتورة
+                </label>
+              </div>
+              <p id="purchase-reward-per-product-note" class="hidden text-[11px] text-gray-400">القيمة تُحدَّد لكل منتج على حدة من صفحة المنتجات</p>
+              <input id="set-purchase-reward-per-100" type="number" min="0" placeholder="500" class="hidden w-full border border-gray-200 rounded-xl px-4 py-3 text-sm focus:outline-none focus:ring-2 focus:ring-orange-400" />
+            </div>
+          </div>
+
+          <!-- قسيمة الشراء (حد أدنى) -->
+          <div class="border border-gray-100 rounded-xl p-3 space-y-2">
+            <div class="flex items-center justify-between">
+              <label class="text-xs font-bold text-gray-600">🎟️ قسيمة شراء عند الوصول لحد أدنى</label>
+              <input id="set-purchase-voucher-enabled" type="checkbox" class="w-5 h-5 accent-orange-500" onchange="toggleLoyaltySubfield('purchaseVoucher')" />
+            </div>
+            <div id="purchase-voucher-fields" class="hidden space-y-2">
+              <div><label class="text-[11px] text-gray-500 mb-1 block">الحد الأدنى لقيمة الفاتورة (ج.م)</label>
+                <input id="set-purchase-voucher-min" type="number" min="0" placeholder="100" class="w-full border border-gray-200 rounded-xl px-4 py-3 text-sm focus:outline-none focus:ring-2 focus:ring-orange-400" /></div>
+              <div><label class="text-[11px] text-gray-500 mb-1 block">قيمة القسيمة (كوين)</label>
+                <input id="set-purchase-voucher-coins" type="number" min="0" placeholder="5000" class="w-full border border-gray-200 rounded-xl px-4 py-3 text-sm focus:outline-none focus:ring-2 focus:ring-orange-400" /></div>
+            </div>
+          </div>
+
           <div><label class="text-xs font-bold text-gray-500 mb-1 block">⬇️ الحد الأدنى للاسترداد (كوين) — مثال: 100,000 = 100 ج.م</label>
             <input id="set-min-redeem" type="number" min="0" placeholder="100000" class="w-full border border-gray-200 rounded-xl px-4 py-3 text-sm focus:outline-none focus:ring-2 focus:ring-orange-400" /></div>
+
           <button onclick="saveLoyaltySettings()" class="w-full bg-orange-500 text-white font-bold rounded-xl py-3">حفظ إعدادات الكوينز</button>
         </div>
       </div>
@@ -1018,7 +1079,7 @@ function applyRoleUI() {
   const dcSection = document.getElementById('discount-codes-section')
   if (dcSection) dcSection.classList.toggle('hidden', !isAdmin)
   const pmLoyWrap = document.getElementById('pm-loyalty-coins-wrap')
-  if (pmLoyWrap) pmLoyWrap.classList.toggle('hidden', !isAdmin || !state.restaurant?.loyalty_enabled)
+  if (pmLoyWrap) pmLoyWrap.classList.toggle('hidden', !isAdmin || !state.restaurant?.loyalty_enabled || !state.restaurant?.purchase_reward_enabled || state.restaurant?.purchase_reward_mode !== 'per_product')
   // لو مش أدمن وكان في settings → نحوله لـ orders
   if (!isAdmin) {
     const activeTab = document.querySelector('.tab-btn.tab-active')
@@ -1084,10 +1145,34 @@ async function loadDashboard(r, branches) {
   const loyEl = document.getElementById('set-loyalty-enabled')
   if (loyEl) {
     loyEl.checked = r.loyalty_enabled || false
-    document.getElementById('set-welcome-coins').value  = r.welcome_coins  ?? 10000
-    document.getElementById('set-referral-coins').value = r.referral_coins ?? 5000
-    document.getElementById('set-min-redeem').value     = r.min_redeem_coins ?? 100000
+    document.getElementById('set-min-redeem').value = r.min_redeem_coins ?? 100000
+
+    document.getElementById('set-welcome-enabled').checked = r.welcome_bonus_enabled ?? true
+    document.getElementById('set-welcome-coins').value     = r.welcome_coins ?? 10000
+
+    document.getElementById('set-referral-enabled').checked = r.referral_enabled ?? true
+    document.getElementById('set-referral-coins').value     = r.referral_coins ?? 5000
+
+    document.getElementById('set-birthday-enabled').checked = r.birthday_gift_enabled || false
+    document.getElementById('set-birthday-coins').value     = r.birthday_coins ?? 3000
+
+    document.getElementById('set-purchase-reward-enabled').checked = r.purchase_reward_enabled || false
+    const mode = r.purchase_reward_mode || 'per_product'
+    const modeRadio = document.querySelector(`input[name="purchase-reward-mode"][value="${mode}"]`)
+    if (modeRadio) modeRadio.checked = true
+    document.getElementById('set-purchase-reward-per-100').value = r.purchase_reward_per_100_egp ?? 500
+
+    document.getElementById('set-purchase-voucher-enabled').checked = r.purchase_voucher_enabled || false
+    document.getElementById('set-purchase-voucher-min').value   = r.purchase_voucher_min_amount ?? 100
+    document.getElementById('set-purchase-voucher-coins').value = r.purchase_voucher_coins ?? 5000
+
     document.getElementById('loyalty-fields').classList.toggle('hidden', !r.loyalty_enabled)
+    toggleLoyaltySubfield('welcome', true)
+    toggleLoyaltySubfield('referral', true)
+    toggleLoyaltySubfield('birthday', true)
+    toggleLoyaltySubfield('purchaseReward', true)
+    toggleLoyaltySubfield('purchaseVoucher', true)
+    togglePurchaseRewardMode()
   }
   const primary = r.theme?.primary || '#FF6B00'
   document.getElementById('set-color').value     = primary
@@ -1127,21 +1212,76 @@ function toggleLoyaltySection() {
   document.getElementById('loyalty-fields').classList.toggle('hidden', !enabled)
 }
 
+// يظهر/يخفي حقل القيمة الخاص بميزة واحدة بناءً على مفتاحها on/off
+// keepCurrentCheckbox=true تُستخدم وقت التحميل الأولي (الـ checkbox خلاص مظبوط من قبل، مجرد إظهار/إخفاء)
+function toggleLoyaltySubfield(key, keepCurrentCheckbox) {
+  const map = {
+    welcome:         { checkbox: 'set-welcome-enabled',         field: 'set-welcome-coins' },
+    referral:        { checkbox: 'set-referral-enabled',        field: 'set-referral-coins' },
+    birthday:        { checkbox: 'set-birthday-enabled',        field: 'set-birthday-coins' },
+    purchaseReward:  { checkbox: 'set-purchase-reward-enabled', field: 'purchase-reward-fields' },
+    purchaseVoucher: { checkbox: 'set-purchase-voucher-enabled', field: 'purchase-voucher-fields' },
+  }
+  const cfg = map[key]
+  if (!cfg) return
+  const checked = document.getElementById(cfg.checkbox).checked
+  document.getElementById(cfg.field).classList.toggle('hidden', !checked)
+}
+
+// يظهر/يخفي حقل "لكل 100 ج.م" أو ملاحظة "لكل منتج" حسب الوضع المختار
+function togglePurchaseRewardMode() {
+  const selected = document.querySelector('input[name="purchase-reward-mode"]:checked')
+  const mode = selected ? selected.value : 'per_product'
+  document.getElementById('purchase-reward-per-product-note').classList.toggle('hidden', mode !== 'per_product')
+  document.getElementById('set-purchase-reward-per-100').classList.toggle('hidden', mode !== 'per_100_egp')
+}
+
 async function saveLoyaltySettings() {
   const enabled    = document.getElementById('set-loyalty-enabled').checked
-  const welcome    = parseInt(document.getElementById('set-welcome-coins').value)  || 10000
-  const referral   = parseInt(document.getElementById('set-referral-coins').value) || 5000
-  const minRedeem  = parseInt(document.getElementById('set-min-redeem').value)     || 100000
-  await db.from('restaurants').update({
-    loyalty_enabled: enabled,
-    welcome_coins:   welcome,
-    referral_coins:  referral,
-    min_redeem_coins: minRedeem
-  }).eq('id', state.restaurant.id)
-  state.restaurant.loyalty_enabled  = enabled
-  state.restaurant.welcome_coins    = welcome
-  state.restaurant.referral_coins   = referral
-  state.restaurant.min_redeem_coins = minRedeem
+  const minRedeem  = parseInt(document.getElementById('set-min-redeem').value) || 100000
+
+  const welcomeEnabled  = document.getElementById('set-welcome-enabled').checked
+  const welcome         = parseInt(document.getElementById('set-welcome-coins').value) || 10000
+
+  const referralEnabled = document.getElementById('set-referral-enabled').checked
+  const referral         = parseInt(document.getElementById('set-referral-coins').value) || 5000
+
+  const birthdayEnabled = document.getElementById('set-birthday-enabled').checked
+  const birthdayCoins    = parseInt(document.getElementById('set-birthday-coins').value) || 3000
+
+  const purchaseRewardEnabled = document.getElementById('set-purchase-reward-enabled').checked
+  const rewardModeEl = document.querySelector('input[name="purchase-reward-mode"]:checked')
+  const purchaseRewardMode = rewardModeEl ? rewardModeEl.value : 'per_product'
+  const purchaseRewardPer100 = parseInt(document.getElementById('set-purchase-reward-per-100').value) || 500
+
+  const purchaseVoucherEnabled = document.getElementById('set-purchase-voucher-enabled').checked
+  const purchaseVoucherMin     = parseInt(document.getElementById('set-purchase-voucher-min').value) || 100
+  const purchaseVoucherCoins   = parseInt(document.getElementById('set-purchase-voucher-coins').value) || 5000
+
+  const payload = {
+    loyalty_enabled:  enabled,
+    min_redeem_coins: minRedeem,
+
+    welcome_bonus_enabled: welcomeEnabled,
+    welcome_coins:         welcome,
+
+    referral_enabled: referralEnabled,
+    referral_coins:   referral,
+
+    birthday_gift_enabled: birthdayEnabled,
+    birthday_coins:        birthdayCoins,
+
+    purchase_reward_enabled:    purchaseRewardEnabled,
+    purchase_reward_mode:       purchaseRewardMode,
+    purchase_reward_per_100_egp: purchaseRewardPer100,
+
+    purchase_voucher_enabled:    purchaseVoucherEnabled,
+    purchase_voucher_min_amount: purchaseVoucherMin,
+    purchase_voucher_coins:      purchaseVoucherCoins,
+  }
+
+  await db.from('restaurants').update(payload).eq('id', state.restaurant.id)
+  Object.assign(state.restaurant, payload)
   showToast('تم حفظ إعدادات الكوينز ✅')
 }
 

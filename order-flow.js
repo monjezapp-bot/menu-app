@@ -1,0 +1,497 @@
+// هذا الملف جزء من تطبيق Monjez Menu — تم تقسيمه من index.html الأصلي
+
+// ── FIELD VALIDATION HELPERS (مستخدمة في نموذج الطلب) ──────────────────
+// تمييز حقل ناقص بإطار أحمر، وإزالته عند التصحيح
+function markFieldError(id) {
+  const el = document.getElementById(id)
+  if (el) { el.style.borderColor = '#ef4444'; el.addEventListener('input', () => { el.style.borderColor = '#eee' }, { once: true }) }
+}
+function clearFieldErrors() {
+  ;['order-phone', 'map-pick-btn'].forEach(id => { const el = document.getElementById(id); if (el) el.style.borderColor = '#eee' })
+}
+
+// تفاعل لوحة المفاتيح: الضغط على "تم/Next" ينقل التركيز للحقل التالي،
+// أو ينفّذ فعل الفورم الرئيسي (مثل sendOrder) لو كان هذا آخر حقل
+function focusNextField(event, nextFieldId, submitFn) {
+  const isEnterKey = event.key === 'Enter'
+  if (!isEnterKey) return
+  // في textarea، Enter العادي بيعمل سطر جديد — نمنع ذلك فقط لو هذا آخر حقل بالفورم (عنده submitFn)
+  if (event.target.tagName === 'TEXTAREA' && !submitFn) return
+  event.preventDefault()
+  if (nextFieldId) {
+    const next = document.getElementById(nextFieldId)
+    if (next) next.focus()
+  } else if (submitFn) {
+    event.target.blur() // يقفل لوحة المفاتيح قبل التنفيذ
+    submitFn()
+  }
+}
+
+
+// ── SEND ORDER ────────────────────────────────────────────────────────
+async function sendOrder() {
+  if (!S.cart.length) return
+
+  const table    = document.getElementById('table-number-input').value.trim()
+  const custName = document.getElementById('order-name').value.trim()
+  const custPhone= document.getElementById('order-phone').value.trim()
+  const custAddr = document.getElementById('order-address').value.trim()
+  const custLoc  = document.getElementById('order-location').value.trim()
+  const custLat  = document.getElementById('order-location-lat').value
+  const custLng  = document.getElementById('order-location-lng').value
+  const note     = document.getElementById('order-note').value.trim()
+
+  // تحقق إجباري: لو الطلب توصيل (مفيش رقم طاولة)، لازم رقم تواصل + تحديد الموقع على الخريطة
+  // (الموقع إجباري وليس بديلاً اختيارياً للعنوان، لأنه أساس حساب أقرب فرع وتكلفة التوصيل)
+  clearFieldErrors()
+  if (!table) {
+    const missing = []
+    if (!custPhone) missing.push('order-phone')
+    if (!custLat) missing.push('map-pick-btn')
+    if (missing.length) {
+      missing.forEach(id => markFieldError(id))
+      showToast('من فضلك اكتب رقم تواصلك وحدد موقعك على الخريطة لإتمام التوصيل')
+      document.getElementById(missing[0]).scrollIntoView({ behavior: 'smooth', block: 'center' })
+      return
+    }
+  }
+
+  const btn      = document.getElementById('send-order-btn')
+  const btnLabel = '<span>إرسال الطلب</span><span style="font-size:20px">✅</span>'
+  const resetBtn = () => { btn.style.opacity = '1'; btn.innerHTML = btnLabel }
+  btn.style.opacity = '0.6'; btn.innerHTML = '<span>جاري الإرسال...</span>'
+
+  const items = S.cart.map(c => ({
+    id: c.id, type: c.type, name: c.name, price: c.price, qty: c.qty,
+    unit: c.unit || 'قطعة', options: c.options || null,
+    subtotal: Number((c.price * c.qty).toFixed(2))
+  }))
+  const total = cartTotal()
+
+  // الوقت التقديري الكلي للطلب = أكبر وقت تجهيز بين كل المنتجات (تُجهَّز بالتوازي لا بالتتابع)
+  const estimatedPrepMinutes = Math.max(
+    10, // حد أدنى افتراضي لو مفيش بيانات وقت تجهيز
+    ...S.cart.map(c => {
+      if (c.type === 'bundle') return 10 // العروض المجمّعة: قيمة افتراضية (لا يوجد وقت تجهيز مخصص لها حالياً)
+      const product = S.products.find(p => p.id === c.id)
+      return product?.prep_minutes || 10
+    })
+  )
+
+  // أقرب فرع نشط لموقع العميل (لو الطلب توصيل ومفيش طاولة) — أساس توجيه الطلب وحساب التوصيل
+  let nearestBranchId = null
+  let deliveryFee     = 0
+  if (!table && custLat && custLng) {
+    const pricePerKm = parseFloat(S.restaurant.price_per_km) || 0
+    if (S.branches.length > 0) {
+      const result = findNearestBranch(parseFloat(custLat), parseFloat(custLng))
+      if (result) {
+        nearestBranchId = result.branch.id
+        if (pricePerKm > 0) deliveryFee = Math.round(result.distanceKm * pricePerKm * 100) / 100
+      }
+    } else {
+      // fallback: موقع المطعم مباشرة
+      const restLat = parseFloat(S.restaurant.lat)
+      const restLng = parseFloat(S.restaurant.lng)
+      if (!isNaN(restLat) && !isNaN(restLng) && pricePerKm > 0) {
+        const d = distanceKm(parseFloat(custLat), parseFloat(custLng), restLat, restLng)
+        deliveryFee = Math.round(d * pricePerKm * 100) / 100
+      }
+    }
+  }
+  const grandTotal = Math.round((cartTotal() + deliveryFee) * 100) / 100
+
+  // الخصومات
+  const coinsPerEgp    = S.restaurant?.coins_per_egp ?? 1000
+  const coinsDiscountEgp = _coinsToRedeem > 0 ? Math.round(_coinsToRedeem / coinsPerEgp * 100) / 100 : 0
+  const finalTotal     = Math.max(0, Math.round((grandTotal - _appliedDiscount - coinsDiscountEgp) * 100) / 100)
+
+  // Save order to DB — the merchant receives it live in the dashboard (no WhatsApp)
+  let orderId, orderNumber
+  try {
+    const { data: rpc, error: re } = await db.rpc('generate_order_number')
+    if (re || !rpc) throw new Error(re?.message || 'generate_order_number failed')
+
+    const { data: od, error: ie } = await db.from('orders')
+      .insert({
+        restaurant_id:    S.restaurant.id,
+        order_number:     rpc,
+        items, total:     finalTotal,
+        table_number:     table     || null,
+        customer_name:    custName  || S.customer?.name || null,
+        customer_phone:   custPhone || S.customer?.phone || null,
+        customer_address: custAddr  || null,
+        customer_location:custLoc   || null,
+        customer_lat:     custLat   ? parseFloat(custLat) : null,
+        customer_lng:     custLng   ? parseFloat(custLng) : null,
+        note:             note      || null,
+        estimated_prep_minutes: estimatedPrepMinutes,
+        branch_id:        nearestBranchId,
+        delivery_fee:     deliveryFee > 0 ? deliveryFee : null,
+        customer_id:      S.customer?.id || null,
+        coins_redeemed:   _coinsToRedeem > 0 ? _coinsToRedeem : null,
+        coins_discount:   coinsDiscountEgp > 0 ? coinsDiscountEgp : null,
+        discount_code:    _appliedCode ? document.getElementById('cart-discount-code').value.trim().toUpperCase() : null,
+        discount_code_amount: _appliedDiscount > 0 ? _appliedDiscount : null
+      })
+      .select('id,order_number').single()
+
+    if (ie || !od?.order_number) throw new Error(ie?.message || 'insert failed')
+    orderId     = od.id
+    orderNumber = od.order_number
+
+    // خصم الكوينز المستخدمة من المحفظة
+    if (_coinsToRedeem > 0 && S.customer) {
+      const newBal = Math.max(0, (S.customer.coins_balance || 0) - _coinsToRedeem)
+      await db.from('menu_customers').update({ coins_balance: newBal }).eq('id', S.customer.id)
+      await db.from('coin_transactions').insert({
+        customer_id: S.customer.id, restaurant_id: S.restaurant.id,
+        type: 'redeem', amount: -_coinsToRedeem, order_id: orderId,
+        note: `استخدام في طلب ${orderNumber}`
+      })
+      S.customer.coins_balance = newBal
+    }
+
+    // تحديث عداد الكود المستخدم
+    if (_appliedCode) {
+      const { data: codeRow } = await db.from('discount_codes').select('used_count').eq('id', _appliedCode).single()
+      if (codeRow) await db.from('discount_codes').update({ used_count: (codeRow.used_count || 0) + 1 }).eq('id', _appliedCode)
+    }
+
+    // منح كوينز الولاء بعد الطلب
+    await awardLoyaltyAndWelcome(orderId, items, S.customer?.id, finalTotal)
+  } catch(e) {
+    btn.style.opacity = '1'
+    btn.innerHTML = `<span>⚠️ ${e.message || 'خطأ غير معروف'}</span>`
+    setTimeout(resetBtn, 5000)
+    return
+  }
+
+  clearCart(); updateCartUI(); closeCartSheet()
+  ;['order-name', 'order-phone', 'order-address', 'order-location', 'order-note', 'table-number-input', 'cart-discount-code']
+    .forEach(id => { const el = document.getElementById(id); if (el) el.value = '' })
+  document.getElementById('order-location-lat').value = ''
+  document.getElementById('order-location-lng').value = ''
+  const coinsInput = document.getElementById('cart-coins-input'); if (coinsInput) coinsInput.value = ''
+  document.getElementById('cart-discount-msg').style.display = 'none'
+  _appliedDiscount = 0; _appliedCode = null; _coinsToRedeem = 0
+  resetBtn()
+  showOrderSuccess(orderNumber, orderId, finalTotal, deliveryFee)
+  trackOrderStatus(orderId)
+}
+
+// ── ORDER STATUS TRACKING (live) ────────────────────────────────────────
+let _orderTrackChannel = null
+let _orderDelayTimeout  = null
+const ORDER_DELAY_WARNING_SECONDS = 300 // 5 دقائق بدون استجابة من المطعم = تنبيه للعميل
+
+function trackOrderStatus(orderId) {
+  if (_orderTrackChannel) { db.removeChannel(_orderTrackChannel); _orderTrackChannel = null }
+  _orderTrackChannel = db
+    .channel('order-status-' + orderId)
+    .on('postgres_changes', { event: 'UPDATE', schema: 'public', table: 'orders', filter: `id=eq.${orderId}` }, p => handleOrderStatusChange(p.new))
+    .subscribe()
+
+  clearTimeout(_orderDelayTimeout)
+  _orderDelayTimeout = setTimeout(() => showOrderDelayWarning(), ORDER_DELAY_WARNING_SECONDS * 1000)
+}
+// تنبيه العميل لو الطلب فضل بدون استجابة من المطعم لفترة غير طبيعية —
+// لا يعني هذا فقدان الطلب، فقط تنبيه بوجود تأخير مع تأكيد أن الطلب لم يُفقد
+function showOrderDelayWarning() {
+  const msgEl = document.getElementById('success-sub-msg')
+  if (!msgEl || msgEl.dataset.state !== 'pending') return // الطلب أُكِّد أو اترفض بالفعل، التحذير غير مطلوب
+  const warnEl = document.getElementById('success-delay-warning')
+  if (warnEl) warnEl.classList.remove('hidden')
+}
+function handleOrderStatusChange(order) {
+  if (['confirmed', 'ready', 'delivering', 'delivered', 'cancelled'].includes(order.status)) {
+    updateSuccessModalState(order.status, order.cancel_reason, order)
+  }
+}
+
+function showOrderSuccess(orderNumber, orderId, total, deliveryFee) {
+  document.getElementById('success-order-num').textContent = `رقم الطلب: ${orderNumber}`
+  // عرض رسوم التوصيل في مودال النجاح
+  const dfEl = document.getElementById('success-delivery-fee')
+  if (dfEl) {
+    if (deliveryFee > 0) {
+      dfEl.textContent = `🛵 رسوم التوصيل: ${fmt(deliveryFee)} — الإجمالي: ${fmt(total)}`
+      dfEl.style.display = 'block'
+    } else dfEl.style.display = 'none'
+  }
+  document.getElementById('order-success-modal').dataset.orderId = orderId
+  setSuccessModalVisual('pending')
+  document.getElementById('order-success-modal').classList.remove('hidden')
+  document.documentElement.style.overflow = 'hidden'
+  pushModal('success', closeSuccessModal)
+}
+function updateSuccessModalState(state, cancelReason, order) {
+  // لو المستخدم قفل المودال بالفعل، نفتحه تاني عشان يشوف نتيجة طلبه أكيد
+  document.getElementById('order-success-modal').classList.remove('hidden')
+  document.documentElement.style.overflow = 'hidden'
+  setSuccessModalVisual(state, cancelReason, order)
+  // الاشتراك يستمر طوال مراحل التتبع، ويُلغى فقط عند الوصول لحالة نهائية (تم التسليم أو الرفض)
+  if ((state === 'delivered' || state === 'cancelled') && _orderTrackChannel) {
+    db.removeChannel(_orderTrackChannel); _orderTrackChannel = null
+  }
+}
+function setSuccessModalVisual(state, cancelReason, order) {
+  const iconEl  = document.querySelector('#order-success-modal .success-icon')
+  const titleEl = document.getElementById('success-title')
+  const msgEl   = document.getElementById('success-sub-msg')
+  const reasonEl= document.getElementById('success-cancel-reason')
+  const stepsEl = document.getElementById('success-tracking-steps')
+  const delayEl = document.getElementById('success-delay-warning')
+  reasonEl.classList.add('hidden')
+  stepsEl.classList.add('hidden')
+  msgEl.dataset.state = state
+  if (state !== 'pending') { delayEl.classList.add('hidden'); clearTimeout(_orderDelayTimeout) }
+
+  const TRACKING_STATES = ['confirmed', 'ready', 'delivering', 'delivered']
+  if (TRACKING_STATES.includes(state)) {
+    stepsEl.classList.remove('hidden')
+    stepsEl.style.display = 'flex'
+    renderTrackingSteps(state)
+  }
+
+  if (state === 'pending') {
+    iconEl.textContent = '⏳'
+    titleEl.textContent = 'تم استلام طلبك!'
+    msgEl.textContent = '🔔 في انتظار تأكيد المطعم...'
+    msgEl.style.color = '#aaa'
+  } else if (state === 'confirmed') {
+    iconEl.textContent = '👨‍🍳'
+    titleEl.textContent = 'تم تأكيد طلبك!'
+    const prepMin = order?.estimated_prep_minutes
+    msgEl.textContent = prepMin ? `جاري التجهيز — تقريباً ${prepMin} دقيقة 🎉` : 'المطعم بيجهز طلبك دلوقتي 🎉'
+    msgEl.style.color = '#22c55e'
+  } else if (state === 'ready') {
+    iconEl.textContent = '📦'
+    titleEl.textContent = 'طلبك جاهز!'
+    msgEl.textContent = 'في انتظار استلام مندوب التوصيل'
+    msgEl.style.color = '#a855f7'
+  } else if (state === 'delivering') {
+    iconEl.textContent = '🛵'
+    titleEl.textContent = 'الطلب في الطريق إليك!'
+    msgEl.textContent = 'المندوب في الطريق الآن'
+    msgEl.style.color = '#6366f1'
+    document.getElementById('confirm-receipt-btn').classList.remove('hidden')
+    startAutoConfirmTimer(order?.id)
+  } else if (state === 'delivered') {
+    iconEl.textContent = '🎉'
+    titleEl.textContent = 'تم التسليم!'
+    msgEl.textContent = 'بالعافية، نتمنى أن تكون استمتعت بطلبك'
+    msgEl.style.color = '#22c55e'
+    document.getElementById('confirm-receipt-btn').classList.add('hidden')
+    clearTimeout(_autoConfirmTimeout)
+  } else if (state === 'cancelled') {
+    iconEl.textContent = '❌'
+    titleEl.textContent = 'تعذّر قبول الطلب'
+    msgEl.textContent = 'للأسف المطعم لم يستطع تنفيذ طلبك'
+    msgEl.style.color = '#ef4444'
+    if (cancelReason) {
+      reasonEl.textContent = `السبب: ${cancelReason}`
+      reasonEl.classList.remove('hidden')
+    }
+  } else {
+    document.getElementById('confirm-receipt-btn').classList.add('hidden')
+  }
+}
+// تأكيد استلام يدوي من العميل (زر "تم استلام طلبي")
+async function confirmOrderReceipt() {
+  const orderId = document.getElementById('order-success-modal').dataset.orderId
+  if (!orderId) return
+  await db.from('orders').update({ status: 'delivered', delivered_at: new Date().toISOString() }).eq('id', orderId)
+  document.getElementById('confirm-receipt-btn').classList.add('hidden')
+}
+// تأكيد استلام تلقائي لو العميل لم يضغط الزر بنفسه بعد مدة معقولة من بدء التوصيل
+let _autoConfirmTimeout = null
+const AUTO_CONFIRM_MINUTES_AFTER_DELIVERING = 30
+function startAutoConfirmTimer(orderId) {
+  clearTimeout(_autoConfirmTimeout)
+  if (!orderId) return
+  _autoConfirmTimeout = setTimeout(async () => {
+    await db.from('orders').update({ status: 'delivered', delivered_at: new Date().toISOString() }).eq('id', orderId)
+  }, AUTO_CONFIRM_MINUTES_AFTER_DELIVERING * 60 * 1000)
+}
+// يعرض شريط مراحل بصري (4 نقاط متصلة) يوضّح موقع الطلب الحالي ضمن رحلة التجهيز والتوصيل
+function renderTrackingSteps(currentState) {
+  const steps = [
+    { key: 'confirmed',  icon: '👨‍🍳', label: 'التجهيز' },
+    { key: 'ready',      icon: '📦',   label: 'جاهز' },
+    { key: 'delivering', icon: '🛵',   label: 'التوصيل' },
+    { key: 'delivered',  icon: '🎉',   label: 'التسليم' }
+  ]
+  const currentIdx = steps.findIndex(s => s.key === currentState)
+  const el = document.getElementById('success-tracking-steps')
+  el.innerHTML = steps.map((s, i) => {
+    const isDone   = i < currentIdx
+    const isActive = i === currentIdx
+    const color = isDone || isActive ? 'var(--brand)' : '#e5e5e5'
+    const textColor = isDone || isActive ? '#1a1a1a' : '#bbb'
+    return `
+      <div style="display:flex;flex-direction:column;align-items:center;flex:1">
+        <div style="width:32px;height:32px;border-radius:50%;background:${color};display:flex;align-items:center;justify-content:center;font-size:14px;${isActive ? 'box-shadow:0 0 0 4px ' + color + '33' : ''}">${isDone || isActive ? s.icon : ''}</div>
+        <p style="font-size:10px;font-weight:700;color:${textColor};margin-top:4px">${s.label}</p>
+      </div>
+      ${i < steps.length - 1 ? `<div style="flex:0.5;height:2px;background:${i < currentIdx ? 'var(--brand)' : '#e5e5e5'};margin-top:16px"></div>` : ''}
+    `
+  }).join('')
+}
+function closeSuccessModal(fromPopstate) {
+  document.getElementById('order-success-modal').classList.add('hidden')
+  document.documentElement.style.overflow = ''
+  if (!fromPopstate) popModalSilently('success')
+}
+
+// ── DISCOUNT CODE ──────────────────────────────────────────────────────
+async function applyDiscountCode() {
+  const code  = document.getElementById('cart-discount-code').value.trim().toUpperCase()
+  const msgEl = document.getElementById('cart-discount-msg')
+  if (!code) return
+  msgEl.style.display = 'block'
+  msgEl.style.color = '#aaa'; msgEl.textContent = 'جاري التحقق...'
+
+  const now = new Date().toISOString()
+  const { data } = await db.from('discount_codes')
+    .select('*')
+    .eq('restaurant_id', S.restaurant.id)
+    .eq('code', code)
+    .eq('is_active', true)
+    .single()
+
+  if (!data) { msgEl.style.color = '#ef4444'; msgEl.textContent = '❌ الكود غير صحيح أو منتهي'; return }
+  if (data.valid_from && now < data.valid_from) { msgEl.style.color = '#ef4444'; msgEl.textContent = '❌ الكود لم يبدأ بعد'; return }
+  if (data.valid_until && now > data.valid_until) { msgEl.style.color = '#ef4444'; msgEl.textContent = '❌ الكود انتهت صلاحيته'; return }
+  if (data.max_uses !== null && data.used_count >= data.max_uses) { msgEl.style.color = '#ef4444'; msgEl.textContent = '❌ الكود استُنفد'; return }
+
+  _appliedDiscount = Number(data.discount_egp)
+  _appliedCode     = data.id
+  msgEl.style.color = '#22c55e'
+  msgEl.textContent = `✅ تم تطبيق خصم ${_appliedDiscount.toFixed(2)} ج.م`
+  renderCartItems()
+}
+
+// ── COINS IN CART ──────────────────────────────────────────────────────
+function updateCoinsRowInCart() {
+  const row = document.getElementById('cart-coins-row')
+  if (!row) return
+  const minRedeem = S.restaurant?.min_redeem_coins ?? 100000
+  if (S.customer && S.customer.coins_balance >= minRedeem && (S.restaurant?.loyalty_enabled)) {
+    const coinsPerEgp = S.restaurant.coins_per_egp ?? 1000
+    document.getElementById('cart-coins-available').textContent =
+      `رصيدك: ${S.customer.coins_balance.toLocaleString('ar-EG')} 🪙 = ${(S.customer.coins_balance / coinsPerEgp).toFixed(2)} ج.م`
+    row.style.display = 'block'
+  } else {
+    row.style.display = 'none'
+  }
+}
+
+function updateCoinsDiscount() {
+  const input = document.getElementById('cart-coins-input')
+  const preview = document.getElementById('cart-coins-discount-preview')
+  const val = parseInt(input.value) || 0
+  const coinsPerEgp = S.restaurant?.coins_per_egp ?? 1000
+  const maxCoins = Math.min(S.customer?.coins_balance || 0, val)
+  _coinsToRedeem = Math.max(0, Math.min(maxCoins, S.customer?.coins_balance || 0))
+  const disc = _coinsToRedeem / coinsPerEgp
+  if (_coinsToRedeem > 0) {
+    preview.textContent = `خصم ${disc.toFixed(2)} ج.م مقابل ${_coinsToRedeem.toLocaleString('ar-EG')} كوين`
+    preview.style.display = 'block'
+  } else {
+    preview.style.display = 'none'
+  }
+  renderCartItems()
+}
+
+function useMaxCoins() {
+  const bal = S.customer?.coins_balance || 0
+  const coinsPerEgp = S.restaurant?.coins_per_egp ?? 1000
+  const cartVal = cartTotal()
+  // لا تتجاوز قيمة الطلب
+  const maxByCart = Math.floor(cartVal * coinsPerEgp)
+  _coinsToRedeem = Math.min(bal, maxByCart)
+  document.getElementById('cart-coins-input').value = _coinsToRedeem
+  updateCoinsDiscount()
+}
+
+// ── REFERRAL PARAM ON LOAD ──────────────────────────────────────────────
+async function handleReferralParam() {
+  const ref = new URLSearchParams(location.search).get('ref')
+  if (!ref || !S.restaurant) return
+  // خزّن كود الإحالة في localStorage لاستخدامه عند التسجيل
+  try { localStorage.setItem('pending_ref_' + S.restaurant.id, ref.toUpperCase()) } catch(e) {}
+}
+
+function getPendingRef() {
+  if (!S.restaurant) return null
+  try { return localStorage.getItem('pending_ref_' + S.restaurant.id) || null } catch(e) { return null }
+}
+
+function clearPendingRef() {
+  if (!S.restaurant) return
+  try { localStorage.removeItem('pending_ref_' + S.restaurant.id) } catch(e) {}
+}
+
+// ── AWARD LOYALTY COINS AFTER ORDER ────────────────────────────────────
+async function awardLoyaltyAndWelcome(orderId, orderItems, customerId, orderTotal) {
+  if (!S.restaurant?.loyalty_enabled) return
+  const coinsPerEgp = S.restaurant.coins_per_egp ?? 1000
+  let totalLoyalty = 0
+
+  // هدية الشراء: التاجر يختار وضع واحد فقط — لكل منتج، أو لكل 100 ج.م من الفاتورة
+  if (S.restaurant.purchase_reward_enabled) {
+    const mode = S.restaurant.purchase_reward_mode || 'per_product'
+    if (mode === 'per_product') {
+      for (const item of orderItems) {
+        if (item.type === 'bundle') continue
+        const prod = S.products.find(p => p.id === item.id)
+        if (prod?.loyalty_coins > 0) totalLoyalty += prod.loyalty_coins * item.qty
+      }
+    } else if (mode === 'per_100_egp') {
+      const perHundred = S.restaurant.purchase_reward_per_100_egp ?? 500
+      totalLoyalty += Math.floor((orderTotal || 0) / 100) * perHundred
+    }
+  }
+
+  const cust = S.customer
+  if (!cust) return
+
+  let balanceDelta = 0
+  const txs = []
+
+  // بونص الترحيب وبونص الإحالة يُمنحان فوراً كرصيد نقدي وقت التسجيل (راجع core.js initCustomerSession)
+  // هنا فقط نُعلّم أن العميل استخدم/استلم بونص الترحيب رسمياً عند أول طلب فعلي (لغرض العرض فقط، بلا منح مكرر)
+  if (!cust.welcome_coins_claimed) {
+    await db.from('menu_customers').update({ welcome_coins_claimed: true }).eq('id', cust.id)
+    S.customer.welcome_coins_claimed = true
+  }
+
+  // كوينز هدية الشراء
+  if (totalLoyalty > 0) {
+    txs.push({ customer_id: cust.id, restaurant_id: S.restaurant.id, type: 'loyalty', amount: totalLoyalty, order_id: orderId, note: 'هدية الشراء من الطلب' })
+    balanceDelta += totalLoyalty
+  }
+
+  // قسيمة الشراء عند الوصول للحد الأدنى المحدد من التاجر
+  if (S.restaurant.purchase_voucher_enabled) {
+    const minAmount = S.restaurant.purchase_voucher_min_amount ?? 100
+    const voucherCoins = S.restaurant.purchase_voucher_coins ?? 5000
+    if ((orderTotal || 0) >= minAmount) {
+      txs.push({ customer_id: cust.id, restaurant_id: S.restaurant.id, type: 'purchase_voucher', amount: voucherCoins, order_id: orderId, note: `قسيمة شراء — فاتورة ${minAmount}+ ج.م` })
+      balanceDelta += voucherCoins
+    }
+  }
+
+  if (txs.length) await db.from('coin_transactions').insert(txs)
+  if (balanceDelta > 0) {
+    const newBalance = (cust.coins_balance || 0) + balanceDelta
+    await db.from('menu_customers').update({ coins_balance: newBalance }).eq('id', cust.id)
+    S.customer.coins_balance = newBalance
+  }
+
+  // تحديث loyalty_coins_earned في الطلب
+  if (totalLoyalty > 0) await db.from('orders').update({ loyalty_coins_earned: totalLoyalty }).eq('id', orderId)
+  updateWalletBadge()
+}
+
