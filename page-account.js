@@ -113,9 +113,21 @@ function updateSettingsDisplay() {
 
 
 // ── GOOGLE SIGN IN ────────────────────────────────────────────────────
-async function signInWithGoogle() {
+let _googleSignInInFlight = false
+async function signInWithGoogle(btn) {
+  if (_googleSignInInFlight) return   // يمنع الضغط المتكرر — كل ضغطة بتولّد PKCE verifier جديد بيدوس على القديم
+  _googleSignInInFlight = true
+
   const errEl = document.getElementById('acc-error')
   if (errEl) errEl.style.display = 'none'
+  if (btn) {
+    btn.disabled = true
+    btn.style.opacity = '0.6'
+    btn.style.pointerEvents = 'none'
+    const span = btn.querySelector('span')
+    if (span) span.textContent = 'لحظة... ⏳'
+  }
+
   try {
     // احفظ الـ slug قبل الـ redirect
     if (_lastSlug) localStorage.setItem('mnio_last_slug', _lastSlug)
@@ -126,7 +138,16 @@ async function signInWithGoogle() {
       options: { redirectTo }
     })
     if (error) throw error
+    // لو وصلنا هنا يبقى في طريقنا لـ Google، الصفحة هتعمل redirect فعلياً
   } catch(e) {
+    _googleSignInInFlight = false
+    if (btn) {
+      btn.disabled = false
+      btn.style.opacity = '1'
+      btn.style.pointerEvents = 'auto'
+      const span = btn.querySelector('span')
+      if (span) span.textContent = 'متابعة مع Google'
+    }
     if (errEl) { errEl.textContent = 'خطأ: ' + e.message; errEl.style.display = 'block' }
   }
 }
