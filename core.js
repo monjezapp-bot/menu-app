@@ -350,11 +350,13 @@ async function _loadCustomerProfileInner(forceCreate, extraData) {
   const { data: { user } } = await db.auth.getUser()
   if (!user || !S.restaurant) return
 
-  const { data } = await db.from('menu_customers')
+  const { data, error: selErr } = await db.from('menu_customers')
     .select('*')
     .eq('user_id', user.id)
     .eq('restaurant_id', S.restaurant.id)
     .maybeSingle()
+
+  if (selErr) showAuthDebug('select الأساسي رجع error: ' + selErr.message + ' (code: ' + selErr.code + ')')
 
   if (data) {
     S.customer = data
@@ -380,7 +382,7 @@ async function _loadCustomerProfileInner(forceCreate, extraData) {
     }
 
     try {
-      const { data: newCust } = await db.from('menu_customers').insert({
+      const { data: newCust, error: insertErr } = await db.from('menu_customers').insert({
         user_id:     user.id,
         restaurant_id: S.restaurant.id,
         email:       user.email,
@@ -396,6 +398,8 @@ async function _loadCustomerProfileInner(forceCreate, extraData) {
         referred_by: referredBy,
         welcome_coins_claimed: false
       }).select('*').maybeSingle()
+
+      if (insertErr) showAuthDebug('insert رجع error صريح: ' + insertErr.message + ' (code: ' + insertErr.code + ')')
 
       if (newCust) {
         S.customer = newCust
