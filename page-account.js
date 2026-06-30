@@ -82,7 +82,7 @@ async function saveEditProfile() {
       const newBal = (S.customer.coins_balance || 0) + bonusCoins
       await db.from('menu_customers').update({ coins_balance: newBal }).eq('id', S.customer.id)
       S.customer.coins_balance = newBal
-      showToast(`+${bonusCoins.toLocaleString('ar-EG')} 🪙 كوينز على إكمال ملفك!`)
+      showToast(`+${bonusCoins.toLocaleString('en-US')} 🪙 كوينز على إكمال ملفك!`)
       playSuccessSound()
     }
     Object.assign(S.customer, updates)
@@ -108,7 +108,7 @@ function updateSettingsDisplay() {
   const refEl = document.getElementById('ref-code-display')
   if (refEl) refEl.textContent = c.referral_code || '------'
   const refRew = document.getElementById('ref-reward-display')
-  if (refRew) refRew.textContent = `عند أول شراء لصديقك تكسب ${(S.restaurant?.referral_coins ?? 5000).toLocaleString('ar-EG')} كوين 🪙`
+  if (refRew) refRew.textContent = `عند أول شراء لصديقك تكسب ${(S.restaurant?.referral_coins ?? 5000).toLocaleString('en-US')} كوين 🪙`
 }
 
 
@@ -190,7 +190,7 @@ function renderAccountPage() {
   const emailEl = document.getElementById('acc-logged-email')
   if (emailEl) emailEl.textContent = c.email || ''
   const coinsEl = document.getElementById('acc-coins-display')
-  if (coinsEl) coinsEl.textContent = (c.coins_balance || 0).toLocaleString('ar-EG')
+  if (coinsEl) coinsEl.textContent = (c.coins_balance || 0).toLocaleString('en-US')
 
   // تحديث الإعدادات
   updateSettingsDisplay()
@@ -285,7 +285,7 @@ async function submitEditField(field, value) {
         note: `إكمال بيانات: ${field}`
       })
       S.customer.coins_balance = (S.customer.coins_balance || 0) + coins
-      showToast(`+${coins.toLocaleString('ar-EG')} 🪙 كوينز على إكمال ملفك!`)
+      showToast(`+${coins.toLocaleString('en-US')} 🪙 كوينز على إكمال ملفك!`)
       playSuccessSound()
     }
     renderAccountPage()
@@ -467,7 +467,7 @@ async function redeemVoucher() {
     await db.from('discount_codes').update({ used_count: (dc.used_count || 0) + 1 }).eq('id', dc.id)
 
     S.customer.coins_balance = (S.customer.coins_balance || 0) + coins
-    showMsg(`✅ تم! +${coins.toLocaleString('ar-EG')} 🪙 أُضيفت لمحفظتك`, true)
+    showMsg(`✅ تم! +${coins.toLocaleString('en-US')} 🪙 أُضيفت لمحفظتك`, true)
     document.getElementById('voucher-input').value = ''
     playSuccessSound()
     updateWalletBadge()
@@ -500,7 +500,7 @@ function triggerInstall() {
 }
 
 function showCelebration(coins) {
-  document.getElementById('celeb-coins').textContent = coins.toLocaleString('ar-EG')
+  document.getElementById('celeb-coins').textContent = coins.toLocaleString('en-US')
   document.getElementById('celebration-overlay').classList.remove('hidden')
   document.documentElement.style.overflow = 'hidden'
   startConfetti()
