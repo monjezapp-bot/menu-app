@@ -234,8 +234,109 @@ function showOrderDelayWarning() {
 }
 function handleOrderStatusChange(order) {
   if (['confirmed', 'ready', 'delivering', 'delivered', 'cancelled'].includes(order.status)) {
+    if (isOrderMinimized(order.id)) {
+      // الطلب مُصغّر بمعرفة العميل: منفرضش المودال، التحديث هيظهر له لما يفتح "طلباتي"
+      if (['delivered', 'cancelled'].includes(order.status) && _orderTrackChannel) {
+        db.removeChannel(_orderTrackChannel); _orderTrackChannel = null
+      }
+      return
+    }
     updateSuccessModalState(order.status, order.cancel_reason, order)
   }
+}
+
+// ── MINIMIZE / RESTORE التتبع ────────────────────────────────────────
+// طلب مُصغّر = العميل ضغط (−)؛ بطاقة التتبع متبقاش بتفرض نفسها تلقائي،
+// والرجوع ليها يبقى فقط من صفحة "طلباتي" (active-order-tracker أو تفاصيل الطلب)
+function getMinimizedOrders() {
+  try { return JSON.parse(localStorage.getItem('minimized_orders') || '[]') } catch(e) { return [] }
+}
+function isOrderMinimized(orderId) { return getMinimizedOrders().includes(orderId) }
+function setOrderMinimized(orderId, minimized) {
+  const list = getMinimizedOrders().filter(id => id !== orderId)
+  if (minimized) list.push(orderId)
+  try { localStorage.setItem('minimized_orders', JSON.stringify(list)) } catch(e) {}
+}
+function minimizeSuccessModal() {
+  const orderId = document.getElementById('order-success-modal').dataset.orderId
+  if (orderId) setOrderMinimized(orderId, true)
+  closeSuccessModal()
+}
+// إعادة فتح بطاقة التتبع يدويًا من صفحة طلباتي (بتجيب أحدث حالة من الداتابيز أولاً)
+async function reopenOrderTracking(orderId) {
+  if (!orderId) return
+  setOrderMinimized(orderId, false)
+  const { data: order } = await db.from('orders').select('*').eq('id', orderId).single()
+  if (!order) return
+  document.getElementById('order-success-modal').dataset.orderId = orderId
+  document.getElementById('success-order-num').textContent = `رقم الطلب: ${order.order_number || ''}`
+  document.getElementById('order-success-modal').classList.remove('hidden')
+  document.documentElement.style.overflow = 'hidden'
+  pushModal('success', closeSuccessModal)
+  setSuccessModalVisual(order.status, order.cancel_reason, order)
+  if (!['delivered', 'cancelled'].includes(order.status)) trackOrderStatus(orderId)
+}
+
+// ── CANCEL ORDER BY CUSTOMER ─────────────────────────────────────────
+// قاعدة: قبل قبول التاجر (pending) الإلغاء متاح بلا قيود.
+// بعد القبول (confirmed) فيه مهلة دقيقتين بالظبط من وقت القبول، وبعدها يُمنع الإلغاء نهائيًا.
+const CANCEL_GRACE_SECONDS = 120
+let _cancelGraceInterval = null
+
+function showCancelButton(visible) {
+  const btn = document.getElementById('cancel-order-btn')
+  const countdownEl = document.getElementById('cancel-order-countdown')
+  if (!btn) return
+  btn.classList.toggle('hidden', !visible)
+  if (!visible && countdownEl) countdownEl.classList.add('hidden')
+}
+
+function startCancelGracePeriod(confirmedAt) {
+  clearInterval(_cancelGraceInterval)
+  if (!confirmedAt) { showCancelButton(false); return } // مفيش وقت قبول معروف، أمان: امنع الإلغاء
+  const countdownEl = document.getElementById('cancel-order-countdown')
+  const tick = () => {
+    const elapsedSec = (Date.now() - new Date(confirmedAt).getTime()) / 1000
+    const remaining = Math.ceil(CANCEL_GRACE_SECONDS - elapsedSec)
+    if (remaining <= 0) {
+      clearInterval(_cancelGraceInterval)
+      showCancelButton(false)
+      return
+    }
+    showCancelButton(true)
+    if (countdownEl) {
+      countdownEl.classList.remove('hidden')
+      const mm = String(Math.floor(remaining / 60)).padStart(2, '0')
+      const ss = String(remaining % 60).padStart(2, '0')
+      countdownEl.textContent = `⏱ تقدر تلغي خلال ${mm}:${ss}`
+    }
+  }
+  tick()
+  _cancelGraceInterval = setInterval(tick, 1000)
+}
+
+async function cancelOrderByCustomer() {
+  const orderId = document.getElementById('order-success-modal').dataset.orderId
+  if (!orderId) return
+  showConfirmSheet(
+    'إلغاء الطلب',
+    '<p style="font-size:13px;color:#888;line-height:1.6">هل أنت متأكد من إلغاء الطلب؟ لا يمكن التراجع عن هذا القرار.</p>',
+    () => doCancelOrder(orderId),
+    'نعم، إلغاء الطلب'
+  )
+}
+async function doCancelOrder(orderId) {
+  const btn = document.getElementById('cancel-order-btn')
+  if (btn) { btn.disabled = true; btn.textContent = 'جاري الإلغاء...' }
+  const { error } = await db.from('orders')
+    .update({ status: 'cancelled', cancel_reason: 'تم الإلغاء بواسطة العميل' })
+    .eq('id', orderId)
+    .in('status', ['pending', 'confirmed']) // حماية إضافية: منع الإلغاء لو الحالة تخطّت confirmed فعليًا على السيرفر
+  if (btn) { btn.disabled = false; btn.textContent = '❌ إلغاء الطلب' }
+  if (error) { showToast('تعذّر إلغاء الطلب، حاول تاني'); return }
+  clearInterval(_cancelGraceInterval)
+  setSuccessModalVisual('cancelled', 'تم الإلغاء بواسطة العميل')
+  if (_orderTrackChannel) { db.removeChannel(_orderTrackChannel); _orderTrackChannel = null }
 }
 
 function showOrderSuccess(orderNumber, orderId, total, deliveryFee) {
@@ -274,6 +375,7 @@ function setSuccessModalVisual(state, cancelReason, order) {
   reasonEl.classList.add('hidden')
   stepsEl.classList.add('hidden')
   msgEl.dataset.state = state
+  showCancelButton(false); clearTimeout(_cancelGraceInterval)
   if (state !== 'pending') { delayEl.classList.add('hidden'); clearTimeout(_orderDelayTimeout) }
 
   const TRACKING_STATES = ['confirmed', 'ready', 'delivering', 'delivered']
@@ -288,12 +390,14 @@ function setSuccessModalVisual(state, cancelReason, order) {
     titleEl.textContent = 'تم استلام طلبك!'
     msgEl.textContent = '🔔 في انتظار تأكيد المطعم...'
     msgEl.style.color = '#aaa'
+    showCancelButton(true) // قبل قبول التاجر: الإلغاء متاح دايمًا بدون مهلة
   } else if (state === 'confirmed') {
     iconEl.textContent = '👨‍🍳'
     titleEl.textContent = 'تم تأكيد طلبك!'
     const prepMin = order?.estimated_prep_minutes
     msgEl.textContent = prepMin ? `جاري التجهيز — تقريباً ${prepMin} دقيقة 🎉` : 'المطعم بيجهز طلبك دلوقتي 🎉'
     msgEl.style.color = '#22c55e'
+    startCancelGracePeriod(order?.confirmed_at) // بعد القبول: مهلة دقيقتين فقط للإلغاء
   } else if (state === 'ready') {
     iconEl.textContent = '📦'
     titleEl.textContent = 'طلبك جاهز!'

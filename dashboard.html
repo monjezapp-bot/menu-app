@@ -492,7 +492,7 @@
           <option value="لتر">لتر</option><option value="متر">متر</option><option value="علبة">علبة</option>
           <option value="custom">✏️ أخرى...</option>
         </select>
-        <input id="pm-unit-custom" type="text" placeholder="اكتب الوحدة..." class="hidden flex-1 border border-gray-200 rounded-xl px-4 py-3 text-sm focus:outline-none focus:ring-2 focus:ring-orange-400" />
+        <input id="pm-unit-custom" type="text" placeholder="اكتب الوحدة..." class="hidden flex-1 min-w-0 border border-gray-200 rounded-xl px-4 py-3 text-sm focus:outline-none focus:ring-2 focus:ring-orange-400" />
       </div>
       <input type="hidden" id="pm-unit" value="قطعة" />
     </div>
@@ -789,6 +789,25 @@ window.addEventListener('unhandledrejection', e => {
   box.innerHTML = `<b>Unhandled Promise Rejection:</b><br>${e.reason?.message || e.reason}<br><br><b>Stack:</b><br><pre>${e.reason?.stack || 'N/A'}</pre>`
   el.appendChild(box)
 })
+
+// ── SCROLL LOCK HELPER (يمنع تمرير الخلفية وقت فتح أي مودال) ──────────
+let _dashScrollLockY = 0
+function _lockBodyScroll() {
+  _dashScrollLockY = window.scrollY || document.body.scrollTop || 0
+  document.body.style.position = 'fixed'
+  document.body.style.top = `-${_dashScrollLockY}px`
+  document.body.style.left = '0'
+  document.body.style.right = '0'
+  document.body.style.width = '100%'
+}
+function _unlockBodyScroll() {
+  document.body.style.position = ''
+  document.body.style.top = ''
+  document.body.style.left = ''
+  document.body.style.right = ''
+  document.body.style.width = ''
+  window.scrollTo(0, _dashScrollLockY)
+}
 
 // ── CONFIG ────────────────────────────────────────────────────────────
 const SUPABASE_URL  = 'https://pcmyugeqveyjnappulng.supabase.co'
@@ -1346,10 +1365,12 @@ function openDiscountCodeModal(id = null) {
     document.getElementById('dcm-active').checked = true
   }
   document.getElementById('modal-discount-code').classList.remove('hidden')
+  _lockBodyScroll()
   pushModal('discountcode', closeDiscountCodeModal)
 }
 function closeDiscountCodeModal(fromPopstate) {
   document.getElementById('modal-discount-code').classList.add('hidden')
+  _unlockBodyScroll()
   if (!fromPopstate) popModalSilently('discountcode')
 }
 
@@ -1459,10 +1480,12 @@ function openBannerModal(id = null) {
   }
   updateBannerLinkUI()
   document.getElementById('modal-banner').classList.remove('hidden')
+  _lockBodyScroll()
   pushModal('banner', closeBannerModal)
 }
 function closeBannerModal(fromPopstate) {
   document.getElementById('modal-banner').classList.add('hidden')
+  _unlockBodyScroll()
   if (!fromPopstate) popModalSilently('banner')
 }
 function updateBannerLinkUI() {
@@ -1520,11 +1543,13 @@ function openCatModal(id = null) {
   if (id) { const c = state.categories.find(x => x.id === id); document.getElementById('cm-name').value = c.name; document.getElementById('cm-icon').value = c.icon_url || ''; document.getElementById('cat-modal-title').textContent = 'تعديل تصنيف' }
   else    { document.getElementById('cm-name').value = ''; document.getElementById('cm-icon').value = ''; document.getElementById('cat-modal-title').textContent = 'إضافة تصنيف' }
   document.getElementById('modal-category').classList.remove('hidden')
+  _lockBodyScroll()
   setTimeout(() => document.getElementById('cm-name').focus(), 100)
   pushModal('category', closeCatModal)
 }
 function closeCatModal(fromPopstate) {
   document.getElementById('modal-category').classList.add('hidden')
+  _unlockBodyScroll()
   if (!fromPopstate) popModalSilently('category')
 }
 async function saveCat() {
@@ -1640,10 +1665,12 @@ function openBranchModal(id = null) {
     document.getElementById('branch-modal-title').textContent = 'فرع جديد'
   }
   document.getElementById('modal-branch').classList.remove('hidden')
+  _lockBodyScroll()
   pushModal('branch', closeBranchModal)
 }
 function closeBranchModal(fromPopstate) {
   document.getElementById('modal-branch').classList.add('hidden')
+  _unlockBodyScroll()
   if (!fromPopstate) popModalSilently('branch')
 }
 async function saveBranch() {
@@ -1686,6 +1713,7 @@ async function deleteBranch(id) {
 let _branchMap = null, _branchMarker = null
 function openBranchMapPicker() {
   document.getElementById('branch-map-modal').classList.remove('hidden')
+  _lockBodyScroll()
   pushModal('branch-map', closeBranchMapPicker)
   const startLat = _branchPickedLat ?? 30.0444
   const startLng = _branchPickedLng ?? 31.2357
@@ -1711,6 +1739,7 @@ function openBranchMapPicker() {
 }
 function closeBranchMapPicker(fromPopstate) {
   document.getElementById('branch-map-modal').classList.add('hidden')
+  _unlockBodyScroll()
   if (!fromPopstate) popModalSilently('branch-map')
 }
 function updateBranchCoordsLabel() {
@@ -1740,6 +1769,7 @@ function openRestaurantMapPicker() {
   const startLat = _restPickedLat ?? (parseFloat(document.getElementById('set-restaurant-lat').value) || 30.0444)
   const startLng = _restPickedLng ?? (parseFloat(document.getElementById('set-restaurant-lng').value) || 31.2357)
   document.getElementById('restaurant-map-modal').classList.remove('hidden')
+  _lockBodyScroll()
   pushModal('restaurant-map', closeRestaurantMapPicker)
   if (!_restMap) {
     _restMap = L.map('restaurant-leaflet-map', { zoomControl: true }).setView([startLat, startLng], 13)
@@ -1763,6 +1793,7 @@ function openRestaurantMapPicker() {
 }
 function closeRestaurantMapPicker(fromPopstate) {
   document.getElementById('restaurant-map-modal').classList.add('hidden')
+  _unlockBodyScroll()
   if (!fromPopstate) popModalSilently('restaurant-map')
 }
 function updateRestCoordsLabel() {
@@ -1824,11 +1855,13 @@ function openProductModal(id = null) {
     setUnitField('قطعة'); renderOptionsUI([]); renderAlsoWith([], null)
   }
   document.getElementById('modal-product').classList.remove('hidden')
+  _lockBodyScroll()
   setTimeout(() => document.getElementById('pm-name').focus(), 100)
   pushModal('product', closeProductModal)
 }
 function closeProductModal(fromPopstate) {
   document.getElementById('modal-product').classList.add('hidden')
+  _unlockBodyScroll()
   if (!fromPopstate) popModalSilently('product')
 }
 function updateDiscountPreview() {
@@ -1880,8 +1913,8 @@ function buildGroupEl(g) {
     <div class="flex items-center gap-2">
       <span class="text-xs font-bold text-gray-400 bg-white border border-gray-200 rounded-lg px-2 py-1.5 whitespace-nowrap">${GROUP_TYPE_LABELS[g.type] || GROUP_TYPE_LABELS.custom}</span>
       ${isFixed
-        ? `<input type="text" value="${GROUP_TYPE_LABELS[g.type].replace(/^\S+\s/, '')}" class="opt-group-name flex-1 border border-gray-200 rounded-xl px-3 py-2 text-sm bg-gray-100 text-gray-400" readonly />`
-        : `<input type="text" placeholder="اسم المجموعة" value="${g.name || ''}" class="opt-group-name flex-1 border border-gray-200 rounded-xl px-3 py-2 text-sm focus:outline-none focus:ring-2 focus:ring-orange-400 bg-white" />`
+        ? `<input type="text" value="${GROUP_TYPE_LABELS[g.type].replace(/^\S+\s/, '')}" class="opt-group-name flex-1 min-w-0 border border-gray-200 rounded-xl px-3 py-2 text-sm bg-gray-100 text-gray-400" readonly />`
+        : `<input type="text" placeholder="اسم المجموعة" value="${g.name || ''}" class="opt-group-name flex-1 min-w-0 border border-gray-200 rounded-xl px-3 py-2 text-sm focus:outline-none focus:ring-2 focus:ring-orange-400 bg-white" />`
       }
       <button onclick="this.closest('.border').remove()" class="text-red-400 font-bold text-xl leading-none">×</button>
     </div>
@@ -1904,7 +1937,7 @@ function buildGroupEl(g) {
 }
 function optRowHTML(o) {
   return `<div class="flex gap-2 items-center opt-row">
-    <input type="text"   placeholder="الاسم"  value="${o.name||''}"               class="opt-item-name  flex-1 border border-gray-200 rounded-xl px-3 py-2 text-sm focus:outline-none focus:ring-2 focus:ring-orange-400 bg-white" />
+    <input type="text"   placeholder="الاسم"  value="${o.name||''}"               class="opt-item-name  flex-1 min-w-0 border border-gray-200 rounded-xl px-3 py-2 text-sm focus:outline-none focus:ring-2 focus:ring-orange-400 bg-white" />
     <input type="number" placeholder="السعر (0 لو يطابق المنتج الأساسي)" value="${o.price!=null?o.price:''}" step="0.5" class="opt-item-price w-24 border border-gray-200 rounded-xl px-3 py-2 text-sm focus:outline-none focus:ring-2 focus:ring-orange-400 bg-white" />
     <button onclick="this.closest('.opt-row').remove()" class="text-red-400 font-bold text-xl leading-none">×</button>
   </div>`
@@ -2083,6 +2116,7 @@ function openBundleModal(id = null) {
   }
   updateBundleSelectedCount()
   document.getElementById('modal-bundle').classList.remove('hidden')
+  _lockBodyScroll()
   pushModal('bundle', closeBundleModal)
 }
 function toggleAllBundleBranches(allCb) {
@@ -2105,6 +2139,7 @@ function toggleAllBundleProducts() {
 }
 function closeBundleModal(fromPopstate) {
   document.getElementById('modal-bundle').classList.add('hidden')
+  _unlockBodyScroll()
   if (!fromPopstate) popModalSilently('bundle')
 }
 async function saveBundle() {
@@ -2401,6 +2436,7 @@ function showNewOrderPopup(order) {
   if (order.customer_address) meta.push(`🏠 ${order.customer_address}`)
   document.getElementById('nop-meta').innerHTML = meta.map(m => `<p>${m}</p>`).join('')
   document.getElementById('new-order-popup').classList.remove('hidden')
+  _lockBodyScroll()
   updateQueueCounter()
 }
 // يحدّث شارة "+X طلبات أخرى في الانتظار" فوق البطاقة المنبثقة
@@ -2417,6 +2453,7 @@ function advanceToNextPendingOrder() {
     showNewOrderPopup(_pendingOrdersQueue[0]) // يعرض أقدم طلب متبقي في الطابور
   } else {
     document.getElementById('new-order-popup').classList.add('hidden')
+    _unlockBodyScroll()
     stopAlarmLoop()
   }
 }
@@ -2436,6 +2473,7 @@ function rejectNewOrder() {
 function dismissNewOrderPopup() {
   // ملاحظة: لا يُستخدم هذا لإغلاق popup الطلب الإجباري بدون قرار — فقط كجزء من تدفق التأكيد/الرفض
   document.getElementById('new-order-popup').classList.add('hidden')
+  _unlockBodyScroll()
 }
 
 // ── REJECT REASON ────────────────────────────────────────────────────
@@ -2445,10 +2483,12 @@ function openRejectReasonModal() {
   wrap.innerHTML = REJECT_REASONS.map(r => `<button onclick="submitRejectReason('${r.replace(/'/g, "\\'")}')" class="w-full text-right border border-gray-200 rounded-xl px-4 py-3 text-sm font-bold text-gray-700 hover:border-red-300 hover:bg-red-50 transition-colors">${r}</button>`).join('')
   document.getElementById('reject-custom-reason').value = ''
   document.getElementById('reject-reason-modal').classList.remove('hidden')
+  _lockBodyScroll()
   pushModal('reject-reason', closeRejectReasonModal)
 }
 function closeRejectReasonModal(fromPopstate) {
   document.getElementById('reject-reason-modal').classList.add('hidden')
+  _unlockBodyScroll()
   if (!fromPopstate) popModalSilently('reject-reason')
 }
 function submitRejectCustomReason() {
@@ -2547,8 +2587,8 @@ async function uploadBannerImage(input) { const f = input.files[0]; if (!f) retu
 
 // ── UI HELPERS ────────────────────────────────────────────────────────
 function showScreen(name) { ['login','passcode','dashboard'].forEach(s => document.getElementById('screen-'+s).classList.add('hidden')); document.getElementById('screen-'+name).classList.remove('hidden') }
-function showMoreMenu()   { document.getElementById('more-menu').classList.remove('hidden') }
-function hideMoreMenu()   { document.getElementById('more-menu').classList.add('hidden') }
+function showMoreMenu()   { document.getElementById('more-menu').classList.remove('hidden'); _lockBodyScroll() }
+function hideMoreMenu()   { document.getElementById('more-menu').classList.add('hidden'); _unlockBodyScroll() }
 
 function showTab(name) {
   const tabs = ['products','categories','bundles','banners','orders','customers','analytics','branches','settings']
@@ -2583,12 +2623,16 @@ function showConfirm(msg, btnLabel='حذف') {
     document.getElementById('confirm-yes-btn').textContent   = btnLabel
     document.getElementById('confirm-yes-btn').onclick = () => { closeConfirm(); resolve(true) }
     document.getElementById('confirm-dialog').classList.remove('hidden')
+    _lockBodyScroll()
   })
 }
-function closeConfirm() { document.getElementById('confirm-dialog').classList.add('hidden'); if (_confirmResolve) { _confirmResolve(false); _confirmResolve=null } }
+function closeConfirm() { document.getElementById('confirm-dialog').classList.add('hidden'); _unlockBodyScroll(); if (_confirmResolve) { _confirmResolve(false); _confirmResolve=null } }
 
+// العداد بجوار "الطلبات" في شريط التنقل = كل الطلبات الجارية (لسه ماتسلمتش/ماتلغتش)،
+// سواء جديدة في انتظار القبول أو مقبولة وجاري تجهيزها/توصيلها — التاجر عارف بنظرة واحدة عنده كام طلب شغال
 function updateOrdersBadge(orders) {
-  const n = orders.filter(o=>o.status==='pending').length
+  const ACTIVE_STATUSES = ['pending', 'confirmed', 'ready', 'delivering']
+  const n = orders.filter(o => ACTIVE_STATUSES.includes(o.status)).length
   const b = document.getElementById('orders-badge'); if (!b) return
   b.textContent   = n > 9 ? '9+' : n
   b.style.display = n > 0 ? 'flex' : 'none'

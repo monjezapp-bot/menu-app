@@ -58,7 +58,8 @@ async function loadOrdersPage() {
       const st = ORDER_STATUS[o.status] || ORDER_STATUS.pending
       const items = typeof o.items === 'string' ? JSON.parse(o.items) : (o.items || [])
       const preview = items.slice(0,2).map(i => i.name || '').filter(Boolean).join('، ')
-      return `<div class="order-card" onclick="openOrderDetail('${o.id}')">
+      const isActiveOrder = !['delivered','cancelled'].includes(o.status)
+      return `<div class="order-card" onclick="${isActiveOrder ? `reopenOrderTracking('${o.id}')` : `openOrderDetail('${o.id}')`}">
         <div style="display:flex;justify-content:space-between;align-items:flex-start;margin-bottom:10px">
           <div>
             <p style="font-size:14px;font-weight:900;color:#1a1a1a;margin-bottom:2px">${o.order_number || '#' + o.id.slice(-6)}</p>
@@ -86,6 +87,8 @@ function renderOrderTracker(order) {
   const tracker = document.getElementById('active-order-tracker')
   if (!order || !tracker) { if(tracker) tracker.style.display='none'; return }
   tracker.style.display = 'block'
+  tracker.style.cursor = 'pointer'
+  tracker.onclick = () => reopenOrderTracking(order.id)
   document.getElementById('tracker-order-num').textContent = order.order_number || '#' + order.id.slice(-6)
   const st = ORDER_STATUS[order.status] || ORDER_STATUS.pending
   const badge = document.getElementById('tracker-status-badge')
@@ -131,7 +134,7 @@ async function openOrderDetail(orderId) {
   const sheet = document.getElementById('order-detail-sheet')
   if (!sheet) return
   sheet.style.display = 'flex'
-  document.documentElement.style.overflow = 'hidden'
+  _lockBodyScroll()
   const body = document.getElementById('ods-body')
   body.innerHTML = '<p style="text-align:center;padding:30px;color:#bbb">جاري التحميل...</p>'
 
@@ -181,6 +184,6 @@ async function openOrderDetail(orderId) {
 function closeOrderDetail() {
   const sheet = document.getElementById('order-detail-sheet')
   if (sheet) sheet.style.display = 'none'
-  document.documentElement.style.overflow = ''
+  _unlockBodyScroll()
 }
 

@@ -712,7 +712,9 @@
      ORDER SUCCESS MODAL
 ══════════════════════════════════════════ -->
 <div id="order-success-modal" class="hidden fixed inset-y-0 z-[65] flex items-center justify-center" style="background:rgba(0,0,0,0.6);backdrop-filter:blur(6px)">
-  <div class="bg-white rounded-3xl shadow-2xl mx-4 w-full max-w-sm p-8 text-center fade-up">
+  <div class="bg-white rounded-3xl shadow-2xl mx-4 w-full max-w-sm p-8 text-center fade-up" style="position:relative">
+    <button onclick="minimizeSuccessModal()" title="تصغير — هترجعله من صفحة طلباتي"
+            style="position:absolute;top:12px;left:12px;width:30px;height:30px;border-radius:50%;background:#f5f5f5;border:none;color:#888;font-size:18px;font-weight:900;line-height:1;cursor:pointer">−</button>
     <div class="success-icon text-6xl mb-4">⏳</div>
     <h2 id="success-title" style="font-size:22px;font-weight:900;color:#1a1a1a;margin-bottom:6px">تم استلام طلبك!</h2>
     <p id="success-order-num" style="font-size:15px;font-weight:700;color:#FF6B00;margin-bottom:4px"></p>
@@ -727,6 +729,11 @@
             style="width:100%;background:#22c55e;color:#fff;font-size:14px;font-weight:900;border-radius:16px;padding:13px;margin-bottom:8px">
       ✅ تم استلام طلبي
     </button>
+    <button id="cancel-order-btn" onclick="cancelOrderByCustomer()" class="hidden"
+            style="width:100%;background:#fff;color:#ef4444;border:1.5px solid #fecaca;font-size:13px;font-weight:800;border-radius:16px;padding:11px;margin-bottom:8px">
+      ❌ إلغاء الطلب
+    </button>
+    <p id="cancel-order-countdown" class="hidden" style="font-size:11px;color:#aaa;margin-bottom:8px"></p>
     <button onclick="closeSuccessModal()"
             style="width:100%;background:var(--brand);color:#fff;font-size:15px;font-weight:900;border-radius:16px;padding:14px;margin-top:8px">
       تمام 👍
