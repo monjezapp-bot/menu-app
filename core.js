@@ -567,13 +567,33 @@ function showToast(msg) {
   t._timer = setTimeout(() => t.style.opacity = '0', 2500)
 }
 
-// ── CONFIRM SHEET HELPER ──────────────────────────────────────────────
+// ── CONFIRM SHEET HELPER (مُعاد بناؤه) ─────────────────────────────────
+let _scrollLockY = 0
+
+function _lockBodyScroll() {
+  _scrollLockY = window.scrollY || document.body.scrollTop || 0
+  document.body.style.position = 'fixed'
+  document.body.style.top = `-${_scrollLockY}px`
+  document.body.style.left = '0'
+  document.body.style.right = '0'
+  document.body.style.width = '100%'
+}
+
+function _unlockBodyScroll() {
+  document.body.style.position = ''
+  document.body.style.top = ''
+  document.body.style.left = ''
+  document.body.style.right = ''
+  document.body.style.width = ''
+  window.scrollTo(0, _scrollLockY)
+}
+
 function showConfirmSheet(title, bodyHTML, onConfirm, confirmLabel, noConfirmBtn) {
   let sheet = document.getElementById('confirm-sheet')
   if (!sheet) {
     sheet = document.createElement('div')
     sheet.id = 'confirm-sheet'
-    sheet.style.cssText = 'position:fixed;inset:0;z-index:200;display:flex;align-items:flex-end;justify-content:center;background:rgba(0,0,0,0.5)'
+    sheet.style.cssText = 'position:fixed;top:0;right:0;bottom:0;left:0;width:100vw;height:100%;z-index:9999;display:flex;align-items:flex-end;justify-content:center;background:rgba(0,0,0,0.5);isolation:isolate;-webkit-transform:translateZ(0);transform:translateZ(0)'
     sheet.innerHTML = `<div style="background:#fff;border-radius:24px 24px 0 0;padding:24px 20px 36px;width:100%;max-width:480px;max-height:88vh;overflow-y:auto;box-sizing:border-box;-webkit-overflow-scrolling:touch">
       <div id="cs-title" style="font-size:16px;font-weight:900;color:#1a1a1a;margin-bottom:16px"></div>
       <div id="cs-body"></div>
@@ -582,7 +602,10 @@ function showConfirmSheet(title, bodyHTML, onConfirm, confirmLabel, noConfirmBtn
         <button id="cs-confirm-btn" style="flex:1;padding:13px;border-radius:14px;border:none;background:linear-gradient(135deg,var(--brand),#ff8c38);color:#fff;font-size:14px;font-weight:900;cursor:pointer;font-family:'Rubik',sans-serif"></button>
       </div>
     </div>`
+    // يتعلّق دايماً مباشرة بالـ body عشان يضمن إنه يتمركز بالنسبة للشاشة كلها مش لأي عنصر متحرك تاني
     document.body.appendChild(sheet)
+    // قفل سكرول الخلفية لمنع تعارض السحب بين الصفحة والمودال
+    sheet.addEventListener('click', (e) => { if (e.target === sheet) closeConfirmSheet() })
   }
   document.getElementById('cs-title').textContent = title
   document.getElementById('cs-body').innerHTML    = bodyHTML
@@ -594,11 +617,13 @@ function showConfirmSheet(title, bodyHTML, onConfirm, confirmLabel, noConfirmBtn
     cfmBtn.textContent   = confirmLabel || 'تأكيد'
     cfmBtn.onclick       = () => { closeConfirmSheet(); if (onConfirm) onConfirm() }
   }
+  _lockBodyScroll()
   sheet.style.display = 'flex'
 }
 function closeConfirmSheet() {
   const s = document.getElementById('confirm-sheet')
   if (s) s.style.display = 'none'
+  _unlockBodyScroll()
 }
 
 
