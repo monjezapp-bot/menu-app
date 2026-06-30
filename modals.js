@@ -233,20 +233,27 @@ function quickAdd(pid) {
   const price = isDiscountActive(p) ? Number(p.discount_price) : Number(p.price)
   const ci    = S.cart.find(c => c.id === pid && c.type === 'product')
   if (ci) { ci.qty += 1 } else { S.cart.push({ id: pid, type: 'product', name: p.name, price, image_url: p.image_url, qty: 1, unit: 'قطعة' }) }
-  saveCart(); updateCartUI(); renderAllSections()
+  saveCart(); updateCartUI()
+  // إخفاء زرار "+" بدلاً من إعادة بناء الصفحة كاملة (كان يهدم كل الصور ويعيد تحميلها من الصفر)
+  document.querySelectorAll(`.prod-card .add-btn[onclick*="quickAdd('${pid}')"]`).forEach(btn => btn.style.display = 'none')
 }
 function addBundleToCart(bid) {
   const b  = S.bundles.find(x => x.id === bid); if (!b) return
   const ci = S.cart.find(c => c.id === bid && c.type === 'bundle')
   if (ci) { ci.qty += 1 } else { S.cart.push({ id: bid, type: 'bundle', name: b.name, price: Number(b.price), image_url: b.image_url, qty: 1 }) }
-  saveCart(); updateCartUI(); renderAllSections()
+  saveCart(); updateCartUI()
 }
 function cQty(id, type, d) {
   const idx = S.cart.findIndex(c => c.id === id && c.type === type); if (idx === -1) return
   S.cart[idx].qty += d
-  if (S.cart[idx].qty <= 0) S.cart.splice(idx, 1)
-  saveCart(); updateCartUI(); renderAllSections()
+  const removed = S.cart[idx].qty <= 0
+  if (removed) S.cart.splice(idx, 1)
+  saveCart(); updateCartUI()
   if (!document.getElementById('cart-sheet').classList.contains('hidden')) renderCartItems()
+  // لو اتشال المنتج بالكامل من السلة، رجّع زرار "+" يظهر في كارته بالصفحة الرئيسية (بدون إعادة بناء باقي الصفحة)
+  if (removed && type === 'product') {
+    document.querySelectorAll(`.prod-card .add-btn[onclick*="quickAdd('${id}')"]`).forEach(btn => btn.style.display = '')
+  }
 }
 function cartTotal() { return S.cart.reduce((s, c) => s + c.price * c.qty, 0) }
 function updateCartUI() {

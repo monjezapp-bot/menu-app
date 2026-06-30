@@ -379,8 +379,8 @@ function updateCoinsRowInCart() {
   const minRedeem = S.restaurant?.min_redeem_coins ?? 100000
   if (S.customer && S.customer.coins_balance >= minRedeem && (S.restaurant?.loyalty_enabled)) {
     const coinsPerEgp = S.restaurant.coins_per_egp ?? 1000
-    document.getElementById('cart-coins-available').textContent =
-      `رصيدك: ${S.customer.coins_balance.toLocaleString('ar-EG')} 🪙 = ${(S.customer.coins_balance / coinsPerEgp).toFixed(2)} ج.م`
+    document.getElementById('cart-coins-available').innerHTML =
+      `رصيدك: <span class="ltr-num">${S.customer.coins_balance.toLocaleString('en-US')}</span> 🪙 = <span class="ltr-num">${(S.customer.coins_balance / coinsPerEgp).toFixed(2)}</span> ج.م`
     row.style.display = 'block'
   } else {
     row.style.display = 'none'
@@ -396,7 +396,7 @@ function updateCoinsDiscount() {
   _coinsToRedeem = Math.max(0, Math.min(maxCoins, S.customer?.coins_balance || 0))
   const disc = _coinsToRedeem / coinsPerEgp
   if (_coinsToRedeem > 0) {
-    preview.textContent = `خصم ${disc.toFixed(2)} ج.م مقابل ${_coinsToRedeem.toLocaleString('ar-EG')} كوين`
+    preview.innerHTML = `خصم <span class="ltr-num">${disc.toFixed(2)}</span> ج.م مقابل <span class="ltr-num">${_coinsToRedeem.toLocaleString('en-US')}</span> كوين`
     preview.style.display = 'block'
   } else {
     preview.style.display = 'none'
