@@ -809,6 +809,25 @@
 </div>
 
 <script>
+// ── GLOBAL ERROR HANDLER (debug) ─────────────────────────────────────
+// قاعدة ثابتة: أي خطأ JS أو Promise مرفوضة لازم تظهر على الشاشة فعلياً
+// (التاجر مفيش عنده DevTools ولا لابتوب يقدر يشوف بيه الـ Console)
+window.onerror = function(msg, src, line, col, err) {
+  const el = document.body
+  const box = document.createElement('div')
+  box.style.cssText = 'padding:20px;font-family:monospace;background:#fff;color:#c00;font-size:12px;direction:ltr;word-break:break-all;position:fixed;inset:0;z-index:99999;overflow:auto'
+  box.innerHTML = `<b>JS Error:</b><br>${msg}<br><br><b>Line:</b> ${line}:${col}<br><br><b>Stack:</b><br><pre>${err?.stack || 'N/A'}</pre>`
+  el.appendChild(box)
+  return false
+}
+window.addEventListener('unhandledrejection', e => {
+  const el = document.body
+  const box = document.createElement('div')
+  box.style.cssText = 'padding:20px;font-family:monospace;background:#fff;color:#c00;font-size:12px;direction:ltr;word-break:break-all;position:fixed;inset:0;z-index:99999;overflow:auto'
+  box.innerHTML = `<b>Unhandled Promise Rejection:</b><br>${e.reason?.message || e.reason}<br><br><b>Stack:</b><br><pre>${e.reason?.stack || 'N/A'}</pre>`
+  el.appendChild(box)
+})
+
 // ── CONFIG ────────────────────────────────────────────────────────────
 const SUPABASE_URL  = 'https://pcmyugeqveyjnappulng.supabase.co'
 const SUPABASE_ANON = 'eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6InBjbXl1Z2VxdmV5am5hcHB1bG5nIiwicm9sZSI6ImFub24iLCJpYXQiOjE3ODExNjU0NDAsImV4cCI6MjA5Njc0MTQ0MH0.uwn0X4CvNRW38FGh_0rYD9KjBRM19CydXucfBsCDYeo'
@@ -910,25 +929,45 @@ window.addEventListener('scroll', () => {
 // ── BOOT ──────────────────────────────────────────────────────────────
 async function boot() {
   let _booted = false
-  const { data: { session } } = await db.auth.getSession()
-  if (session) { _booted = true; await afterLogin() }
-  else showScreen('login')
+  try {
+    const { data: { session } } = await db.auth.getSession()
+    if (session) { _booted = true; await afterLogin() }
+    else showScreen('login')
+  } catch(e) {
+    resetLoginButton('خطأ في تحميل الجلسة: ' + (e.message || e))
+  }
 
   db.auth.onAuthStateChange(async (event) => {
     if (event === 'SIGNED_IN') {
       if (_booted) return   // منع التنفيذ المزدوج عند وجود session محفوظة
       _booted = true
-      await afterLogin()
+      try {
+        await afterLogin()
+      } catch(e) {
+        // لو afterLogin() فشلت، لازم نرجّع زرار الدخول لحالته الطبيعية ونوريك الخطأ الحقيقي
+        // بدل ما يفضل عالق على Loading للأبد من غير أي تفسير
+        resetLoginButton('خطأ بعد تسجيل الدخول: ' + (e.message || e))
+        _booted = false
+      }
     }
     if (event === 'SIGNED_OUT') { _booted = false; _role = null; _activeBranchId = null; showScreen('login') }
   })
+}
+
+// يرجّع زرار "دخول" لحالته الطبيعية ويظهر رسالة الخطأ الحقيقية على الشاشة
+function resetLoginButton(msg) {
+  showScreen('login')
+  const btn   = document.getElementById('login-btn-text')
+  const errEl = document.getElementById('login-error')
+  if (btn) btn.textContent = 'دخول'
+  if (errEl && msg) { errEl.textContent = msg; errEl.classList.remove('hidden') }
 }
 
 // بعد التحقق من الجلسة — نقرر هل نذهب لشاشة الـ passcode أم مباشرة للداشبورد
 async function afterLogin() {
   const { data: { user } } = await db.auth.getUser()
   const { data: r, error: rErr } = await db.from('restaurants').select('*').eq('owner_id', user.id).single()
-  if (!r) { showToast('لم يتم العثور على مطعم — ' + (rErr?.message || 'خطأ غير معروف')); return }
+  if (!r) { resetLoginButton('لم يتم العثور على مطعم — ' + (rErr?.message || 'خطأ غير معروف')); return }
 
   // اقرأ الفروع أولاً لتحديد إذا كان فيه أكثر من فرع
   const { data: branches } = await db.from('branches').select('id,name,passcode').eq('restaurant_id', r.id).order('created_at')
@@ -1103,8 +1142,17 @@ async function doLogin() {
   const btn   = document.getElementById('login-btn-text')
   errEl.classList.add('hidden')
   btn.innerHTML = '<span class="spinner"></span>'
-  const { error } = await db.auth.signInWithPassword({ email, password: pass })
-  if (error) { errEl.textContent = 'بيانات الدخول غير صحيحة'; errEl.classList.remove('hidden'); btn.textContent = 'دخول' }
+  try {
+    const { error } = await db.auth.signInWithPassword({ email, password: pass })
+    if (error) { errEl.textContent = 'بيانات الدخول غير صحيحة: ' + error.message; errEl.classList.remove('hidden'); btn.textContent = 'دخول'; return }
+    // لو نجح تسجيل الدخول، onAuthStateChange هيستدعي afterLogin() ويغيّر الشاشة.
+    // afterLogin() لازم تتولى تصفير الزرار أو الانتقال للداشبورد — مفيش حاجة تانية تتعمل هنا.
+  } catch(e) {
+    // أي خطأ غير متوقع (شبكة، إلخ) — لازم يظهر فعلياً ويرجّع الزرار لحالته الطبيعية
+    errEl.textContent = 'خطأ: ' + (e.message || e)
+    errEl.classList.remove('hidden')
+    btn.textContent = 'دخول'
+  }
 }
 async function doLogout() { await db.auth.signOut() }
 

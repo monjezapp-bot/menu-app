@@ -217,7 +217,7 @@ function numFmt(v) {
   const n = Math.round(Number(v) || 0)
   // toLocaleString('en-US') بيدّينا الفواصل، وبعدين نضمن تحويل أي رقم عربي
   // (لو الـ WebView تجاهل الـ locale) لرقم إنجليزي يدوياً
-  return numFmt(n).replace(/[٠-٩]/g, d => '٠١٢٣٤٥٦٧٨٩'.indexOf(d))
+  return n.toLocaleString('en-US').replace(/[٠-٩]/g, d => '٠١٢٣٤٥٦٧٨٩'.indexOf(d))
 }
 
 // المسافة بالكيلومتر بين نقطتين (صيغة Haversine)
