@@ -28,7 +28,8 @@ const db = createClient(SUPABASE_URL, SUPABASE_ANON, {
     storageKey: 'menu-customer-auth',
     autoRefreshToken: true,
     persistSession: true,
-    detectSessionInUrl: true   // ← لازم true: ده اللي بيقرأ access_token/code من الـ URL بعد رجوع Google
+    detectSessionInUrl: true,  // ← لازم true: ده اللي بيقرأ access_token/code من الـ URL بعد رجوع Google
+    flowType: 'pkce'           // ← أكثر ثباتاً مع WebViews/PWA standalone، يقلل لوب اختيار حساب Google
   }
 })
 
