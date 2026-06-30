@@ -428,7 +428,7 @@ function initAuthListener() {
         // لو جاي من Google redirect (مش refresh عادي)
         const isOAuthCallback = window.location.hash.includes('access_token') ||
                                  window.location.search.includes('code=')
-        if (isOAuthCallback || !sessionStorage.getItem('mnio_page')) {
+        if (isOAuthCallback) {
           switchPage('account')
           // احتفال لو أول تسجيل
           const isNew = !sessionStorage.getItem('was_customer_' + S.restaurant.id)
