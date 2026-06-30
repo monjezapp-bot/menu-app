@@ -52,12 +52,12 @@ async function openWalletModal() {
     </div>`).join('') : `<p style="font-size:13px;color:#aaa;text-align:center;padding:12px 0">لا توجد حركات بعد</p>`
 
   document.getElementById('wallet-modal').classList.remove('hidden')
-  document.documentElement.style.overflow = 'hidden'
+  _lockBodyScroll()
   pushModal('wallet', closeWalletModal)
 }
 function closeWalletModal(fromPopstate) {
   document.getElementById('wallet-modal').classList.add('hidden')
-  document.documentElement.style.overflow = ''
+  _unlockBodyScroll()
   if (!fromPopstate) popModalSilently('wallet')
 }
 
