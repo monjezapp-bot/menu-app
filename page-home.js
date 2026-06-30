@@ -203,12 +203,26 @@ function renderCatGrid() {
   const el         = document.getElementById('cat-grid')
   const hasBundles = S.bundles.length > 0
   const catsHTML   = S.categories.map(c =>
-    `<button class="cat-tab ${c.id === S.activeCat ? 'active' : ''}" onclick="selectCat('${c.id}')">${c.name}</button>`
+    `<button class="cat-tab ${c.id === S.activeCat ? 'active' : ''}" data-cat="${c.id}" onclick="selectCat('${c.id}')">${c.name}</button>`
   ).join('')
   const bundleTab  = hasBundles
-    ? `<button class="cat-tab ${S.activeCat === 'bundles' ? 'active' : ''}" onclick="selectCat('bundles')">🎁 العروض</button>`
+    ? `<button class="cat-tab ${S.activeCat === 'bundles' ? 'active' : ''}" data-cat="bundles" onclick="selectCat('bundles')">🎁 العروض</button>`
     : ''
   el.innerHTML = catsHTML + bundleTab
+}
+
+// تمرير أفقي آمن داخل شريط التابات فقط — بدون استخدام scrollIntoView()
+// لأن scrollIntoView() يتجاهل position:sticky ويحسب المكان بناءً على
+// الموضع الأصلي للعنصر في الـ document flow، فيسبب قفزة للصفحة بالكامل لأعلى
+// (وهو سبب الـ Auto-Scroll/Jump Bug في الـ Home Feed)
+function scrollTabIntoView(tabEl) {
+  if (!tabEl) return
+  const container = document.getElementById('cat-grid')
+  if (!container) return
+  const cRect = container.getBoundingClientRect()
+  const tRect = tabEl.getBoundingClientRect()
+  const offset = (tRect.left + tRect.right) / 2 - (cRect.left + cRect.right) / 2
+  container.scrollBy({ left: offset, behavior: 'smooth' })
 }
 
 function selectCat(id) {
@@ -217,9 +231,9 @@ function selectCat(id) {
   document.getElementById('search-input').value = ''
   hideSuggestions(); renderCatGrid(); renderAllSections()
 
-  // Scroll tab into view
-  const tabEl = document.querySelector(`.cat-tab[onclick="selectCat('${id}')"]`)
-  if (tabEl) tabEl.scrollIntoView({ behavior: 'smooth', block: 'nearest', inline: 'center' })
+  // Scroll tab into view (أفقي فقط)
+  const tabEl = document.querySelector(`.cat-tab[data-cat="${id}"]`)
+  scrollTabIntoView(tabEl)
 
   // Scroll to section
   const sec = document.getElementById(id === 'bundles' ? 'sec-bundles' : 'sec-' + id)
@@ -241,8 +255,8 @@ function initScrollSpy() {
       if (id === S.activeCat) return
       S.activeCat = id
       renderCatGrid()
-      const tabEl = document.querySelector(`.cat-tab[onclick="selectCat('${id}')"]`)
-      if (tabEl) tabEl.scrollIntoView({ behavior: 'smooth', block: 'nearest', inline: 'center' })
+      const tabEl = document.querySelector(`.cat-tab[data-cat="${id}"]`)
+      scrollTabIntoView(tabEl)
     })
   }, { rootMargin: '-40% 0px -50% 0px', threshold: 0 })
 
@@ -315,7 +329,7 @@ function prodCardHTML(p) {
        onclick="${unavailable ? '' : `openModal('${p.id}')`}"
        style="${unavailable ? 'cursor:default' : ''}">
     <div class="thumb">
-      ${p.image_url ? `<img src="${p.image_url}" alt="${p.name}" loading="lazy" />` : `<div class="no-img">🍽️</div>`}
+      ${p.image_url ? `<img src="${p.image_url}" alt="${p.name}" loading="lazy" onload="this.classList.add('loaded'); this.parentElement.classList.add('img-ready')" onerror="this.parentElement.classList.add('img-ready')" />` : `<div class="no-img">🍽️</div>`}
       ${p.offer_badge ? `<div class="offer-badge">${p.offer_badge}</div>` : ''}
       ${discPct >= 5 && !p.offer_badge ? `<div class="disc-pct">-${discPct}%</div>` : ''}
       ${unavailable ? `<div class="unavail-overlay"></div>` : ''}

@@ -812,7 +812,10 @@
 // ── CONFIG ────────────────────────────────────────────────────────────
 const SUPABASE_URL  = 'https://pcmyugeqveyjnappulng.supabase.co'
 const SUPABASE_ANON = 'eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6InBjbXl1Z2VxdmV5am5hcHB1bG5nIiwicm9sZSI6ImFub24iLCJpYXQiOjE3ODExNjU0NDAsImV4cCI6MjA5Njc0MTQ0MH0.uwn0X4CvNRW38FGh_0rYD9KjBRM19CydXucfBsCDYeo'
-const MENU_BASE_URL = 'https://monjezapp-bot.github.io/menu-app/'
+// MENU_BASE_URL يُحسب ديناميكياً من نفس الدومين الحالي بدل ما يكون مكتوب يدوياً (Hardcoded)
+// كان مكتوب قبل كده على دومين قديم (monjezapp-bot.github.io) بتاع Repository مش موجود حالياً،
+// وده كان سبب ظهور 404 لما العميل يضغط على رابط/QR المنيو اللي بيطلعه الداشبورد
+const MENU_BASE_URL = location.origin + location.pathname.replace(/dashboard\.html$/, 'index.html')
 const SUPPORT_WHATSAPP = '20XXXXXXXXXX' // ⚠️ غيّر هذا الرقم لرقم واتساب الدعم الفني الفعلي (بصيغة دولية بدون + أو مسافات)
 // المفتاح العام لـ Web Push (VAPID) — آمن نشره في الكود، المفتاح الخاص يبقى سري في Edge Function فقط
 const VAPID_PUBLIC_KEY = 'BHpeyTZ57ZxBaWldVJ2qNWqrwWZMUSsLFIzOGvtl0suELxgRqoiZ8oLXNQNQEoTIv_4dYzelHMGG3llLWV_FMaE'

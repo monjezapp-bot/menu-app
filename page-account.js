@@ -82,7 +82,7 @@ async function saveEditProfile() {
       const newBal = (S.customer.coins_balance || 0) + bonusCoins
       await db.from('menu_customers').update({ coins_balance: newBal }).eq('id', S.customer.id)
       S.customer.coins_balance = newBal
-      showToast(`+${bonusCoins.toLocaleString('en-US')} 🪙 كوينز على إكمال ملفك!`)
+      showToast(`+${numFmt(bonusCoins)} 🪙 كوينز على إكمال ملفك!`)
       playSuccessSound()
     }
     Object.assign(S.customer, updates)
@@ -108,7 +108,7 @@ function updateSettingsDisplay() {
   const refEl = document.getElementById('ref-code-display')
   if (refEl) refEl.textContent = c.referral_code || '------'
   const refRew = document.getElementById('ref-reward-display')
-  if (refRew) refRew.innerHTML = `عند أول شراء لصديقك تكسب <span class="ltr-num">${(S.restaurant?.referral_coins ?? 5000).toLocaleString('en-US')}</span> كوين 🪙`
+  if (refRew) refRew.innerHTML = `عند أول شراء لصديقك تكسب <span class="ltr-num">${numFmt(S.restaurant?.referral_coins ?? 5000)}</span> كوين 🪙`
 }
 
 
@@ -190,7 +190,7 @@ function renderAccountPage() {
   const emailEl = document.getElementById('acc-logged-email')
   if (emailEl) emailEl.textContent = c.email || ''
   const coinsEl = document.getElementById('acc-coins-display')
-  if (coinsEl) coinsEl.textContent = (c.coins_balance || 0).toLocaleString('en-US')
+  if (coinsEl) coinsEl.textContent = numFmt(c.coins_balance || 0)
 
   // تحديث الإعدادات
   updateSettingsDisplay()
@@ -285,7 +285,7 @@ async function submitEditField(field, value) {
         note: `إكمال بيانات: ${field}`
       })
       S.customer.coins_balance = (S.customer.coins_balance || 0) + coins
-      showToast(`+${coins.toLocaleString('en-US')} 🪙 كوينز على إكمال ملفك!`)
+      showToast(`+${numFmt(coins)} 🪙 كوينز على إكمال ملفك!`)
       playSuccessSound()
     }
     renderAccountPage()
@@ -420,9 +420,9 @@ function renderVouchersSection() {
       <p style="font-size:13px;color:#888;margin-bottom:12px">أدخل كود القسيمة أو كود الخصم</p>
       <div style="display:flex;gap:8px">
         <input id="voucher-input" type="text" placeholder="XXXX-XXXX"
-               style="flex:1;background:#f5f5f5;border:1.5px solid #eee;border-radius:12px;padding:12px 14px;font-size:14px;font-family:'Rubik',sans-serif;outline:none;text-transform:uppercase;letter-spacing:2px;font-weight:700"
+               style="flex:1;min-width:0;background:#f5f5f5;border:1.5px solid #eee;border-radius:12px;padding:12px 14px;font-size:14px;font-family:'Rubik',sans-serif;outline:none;text-transform:uppercase;letter-spacing:2px;font-weight:700"
                onfocus="this.style.borderColor='var(--brand)'" onblur="this.style.borderColor='#eee'" />
-        <button onclick="redeemVoucher()" style="background:linear-gradient(135deg,var(--brand),#ff8c38);color:#fff;border:none;border-radius:12px;padding:12px 18px;font-size:13px;font-weight:900;cursor:pointer;font-family:'Rubik',sans-serif;white-space:nowrap">استرداد</button>
+        <button onclick="redeemVoucher()" style="flex-shrink:0;background:linear-gradient(135deg,var(--brand),#ff8c38);color:#fff;border:none;border-radius:12px;padding:12px 18px;font-size:13px;font-weight:900;cursor:pointer;font-family:'Rubik',sans-serif;white-space:nowrap">استرداد</button>
       </div>
       <p id="voucher-msg" style="display:none;font-size:12px;font-weight:700;margin-top:8px;padding:8px 12px;border-radius:10px"></p>
     </div>`
@@ -467,7 +467,7 @@ async function redeemVoucher() {
     await db.from('discount_codes').update({ used_count: (dc.used_count || 0) + 1 }).eq('id', dc.id)
 
     S.customer.coins_balance = (S.customer.coins_balance || 0) + coins
-    showMsg(`✅ تم! +${coins.toLocaleString('en-US')} 🪙 أُضيفت لمحفظتك`, true)
+    showMsg(`✅ تم! +${numFmt(coins)} 🪙 أُضيفت لمحفظتك`, true)
     document.getElementById('voucher-input').value = ''
     playSuccessSound()
     updateWalletBadge()
@@ -500,7 +500,7 @@ function triggerInstall() {
 }
 
 function showCelebration(coins) {
-  document.getElementById('celeb-coins').textContent = coins.toLocaleString('en-US')
+  document.getElementById('celeb-coins').textContent = numFmt(coins)
   document.getElementById('celebration-overlay').classList.remove('hidden')
   document.documentElement.style.overflow = 'hidden'
   startConfetti()

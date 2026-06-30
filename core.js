@@ -208,6 +208,18 @@ function isDiscountActive(p) {
 }
 function fmt(v)          { return `${Number(v).toFixed(0)} ج.م` }
 
+// ── تنسيق أرقام آمن للأرقام الإنجليزية دايماً ───────────────────────────
+// بعض متصفحات الموبايل (خصوصاً Android WebView مع نظام تشغيل بلغة عربية)
+// تتجاهل المعامل 'en-US' في toLocaleString() وتعرض أرقام عربية (١٠,٠٠٠)
+// رغم تحديد اللغة الإنجليزية صراحةً في الكود — وهو سبب تضارب الأرقام في صفحة المحفظة.
+// numFmt() تبني الفاصلة العشرية يدوياً بدون الاعتماد على Intl إطلاقاً، فتضمن أرقام إنجليزية دايماً.
+function numFmt(v) {
+  const n = Math.round(Number(v) || 0)
+  // toLocaleString('en-US') بيدّينا الفواصل، وبعدين نضمن تحويل أي رقم عربي
+  // (لو الـ WebView تجاهل الـ locale) لرقم إنجليزي يدوياً
+  return numFmt(n).replace(/[٠-٩]/g, d => '٠١٢٣٤٥٦٧٨٩'.indexOf(d))
+}
+
 // المسافة بالكيلومتر بين نقطتين (صيغة Haversine)
 function distanceKm(lat1, lng1, lat2, lng2) {
   const R = 6371
@@ -287,12 +299,25 @@ async function checkAndAwardBirthdayGift() {
       amount: r.birthday_coins,
       note:   '🎂 هدية عيد ميلادك السعيد!'
     }).catch(() => {})
-    showToast(`🎂 عيد ميلاد سعيد! حصلت على ${r.birthday_coins.toLocaleString('ar-EG')} كوين هدية 🎉`)
+    showToast(`🎂 عيد ميلاد سعيد! حصلت على ${numFmt(r.birthday_coins)} كوين هدية 🎉`)
     playSuccessSound()
   } catch(e) {}
 }
 
+let _customerLoadInFlight = null // mutex: يمنع تشغيل loadCustomerProfile مرتين بالتوازي
+                                  // (initCustomerSession + onAuthStateChange ممكن يشتغلوا في نفس اللحظة عند تحميل الصفحة،
+                                  //  وده كان بيسبب الـ Flicker في الهيدر: بيانات تظهر وتختفي وترجع تظهر)
 async function loadCustomerProfile(forceCreate, extraData) {
+  if (_customerLoadInFlight) return _customerLoadInFlight
+  _customerLoadInFlight = _loadCustomerProfileInner(forceCreate, extraData)
+  try {
+    await _customerLoadInFlight
+  } finally {
+    _customerLoadInFlight = null
+  }
+}
+
+async function _loadCustomerProfileInner(forceCreate, extraData) {
   const { data: { user } } = await db.auth.getUser()
   if (!user || !S.restaurant) return
 
@@ -385,7 +410,7 @@ async function loadCustomerProfile(forceCreate, extraData) {
 // ── مراقبة تغيير الـ Auth State (Google redirect) ─────────────────────
 function initAuthListener() {
   db.auth.onAuthStateChange(async (event, session) => {
-    if (event === 'SIGNED_IN' && session) {
+    if ((event === 'SIGNED_IN' || event === 'INITIAL_SESSION') && session) {
       // انتظر لو S.restaurant لسه مش موجود
       let tries = 0
       while (!S.restaurant && tries < 20) {
@@ -498,6 +523,8 @@ function showBottomNav(show) {
   // لو في bottom nav، زوّد الـ padding السفلي للصفحة الرئيسية
   document.getElementById('state-app')?.classList.toggle('pb-36', !show)
   if (show) document.getElementById('state-app')?.style.setProperty('padding-bottom', '100px')
+  // يحرّك السلة/الأزرار العائمة السفلية لترتفع فوق شريط التنقل بدل ما تختفي تحته
+  document.body.classList.toggle('has-bottom-nav', !!show)
 }
 
 // ── SESSION PERSISTENCE ───────────────────────────────────────────────
@@ -547,10 +574,10 @@ function showConfirmSheet(title, bodyHTML, onConfirm, confirmLabel, noConfirmBtn
     sheet = document.createElement('div')
     sheet.id = 'confirm-sheet'
     sheet.style.cssText = 'position:fixed;inset:0;z-index:200;display:flex;align-items:flex-end;justify-content:center;background:rgba(0,0,0,0.5)'
-    sheet.innerHTML = `<div style="background:#fff;border-radius:24px 24px 0 0;padding:24px 20px 36px;width:100%;max-width:480px;box-sizing:border-box">
+    sheet.innerHTML = `<div style="background:#fff;border-radius:24px 24px 0 0;padding:24px 20px 36px;width:100%;max-width:480px;max-height:88vh;overflow-y:auto;box-sizing:border-box;-webkit-overflow-scrolling:touch">
       <div id="cs-title" style="font-size:16px;font-weight:900;color:#1a1a1a;margin-bottom:16px"></div>
       <div id="cs-body"></div>
-      <div id="cs-btns" style="display:flex;gap:10px;margin-top:16px">
+      <div id="cs-btns" style="display:flex;gap:10px;margin-top:16px;position:sticky;bottom:0;background:#fff;padding-top:4px">
         <button onclick="closeConfirmSheet()" style="flex:1;padding:13px;border-radius:14px;border:1.5px solid #eee;background:#f5f5f5;font-size:14px;font-weight:700;color:#888;cursor:pointer;font-family:'Rubik',sans-serif">إلغاء</button>
         <button id="cs-confirm-btn" style="flex:1;padding:13px;border-radius:14px;border:none;background:linear-gradient(135deg,var(--brand),#ff8c38);color:#fff;font-size:14px;font-weight:900;cursor:pointer;font-family:'Rubik',sans-serif"></button>
       </div>
@@ -735,7 +762,7 @@ function renderNotifList() {
       <div style="flex:1">
         <p style="font-size:13px;font-weight:${n.is_read ? '600' : '800'};color:#1a1a1a;margin-bottom:2px">${n.title || ''}</p>
         <p style="font-size:11px;color:#888">${n.body || ''}</p>
-        <p style="font-size:10px;color:#ccc;margin-top:3px">${new Date(n.created_at).toLocaleDateString('ar-EG', { day:'numeric', month:'short', hour:'2-digit', minute:'2-digit' })}</p>
+        <p style="font-size:10px;color:#ccc;margin-top:3px">${new Date(n.created_at).toLocaleDateString('ar-EG-u-nu-latn', { day:'numeric', month:'short', hour:'2-digit', minute:'2-digit' })}</p>
       </div>
       ${!n.is_read ? '<span style="width:8px;height:8px;border-radius:50%;background:var(--brand);flex-shrink:0;margin-top:4px"></span>' : ''}
     </div>`).join('')

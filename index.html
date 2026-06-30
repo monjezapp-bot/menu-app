@@ -116,6 +116,8 @@
       align-items: center;
       gap: 10px;
       z-index: 60;
+      box-sizing: border-box;
+      transition: bottom 0.2s ease;
     }
 
     /* ── كل الـ fixed modals ── */
@@ -443,6 +445,16 @@
       width: 100%; max-width: 480px;
       padding: 10px 16px;
       padding-bottom: calc(14px + env(safe-area-inset-bottom));
+      transition: bottom 0.2s ease;
+    }
+    /* لما الـ Bottom Nav ظاهر (المستخدم مسجّل دخول)، السلة والأزرار العائمة السفلية
+       ترتفع فوقه بدل ما تتغطّى وتختفي تحته تماماً (كان bottom:0 لكليهما بنفس الوقت) */
+    body.has-bottom-nav .cart-bar,
+    body.has-bottom-nav .prod-add-bar {
+      bottom: calc(var(--nav-h) + env(safe-area-inset-bottom));
+    }
+    body.has-bottom-nav .cart-bar {
+      padding-bottom: 14px;
     }
     .cart-bar-btn {
       background: var(--brand); color: #fff;

@@ -47,7 +47,7 @@ async function loadOrdersPage() {
     const statCoins = document.getElementById('orders-stat-coins')
     if(statTotal) statTotal.textContent = orders.filter(o=>o.status!=='cancelled').length
     if(statSpend) statSpend.textContent = totalSpend.toFixed(0)
-    if(statCoins) statCoins.textContent = totalCoins.toLocaleString('en-US')
+    if(statCoins) statCoins.textContent = numFmt(totalCoins)
 
     // Active order tracker
     const active = orders.find(o => !['delivered','cancelled'].includes(o.status))
@@ -62,7 +62,7 @@ async function loadOrdersPage() {
         <div style="display:flex;justify-content:space-between;align-items:flex-start;margin-bottom:10px">
           <div>
             <p style="font-size:14px;font-weight:900;color:#1a1a1a;margin-bottom:2px">${o.order_number || '#' + o.id.slice(-6)}</p>
-            <p style="font-size:11px;color:#aaa">${new Date(o.created_at).toLocaleDateString('ar-EG',{day:'numeric',month:'short',year:'numeric',hour:'2-digit',minute:'2-digit'})}</p>
+            <p style="font-size:11px;color:#aaa">${new Date(o.created_at).toLocaleDateString('ar-EG-u-nu-latn',{day:'numeric',month:'short',year:'numeric',hour:'2-digit',minute:'2-digit'})}</p>
           </div>
           <span style="font-size:11px;font-weight:800;color:${st.color};background:${st.bg};border-radius:10px;padding:4px 10px">${st.icon} ${st.label}</span>
         </div>
@@ -70,7 +70,7 @@ async function loadOrdersPage() {
         <div style="display:flex;justify-content:space-between;align-items:center;border-top:1px solid #f5f5f5;padding-top:10px">
           <span style="font-size:16px;font-weight:900;color:var(--brand)"><span class="ltr-num">${Number(o.total||0).toFixed(2)}</span> ج.م</span>
           <div style="display:flex;align-items:center;gap:10px">
-            ${o.loyalty_coins_earned ? `<span style="font-size:11px;color:#f97316;font-weight:700">+<span class="ltr-num">${Number(o.loyalty_coins_earned).toLocaleString('en-US')}</span> 🪙</span>` : ''}
+            ${o.loyalty_coins_earned ? `<span style="font-size:11px;color:#f97316;font-weight:700">+<span class="ltr-num">${numFmt(o.loyalty_coins_earned)}</span> 🪙</span>` : ''}
             <svg width="14" height="14" fill="none" stroke="#bbb" stroke-width="2.5" viewBox="0 0 24 24"><path d="M15 18l-6-6 6-6"/></svg>
           </div>
         </div>
@@ -167,7 +167,7 @@ async function openOrderDetail(orderId) {
           <span style="font-size:15px;font-weight:900;color:#1a1a1a">الإجمالي</span>
           <span style="font-size:15px;font-weight:900;color:var(--brand)"><span class="ltr-num">${Number(o.total||0).toFixed(2)}</span> ج.م</span>
         </div>
-        ${o.loyalty_coins_earned ? `<div style="margin-top:10px;background:#fff8f3;border-radius:10px;padding:8px 12px;text-align:center"><span style="font-size:12px;font-weight:800;color:var(--brand)">+<span class="ltr-num">${Number(o.loyalty_coins_earned).toLocaleString('en-US')}</span> 🪙 كوينز كسبتها من هذا الطلب</span></div>` : ''}
+        ${o.loyalty_coins_earned ? `<div style="margin-top:10px;background:#fff8f3;border-radius:10px;padding:8px 12px;text-align:center"><span style="font-size:12px;font-weight:800;color:var(--brand)">+<span class="ltr-num">${numFmt(o.loyalty_coins_earned)}</span> 🪙 كوينز كسبتها من هذا الطلب</span></div>` : ''}
       </div>
       ${o.notes ? `<div style="margin-top:12px;background:#f9f9f9;border-radius:12px;padding:12px 14px"><p style="font-size:12px;color:#888;font-weight:600">ملاحظات: ${o.notes}</p></div>` : ''}
       <button onclick="closeOrderDetail();switchPage('home')" style="width:100%;margin-top:16px;background:linear-gradient(135deg,var(--brand),#ff8c38);color:#fff;font-size:14px;font-weight:900;border-radius:14px;padding:14px;border:none;cursor:pointer;font-family:'Rubik',sans-serif">
