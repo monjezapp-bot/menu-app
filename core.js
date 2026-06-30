@@ -124,7 +124,9 @@ async function boot() {
     initScrollBehavior()
     initScrollSpy()
     initAuthListener()   // ← لازم تتسجل قبل أي قراءة session، عشان ما نفوّتش SIGNED_IN لو جايين من Google redirect
-    await initCustomerSession().catch(() => {})
+    // تحقق هل جوجل رجّع خطأ صريح في الـ URL (مثلاً error=server_error&error_description=...)
+    checkOAuthErrorInUrl()
+    await initCustomerSession().catch(e => showAuthDebug('initCustomerSession فشل: ' + (e?.message || e)))
     handleReferralParam()
     renderInfoStrip()
     renderAccountPage()
@@ -146,6 +148,27 @@ async function boot() {
     showError(isNotFound ? e.message : ('خطأ: ' + (e.message || e)), !isNotFound)
   }
 }
+// ── DEBUG: إظهار أخطاء الأوث الحقيقية بدل إخفائها ──────────────────────
+function showAuthDebug(msg) {
+  console.error('[AUTH DEBUG]', msg)
+  let el = document.getElementById('auth-debug-banner')
+  if (!el) {
+    el = document.createElement('div')
+    el.id = 'auth-debug-banner'
+    el.style.cssText = 'position:fixed;bottom:0;left:0;right:0;background:#c00;color:#fff;font-size:12px;padding:10px;z-index:99999;direction:rtl;text-align:right;font-family:monospace'
+    document.body.appendChild(el)
+  }
+  el.textContent = '⚠️ ' + msg
+}
+
+function checkOAuthErrorInUrl() {
+  const hash = new URLSearchParams(window.location.hash.replace('#', ''))
+  const search = new URLSearchParams(window.location.search)
+  const err = hash.get('error') || search.get('error')
+  const errDesc = hash.get('error_description') || search.get('error_description')
+  if (err) showAuthDebug(`Google/Supabase رجّع خطأ: ${err} — ${errDesc || ''}`)
+}
+
 function retryLoad() {
   showState('loading')
   boot()
@@ -270,7 +293,12 @@ let _coinsToRedeem   = 0      // كوينز سيتم استخدامها في ا�
 
 async function initCustomerSession(forceCreate, extraData) {
   const { data: { session } } = await db.auth.getSession()
-  if (!session) return
+  if (!session) {
+    const wasOAuthCallback = window.location.hash.includes('access_token') ||
+                              window.location.search.includes('code=')
+    if (wasOAuthCallback) showAuthDebug('كان فيه code في الـ URL لكن getSession() رجع بدون session — فشل تبادل الكود (PKCE exchange) بصمت')
+    return
+  }
   await loadCustomerProfile(forceCreate, extraData)
   if (S.customer) await checkAndAwardBirthdayGift()
 }
@@ -397,6 +425,7 @@ async function _loadCustomerProfileInner(forceCreate, extraData) {
         }
       }
     } catch(e) {
+      showAuthDebug('فشل إنشاء menu_customers: ' + (e?.message || e))
       // لو فشل الـ insert (race condition)، جرب تجيب الـ profile تاني
       const { data: retry } = await db.from('menu_customers')
         .select('*').eq('user_id', user.id).eq('restaurant_id', S.restaurant.id).maybeSingle()
@@ -418,10 +447,11 @@ function initAuthListener() {
         await new Promise(r => setTimeout(r, 200))
         tries++
       }
-      if (!S.restaurant) return
+      if (!S.restaurant) { showAuthDebug('S.restaurant لسه null بعد 4 ثواني انتظار — العميل اتعرّف لكن المطعم متأخر/فشل في التحميل'); return }
 
       if (!S.customer) {
         await loadCustomerProfile(true)
+        if (!S.customer) showAuthDebug('loadCustomerProfile انتهى بدون S.customer — السيشن موجودة بس البروفايل ما اتعملش')
         renderAccountPage()
         showBottomNav(true)
         updateWalletBadge()
