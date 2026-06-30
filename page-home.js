@@ -211,15 +211,6 @@ function renderCatGrid() {
   el.innerHTML = catsHTML + bundleTab
 }
 
-// تحديث خفيف لا يعيد بناء العناصر — فقط ينقل كلاس "active" بين الأزرار الموجودة بالفعل
-// يُستخدم في scroll spy لتجنب innerHTML المتكرر أثناء التمرير (كان يسبب اهتزاز/تجمد الـ scroll)
-function updateActiveCatTab() {
-  document.querySelectorAll('#cat-grid .cat-tab').forEach(btn => {
-    const isActive = btn.getAttribute('onclick') === `selectCat('${S.activeCat}')`
-    btn.classList.toggle('active', isActive)
-  })
-}
-
 function selectCat(id) {
   S.activeCat = id
   S.search = ''
@@ -249,7 +240,7 @@ function initScrollSpy() {
       const id = entry.target.id.replace('sec-', '')
       if (id === S.activeCat) return
       S.activeCat = id
-      updateActiveCatTab()
+      renderCatGrid()
       const tabEl = document.querySelector(`.cat-tab[onclick="selectCat('${id}')"]`)
       if (tabEl) tabEl.scrollIntoView({ behavior: 'smooth', block: 'nearest', inline: 'center' })
     })
@@ -323,8 +314,8 @@ function prodCardHTML(p) {
   return `<div class="prod-card${unavailable ? ' opacity-60' : ''}"
        onclick="${unavailable ? '' : `openModal('${p.id}')`}"
        style="${unavailable ? 'cursor:default' : ''}">
-    <div class="thumb${p.image_url ? '' : ' img-ready'}">
-      ${p.image_url ? `<img src="${p.image_url}" alt="${p.name}" loading="lazy" onload="this.classList.add('loaded'); this.parentElement.classList.add('img-ready')" onerror="this.parentElement.classList.add('img-ready'); this.replaceWith(Object.assign(document.createElement('div'),{className:'no-img',textContent:'🍽️'}))" />` : `<div class="no-img">🍽️</div>`}
+    <div class="thumb">
+      ${p.image_url ? `<img src="${p.image_url}" alt="${p.name}" loading="lazy" />` : `<div class="no-img">🍽️</div>`}
       ${p.offer_badge ? `<div class="offer-badge">${p.offer_badge}</div>` : ''}
       ${discPct >= 5 && !p.offer_badge ? `<div class="disc-pct">-${discPct}%</div>` : ''}
       ${unavailable ? `<div class="unavail-overlay"></div>` : ''}

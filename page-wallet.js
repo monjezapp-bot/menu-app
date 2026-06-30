@@ -8,13 +8,13 @@ async function openWalletModal() {
   const c = S.customer
   const coinsPerEgp = S.restaurant.coins_per_egp ?? 1000
   const minRedeem   = S.restaurant.min_redeem_coins ?? 100000
-  document.getElementById('wallet-balance').textContent     = c.coins_balance.toLocaleString('en-US')
+  document.getElementById('wallet-balance').textContent     = c.coins_balance.toLocaleString('ar-EG')
   document.getElementById('wallet-balance-egp').textContent = `= ${(c.coins_balance / coinsPerEgp).toFixed(2)} ج.م`
   document.getElementById('wallet-min-redeem-note').textContent = c.coins_balance >= minRedeem
     ? `✅ يمكنك استخدام كوينزك الآن!`
-    : `تحتاج ${(minRedeem - c.coins_balance).toLocaleString('en-US')} كوين للوصول للحد الأدنى`
+    : `تحتاج ${(minRedeem - c.coins_balance).toLocaleString('ar-EG')} كوين للوصول للحد الأدنى`
   document.getElementById('wallet-ref-code').textContent    = c.referral_code || '---'
-  document.getElementById('wallet-ref-reward').textContent  = (S.restaurant.referral_coins ?? 5000).toLocaleString('en-US')
+  document.getElementById('wallet-ref-reward').textContent  = (S.restaurant.referral_coins ?? 5000).toLocaleString('ar-EG')
 
   // طلبات العميل
   const { data: orders } = await db.from('orders')
@@ -29,7 +29,7 @@ async function openWalletModal() {
       <div>
         <p style="font-size:13px;font-weight:800;color:#1a1a1a">${o.order_number}</p>
         <p style="font-size:11px;color:#aaa">${new Date(o.created_at).toLocaleDateString('ar-EG')}</p>
-        ${o.loyalty_coins_earned ? `<p style="font-size:11px;color:#f97316">+${o.loyalty_coins_earned.toLocaleString('en-US')} 🪙</p>` : ''}
+        ${o.loyalty_coins_earned ? `<p style="font-size:11px;color:#f97316">+${o.loyalty_coins_earned.toLocaleString('ar-EG')} 🪙</p>` : ''}
       </div>
       <div style="text-align:left">
         <p style="font-size:14px;font-weight:900;color:var(--brand)">${Number(o.total).toFixed(2)} ج.م</p>
@@ -48,7 +48,7 @@ async function openWalletModal() {
         <p style="font-size:13px;font-weight:700;color:#333">${txLabel[t.type] || t.type}</p>
         <p style="font-size:11px;color:#bbb">${new Date(t.created_at).toLocaleDateString('ar-EG')} ${t.note ? '· ' + t.note : ''}</p>
       </div>
-      <p style="font-size:15px;font-weight:900;color:${t.amount > 0 ? '#22c55e' : '#ef4444'}">${t.amount > 0 ? '+' : ''}${t.amount.toLocaleString('en-US')}</p>
+      <p style="font-size:15px;font-weight:900;color:${t.amount > 0 ? '#22c55e' : '#ef4444'}">${t.amount > 0 ? '+' : ''}${t.amount.toLocaleString('ar-EG')}</p>
     </div>`).join('') : `<p style="font-size:13px;color:#aaa;text-align:center;padding:12px 0">لا توجد حركات بعد</p>`
 
   document.getElementById('wallet-modal').classList.remove('hidden')
@@ -80,11 +80,11 @@ function renderWalletBalances(c) {
   const balEl  = document.getElementById('wpage-balance')
   const egpEl  = document.getElementById('wpage-balance-egp')
   const noteEl = document.getElementById('wpage-min-note')
-  if (balEl)  { balEl.textContent  = (c.coins_balance || 0).toLocaleString('en-US'); balEl.style.opacity = '1' }
+  if (balEl)  { balEl.textContent  = (c.coins_balance || 0).toLocaleString('ar-EG'); balEl.style.opacity = '1' }
   if (egpEl)  { egpEl.textContent  = `= ${((c.coins_balance||0) / cpE).toFixed(2)} ج.م متاح للشراء`; egpEl.style.opacity = '1' }
   if (noteEl) noteEl.textContent = (c.coins_balance || 0) >= minRed
     ? '✅ يمكنك تحويل كوينزك الآن!'
-    : `تحتاج ${(minRed - (c.coins_balance||0)).toLocaleString('en-US')} كوين للحد الأدنى`
+    : `تحتاج ${(minRed - (c.coins_balance||0)).toLocaleString('ar-EG')} كوين للحد الأدنى`
 }
 
 async function loadWalletPage() {
@@ -111,7 +111,7 @@ async function loadWalletPage() {
     if (canConvert) {
       const convEl  = document.getElementById('wpage-convertable')
       const egpConv = document.getElementById('wpage-convert-egp')
-      if (convEl)  convEl.textContent  = (c.coins_balance || 0).toLocaleString('en-US') + ' 🪙'
+      if (convEl)  convEl.textContent  = (c.coins_balance || 0).toLocaleString('ar-EG') + ' 🪙'
       if (egpConv) egpConv.textContent = `= ${((c.coins_balance||0) / cpE).toFixed(2)} ج.م`
     }
   }
@@ -157,7 +157,7 @@ async function loadWalletPage() {
           <p style="font-size:13px;font-weight:800;color:#1a1a1a;margin-bottom:2px">${type.label}</p>
           <p style="font-size:11px;color:#bbb">${new Date(t.created_at).toLocaleDateString('ar-EG',{day:'numeric',month:'short',hour:'2-digit',minute:'2-digit'})}${t.note?' · '+t.note:''}</p>
         </div>
-        <p style="font-size:16px;font-weight:900;color:${plus?'#22c55e':'#ef4444'}">${plus?'+':''}${Number(t.amount).toLocaleString('en-US')} 🪙</p>
+        <p style="font-size:16px;font-weight:900;color:${plus?'#22c55e':'#ef4444'}">${plus?'+':''}${Number(t.amount).toLocaleString('ar-EG')} 🪙</p>
       </div>`
     }).join('')
   } catch(e) {
@@ -175,7 +175,7 @@ async function convertCoinsToBalance() {
   showConfirmSheet(
     'تحويل الكوينز لرصيد 💳',
     `<div style="text-align:center;padding:10px 0">
-      <p style="font-size:36px;font-weight:900;color:var(--brand);margin-bottom:4px">${coins.toLocaleString('en-US')} 🪙</p>
+      <p style="font-size:36px;font-weight:900;color:var(--brand);margin-bottom:4px">${coins.toLocaleString('ar-EG')} 🪙</p>
       <p style="font-size:16px;color:#888;margin-bottom:16px">= ${amount.toFixed(2)} ج.م</p>
       <div style="background:#f0fdf4;border-radius:14px;padding:14px;border:1.5px solid #bbf7d0">
         <p style="font-size:13px;color:#16a34a;font-weight:700;line-height:1.6">سيتم تحويل الكوينز لرصيد نقدي في محفظتك ويُستخدم للشراء من المتجر فقط 🛒</p>
@@ -187,7 +187,7 @@ async function convertCoinsToBalance() {
         await db.from('menu_customers').update({ coins_balance: 0, wallet_balance: newBalance }).eq('id', S.customer.id)
         await db.from('coin_transactions').insert({
           customer_id: S.customer.id, restaurant_id: S.restaurant.id,
-          type: 'convert', amount: -coins, note: `تحويل ${coins.toLocaleString('en-US')} كوين = ${amount.toFixed(2)} ج.م`
+          type: 'convert', amount: -coins, note: `تحويل ${coins.toLocaleString('ar-EG')} كوين = ${amount.toFixed(2)} ج.م`
         })
         S.customer.coins_balance = 0
         S.customer.wallet_balance = newBalance

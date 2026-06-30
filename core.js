@@ -287,7 +287,7 @@ async function checkAndAwardBirthdayGift() {
       amount: r.birthday_coins,
       note:   '🎂 هدية عيد ميلادك السعيد!'
     }).catch(() => {})
-    showToast(`🎂 عيد ميلاد سعيد! حصلت على ${r.birthday_coins.toLocaleString('en-US')} كوين هدية 🎉`)
+    showToast(`🎂 عيد ميلاد سعيد! حصلت على ${r.birthday_coins.toLocaleString('ar-EG')} كوين هدية 🎉`)
     playSuccessSound()
   } catch(e) {}
 }
@@ -547,7 +547,7 @@ function showConfirmSheet(title, bodyHTML, onConfirm, confirmLabel, noConfirmBtn
     sheet = document.createElement('div')
     sheet.id = 'confirm-sheet'
     sheet.style.cssText = 'position:fixed;inset:0;z-index:200;display:flex;align-items:flex-end;justify-content:center;background:rgba(0,0,0,0.5)'
-    sheet.innerHTML = `<div style="background:#fff;border-radius:24px 24px 0 0;padding:24px 20px 36px;width:100%;max-width:480px;max-height:85vh;overflow-y:auto;box-sizing:border-box">
+    sheet.innerHTML = `<div style="background:#fff;border-radius:24px 24px 0 0;padding:24px 20px 36px;width:100%;max-width:480px;box-sizing:border-box">
       <div id="cs-title" style="font-size:16px;font-weight:900;color:#1a1a1a;margin-bottom:16px"></div>
       <div id="cs-body"></div>
       <div id="cs-btns" style="display:flex;gap:10px;margin-top:16px">
