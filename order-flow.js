@@ -112,7 +112,7 @@ async function sendOrder() {
     const { data: rpc, error: re } = await db.rpc('generate_order_number')
     if (re || !rpc) throw new Error(re?.message || 'generate_order_number failed')
 
-    const { data: od, error: ie } = await db.from('orders')
+    let { data: od, error: ie } = await db.from('orders')
       .insert({
         restaurant_id:    S.restaurant.id,
         order_number:     rpc,
@@ -135,6 +135,35 @@ async function sendOrder() {
         discount_code_amount: _appliedDiscount > 0 ? _appliedDiscount : null
       })
       .select('id,order_number').single()
+
+    // customer_id بقى يشاور على صف ملوش وجود (اتمسح، أو السيشن مش متوافقة) — صفّر S.customer وأعد المحاولة بدون ربط
+    if (ie?.message?.includes('orders_customer_id_fkey')) {
+      console.warn('customer_id غير صالح، إعادة المحاولة كـ زائر:', S.customer?.id)
+      S.customer = null
+      const retry = await db.from('orders')
+        .insert({
+          restaurant_id:    S.restaurant.id,
+          order_number:     rpc,
+          items, total:     finalTotal,
+          table_number:     table     || null,
+          customer_name:    custName  || null,
+          customer_phone:   custPhone || null,
+          customer_address: custAddr  || null,
+          customer_location:custLoc   || null,
+          customer_lat:     custLat   ? parseFloat(custLat) : null,
+          customer_lng:     custLng   ? parseFloat(custLng) : null,
+          note:             note      || null,
+          estimated_prep_minutes: estimatedPrepMinutes,
+          branch_id:        nearestBranchId,
+          delivery_fee:     deliveryFee > 0 ? deliveryFee : null,
+          customer_id:      null,
+          discount_code:    _appliedCode ? document.getElementById('cart-discount-code').value.trim().toUpperCase() : null,
+          discount_code_amount: _appliedDiscount > 0 ? _appliedDiscount : null
+        })
+        .select('id,order_number').single()
+      od = retry.data
+      ie = retry.error
+    }
 
     if (ie || !od?.order_number) throw new Error(ie?.message || 'insert failed')
     orderId     = od.id
