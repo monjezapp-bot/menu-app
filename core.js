@@ -155,10 +155,13 @@ function showAuthDebug(msg) {
   if (!el) {
     el = document.createElement('div')
     el.id = 'auth-debug-banner'
-    el.style.cssText = 'position:fixed;bottom:0;left:0;right:0;background:#c00;color:#fff;font-size:12px;padding:10px;z-index:99999;direction:rtl;text-align:right;font-family:monospace'
+    el.style.cssText = 'position:fixed;bottom:0;left:0;right:0;max-height:50vh;overflow:auto;background:#c00;color:#fff;font-size:11px;padding:10px;z-index:99999;direction:rtl;text-align:right;font-family:monospace'
     document.body.appendChild(el)
   }
-  el.textContent = '⚠️ ' + msg
+  const line = document.createElement('div')
+  line.style.cssText = 'border-bottom:1px solid rgba(255,255,255,0.3);padding:4px 0'
+  line.textContent = '⚠️ [' + new Date().toLocaleTimeString('en-GB') + '] ' + msg
+  el.appendChild(line)
 }
 
 function checkOAuthErrorInUrl() {
