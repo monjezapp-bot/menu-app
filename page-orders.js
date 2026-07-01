@@ -150,12 +150,12 @@ async function openOrderDetail(orderId) {
       </div>
       <div style="background:#f9f9f9;border-radius:16px;padding:14px;margin-bottom:14px">
         ${items.map(item => `
-          <div style="display:flex;justify-content:space-between;align-items:center;padding:8px 0;border-bottom:1px solid #f0f0f0">
-            <div>
-              <p style="font-size:13px;font-weight:700;color:#1a1a1a">${item.name || ''}</p>
-              ${item.options?.length ? `<p style="font-size:11px;color:#aaa">${item.options.map(op=>op.label||op).join('، ')}</p>` : ''}
+          <div style="display:flex;justify-content:space-between;align-items:center;gap:10px;padding:8px 0;border-bottom:1px solid #f0f0f0">
+            <div style="flex:1;min-width:0">
+              <p style="font-size:13px;font-weight:700;color:#1a1a1a;overflow-wrap:anywhere">${item.name || ''}</p>
+              ${item.options?.length ? `<p style="font-size:11px;color:#aaa;overflow-wrap:anywhere">${item.options.map(op=>op.label||op).join('، ')}</p>` : ''}
             </div>
-            <div style="text-align:left">
+            <div style="text-align:left;flex-shrink:0">
               <p style="font-size:12px;color:#888">×${item.qty||1}</p>
               <p style="font-size:13px;font-weight:800;color:var(--brand)">${Number((item.price||0)*(item.qty||1)).toFixed(2)} ج.م</p>
             </div>
@@ -181,18 +181,35 @@ async function openOrderDetail(orderId) {
         if (o.customer_location) rows.push(`📍 ${o.customer_location}`)
         if (o.customer_phone)    rows.push(`📞 ${o.customer_phone}`)
         if (o.note)              rows.push(`📝 ${o.note}`)
-        return rows.length ? `<div style="margin-top:12px;background:#f9f9f9;border-radius:12px;padding:12px 14px">${rows.map(r => `<p style="font-size:12px;color:#888;font-weight:600;margin-bottom:4px">${r}</p>`).join('')}</div>` : ''
+        return rows.length ? `<div style="margin-top:12px;background:#f9f9f9;border-radius:12px;padding:12px 14px">${rows.map(r => `<p style="font-size:12px;color:#888;font-weight:600;margin-bottom:4px;overflow-wrap:anywhere">${r}</p>`).join('')}</div>` : ''
       })()}
-      ${o.status === 'cancelled' && o.cancel_reason ? `<div style="margin-top:12px;background:#fef2f2;border-radius:12px;padding:12px 14px"><p style="font-size:12px;color:#ef4444;font-weight:700">سبب الرفض: ${o.cancel_reason}</p></div>` : ''}
+      ${o.status === 'cancelled' && o.cancel_reason ? `<div style="margin-top:12px;background:#fef2f2;border-radius:12px;padding:12px 14px"><p style="font-size:12px;color:#ef4444;font-weight:700;overflow-wrap:anywhere">سبب الرفض: ${o.cancel_reason}</p></div>` : ''}
+      ${isOrderLateEnoughToCancel(o) ? `
+      <button onclick="confirmLateCancelFromDetail('${o.id}')" style="width:100%;margin-top:12px;background:#fef2f2;color:#ef4444;font-size:13px;font-weight:800;border-radius:14px;padding:13px;border:1.5px solid #fecaca;cursor:pointer;font-family:'Rubik',sans-serif">
+        ❌ الطلب تأخر عن الوقت المتوقع — إلغاء الطلب
+      </button>` : ''}
       <div style="display:flex;gap:8px;margin-top:16px">
         ${!['delivered','cancelled'].includes(o.status)
-          ? `<button onclick="closeOrderDetail();reopenOrderTracking('${o.id}')" style="flex:1;background:linear-gradient(135deg,var(--brand),#ff8c38);color:#fff;font-size:13.5px;font-weight:900;border-radius:14px;padding:14px;border:none;cursor:pointer;font-family:'Rubik',sans-serif">🔎 تابع الطلب</button>`
-          : `<button onclick="closeOrderDetail();switchPage('home')" style="flex:1;background:linear-gradient(135deg,var(--brand),#ff8c38);color:#fff;font-size:13.5px;font-weight:900;border-radius:14px;padding:14px;border:none;cursor:pointer;font-family:'Rubik',sans-serif">🔄 اطلب مرة تانية</button>`}
-        <button onclick="contactRestaurantAboutOrder('${(o.order_number || '').replace(/'/g, "\\'")}')" style="flex:1;background:#e8f8ee;color:#16a34a;font-size:13.5px;font-weight:800;border-radius:14px;padding:14px;border:none;cursor:pointer;font-family:'Rubik',sans-serif">💬 تواصل مع المطعم</button>
+          ? `<button onclick="closeOrderDetail();reopenOrderTracking('${o.id}')" style="flex:1;min-width:0;background:linear-gradient(135deg,var(--brand),#ff8c38);color:#fff;font-size:13.5px;font-weight:900;border-radius:14px;padding:14px 8px;border:none;cursor:pointer;font-family:'Rubik',sans-serif">🔎 تابع الطلب</button>`
+          : `<button onclick="closeOrderDetail();switchPage('home')" style="flex:1;min-width:0;background:linear-gradient(135deg,var(--brand),#ff8c38);color:#fff;font-size:13.5px;font-weight:900;border-radius:14px;padding:14px 8px;border:none;cursor:pointer;font-family:'Rubik',sans-serif">🔄 اطلب مرة تانية</button>`}
+        <button onclick="contactRestaurantAboutOrder('${(o.order_number || '').replace(/'/g, "\\'")}')" style="flex:1;min-width:0;background:#e8f8ee;color:#16a34a;font-size:13.5px;font-weight:800;border-radius:14px;padding:14px 8px;border:none;cursor:pointer;font-family:'Rubik',sans-serif">💬 تواصل مع المطعم</button>
       </div>`
   } catch(e) {
     body.innerHTML = `<p style="text-align:center;color:#ef4444;padding:20px">خطأ: ${e.message}</p>`
   }
+}
+
+// إلغاء الطلب من داخل شيت التفاصيل بسبب تأخره عن الوقت المتوقع للتحضير + ساعة
+function confirmLateCancelFromDetail(orderId) {
+  showConfirmSheet(
+    'إلغاء الطلب',
+    '<p style="font-size:13px;color:#888;line-height:1.6">الطلب تأخر عن الوقت المتوقع لتحضيره. هل تريد إلغاءه؟ لا يمكن التراجع عن هذا القرار.</p>',
+    async () => {
+      const ok = await performLateCancel(orderId)
+      if (ok) { closeOrderDetail(); loadOrdersPage() }
+    },
+    'نعم، إلغاء الطلب'
+  )
 }
 
 function closeOrderDetail() {

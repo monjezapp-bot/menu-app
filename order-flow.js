@@ -319,13 +319,18 @@ function contactRestaurantAboutOrder(orderNumber) {
 // بعد القبول (confirmed) فيه مهلة دقيقتين بالظبط من وقت القبول، وبعدها يُمنع الإلغاء نهائيًا.
 const CANCEL_GRACE_SECONDS = 120
 let _cancelGraceInterval = null
+let _lateCancelInterval  = null
 
-function showCancelButton(visible) {
+function showCancelButton(visible, lateMode) {
   const btn = document.getElementById('cancel-order-btn')
   const countdownEl = document.getElementById('cancel-order-countdown')
   if (!btn) return
   btn.classList.toggle('hidden', !visible)
-  if (!visible && countdownEl) countdownEl.classList.add('hidden')
+  if (visible) {
+    btn.dataset.late = lateMode ? '1' : ''
+    btn.textContent = lateMode ? '❌ إلغاء الطلب — تأخر عن الوقت المتوقع' : '❌ إلغاء الطلب'
+  }
+  if ((!visible || lateMode) && countdownEl) countdownEl.classList.add('hidden')
 }
 
 function startCancelGracePeriod(confirmedAt) {
@@ -364,7 +369,17 @@ async function cancelOrderByCustomer() {
 }
 async function doCancelOrder(orderId) {
   const btn = document.getElementById('cancel-order-btn')
+  const isLate = btn?.dataset.late === '1'
   if (btn) { btn.disabled = true; btn.textContent = 'جاري الإلغاء...' }
+  if (isLate) {
+    const ok = await performLateCancel(orderId)
+    if (btn) { btn.disabled = false }
+    if (!ok) { showCancelButton(true, true); return }
+    clearInterval(_cancelGraceInterval); clearInterval(_lateCancelInterval)
+    setSuccessModalVisual('cancelled', 'تم الإلغاء بواسطة العميل بسبب تأخر الطلب عن الوقت المتوقع')
+    if (_orderTrackChannel) { db.removeChannel(_orderTrackChannel); _orderTrackChannel = null }
+    return
+  }
   const { error } = await db.from('orders')
     .update({ status: 'cancelled', cancel_reason: 'تم الإلغاء بواسطة العميل' })
     .eq('id', orderId)
@@ -374,6 +389,55 @@ async function doCancelOrder(orderId) {
   clearInterval(_cancelGraceInterval)
   setSuccessModalVisual('cancelled', 'تم الإلغاء بواسطة العميل')
   if (_orderTrackChannel) { db.removeChannel(_orderTrackChannel); _orderTrackChannel = null }
+}
+
+// ── LATE CANCELLATION (تأخر الطلب عن وقت التحضير المقدر + ساعة) ─────────
+// حتى لو انتهت مهلة الإلغاء العادية (دقيقتين بعد القبول)، لو الطلب فضل عالق
+// (وقت التحضير المقدر + ساعة كاملة من وقت قبول التاجر) العميل يرجع له حق الإلغاء تاني —
+// حماية له من انتظار بلا نهاية لو المطعم اتأخر جداً أو نسي الطلب.
+const LATE_CANCEL_EXTRA_MINUTES = 60
+
+function lateCancelDeadline(order) {
+  if (!order?.confirmed_at) return null
+  const prepMin = order.estimated_prep_minutes || 30
+  return new Date(order.confirmed_at).getTime() + (prepMin + LATE_CANCEL_EXTRA_MINUTES) * 60000
+}
+function isOrderLateEnoughToCancel(order) {
+  if (!order || !['confirmed', 'ready', 'delivering'].includes(order.status)) return false
+  const deadline = lateCancelDeadline(order)
+  return deadline !== null && Date.now() >= deadline
+}
+// يُستدعى مع كل تحديث لحالة مودال التتبع؛ بيراقب لحد ما ميعاد "التأخر" يحين ويظهر زر الإلغاء تلقائياً
+function startLateCancelWatch(order) {
+  clearInterval(_lateCancelInterval)
+  if (!order || !['confirmed', 'ready', 'delivering'].includes(order.status)) return
+  const deadline = lateCancelDeadline(order)
+  if (deadline === null) return
+  const check = () => {
+    if (Date.now() >= deadline) {
+      clearInterval(_lateCancelInterval)
+      showCancelButton(true, true)
+    }
+  }
+  check()
+  _lateCancelInterval = setInterval(check, 30000)
+}
+// إلغاء فعلي بعد تأخر الطلب — بيتأكد من confirmed_at الحقيقي على السيرفر قبل التنفيذ
+// (مش بس ساعة جهاز العميل) عشان محدش يلغي طلب لسه في وقته المسموح بمجرد تغيير ساعة موبايله
+async function performLateCancel(orderId) {
+  const { data: ord } = await db.from('orders').select('status, confirmed_at, estimated_prep_minutes').eq('id', orderId).single()
+  const deadline = lateCancelDeadline(ord)
+  if (!ord || !['confirmed', 'ready', 'delivering'].includes(ord.status) || deadline === null || Date.now() < deadline) {
+    showToast('لسه الوقت المسموح بإلغاء الطلب لم يحن')
+    return false
+  }
+  const { error } = await db.from('orders')
+    .update({ status: 'cancelled', cancel_reason: 'تم الإلغاء بواسطة العميل بسبب تأخر الطلب عن الوقت المتوقع' })
+    .eq('id', orderId)
+    .in('status', ['confirmed', 'ready', 'delivering'])
+  if (error) { showToast('تعذّر إلغاء الطلب، حاول تاني'); return false }
+  showToast('❌ تم إلغاء الطلب')
+  return true
 }
 
 function showOrderSuccess(orderNumber, orderId, total, deliveryFee) {
@@ -466,6 +530,11 @@ function setSuccessModalVisual(state, cancelReason, order) {
   } else {
     document.getElementById('confirm-receipt-btn').classList.add('hidden')
   }
+
+  // يُشغَّل آخر حاجة عشان لو الطلب متأخر فعلاً، زر الإلغاء يفضل ظاهر
+  // حتى لو مهلة الدقيقتين العادية خلصت أو مبتنفّعش أصلاً في حالة ready/delivering
+  if (['confirmed', 'ready', 'delivering'].includes(state)) startLateCancelWatch(order)
+  else clearInterval(_lateCancelInterval)
 }
 // تأكيد استلام يدوي من العميل (زر "تم استلام طلبي")
 async function confirmOrderReceipt() {
@@ -534,6 +603,11 @@ async function applyDiscountCode() {
   if (data.valid_from && now < data.valid_from) { msgEl.style.color = '#ef4444'; msgEl.textContent = '❌ الكود لم يبدأ بعد'; return }
   if (data.valid_until && now > data.valid_until) { msgEl.style.color = '#ef4444'; msgEl.textContent = '❌ الكود انتهت صلاحيته'; return }
   if (data.max_uses !== null && data.used_count >= data.max_uses) { msgEl.style.color = '#ef4444'; msgEl.textContent = '❌ الكود استُنفد'; return }
+  // كود موجّه لعملاء محددين أو لأعلى/أدنى نسبة شراء — غير عام، لازم العميل يكون داخل القائمة المحفوظة وقت إنشاء الكود
+  if (data.target_type && data.target_type !== 'public') {
+    const eligible = S.customer && Array.isArray(data.target_customer_ids) && data.target_customer_ids.includes(S.customer.id)
+    if (!eligible) { msgEl.style.color = '#ef4444'; msgEl.textContent = '❌ هذا الكود غير متاح لحسابك'; return }
+  }
 
   _appliedDiscount = Number(data.discount_egp)
   _appliedCode     = data.id

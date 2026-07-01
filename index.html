@@ -266,7 +266,7 @@
 
   <!-- Order Detail Sheet -->
   <div id="order-detail-sheet" style="display:none;position:fixed;inset:0;z-index:100;background:rgba(0,0,0,0.5);align-items:flex-end;justify-content:center">
-    <div style="background:#fff;border-radius:24px 24px 0 0;padding:24px 20px 40px;width:100%;max-width:480px;max-height:85vh;overflow-y:auto;box-sizing:border-box">
+    <div style="background:#fff;border-radius:24px 24px 0 0;padding:24px 20px 40px;width:100%;max-width:480px;max-height:85vh;overflow-y:auto;overflow-x:hidden;box-sizing:border-box">
       <div style="display:flex;justify-content:space-between;align-items:center;margin-bottom:20px">
         <p style="font-size:16px;font-weight:900;color:#1a1a1a" id="ods-num"></p>
         <button onclick="closeOrderDetail()" style="width:32px;height:32px;border-radius:50%;background:#f5f5f5;border:none;cursor:pointer;font-size:16px">✕</button>
@@ -792,6 +792,11 @@
             style="width:100%;background:#22c55e;color:#fff;font-size:14px;font-weight:900;border-radius:16px;padding:13px;margin-bottom:8px">
       ✅ تم استلام طلبي
     </button>
+    <button id="cancel-order-btn" onclick="cancelOrderByCustomer()" class="hidden"
+            style="width:100%;background:#fef2f2;color:#ef4444;font-size:13.5px;font-weight:800;border-radius:16px;padding:13px;margin-bottom:8px;border:1.5px solid #fecaca">
+      ❌ إلغاء الطلب
+    </button>
+    <p id="cancel-order-countdown" class="hidden" style="font-size:11px;color:#bbb;margin-bottom:8px"></p>
     <button onclick="closeSuccessModal()"
             style="width:100%;background:var(--brand);color:#fff;font-size:15px;font-weight:900;border-radius:16px;padding:14px;margin-top:8px">
       تمام 👍

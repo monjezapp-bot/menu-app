@@ -624,6 +624,29 @@
     <div><label class="text-xs font-bold text-gray-500 mb-1 block">قيمة الخصم (ج.م) *</label>
       <input id="dcm-discount" type="number" step="0.5" min="0" placeholder="مثال: 50"
              class="w-full border border-gray-200 rounded-xl px-4 py-3 text-sm focus:outline-none focus:ring-2 focus:ring-orange-400" /></div>
+    <div>
+      <label class="text-xs font-bold text-gray-500 mb-1 block">نوع الاستهداف *</label>
+      <select id="dcm-target-type" onchange="onDcmTargetTypeChange()" class="w-full border border-gray-200 rounded-xl px-4 py-3 text-sm focus:outline-none focus:ring-2 focus:ring-orange-400">
+        <option value="public">🌍 عام لكل العملاء — كود عادي، ينزل كبنر/إشعار عام</option>
+        <option value="customers">👤 عملاء محددين تختارهم بنفسك</option>
+        <option value="top_spenders">🏆 أعلى نسبة % من العملاء (الأكثر شراءً)</option>
+        <option value="bottom_spenders">📉 أدنى نسبة % من العملاء (الأقل شراءً — تحفيزي)</option>
+      </select>
+      <p class="text-[11px] text-gray-400 mt-1">تنويه: كل الأنواع دي خصم بالجنيه — مختلف عن نظام كوينز الولاء الأوتوماتيكي في قسم "الكوينز" فوق.</p>
+    </div>
+    <div id="dcm-percent-wrap" class="hidden">
+      <label class="text-xs font-bold text-gray-500 mb-1 block">النسبة %</label>
+      <input id="dcm-target-percent" type="number" min="1" max="100" placeholder="مثال: 10"
+             class="w-full border border-gray-200 rounded-xl px-4 py-3 text-sm focus:outline-none focus:ring-2 focus:ring-orange-400" />
+      <p class="text-[11px] text-gray-400 mt-1">بيتم تحديد العملاء تلقائياً وقت الحفظ حسب إجمالي مشترياتهم (الطلبات المكتملة فقط)، وتُثبَّت القائمة من وقتها.</p>
+    </div>
+    <div id="dcm-customers-wrap" class="hidden">
+      <label class="text-xs font-bold text-gray-500 mb-1 block">اختر العملاء</label>
+      <input id="dcm-cust-search" type="text" placeholder="بحث بالاسم أو الهاتف..." oninput="renderDcmCustomerPicker()"
+             class="w-full border border-gray-200 rounded-xl px-4 py-2.5 text-sm mb-2 focus:outline-none focus:ring-2 focus:ring-orange-400" />
+      <div id="dcm-customers-list" class="border border-gray-200 rounded-xl max-h-48 overflow-y-auto divide-y divide-gray-100"></div>
+      <p id="dcm-customers-count" class="text-[11px] text-gray-400 mt-1"></p>
+    </div>
     <div><label class="text-xs font-bold text-gray-500 mb-1 block">عدد مرات الاستخدام (اتركه فارغاً = غير محدود)</label>
       <input id="dcm-max-uses" type="number" min="1" placeholder="مثال: 100"
              class="w-full border border-gray-200 rounded-xl px-4 py-3 text-sm focus:outline-none focus:ring-2 focus:ring-orange-400" /></div>
@@ -1419,11 +1442,21 @@ function renderDiscountCodes(codes) {
   const el = document.getElementById('discount-codes-list')
   if (!el) return
   if (!codes.length) { el.innerHTML = `<p class="text-center text-gray-400 text-sm py-4">لا توجد أكواد بعد</p>`; return }
+  const targetLabels = {
+    public:          { label: '🌍 عام لكل العملاء',      cls: 'bg-blue-50 text-blue-500' },
+    customers:       { label: '👤 عملاء محددين',          cls: 'bg-purple-50 text-purple-500' },
+    top_spenders:    { label: '🏆 أعلى % شراءً',          cls: 'bg-emerald-50 text-emerald-500' },
+    bottom_spenders: { label: '📉 أدنى % شراءً',          cls: 'bg-amber-50 text-amber-600' },
+  }
   el.innerHTML = codes.map(c => {
     const exp = c.valid_until ? new Date(c.valid_until) < new Date() : false
+    const t = targetLabels[c.target_type || 'public']
     return `<div class="flex items-center justify-between bg-gray-50 rounded-xl p-3 ${exp ? 'opacity-50' : ''}">
       <div>
-        <p class="font-extrabold text-gray-800 text-sm tracking-widest">${c.code}</p>
+        <div class="flex items-center gap-2 flex-wrap mb-1">
+          <p class="font-extrabold text-gray-800 text-sm tracking-widest">${c.code}</p>
+          <span class="text-[10px] font-bold px-2 py-0.5 rounded-full ${t.cls}">${t.label}${c.target_customer_ids?.length ? ` (${c.target_customer_ids.length})` : ''}</span>
+        </div>
         <p class="text-xs text-gray-400">خصم ${Number(c.discount_egp).toFixed(2)} ج.م · استُخدم ${c.used_count}${c.max_uses ? '/' + c.max_uses : ''} مرة</p>
         ${c.valid_until ? `<p class="text-xs text-gray-400">حتى ${new Date(c.valid_until).toLocaleDateString('ar-EG')}</p>` : ''}
       </div>
@@ -1435,6 +1468,8 @@ function renderDiscountCodes(codes) {
     </div>`
   }).join('')
 }
+
+let _dcmSelectedCustomers = new Set()
 
 function openDiscountCodeModal(id = null) {
   document.getElementById('dcm-id').value    = id || ''
@@ -1449,11 +1484,17 @@ function openDiscountCodeModal(id = null) {
       document.getElementById('dcm-from').value      = code.valid_from ? code.valid_from.slice(0,16) : ''
       document.getElementById('dcm-until').value     = code.valid_until ? code.valid_until.slice(0,16) : ''
       document.getElementById('dcm-active').checked  = code.is_active
+      document.getElementById('dcm-target-type').value    = code.target_type || 'public'
+      document.getElementById('dcm-target-percent').value = code.target_percent || ''
+      _dcmSelectedCustomers = new Set(code.target_customer_ids || [])
     }
   } else {
-    ;['dcm-code','dcm-discount','dcm-max-uses','dcm-from','dcm-until'].forEach(id => { const el = document.getElementById(id); if(el) el.value = '' })
+    ;['dcm-code','dcm-discount','dcm-max-uses','dcm-from','dcm-until','dcm-target-percent'].forEach(id => { const el = document.getElementById(id); if(el) el.value = '' })
     document.getElementById('dcm-active').checked = true
+    document.getElementById('dcm-target-type').value = 'public'
+    _dcmSelectedCustomers = new Set()
   }
+  onDcmTargetTypeChange()
   document.getElementById('modal-discount-code').classList.remove('hidden')
   _lockBodyScroll()
   pushModal('discountcode', closeDiscountCodeModal)
@@ -1464,6 +1505,49 @@ function closeDiscountCodeModal(fromPopstate) {
   if (!fromPopstate) popModalSilently('discountcode')
 }
 
+// ── استهداف كود الخصم: عملاء محددين أو أعلى/أدنى % حسب حجم الشراء ──────
+async function onDcmTargetTypeChange() {
+  const type = document.getElementById('dcm-target-type').value
+  document.getElementById('dcm-percent-wrap').classList.toggle('hidden', !['top_spenders','bottom_spenders'].includes(type))
+  document.getElementById('dcm-customers-wrap').classList.toggle('hidden', type !== 'customers')
+  if (type === 'customers') {
+    if (!_allCustomers.length) await loadCustomers()
+    renderDcmCustomerPicker()
+  }
+}
+function renderDcmCustomerPicker() {
+  const q = document.getElementById('dcm-cust-search').value.trim().toLowerCase()
+  const list = (_allCustomers || []).filter(c => !q || (c.name||'').toLowerCase().includes(q) || (c.phone||'').includes(q))
+  const el = document.getElementById('dcm-customers-list')
+  el.innerHTML = list.slice(0, 100).map(c => `
+    <label class="flex items-center gap-2 px-3 py-2 text-sm">
+      <input type="checkbox" onchange="toggleDcmCustomer('${c.id}', this.checked)" ${_dcmSelectedCustomers.has(c.id) ? 'checked' : ''} class="w-4 h-4 accent-orange-500" />
+      <span class="flex-1">${c.name || '(بدون اسم)'} ${c.phone ? '· '+c.phone : ''}</span>
+    </label>`).join('') || `<p class="text-center text-gray-400 text-xs py-4">لا يوجد عملاء مطابقين</p>`
+  updateDcmCustomersCount()
+}
+function toggleDcmCustomer(id, checked) {
+  if (checked) _dcmSelectedCustomers.add(id); else _dcmSelectedCustomers.delete(id)
+  updateDcmCustomersCount()
+}
+function updateDcmCustomersCount() {
+  document.getElementById('dcm-customers-count').textContent =
+    _dcmSelectedCustomers.size ? `تم اختيار ${_dcmSelectedCustomers.size} عميل` : 'لم يتم اختيار أي عميل بعد'
+}
+// تصنيف العملاء حسب إجمالي مشترياتهم (الطلبات المُسلَّمة فقط) وأخذ أعلى/أدنى نسبة % منهم — لقطة تُثبَّت وقت الحفظ
+async function computeSpendRankedCustomerIds(percent, mode) {
+  const { data: rows } = await db.from('orders')
+    .select('customer_id,total')
+    .eq('restaurant_id', state.restaurant.id)
+    .eq('status', 'delivered')
+    .not('customer_id', 'is', null)
+  const totals = {}
+  ;(rows || []).forEach(r => { totals[r.customer_id] = (totals[r.customer_id] || 0) + Number(r.total || 0) })
+  const ranked = Object.entries(totals).sort((a, b) => mode === 'top_spenders' ? b[1] - a[1] : a[1] - b[1])
+  const n = Math.max(1, Math.ceil(ranked.length * (percent / 100)))
+  return ranked.slice(0, n).map(([id]) => id)
+}
+
 async function saveDiscountCode() {
   const id       = document.getElementById('dcm-id').value
   const code     = document.getElementById('dcm-code').value.trim().toUpperCase()
@@ -1472,11 +1556,30 @@ async function saveDiscountCode() {
   const from     = document.getElementById('dcm-from').value || null
   const until    = document.getElementById('dcm-until').value || null
   const active   = document.getElementById('dcm-active').checked
+  const targetType = document.getElementById('dcm-target-type').value
   const errEl    = document.getElementById('dcm-error')
   if (!code)         { errEl.textContent = 'الكود مطلوب';          errEl.classList.remove('hidden'); return }
   if (isNaN(discount)) { errEl.textContent = 'قيمة الخصم غير صحيحة'; errEl.classList.remove('hidden'); return }
+  if (targetType === 'customers' && !_dcmSelectedCustomers.size) {
+    errEl.textContent = 'اختر عميل واحد على الأقل'; errEl.classList.remove('hidden'); return
+  }
+
+  let targetCustomerIds = null, targetPercent = null
+  if (targetType === 'customers') {
+    targetCustomerIds = Array.from(_dcmSelectedCustomers)
+  } else if (targetType === 'top_spenders' || targetType === 'bottom_spenders') {
+    targetPercent = parseInt(document.getElementById('dcm-target-percent').value) || 10
+    targetCustomerIds = await computeSpendRankedCustomerIds(targetPercent, targetType)
+    if (!targetCustomerIds.length) {
+      errEl.textContent = 'لا يوجد عملاء بفواتير كافية لحساب هذه النسبة'; errEl.classList.remove('hidden'); return
+    }
+  }
   errEl.classList.add('hidden')
-  const payload = { code, discount_egp: discount, max_uses: maxUses, valid_from: from || null, valid_until: until || null, is_active: active, restaurant_id: state.restaurant.id }
+  const payload = {
+    code, discount_egp: discount, max_uses: maxUses, valid_from: from || null, valid_until: until || null,
+    is_active: active, restaurant_id: state.restaurant.id,
+    target_type: targetType, target_customer_ids: targetCustomerIds, target_percent: targetPercent
+  }
   if (id) await db.from('discount_codes').update(payload).eq('id', id)
   else    await db.from('discount_codes').insert(payload)
   closeDiscountCodeModal()
