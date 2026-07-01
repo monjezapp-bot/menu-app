@@ -351,6 +351,23 @@
         </div>
       </div>
 
+      <!-- تعويض إلغاء الطلب بعد القبول -->
+      <div id="cancel-compensation-section" class="hidden bg-white rounded-2xl p-5 shadow-sm space-y-3 mt-4">
+        <div class="flex items-center justify-between">
+          <h3 class="font-bold text-gray-700">🎁 تعويض العميل عند إلغاء طلب مؤكد</h3>
+          <input id="set-cancel-comp-enabled" type="checkbox" class="w-5 h-5 accent-orange-500" onchange="toggleCancelCompensationFields()" />
+        </div>
+        <p class="text-[11px] text-gray-400 leading-relaxed">
+          لو اضطريت تلغي طلب بعد ما تكون قبلته (يعني قبل مرحلة "تم التجهيز") — بعد التواصل مع العميل وكتابة سبب الإلغاء،
+          هيتم تعويضه تلقائياً بعدد كوينز ثابت تحدده هنا. الإلغاء قبل قبول الطلب أصلاً (رفض الطلب الجديد) لا يدخل في هذا النظام ولا يستحق تعويض.
+        </p>
+        <div id="cancel-comp-fields" class="hidden">
+          <label class="text-xs font-bold text-gray-500 mb-1 block">عدد كوينز التعويض — مثال: 1000 كوين = 1 ج.م</label>
+          <input id="set-cancel-comp-coins" type="number" min="0" step="100" placeholder="مثال: 1000" class="w-full border border-gray-200 rounded-xl px-4 py-3 text-sm focus:outline-none focus:ring-2 focus:ring-orange-400" />
+        </div>
+        <button onclick="saveCancelCompensationSettings()" class="w-full bg-orange-500 text-white font-bold rounded-xl py-3">حفظ إعدادات التعويض</button>
+      </div>
+
       <!-- أكواد الخصم -->
       <div id="discount-codes-section" class="hidden bg-white rounded-2xl p-5 shadow-sm space-y-4 mt-4">
         <div class="flex items-center justify-between">
@@ -796,6 +813,27 @@
   </div>
 </div>
 
+<!-- ══ CANCEL CONFIRMED ORDER MODAL ══ -->
+<!-- يُستخدم فقط لإلغاء طلب تم قبوله من قبل (status=confirmed) وقبل بدء التجهيز — وليس لرفض طلب جديد -->
+<div id="cancel-confirmed-modal" class="hidden fixed inset-0 z-[95] flex items-center justify-center p-4" style="background:rgba(0,0,0,0.7);backdrop-filter:blur(6px)">
+  <div class="bg-white rounded-3xl w-full max-w-sm shadow-2xl overflow-hidden" style="animation:popIn .35s cubic-bezier(0.34,1.2,0.64,1) both">
+    <div class="px-5 py-4 border-b border-gray-100">
+      <p class="font-extrabold text-gray-800">❌ إلغاء طلب مؤكد</p>
+      <p class="text-xs text-gray-400 mt-0.5">الطلب سبق قبوله — العميل بيتوقعه فعلاً، فالإلغاء دلوقتي حالة استثنائية</p>
+    </div>
+    <div class="px-5 py-4">
+      <p class="text-xs font-bold text-amber-600 bg-amber-50 rounded-xl px-3 py-2.5 mb-3">⚠️ تأكد إنك اتصلت بالعميل وأخبرته أولاً</p>
+      <p id="ccm-compensation-note" class="hidden text-xs font-bold text-green-700 bg-green-50 rounded-xl px-3 py-2.5 mb-3"></p>
+      <label class="text-xs font-bold text-gray-500 mb-1.5 block">سبب الإلغاء * (سيظهر للعميل)</label>
+      <textarea id="ccm-reason" rows="3" placeholder="اكتب سبب الإلغاء..." class="w-full border border-gray-200 rounded-xl px-3 py-2 text-sm focus:outline-none focus:ring-2 focus:ring-red-300"></textarea>
+    </div>
+    <div class="px-5 pb-5 pt-1 grid grid-cols-2 gap-3">
+      <button onclick="submitCancelConfirmedOrder()" class="bg-red-500 text-white font-extrabold rounded-2xl py-3 text-sm">تأكيد الإلغاء</button>
+      <button onclick="closeCancelConfirmedModal()" class="bg-gray-100 text-gray-500 font-extrabold rounded-2xl py-3 text-sm">رجوع</button>
+    </div>
+  </div>
+</div>
+
 <script>
 // ── GLOBAL ERROR HANDLER (debug) ─────────────────────────────────────
 // قاعدة ثابتة: أي خطأ JS أو Promise مرفوضة لازم تظهر على الشاشة فعلياً
@@ -1125,6 +1163,8 @@ function applyRoleUI() {
   if (apSection) apSection.classList.toggle('hidden', !isAdmin)
   const loySection = document.getElementById('loyalty-section')
   if (loySection) loySection.classList.toggle('hidden', !isAdmin)
+  const ccSection = document.getElementById('cancel-compensation-section')
+  if (ccSection) ccSection.classList.toggle('hidden', !isAdmin)
   const dcSection = document.getElementById('discount-codes-section')
   if (dcSection) dcSection.classList.toggle('hidden', !isAdmin)
   const pmLoyWrap = document.getElementById('pm-loyalty-coins-wrap')
@@ -1231,6 +1271,13 @@ async function loadDashboard(r, branches) {
     toggleLoyaltySubfield('purchaseReward', true)
     toggleLoyaltySubfield('purchaseVoucher', true)
     togglePurchaseRewardMode()
+  }
+  // إعدادات تعويض إلغاء الطلب بعد القبول
+  const ccEl = document.getElementById('set-cancel-comp-enabled')
+  if (ccEl) {
+    ccEl.checked = r.cancel_compensation_enabled || false
+    document.getElementById('set-cancel-comp-coins').value = r.cancel_compensation_coins ?? 1000
+    toggleCancelCompensationFields()
   }
   const primary = r.theme?.primary || '#FF6B00'
   document.getElementById('set-color').value     = primary
@@ -1341,6 +1388,23 @@ async function saveLoyaltySettings() {
   await db.from('restaurants').update(payload).eq('id', state.restaurant.id)
   Object.assign(state.restaurant, payload)
   showToast('تم حفظ إعدادات الكوينز ✅')
+}
+
+// ── CANCEL-AFTER-ACCEPT COMPENSATION SETTINGS ──────────────────────────
+function toggleCancelCompensationFields() {
+  const enabled = document.getElementById('set-cancel-comp-enabled').checked
+  document.getElementById('cancel-comp-fields').classList.toggle('hidden', !enabled)
+}
+async function saveCancelCompensationSettings() {
+  const enabled = document.getElementById('set-cancel-comp-enabled').checked
+  const coins   = Math.max(0, parseInt(document.getElementById('set-cancel-comp-coins').value) || 0)
+  const { error } = await db.from('restaurants')
+    .update({ cancel_compensation_enabled: enabled, cancel_compensation_coins: coins })
+    .eq('id', state.restaurant.id)
+  if (error) { showToast('تعذر حفظ الإعدادات'); return }
+  state.restaurant.cancel_compensation_enabled = enabled
+  state.restaurant.cancel_compensation_coins   = coins
+  showToast('تم حفظ إعدادات التعويض ✅')
 }
 
 // ── DISCOUNT CODES ────────────────────────────────────────────────────
@@ -2373,9 +2437,9 @@ function openOrderDetailModal(orderId) {
     ready:      { label: '🛵 جاري التوصيل', next: 'delivering', cls: 'bg-indigo-500' },
     delivering: { label: '✅ تم التسليم',    next: 'delivered',  cls: 'bg-green-500' }
   }[order.status]
-  document.getElementById('od-actions').innerHTML = nextAction
-    ? `<button onclick="updateOrderStatus('${order.id}','${nextAction.next}');closeOrderDetailModal()" class="w-full ${nextAction.cls} text-white font-extrabold rounded-xl py-3 text-sm">${nextAction.label}</button>`
-    : ''
+  document.getElementById('od-actions').innerHTML =
+    (nextAction ? `<button onclick="updateOrderStatus('${order.id}','${nextAction.next}');closeOrderDetailModal()" class="w-full ${nextAction.cls} text-white font-extrabold rounded-xl py-3 text-sm">${nextAction.label}</button>` : '')
+    + (order.status === 'confirmed' ? `<button onclick="openCancelConfirmedModal('${order.id}')" class="w-full bg-red-50 text-red-600 font-extrabold rounded-xl py-3 text-sm border border-red-200">❌ إلغاء الطلب (بعد القبول)</button>` : '')
 
   document.getElementById('modal-order-detail').classList.remove('hidden')
   pushModal('order-detail', closeOrderDetailModal)
@@ -2383,6 +2447,69 @@ function openOrderDetailModal(orderId) {
 function closeOrderDetailModal(fromPopstate) {
   document.getElementById('modal-order-detail').classList.add('hidden')
   if (!fromPopstate) popModalSilently('order-detail')
+}
+
+// ── CANCEL A CONFIRMED ORDER (بعد القبول، قبل التجهيز) ──────────────────
+// شرط أساسي: لا يُستخدم إلا مع status='confirmed' — الرفض قبل القبول له مساره الخاص (reject-reason-modal)
+// ولا يستحق تعويضاً لأن العميل لم يكن يعلم بقبول طلبه أصلاً.
+let _cancelConfirmedOrderId = null
+function openCancelConfirmedModal(orderId) {
+  _cancelConfirmedOrderId = orderId
+  document.getElementById('ccm-reason').value = ''
+  const noteEl = document.getElementById('ccm-compensation-note')
+  if (state.restaurant.cancel_compensation_enabled) {
+    const coins = state.restaurant.cancel_compensation_coins || 0
+    noteEl.textContent = `🎁 سيتم تعويض العميل تلقائياً بـ ${coins.toLocaleString('ar-EG')} كوين بسبب الإلغاء بعد القبول`
+    noteEl.classList.remove('hidden')
+  } else {
+    noteEl.classList.add('hidden')
+  }
+  document.getElementById('cancel-confirmed-modal').classList.remove('hidden')
+}
+function closeCancelConfirmedModal() {
+  document.getElementById('cancel-confirmed-modal').classList.add('hidden')
+}
+async function submitCancelConfirmedOrder() {
+  const reason = document.getElementById('ccm-reason').value.trim()
+  if (!reason) { showToast('اكتب سبب الإلغاء أولاً'); return }
+  const orderId = _cancelConfirmedOrderId
+  if (!orderId) return
+  closeCancelConfirmedModal()
+  closeOrderDetailModal()
+  await cancelConfirmedOrder(orderId, reason)
+}
+async function cancelConfirmedOrder(orderId, reason) {
+  const order = state.orders.find(o => o.id === orderId)
+  if (!order) return
+  // حماية: لا يُنفَّذ الإلغاء إلا لو الطلب لسه confirmed فعلياً على السيرفر (لم يتحول لـ ready في نفس اللحظة من مكان آخر)
+  const { error } = await db.from('orders')
+    .update({ status: 'cancelled', cancel_reason: reason })
+    .eq('id', orderId)
+    .eq('status', 'confirmed')
+  if (error) { showToast('تعذّر إلغاء الطلب'); return }
+
+  let compensationMsg = ''
+  if (state.restaurant.cancel_compensation_enabled) {
+    const coins = state.restaurant.cancel_compensation_coins || 0
+    if (coins > 0 && order.customer_id) {
+      const { data: cust } = await db.from('menu_customers').select('coins_balance').eq('id', order.customer_id).single()
+      if (cust) {
+        const newBalance = (cust.coins_balance || 0) + coins
+        await db.from('menu_customers').update({ coins_balance: newBalance }).eq('id', order.customer_id)
+        await db.from('coin_transactions').insert({
+          customer_id: order.customer_id, restaurant_id: state.restaurant.id,
+          type: 'compensation', amount: coins, order_id: orderId,
+          note: 'تعويض عن إلغاء الطلب بعد القبول'
+        })
+        await db.from('orders').update({ compensation_coins_sent: coins }).eq('id', orderId)
+        compensationMsg = ` — تم تعويض العميل بـ ${coins.toLocaleString('ar-EG')} كوين`
+      }
+    } else if (coins > 0 && !order.customer_id) {
+      compensationMsg = ' — تنبيه: العميل زائر بدون حساب، لم يتم إرسال تعويض تلقائي'
+    }
+  }
+  showToast('❌ تم إلغاء الطلب' + compensationMsg)
+  await loadOrders()
 }
 async function updateOrderStatus(id, status) {
   const timestampField = { ready: 'ready_at', delivering: 'delivering_at', delivered: 'delivered_at' }[status]
