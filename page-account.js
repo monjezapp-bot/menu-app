@@ -95,7 +95,7 @@ async function saveEditProfile() {
   }
 }
 
-// ── UPDATE SETTINGS DISPLAY ────────────────────────────────────────────
+// ── UPDATE SETTINGS DISPLAY (صفحة بياناتي) ─────────────────────────────
 function updateSettingsDisplay() {
   if (!S.customer) return
   const c = S.customer
@@ -104,11 +104,38 @@ function updateSettingsDisplay() {
   s('setting-email', c.email)
   s('setting-phone', c.phone)
   s('setting-area',  c.area)
-  // referral
+}
+
+// ── RENDER REFERRAL DISPLAY (صفحة شارك واكسب) ──────────────────────────
+function renderReferralDisplay() {
+  if (!S.customer) return
+  const c = S.customer
   const refEl = document.getElementById('ref-code-display')
   if (refEl) refEl.textContent = c.referral_code || '------'
   const refRew = document.getElementById('ref-reward-display')
   if (refRew) refRew.innerHTML = `عند أول شراء لصديقك تكسب <span class="ltr-num">${numFmt(S.restaurant?.referral_coins ?? 5000)}</span> كوين 🪙`
+}
+
+// ── ACCOUNT SUB-PAGES (بياناتي / مكافآتي / القسائم / شارك واكسب) ───────
+function openAccountSubPage(id) {
+  const pageEl = document.getElementById('page-' + id)
+  if (!pageEl || !S.customer) return
+  document.getElementById('page-account')?.classList.add('hidden')
+  pageEl.classList.remove('hidden')
+  showBottomNav(false)
+  window.scrollTo({ top: 0, behavior: 'smooth' })
+
+  if (id === 'profile')  updateSettingsDisplay()
+  if (id === 'rewards')  renderRewardsSection()
+  if (id === 'vouchers') renderVouchersSection()
+  if (id === 'referral') renderReferralDisplay()
+}
+
+function closeAccountSubPage() {
+  document.querySelectorAll('.acc-subpage').forEach(el => el.classList.add('hidden'))
+  document.getElementById('page-account')?.classList.remove('hidden')
+  showBottomNav(true)
+  window.scrollTo({ top: 0, behavior: 'smooth' })
 }
 
 
@@ -213,42 +240,89 @@ function renderAccountPage() {
   const coinsEl = document.getElementById('acc-coins-display')
   if (coinsEl) coinsEl.textContent = numFmt(c.coins_balance || 0)
 
-  // تحديث الإعدادات
+  // تحديث الإعدادات (بيانات الحساب — تترندر فعلياً لما صفحة "بياناتي" تتفتح)
   updateSettingsDisplay()
-  const score = calcProfileScore(c)
-  const barEl = document.getElementById('profile-progress-bar')
-  const pctEl = document.getElementById('profile-completion-pct')
-  const msgEl = document.getElementById('profile-completion-msg')
-  const listEl = document.getElementById('profile-fields-list')
+  renderProfileQuestCard()
+}
 
-  if (barEl) setTimeout(() => { barEl.style.width = score + '%' }, 100)
-  if (pctEl) pctEl.textContent = score + '%'
-  if (msgEl) {
-    const m = [...PROFILE_MSGS].reverse().find(x => score >= x.min)
-    msgEl.textContent = m?.msg || PROFILE_MSGS[0].msg
+// ── PROFILE QUEST CARD (خانة واحدة تظهر الحقل الناقص التالي فقط) ──────
+function nextIncompleteField(customer) {
+  return PROFILE_FIELDS.find(f => !customer[f.key] || customer[f.key] === '')
+}
+
+function renderProfileQuestCard(justCompletedAll) {
+  const el = document.getElementById('profile-quest-card')
+  if (!el || !S.customer) return
+  const c = S.customer
+  const next = nextIncompleteField(c)
+
+  if (!next) {
+    if (justCompletedAll) {
+      el.style.display = 'block'
+      el.style.opacity = '1'
+      el.innerHTML = `
+        <div style="background:linear-gradient(135deg,#f0fdf4,#dcfce7);border:1.5px solid #bbf7d0;border-radius:16px;padding:14px;text-align:center;animation:fadeUp 0.4s ease">
+          <p style="font-size:13px;font-weight:900;color:#16a34a">🎉 ملفك مكتمل بالكامل!</p>
+        </div>`
+      setTimeout(() => {
+        el.style.transition = 'opacity 0.4s ease'
+        el.style.opacity = '0'
+        setTimeout(() => { el.style.display = 'none'; el.innerHTML = ''; el.style.opacity = '1' }, 400)
+      }, 1800)
+    } else {
+      el.style.display = 'none'
+      el.innerHTML = ''
+    }
+    return
   }
-  if (listEl) {
-    listEl.innerHTML = PROFILE_FIELDS.map(f => {
-      const done = !!(c[f.key] && c[f.key] !== '')
-      return `<div onclick="${done ? '' : `openEditField('${f.key}')`}"
-                   style="display:flex;align-items:center;gap:10px;padding:10px 12px;background:${done ? '#f0fdf4' : '#fff8f3'};border-radius:12px;border:1.5px solid ${done ? '#bbf7d0' : '#ffe0b2'};cursor:${done ? 'default' : 'pointer'};transition:all 0.2s">
-        <span style="font-size:18px">${f.icon}</span>
-        <span style="flex:1;font-size:13px;font-weight:700;color:${done ? '#16a34a' : '#cc5500'}">${f.label}</span>
-        ${done
-          ? `<svg width="16" height="16" fill="none" stroke="#16a34a" stroke-width="2.5" viewBox="0 0 24 24"><polyline points="20 6 9 17 4 12"/></svg>`
-          : `<span style="font-size:11px;font-weight:800;color:var(--brand)">أضف ←</span>`
-        }
-      </div>`
-    }).join('')
+
+  el.style.display = 'block'
+  const dots = PROFILE_FIELDS.map(f => {
+    const done = !!(c[f.key] && c[f.key] !== '')
+    return `<span style="width:6px;height:6px;border-radius:50%;background:${done ? 'var(--brand)' : '#e8d9cc'};display:inline-block"></span>`
+  }).join('')
+
+  el.innerHTML = `
+    <div id="quest-slot-inner" onclick="openEditField('${next.key}')"
+         style="cursor:pointer;background:linear-gradient(135deg,#fff8f3,#fff3e6);border:1.5px solid #ffd4a8;border-radius:16px;padding:12px 14px;display:flex;align-items:center;gap:12px;animation:fadeUp 0.4s ease">
+      <div style="width:38px;height:38px;border-radius:12px;background:#fff;display:flex;align-items:center;justify-content:center;font-size:19px;flex-shrink:0;box-shadow:0 2px 8px rgba(0,0,0,0.06)">${next.icon}</div>
+      <div style="flex:1;min-width:0">
+        <p style="font-size:12.5px;font-weight:800;color:#cc5500;margin-bottom:1px">أضف ${next.label}</p>
+        <p style="font-size:11px;color:#a86230;font-weight:700">واكسب +${numFmt(next.coins)} 🪙</p>
+      </div>
+      <div style="display:flex;gap:4px;flex-shrink:0">${dots}</div>
+    </div>`
+}
+
+// شرارة كونفيتي مصغّرة حوالين الخانة نفسها فقط (مش احتفال الشاشة الكامل المحجوز لبونص الترحيب)
+function spawnMiniConfetti(targetEl) {
+  if (!targetEl) return
+  const rect = targetEl.getBoundingClientRect()
+  const icons = ['🪙', '✨', '🎉']
+  for (let i = 0; i < 6; i++) {
+    const p = document.createElement('span')
+    p.textContent = icons[i % icons.length]
+    p.style.cssText = `position:fixed;left:${rect.left + rect.width / 2}px;top:${rect.top + rect.height / 2}px;font-size:${14 + Math.random() * 8}px;pointer-events:none;z-index:999;transition:transform 0.7s cubic-bezier(.2,.8,.3,1), opacity 0.7s`
+    document.body.appendChild(p)
+    const angle = -Math.PI / 2 + (Math.random() - 0.5) * 1.4
+    const dist  = 40 + Math.random() * 50
+    requestAnimationFrame(() => {
+      p.style.transform = `translate(${Math.cos(angle) * dist}px, ${Math.sin(angle) * dist}px) scale(1.3)`
+      p.style.opacity = '0'
+    })
+    setTimeout(() => p.remove(), 750)
   }
+}
 
-  // اخفِ البطاقة لو مكتمل 100%
-  const card = document.getElementById('profile-completion-card')
-  if (card) card.style.display = score === 100 ? 'none' : 'block'
-
-  // رندر باقي الأقسام
-  renderRewardsSection()
-  renderVouchersSection()
+// خروج حماسي للخانة الحالية قبل ما تتحدث بالحقل الجاي
+function celebrateQuestSlot(cb) {
+  const inner = document.getElementById('quest-slot-inner')
+  if (!inner) { cb(); return }
+  spawnMiniConfetti(inner)
+  inner.style.transition = 'transform 0.32s cubic-bezier(.34,1.56,.64,1), opacity 0.32s'
+  inner.style.transform = 'scale(0.85)'
+  inner.style.opacity = '0'
+  setTimeout(cb, 300)
 }
 
 // ── EDIT PROFILE FIELD ────────────────────────────────────────────────
@@ -308,9 +382,17 @@ async function submitEditField(field, value) {
       S.customer.coins_balance = (S.customer.coins_balance || 0) + coins
       showToast(`+${numFmt(coins)} 🪙 كوينز على إكمال ملفك!`)
       playSuccessSound()
+
+      const willCompleteAll = !PROFILE_FIELDS.some(f => f.key !== field && !(S.customer[f.key] && S.customer[f.key] !== ''))
+      celebrateQuestSlot(() => {
+        renderAccountPage()
+        if (willCompleteAll) renderProfileQuestCard(true)
+        updateWalletBadge()
+      })
+    } else {
+      renderAccountPage()
+      updateWalletBadge()
     }
-    renderAccountPage()
-    updateWalletBadge()
   } catch(e) {
     showToast('خطأ: ' + e.message)
   }

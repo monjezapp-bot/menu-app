@@ -577,6 +577,9 @@ function _switchPageCore(page) {
     const el = document.getElementById('page-' + p)
     if (el) el.classList.toggle('hidden', p !== page)
   })
+  // إخفاء دفاعي لأي صفحة فرعية داخل "حسابك" (بياناتي/مكافآتي/القسائم/شارك واكسب)
+  // عشان منسيبش صفحة فرعية ظاهرة لو حصل تنقل من مكان تاني غير زرار الرجوع
+  document.querySelectorAll('.acc-subpage').forEach(el => el.classList.add('hidden'))
   pages.forEach(p => {
     const icon = document.getElementById('bnav-' + p + '-icon')
     const txt  = document.getElementById('bnav-' + p + '-txt')
