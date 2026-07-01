@@ -277,6 +277,25 @@ async function reopenOrderTracking(orderId) {
   if (!['delivered', 'cancelled'].includes(order.status)) trackOrderStatus(orderId)
 }
 
+// ── VIEW DETAILS WHILE TRACKING ─────────────────────────────────────────
+// يفتح شيت تفاصيل الطلب الكامل (نفس المستخدم في صفحة "طلباتي") مباشرة من فوق مودال التتبع،
+// عشان العميل يتأكد من كل بيانات طلبه (المنتجات، العنوان، رقم التواصل...) لو حسّ إن في خطأ
+function viewTrackedOrderDetail() {
+  const orderId = document.getElementById('order-success-modal').dataset.orderId
+  if (orderId) openOrderDetail(orderId)
+}
+
+// ── CONTACT RESTAURANT ABOUT AN ORDER ──────────────────────────────────
+// يفتح واتساب المطعم مباشرة برسالة جاهزة تتضمن رقم الطلب — يُستخدم من مودال التتبع
+// (خصوصاً وقت تأخير المطعم في الرد) ومن شيت تفاصيل الطلب في صفحة "طلباتي"
+function contactRestaurantAboutOrder(orderNumber) {
+  const num = orderNumber || document.getElementById('success-order-num').textContent.replace('رقم الطلب:', '').trim()
+  const phone = normalizeWhatsAppNumber(S.restaurant?.whatsapp)
+  if (!phone) { showToast('رقم تواصل المطعم غير متوفر حالياً'); return }
+  const msg = encodeURIComponent(`السلام عليكم، بخصوص طلبي${num ? ' (' + num + ')' : ''} — `)
+  window.open(`https://wa.me/${phone}?text=${msg}`, '_blank')
+}
+
 // ── CANCEL ORDER BY CUSTOMER ─────────────────────────────────────────
 // قاعدة: قبل قبول التاجر (pending) الإلغاء متاح بلا قيود.
 // بعد القبول (confirmed) فيه مهلة دقيقتين بالظبط من وقت القبول، وبعدها يُمنع الإلغاء نهائيًا.
