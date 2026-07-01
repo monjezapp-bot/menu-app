@@ -531,9 +531,10 @@ async function redeemVoucher() {
   }
 
   const errorMessages = {
-    CODE_NOT_FOUND: 'الكود غير موجود أو غير مفعّل ❌',
-    CODE_EXPIRED:   'الكود منتهي الصلاحية ❌',
-    CODE_MAX_USES:  'هذا الكود وصل لأقصى عدد استخدامات ❌',
+    CODE_NOT_FOUND:   'الكود غير موجود أو غير مفعّل ❌',
+    CODE_EXPIRED:     'الكود منتهي الصلاحية ❌',
+    CODE_MAX_USES:    'هذا الكود وصل لأقصى عدد استخدامات ❌',
+    ALREADY_REDEEMED: 'لقد استخدمت هذا الكود من قبل، لا يمكن استخدامه مرة أخرى ❌',
   }
 
   try {
