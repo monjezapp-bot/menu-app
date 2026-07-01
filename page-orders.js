@@ -166,6 +166,7 @@ async function openOrderDetail(orderId) {
         ${o.delivery_fee ? `<div style="display:flex;justify-content:space-between;margin-bottom:8px"><span style="font-size:13px;color:#888">التوصيل</span><span style="font-size:13px;font-weight:700">${Number(o.delivery_fee).toFixed(2)} ج.م</span></div>` : ''}
         ${o.coins_discount ? `<div style="display:flex;justify-content:space-between;margin-bottom:8px"><span style="font-size:13px;color:#f97316">خصم الكوينز 🪙</span><span style="font-size:13px;font-weight:700;color:#f97316">-${Number(o.coins_discount).toFixed(2)} ج.م</span></div>` : ''}
         ${o.discount_code_amount ? `<div style="display:flex;justify-content:space-between;margin-bottom:8px"><span style="font-size:13px;color:#22c55e">كود خصم</span><span style="font-size:13px;font-weight:700;color:#22c55e">-${Number(o.discount_code_amount).toFixed(2)} ج.م</span></div>` : ''}
+        ${o.wallet_amount_used ? `<div style="display:flex;justify-content:space-between;margin-bottom:8px"><span style="font-size:13px;color:#16a34a">💳 من رصيد المحفظة</span><span style="font-size:13px;font-weight:700;color:#16a34a">-${Number(o.wallet_amount_used).toFixed(2)} ج.م</span></div>` : ''}
         <div style="display:flex;justify-content:space-between;padding-top:10px;border-top:1.5px solid #f0f0f0">
           <span style="font-size:15px;font-weight:900;color:#1a1a1a">الإجمالي</span>
           <span style="font-size:15px;font-weight:900;color:var(--brand)"><span class="ltr-num">${Number(o.total||0).toFixed(2)}</span> ج.م</span>

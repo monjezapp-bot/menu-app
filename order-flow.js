@@ -102,9 +102,10 @@ async function sendOrder() {
   const grandTotal = Math.round((cartTotal() + deliveryFee) * 100) / 100
 
   // الخصومات
-  const coinsPerEgp    = S.restaurant?.coins_per_egp ?? 1000
+  const coinsPerEgp      = S.restaurant?.coins_per_egp ?? 1000
   const coinsDiscountEgp = _coinsToRedeem > 0 ? Math.round(_coinsToRedeem / coinsPerEgp * 100) / 100 : 0
-  const finalTotal     = Math.max(0, Math.round((grandTotal - _appliedDiscount - coinsDiscountEgp) * 100) / 100)
+  const walletAmountUsed = (_walletToUse > 0 && S.customer) ? _walletToUse : 0
+  let finalTotal = Math.max(0, Math.round((grandTotal - _appliedDiscount - coinsDiscountEgp - walletAmountUsed) * 100) / 100)
 
   // Save order to DB — the merchant receives it live in the dashboard (no WhatsApp)
   let orderId, orderNumber
@@ -132,7 +133,8 @@ async function sendOrder() {
         coins_redeemed:   _coinsToRedeem > 0 ? _coinsToRedeem : null,
         coins_discount:   coinsDiscountEgp > 0 ? coinsDiscountEgp : null,
         discount_code:    _appliedCode ? document.getElementById('cart-discount-code').value.trim().toUpperCase() : null,
-        discount_code_amount: _appliedDiscount > 0 ? _appliedDiscount : null
+        discount_code_amount: _appliedDiscount > 0 ? _appliedDiscount : null,
+        wallet_amount_used: walletAmountUsed > 0 ? walletAmountUsed : null
       })
       .select('id,order_number').single()
 
@@ -140,6 +142,8 @@ async function sendOrder() {
     if (ie?.message?.includes('orders_customer_id_fkey')) {
       console.warn('customer_id غير صالح، إعادة المحاولة كـ زائر:', S.customer?.id)
       S.customer = null
+      // خصم الكوينز ورصيد المحفظة يتطلبان حساب عميل صالح — بما إننا رجعنا "زائر" لازم نعيد حساب الإجمالي بدونهم
+      finalTotal = Math.max(0, Math.round((grandTotal - _appliedDiscount) * 100) / 100)
       const retry = await db.from('orders')
         .insert({
           restaurant_id:    S.restaurant.id,
@@ -181,6 +185,18 @@ async function sendOrder() {
       S.customer.coins_balance = newBal
     }
 
+    // خصم رصيد المحفظة النقدي المستخدم
+    if (walletAmountUsed > 0 && S.customer) {
+      const newWalletBal = Math.max(0, Number(S.customer.wallet_balance || 0) - walletAmountUsed)
+      await db.from('menu_customers').update({ wallet_balance: newWalletBal }).eq('id', S.customer.id)
+      await db.from('coin_transactions').insert({
+        customer_id: S.customer.id, restaurant_id: S.restaurant.id,
+        type: 'wallet_redeem', amount: -walletAmountUsed, order_id: orderId,
+        note: `استخدام رصيد المحفظة (نقدي) في طلب ${orderNumber}`
+      })
+      S.customer.wallet_balance = newWalletBal
+    }
+
     // تحديث عداد الكود المستخدم
     if (_appliedCode) {
       const { data: codeRow } = await db.from('discount_codes').select('used_count').eq('id', _appliedCode).single()
@@ -202,8 +218,10 @@ async function sendOrder() {
   document.getElementById('order-location-lat').value = ''
   document.getElementById('order-location-lng').value = ''
   const coinsInput = document.getElementById('cart-coins-input'); if (coinsInput) coinsInput.value = ''
+  const walletInput = document.getElementById('cart-wallet-input'); if (walletInput) walletInput.value = ''
+  const walletPreview = document.getElementById('cart-wallet-preview'); if (walletPreview) walletPreview.style.display = 'none'
   document.getElementById('cart-discount-msg').style.display = 'none'
-  _appliedDiscount = 0; _appliedCode = null; _coinsToRedeem = 0
+  _appliedDiscount = 0; _appliedCode = null; _coinsToRedeem = 0; _walletToUse = 0
   resetBtn()
   showOrderSuccess(orderNumber, orderId, finalTotal, deliveryFee)
   trackOrderStatus(orderId)
@@ -565,6 +583,65 @@ function useMaxCoins() {
   _coinsToRedeem = Math.min(bal, maxByCart)
   document.getElementById('cart-coins-input').value = _coinsToRedeem
   updateCoinsDiscount()
+}
+
+// ── WALLET BALANCE IN CART (رصيد نقدي) ──────────────────────────────────
+// المتاح فعلياً لاستخدام رصيد المحفظة = أقل قيمة بين (رصيد المحفظة) و (المتبقي المطلوب دفعه بعد خصم الكود والكوينز)
+function _walletRemainingPayable() {
+  const coinsPerEgp = S.restaurant?.coins_per_egp ?? 1000
+  const coinsDiscount = _coinsToRedeem > 0 ? _coinsToRedeem / coinsPerEgp : 0
+  const custLat = document.getElementById('order-location-lat')?.value
+  const custLng = document.getElementById('order-location-lng')?.value
+  const pricePerKm = parseFloat(S.restaurant?.price_per_km) || 0
+  let deliveryFee = 0
+  if (custLat && custLng && pricePerKm > 0) {
+    if (S.branches.length > 0) {
+      const result = findNearestBranch(parseFloat(custLat), parseFloat(custLng))
+      if (result) deliveryFee = Math.round(result.distanceKm * pricePerKm * 100) / 100
+    } else {
+      const restLat = parseFloat(S.restaurant?.lat), restLng = parseFloat(S.restaurant?.lng)
+      if (!isNaN(restLat) && !isNaN(restLng)) {
+        deliveryFee = Math.round(distanceKm(parseFloat(custLat), parseFloat(custLng), restLat, restLng) * pricePerKm * 100) / 100
+      }
+    }
+  }
+  return Math.max(0, Math.round((cartTotal() + deliveryFee - _appliedDiscount - coinsDiscount) * 100) / 100)
+}
+// العميل بيكتب المبلغ اللي يحب يستخدمه بنفسه؛ لو أكبر من رصيده المتاح، نسأله يوافق على استخدام كل المتاح أو نلغي
+function updateWalletUse() {
+  const input   = document.getElementById('cart-wallet-input')
+  const preview = document.getElementById('cart-wallet-preview')
+  const balance = Number(S.customer?.wallet_balance || 0)
+  let typed = parseFloat(input.value) || 0
+
+  if (typed > balance) {
+    const useAll = confirm(`رصيدك في المحفظة ${balance.toFixed(2)} ج.م بس، أقل من اللي كتبته. تحب نستخدم كل الرصيد المتاح (${balance.toFixed(2)} ج.م)؟`)
+    typed = useAll ? balance : 0
+  }
+
+  const maxPayable = _walletRemainingPayable()
+  _walletToUse = Math.max(0, Math.min(typed, balance, maxPayable))
+  input.value = _walletToUse > 0 ? _walletToUse : ''
+
+  if (_walletToUse > 0) {
+    preview.textContent = `سيتم خصم ${_walletToUse.toFixed(2)} ج.م من رصيد محفظتك`
+    preview.style.display = 'block'
+  } else {
+    preview.style.display = 'none'
+  }
+  renderCartItems()
+}
+function useMaxWallet() {
+  const balance    = Number(S.customer?.wallet_balance || 0)
+  const maxPayable = _walletRemainingPayable()
+  _walletToUse = Math.max(0, Math.min(balance, maxPayable))
+  document.getElementById('cart-wallet-input').value = _walletToUse > 0 ? _walletToUse : ''
+  const preview = document.getElementById('cart-wallet-preview')
+  if (_walletToUse > 0) {
+    preview.textContent = `سيتم خصم ${_walletToUse.toFixed(2)} ج.م من رصيد محفظتك`
+    preview.style.display = 'block'
+  } else preview.style.display = 'none'
+  renderCartItems()
 }
 
 // ── REFERRAL PARAM ON LOAD ──────────────────────────────────────────────

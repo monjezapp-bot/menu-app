@@ -137,6 +137,7 @@ async function loadWalletPage() {
       convert:          { icon:'💳', label:'تحويل لرصيد',      color:'#f97316' },
       birthday:         { icon:'🎂', label:'هدية عيد الميلاد', color:'#ec4899' },
       purchase_voucher: { icon:'🎟️', label:'قسيمة شراء',       color:'#a855f7' },
+      wallet_redeem:    { icon:'💳', label:'استخدام رصيد نقدي', color:'#16a34a', unit:'egp' },
     }
 
     if (!txs || !txs.length) {
@@ -152,13 +153,17 @@ async function loadWalletPage() {
     txEl.innerHTML = txs.map(t => {
       const type = txTypes[t.type] || { icon:'🪙', label:t.type, color:'#888' }
       const plus = t.amount > 0
+      // معاملات الرصيد النقدي (wallet_redeem) قيمتها بالجنيه، وليست كوينز — لازم تتعرض بوحدة مختلفة تماماً
+      const amountText = type.unit === 'egp'
+        ? `${plus ? '+' : ''}${Number(t.amount).toFixed(2)} ج.م`
+        : `${plus ? '+' : ''}${numFmt(t.amount)} 🪙`
       return `<div class="tx-row">
         <div style="width:40px;height:40px;border-radius:14px;background:${type.color}18;display:flex;align-items:center;justify-content:center;font-size:20px;flex-shrink:0">${type.icon}</div>
         <div style="flex:1">
           <p style="font-size:13px;font-weight:800;color:#1a1a1a;margin-bottom:2px">${type.label}</p>
           <p style="font-size:11px;color:#bbb">${new Date(t.created_at).toLocaleDateString('ar-EG-u-nu-latn',{day:'numeric',month:'short',hour:'2-digit',minute:'2-digit'})}${t.note?' · '+t.note:''}</p>
         </div>
-        <p style="font-size:16px;font-weight:900;color:${plus?'#22c55e':'#ef4444'}">${plus?'+':''}${numFmt(t.amount)} 🪙</p>
+        <p style="font-size:16px;font-weight:900;color:${plus?'#22c55e':'#ef4444'}">${amountText}</p>
       </div>`
     }).join('')
   } catch(e) {

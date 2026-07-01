@@ -257,14 +257,18 @@ function distanceKm(lat1, lng1, lat2, lng2) {
 }
 // أقرب فرع نشط لموقع العميل، باستثناء الفروع المرفوضة مسبقاً لهذا الطلب (للتحويل التلقائي عند الرفض)
 function findNearestBranch(custLat, custLng, excludeIds = []) {
-  const candidates = (S.branches || []).filter(b => !excludeIds.includes(b.id))
+  const candidates = (S.branches || []).filter(b =>
+    !excludeIds.includes(b.id) &&
+    b.lat != null && b.lng != null &&
+    !isNaN(parseFloat(b.lat)) && !isNaN(parseFloat(b.lng))
+  )
   if (!candidates.length) return null
   let nearest = null, minDist = Infinity
   candidates.forEach(b => {
-    const d = distanceKm(custLat, custLng, b.lat, b.lng)
+    const d = distanceKm(custLat, custLng, parseFloat(b.lat), parseFloat(b.lng))
     if (d < minDist) { minDist = d; nearest = b }
   })
-  return { branch: nearest, distanceKm: minDist }
+  return nearest ? { branch: nearest, distanceKm: minDist } : null
 }
 // تنضيف رقم تواصل المطعم لصيغة دولية موحدة قبل استخدامه في رابط tel:
 // (يغطي صيغ مختلفة: 0 محلي / + / مسافات / بدون كود دولة)
@@ -293,6 +297,7 @@ let _custAuthMode  = 'login'  // 'login' | 'signup'
 let _appliedDiscount = 0      // خصم الكود بالجنيه
 let _appliedCode     = null   // الكود المطبّق
 let _coinsToRedeem   = 0      // كوينز سيتم استخدامها في الطلب
+let _walletToUse     = 0      // رصيد المحفظة النقدي (ج.م) سيُستخدم في الطلب
 
 async function initCustomerSession(forceCreate, extraData) {
   const { data: { session } } = await db.auth.getSession()

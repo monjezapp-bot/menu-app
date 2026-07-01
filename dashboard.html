@@ -2423,6 +2423,7 @@ function openOrderDetailModal(orderId) {
   if (order.delivery_fee)         totals.push(`<div class="flex justify-between text-sm"><span class="text-gray-500">🛵 رسوم التوصيل</span><span class="font-bold text-gray-700">${Number(order.delivery_fee).toFixed(2)} ج.م</span></div>`)
   if (order.coins_discount)       totals.push(`<div class="flex justify-between text-sm"><span class="text-orange-500">خصم الكوينز 🪙</span><span class="font-bold text-orange-500">-${Number(order.coins_discount).toFixed(2)} ج.م</span></div>`)
   if (order.discount_code_amount) totals.push(`<div class="flex justify-between text-sm"><span class="text-green-600">كود خصم</span><span class="font-bold text-green-600">-${Number(order.discount_code_amount).toFixed(2)} ج.م</span></div>`)
+  if (order.wallet_amount_used)   totals.push(`<div class="flex justify-between text-sm"><span class="text-emerald-600">💳 من رصيد المحفظة</span><span class="font-bold text-emerald-600">-${Number(order.wallet_amount_used).toFixed(2)} ج.م</span></div>`)
   totals.push(`<div class="flex justify-between text-sm font-extrabold pt-2 border-t border-gray-100"><span>الإجمالي</span><span class="text-orange-500">${Number(order.total).toFixed(2)} ج.م</span></div>`)
   document.getElementById('od-totals').innerHTML = totals.join('')
 

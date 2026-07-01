@@ -81,7 +81,7 @@ function openModal(pid) {
   modal.dataset.qty  = 1
   modal.scrollTop = 0
   modal.classList.remove('hidden')
-  document.documentElement.style.overflow = 'hidden'
+  _lockBodyScroll()
   pushModal('product', closeModal)
 }
 
@@ -174,7 +174,7 @@ function addFromModal(pid) {
 }
 function closeModal(fromPopstate) {
   document.getElementById('product-modal').classList.add('hidden')
-  document.documentElement.style.overflow = ''
+  _unlockBodyScroll()
   S.cart = S.cart.filter(c => !c._also)
   if (!fromPopstate) popModalSilently('product')
 }
@@ -216,12 +216,12 @@ function openBundleModal(bid) {
     </div>`
 
   document.getElementById('bundle-modal').classList.remove('hidden')
-  document.documentElement.style.overflow = 'hidden'
+  _lockBodyScroll()
   pushModal('bundle', closeBundleModal)
 }
 function closeBundleModal(fromPopstate) {
   document.getElementById('bundle-modal').classList.add('hidden')
-  document.documentElement.style.overflow = ''
+  _unlockBodyScroll()
   if (!fromPopstate) popModalSilently('bundle')
 }
 
@@ -281,8 +281,8 @@ function updateCartUI() {
     bar.classList.add('hidden'); closeCartSheet()
   }
 }
-function openCartSheet()  { renderCartItems(); document.getElementById('cart-sheet').classList.remove('hidden'); document.documentElement.style.overflow = 'hidden'; pushModal('cart', closeCartSheet) }
-function closeCartSheet(fromPopstate) { document.getElementById('cart-sheet').classList.add('hidden'); document.documentElement.style.overflow = ''; if (!fromPopstate) popModalSilently('cart') }
+function openCartSheet()  { renderCartItems(); document.getElementById('cart-sheet').classList.remove('hidden'); _lockBodyScroll(); pushModal('cart', closeCartSheet) }
+function closeCartSheet(fromPopstate) { document.getElementById('cart-sheet').classList.add('hidden'); _unlockBodyScroll(); if (!fromPopstate) popModalSilently('cart') }
 function renderCartItems() {
   const el  = document.getElementById('cart-items-list')
   const tot = document.getElementById('cart-grand-total')
@@ -322,6 +322,7 @@ function renderCartItems() {
   const custLat = document.getElementById('order-location-lat')?.value
   const custLng = document.getElementById('order-location-lng')?.value
   const pricePerKm = parseFloat(S.restaurant?.price_per_km) || 0
+  let currentDeliveryFee = 0
   if (deliveryRow) {
     // استخدم الفروع أو موقع المطعم كـ fallback
     const restLat = parseFloat(S.restaurant?.lat)
@@ -336,8 +337,8 @@ function renderCartItems() {
         distKm = distanceKm(parseFloat(custLat), parseFloat(custLng), restLat, restLng)
       }
       if (distKm !== null) {
-        const fee = Math.round(distKm * pricePerKm * 100) / 100
-        deliveryRow.innerHTML = `<span style="font-size:13px;color:#888">🛵 رسوم التوصيل (${distKm.toFixed(1)} كم)</span><span style="font-size:13px;font-weight:900;color:#555">${fmt(fee)}</span>`
+        currentDeliveryFee = Math.round(distKm * pricePerKm * 100) / 100
+        deliveryRow.innerHTML = `<span style="font-size:13px;color:#888">🛵 رسوم التوصيل (${distKm.toFixed(1)} كم)</span><span style="font-size:13px;font-weight:900;color:#555">${fmt(currentDeliveryFee)}</span>`
         deliveryRow.style.display = 'flex'
       } else deliveryRow.style.display = 'none'
     } else deliveryRow.style.display = 'none'
@@ -359,13 +360,32 @@ function renderCartItems() {
     coinsDiscRow.style.display = 'flex'; coinsDiscVal.textContent = '- ' + fmt(coinsDiscount)
   } else { coinsDiscRow.style.display = 'none' }
 
-  // الإجمالي النهائي
+  // استخدام رصيد المحفظة النقدي — يظهر فقط للمسجّلين وعندهم رصيد
+  const walletRow = document.getElementById('cart-wallet-row')
+  if (walletRow) {
+    const walletBalance = Number(S.customer?.wallet_balance || 0)
+    if (S.customer && walletBalance > 0) {
+      document.getElementById('cart-wallet-available').textContent = `رصيدك: ${walletBalance.toFixed(2)} ج.م`
+      walletRow.style.display = 'block'
+    } else {
+      walletRow.style.display = 'none'
+      _walletToUse = 0
+    }
+  }
+  const walletDiscRow = document.getElementById('cart-wallet-disc-row')
+  const walletDiscVal  = document.getElementById('cart-wallet-disc-val')
+  if (_walletToUse > 0) {
+    walletDiscRow.style.display = 'flex'; walletDiscVal.textContent = '- ' + fmt(_walletToUse)
+  } else { walletDiscRow.style.display = 'none' }
+
+  // الإجمالي النهائي = (المنتجات + التوصيل) − كل الخصومات (كود + كوينز + محفظة)
+  // يظهر دايماً لما فيه توصيل أو أي خصم، عشان العميل يشوف رقم واحد واضح قبل التأكيد
   const finalRow = document.getElementById('cart-final-row')
   const finalTot  = document.getElementById('cart-final-total')
-  const totalDiscount = _appliedDiscount + coinsDiscount
-  if (totalDiscount > 0) {
-    const rawTotal = cartTotal()
-    const final    = Math.max(0, rawTotal - totalDiscount)
+  const totalDiscount = _appliedDiscount + coinsDiscount + _walletToUse
+  if (currentDeliveryFee > 0 || totalDiscount > 0) {
+    const beforeDiscount = cartTotal() + currentDeliveryFee
+    const final = Math.max(0, Math.round((beforeDiscount - totalDiscount) * 100) / 100)
     finalRow.style.display = 'flex'; finalTot.textContent = fmt(final)
   } else { finalRow.style.display = 'none' }
 }
@@ -375,7 +395,7 @@ let _map = null, _marker = null, _pickedLat = null, _pickedLng = null
 
 function openMapPicker() {
   document.getElementById('map-modal').classList.remove('hidden')
-  document.documentElement.style.overflow = 'hidden'
+  _lockBodyScroll()
   pushModal('map', closeMapPicker)
 
   if (!_map) {
@@ -403,7 +423,7 @@ function openMapPicker() {
 }
 function closeMapPicker(fromPopstate) {
   document.getElementById('map-modal').classList.add('hidden')
-  document.documentElement.style.overflow = ''
+  _unlockBodyScroll()
   if (!fromPopstate) popModalSilently('map')
 }
 function updateCoordsLabel() {
