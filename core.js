@@ -418,17 +418,12 @@ async function _loadCustomerProfileInner(forceCreate, extraData) {
           }).catch(() => {})
         }
         // كوينز الإحالة للمُحيل (لو الميزة مفعّلة) — تتحول فلوس فوراً في wallet_balance أيضاً
+        // ملاحظة: كان بيُستخدم incrementCustomerWallet(referredBy,...) وده كان بيفشل بصمت
+        // لأن الـ RLS بترفض تعديل عميل تاني من جلسة العميل الجديد — الدالة الآمنة دي بتتخطى المشكلة
+        // وبتسجّل معاملة coin_transactions بنفسها داخلياً، فمفيش داعي لإدراج يدوي هنا تاني
         const referralEnabled = S.restaurant.referral_enabled ?? true
         if (referredBy && referralEnabled && S.restaurant.referral_coins) {
-          const rc = S.restaurant.referral_coins
-          await incrementCustomerWallet(referredBy, rc / cpE).catch(() => {})
-          await db.from('coin_transactions').insert({
-            customer_id:   referredBy,
-            restaurant_id: S.restaurant.id,
-            type:   'referral_reward',
-            amount: rc,
-            note:   `إحالة: ${user.email} — تحوّل فوراً لرصيد المحفظة النقدي`
-          }).catch(() => {})
+          await db.rpc('credit_referral_reward', { p_new_customer_id: newCust.id }).catch(() => {})
         }
       }
     } catch(e) {

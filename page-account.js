@@ -360,39 +360,25 @@ async function submitEditField(field, value) {
   closeConfirmSheet()
 
   const coinsMap = { phone: 1500, birthdate: 1500, gender: 1000, area: 1000 }
-  const wasEmpty = !S.customer[field]
 
   try {
-    const { error } = await db.from('menu_customers')
-      .update({ [field]: value })
-      .eq('id', S.customer.id)
+    // الدالة الآمنة بتحدّث الحقل وتمنح الكوينز معاً في نفس المعاملة على السيرفر،
+    // وبترفض الطلب لو الحقل كان معبّى بالفعل (بتمنع أي محاولة تكرار)
+    const { data, error } = await db.rpc('claim_profile_field', { p_field: field, p_value: value, p_restaurant_id: S.restaurant.id })
     if (error) throw error
 
     S.customer[field] = value
+    S.customer.coins_balance = data.new_balance
 
-    // منح الكوينز لو أول مرة
-    if (wasEmpty && coinsMap[field]) {
-      const coins = coinsMap[field]
-      await db.from('menu_customers').update({ coins_balance: (S.customer.coins_balance || 0) + coins }).eq('id', S.customer.id)
-      await db.from('coin_transactions').insert({
-        customer_id: S.customer.id, restaurant_id: S.restaurant.id,
-        type: 'profile_complete', amount: coins,
-        note: `إكمال بيانات: ${field}`
-      })
-      S.customer.coins_balance = (S.customer.coins_balance || 0) + coins
-      showToast(`+${numFmt(coins)} 🪙 كوينز على إكمال ملفك!`)
-      playSuccessSound()
+    showToast(`+${numFmt(data.coins_granted)} 🪙 كوينز على إكمال ملفك!`)
+    playSuccessSound()
 
-      const willCompleteAll = !PROFILE_FIELDS.some(f => f.key !== field && !(S.customer[f.key] && S.customer[f.key] !== ''))
-      celebrateQuestSlot(() => {
-        renderAccountPage()
-        if (willCompleteAll) renderProfileQuestCard(true)
-        updateWalletBadge()
-      })
-    } else {
+    const willCompleteAll = !PROFILE_FIELDS.some(f => f.key !== field && !(S.customer[f.key] && S.customer[f.key] !== ''))
+    celebrateQuestSlot(() => {
       renderAccountPage()
+      if (willCompleteAll) renderProfileQuestCard(true)
       updateWalletBadge()
-    }
+    })
   } catch(e) {
     showToast('خطأ: ' + e.message)
   }
@@ -544,39 +530,26 @@ async function redeemVoucher() {
     msgEl.style.color        = ok ? '#16a34a' : '#ef4444'
   }
 
+  const errorMessages = {
+    CODE_NOT_FOUND: 'الكود غير موجود أو غير مفعّل ❌',
+    CODE_EXPIRED:   'الكود منتهي الصلاحية ❌',
+    CODE_MAX_USES:  'هذا الكود وصل لأقصى عدد استخدامات ❌',
+  }
+
   try {
-    const { data: dc } = await db.from('discount_codes')
-      .select('*')
-      .eq('code', code)
-      .eq('restaurant_id', S.restaurant.id)
-      .eq('is_active', true)
-      .single()
+    // الدالة الآمنة بتتحقق من الكود وتمنح الكوينز وتحدّث عداد الاستخدام كلها معاً على السيرفر
+    const { data, error } = await db.rpc('redeem_discount_code', { p_code: code, p_restaurant_id: S.restaurant.id })
+    if (error) throw error
 
-    if (!dc) return showMsg('الكود غير موجود أو منتهي الصلاحية ❌', false)
-    if (dc.used_count >= dc.max_uses) return showMsg('هذا الكود وصل لأقصى عدد استخدامات ❌', false)
-    if (dc.expires_at && new Date(dc.expires_at) < new Date()) return showMsg('الكود منتهي الصلاحية ❌', false)
-
-    // حوّل قيمة الخصم لكوينز
-    const cpE   = S.restaurant.coins_per_egp ?? 1000
-    const coins = Math.round(dc.amount * cpE)
-
-    await db.from('menu_customers')
-      .update({ coins_balance: (S.customer.coins_balance || 0) + coins })
-      .eq('id', S.customer.id)
-    await db.from('coin_transactions').insert({
-      customer_id: S.customer.id, restaurant_id: S.restaurant.id,
-      type: 'discount_code', amount: coins, note: `كود: ${code}`
-    })
-    await db.from('discount_codes').update({ used_count: (dc.used_count || 0) + 1 }).eq('id', dc.id)
-
-    S.customer.coins_balance = (S.customer.coins_balance || 0) + coins
-    showMsg(`✅ تم! +${numFmt(coins)} 🪙 أُضيفت لمحفظتك`, true)
+    S.customer.coins_balance = data.new_balance
+    showMsg(`✅ تم! +${numFmt(data.coins_granted)} 🪙 أُضيفت لمحفظتك`, true)
     document.getElementById('voucher-input').value = ''
     playSuccessSound()
     updateWalletBadge()
     renderAccountPage()
   } catch(e) {
-    showMsg('خطأ: ' + e.message, false)
+    const friendly = errorMessages[e.message] || ('خطأ: ' + e.message)
+    showMsg(friendly, false)
   }
 }
 

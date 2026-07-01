@@ -65,7 +65,8 @@ function copyReferralLink() {
   if (!S.customer?.referral_code || !S.restaurant?.slug) return
   const link = `${location.origin}${location.pathname}?r=${S.restaurant.slug}&ref=${S.customer.referral_code}`
   navigator.clipboard.writeText(link).then(() => {
-    const btn = document.querySelector('#wallet-modal button[onclick="copyReferralLink()"]')
+    const btns = document.querySelectorAll('button[onclick="copyReferralLink()"]')
+    const btn = [...btns].find(b => b.offsetParent !== null)
     if (btn) { const orig = btn.textContent; btn.textContent = 'تم النسخ ✅'; setTimeout(() => btn.textContent = orig, 2000) }
   })
 }
