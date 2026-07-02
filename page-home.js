@@ -5,20 +5,35 @@ function renderHeader() {
   document.title = S.restaurant.name
   document.getElementById('mini-name').textContent = S.restaurant.name
 
+  const nameEl = document.getElementById('restaurant-name')
+  if (nameEl) nameEl.textContent = S.restaurant.name
+
   if (S.restaurant.logo_url) {
     const ml = document.getElementById('mini-logo')
     ml.src = S.restaurant.logo_url
     ml.style.display = 'block'
+
+    const logoEl = document.getElementById('restaurant-logo')
+    if (logoEl) { logoEl.src = S.restaurant.logo_url; logoEl.style.display = 'block' }
   }
 
-  // غلاف المطعم كـ background للـ mini header
+  // صورة الغلاف: كارت الهيدر الكامل + خلفية الهيدر المصغّر (shrunk)
   if (S.restaurant.cover_url) {
+    const coverImg = document.getElementById('hero-cover-img')
+    if (coverImg) coverImg.src = S.restaurant.cover_url
+
     const miniHeader = document.getElementById('hero-mini')
     miniHeader.style.background   = `linear-gradient(rgba(0,0,0,0.55),rgba(0,0,0,0.55)), url('${S.restaurant.cover_url}') center/cover`
     miniHeader.style.borderBottom = 'none'
     // اجعل النصوص بيضاء
-    const nameEl = document.getElementById('mini-name')
-    if (nameEl) nameEl.style.color = '#fff'
+    const miniNameEl = document.getElementById('mini-name')
+    if (miniNameEl) miniNameEl.style.color = '#fff'
+  }
+
+  // تصنيفات المطعم كوصف مختصر تحت الاسم
+  const taglineEl = document.getElementById('hero-card-tagline')
+  if (taglineEl && Array.isArray(S.categories) && S.categories.length) {
+    taglineEl.textContent = S.categories.slice(0, 5).map(c => c.name).join('، ')
   }
 
   // رقم التواصل
