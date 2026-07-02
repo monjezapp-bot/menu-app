@@ -167,26 +167,18 @@
     }
 
     /* ══════════════════════════════════════════
-       HERO — صورة غلاف + كارت معلومات عايم (shrink on scroll)
+       HERO — صورة غلاف + كارت معلومات عايم (بيمشي طبيعي مع الصفحة، زي ورقة كتاب واحدة)
     ══════════════════════════════════════════ */
     .hero-wrap {
-      position: relative; z-index: 25;
+      position: relative;
+      z-index: 1; /* أقل من sticky-bar عشان شريط التصنيفات يقف فوقه لما يوصل له */
       overflow: hidden;
-      height: var(--hero-h, 310px); /* بيتحدد بدقة من JS بعد الرندر، عشان الانيميشن يبدأ فورًا بدون تأخير */
-      /* ملحوظة: عمدًا مفيش transition على height هنا.
-         الـ height بيتغيّر لحظيًا من page-home.js بعد ما الـ transform تحت يخلص تمامًا،
-         عشان نمنع تصادم بين تحريك الـ layout (height، بطيء) وتحريك الـ compositor (transform، سريع)
-         وده كان سبب "النغمشة" اللي بتحصل وقت السكرول. */
     }
 
     .hero-inner {
-      transition: transform 0.32s cubic-bezier(0.4, 0, 0.2, 1);
-      transform: translateY(0);
-      will-change: transform;
+      /* مفيش transform ولا transition ولا JS بيتحكم في الهيدر خالص —
+         بيتحرك مع السكرول الطبيعي زي أي محتوى تاني في الصفحة، قطعة واحدة صلبة 100% */
     }
-
-    /* Shrunk state — الهيدر كله (غلاف + كارت) يغرق لفوق كقطعة واحدة متماسكة عبر transform فقط */
-    .hero-wrap.shrunk .hero-inner { transform: translateY(-100%); }
 
     /* صورة الغلاف + شريط الأيقونات العايمة فوقها */
     .hero-section {

@@ -93,41 +93,27 @@ function initScrollBehavior() {
   const backBtn   = document.getElementById('back-to-top-btn')
   const cartBar   = document.getElementById('cart-bar')
   let isShrunk = false
-  let heroFullHeight = 0
-  let collapseTimer = null
 
-  // نقيس ارتفاع الهيدر الحقيقي (صورة الغلاف + الكارت) بدل قيمة تقريبية ثابتة،
-  // عشان انيميشن الغرق لفوق يبدأ فورًا ويبقى قطعة واحدة متماسكة بدون "منطقة ميتة"
-  const measureHeroHeight = () => {
-    if (!heroWrap.classList.contains('shrunk')) {
-      heroFullHeight = heroWrap.scrollHeight
-      heroWrap.style.setProperty('--hero-h', heroFullHeight + 'px')
-    }
-  }
-  measureHeroHeight()
-  window.addEventListener('load', measureHeroHeight)
+  // عتبة ظهور اللوجو المصغّر = ارتفاع الهيدر نفسه، عشان يتزامن بالظبط مع
+  // اللحظة اللي شريط التصنيفات بيوصل فيها لأعلى الشاشة ويثبت (زي طلبات بالظبط)
+  let stickyThreshold = 300
+  const measureThreshold = () => { stickyThreshold = heroWrap.offsetHeight - 8 }
+  measureThreshold()
+  window.addEventListener('load', measureThreshold)
   const coverImg = document.getElementById('hero-cover-img')
-  if (coverImg) coverImg.addEventListener('load', measureHeroHeight)
+  if (coverImg) coverImg.addEventListener('load', measureThreshold)
 
   window.addEventListener('scroll', () => {
     const y = window.scrollY
 
-    // Hysteresis: عتبتان مختلفتان للدخول والخروج من وضع الانكماش
-    // يمنع التبديل السريع المتكرر ("الرعشة") حول نقطة واحدة عند السحب الطبيعي
-    if (!isShrunk && y > 100) {
+    // الهيدر نفسه بيمشي طبيعي مع السكرول (مفيش أي تحكم فيه هنا خالص).
+    // العتبة دي بتتحكم بس في ظهور اللوجو + الاسم المصغّر جنب شريط التصنيفات
+    // في نفس لحظة ما الهيدر الكبير يختفي تمامًا تحت شريط التصنيفات الثابت
+    if (!isShrunk && y > stickyThreshold) {
       isShrunk = true
-      heroWrap.classList.add('shrunk')       // يبدأ الغلاف والكارت يترفعوا سوا بالـ transform
-      stickyBar.classList.add('shrunk')      // يظهر اللوجو + الاسم المصغّر داخل البطاقة الثابتة
-      // نصفّر الـ height لحظيًا بعد ما الـ transform يخلص تمامًا (مش في نفس الوقت)
-      // عشان نمنع تصادم بين حركة الـ layout وحركة الـ compositor اللي بتسبب النغمشة
-      clearTimeout(collapseTimer)
-      collapseTimer = setTimeout(() => { heroWrap.style.height = '0px' }, 320)
-    } else if (isShrunk && y < 60) {
+      stickyBar.classList.add('shrunk')
+    } else if (isShrunk && y < stickyThreshold - 20) {
       isShrunk = false
-      clearTimeout(collapseTimer)
-      // نرجّع الـ height فورًا (من غير أي transition) قبل ما نبدأ ننزّل الكارت بالـ transform
-      heroWrap.style.height = heroFullHeight + 'px'
-      heroWrap.classList.remove('shrunk')
       stickyBar.classList.remove('shrunk')
     }
 
