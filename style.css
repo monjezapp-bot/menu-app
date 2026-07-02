@@ -231,29 +231,12 @@
     .hero-card-meta { display: flex; align-items: center; gap: var(--sp-2); font-size: 11.5px; color: #888; font-weight: 600; margin-top: var(--sp-3); }
     .hero-meta-dot { color: #ddd; }
 
-    /* Hero mini (الشريط المصغّر) — يظهر فقط بعد السكرول (shrunk)، بديل الهيدر الكامل */
-    .hero-mini {
-      display: none;
-      align-items: center;
-      gap: var(--sp-3);
-      padding: var(--sp-3) var(--sp-4);
-      background: #fff;
-      border-bottom: 1px solid #f0f0f0;
-    }
-    .sticky-bar.shrunk .hero-mini { display: flex !important; }
-
-    .sticky-bar:not(.shrunk) .search-wrap { display: none !important; }
-
-    /* الشريط الثابت دائماً: البحث + التصنيفات — لا يختفي ولا يتقلّص أبداً */
+    /* الشريط الثابت دائماً: التصنيفات — لا يختفي ولا يتقلّص أبداً */
     .sticky-bar {
       position: sticky; top: 0; z-index: 25;
       background: var(--bg);
     }
-    .sticky-bar:not(.shrunk) .search-wrap { padding-top: var(--sp-4); }
 
-    /* Hero: mini mode (بطاقة بيضاء فيها لوجو + اسم + بحث) */
-    .hero-mini img       { width: 32px; height: 32px; border-radius: 9px; object-fit: cover; border: 1.5px solid #eee; }
-    .hero-mini h2        { color: #1a1a1a; font-size: 15px; font-weight: 800; flex: 1; }
     .search-icon-btn {
       width: 36px; height: 36px; border-radius: 50%;
       background: #fff;
@@ -264,25 +247,6 @@
     }
     .search-icon-btn:active { background: #f5f5f5; }
 
-    /* Cart icon in mini header */
-    .cart-mini-btn {
-      position: relative;
-      width: 36px; height: 36px; border-radius: 50%;
-      background: var(--brand);
-      display: flex; align-items: center; justify-content: center;
-      border: none; cursor: pointer;
-      transition: opacity 0.2s; flex-shrink: 0;
-    }
-    .cart-mini-btn:active { opacity: 0.8; }
-    .cart-mini-badge {
-      position: absolute; top: -3px; left: -3px;
-      background: #ff3b30; color: #fff;
-      font-size: 9px; font-weight: 900;
-      min-width: 17px; height: 17px;
-      border-radius: 50%; display: flex; align-items: center; justify-content: center;
-      border: 2px solid #fff;
-    }
-
     /* ══════════════════════════════════════════
        SEARCH
     ══════════════════════════════════════════ */
@@ -291,7 +255,6 @@
       margin: 0 var(--sp-4) var(--sp-4);
       z-index: 10;
     }
-    .sticky-bar.shrunk .search-wrap { display: none; } /* في الحالة المصغّرة، البحث يصبح أيقونة دائرية بدل الخانة الكاملة */
     .search-wrap input {
       width: 100%; background: #fff; border: none;
       border-radius: 16px;

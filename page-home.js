@@ -3,31 +3,18 @@
 // ── HEADER ────────────────────────────────────────────────────────────
 function renderHeader() {
   document.title = S.restaurant.name
-  document.getElementById('mini-name').textContent = S.restaurant.name
 
   const nameEl = document.getElementById('restaurant-name')
   if (nameEl) nameEl.textContent = S.restaurant.name
 
   if (S.restaurant.logo_url) {
-    const ml = document.getElementById('mini-logo')
-    ml.src = S.restaurant.logo_url
-    ml.style.display = 'block'
-
     const logoEl = document.getElementById('restaurant-logo')
     if (logoEl) { logoEl.src = S.restaurant.logo_url; logoEl.style.display = 'block' }
   }
 
-  // صورة الغلاف: كارت الهيدر الكامل + خلفية الهيدر المصغّر (shrunk)
   if (S.restaurant.cover_url) {
     const coverImg = document.getElementById('hero-cover-img')
     if (coverImg) coverImg.src = S.restaurant.cover_url
-
-    const miniHeader = document.getElementById('hero-mini')
-    miniHeader.style.background   = `linear-gradient(rgba(0,0,0,0.55),rgba(0,0,0,0.55)), url('${S.restaurant.cover_url}') center/cover`
-    miniHeader.style.borderBottom = 'none'
-    // اجعل النصوص بيضاء
-    const miniNameEl = document.getElementById('mini-name')
-    if (miniNameEl) miniNameEl.style.color = '#fff'
   }
 
   // تصنيفات المطعم كوصف مختصر تحت الاسم
@@ -88,34 +75,11 @@ function handleBannerClick() {
 
 // ── SCROLL BEHAVIOR ───────────────────────────────────────────────────
 function initScrollBehavior() {
-  const heroWrap  = document.getElementById('hero-wrap')
-  const stickyBar = document.getElementById('sticky-bar')
-  const backBtn   = document.getElementById('back-to-top-btn')
-  const cartBar   = document.getElementById('cart-bar')
-  let isShrunk = false
-
-  // عتبة ظهور اللوجو المصغّر = ارتفاع الهيدر نفسه، عشان يتزامن بالظبط مع
-  // اللحظة اللي شريط التصنيفات بيوصل فيها لأعلى الشاشة ويثبت (زي طلبات بالظبط)
-  let stickyThreshold = 300
-  const measureThreshold = () => { stickyThreshold = heroWrap.offsetHeight - 8 }
-  measureThreshold()
-  window.addEventListener('load', measureThreshold)
-  const coverImg = document.getElementById('hero-cover-img')
-  if (coverImg) coverImg.addEventListener('load', measureThreshold)
+  const backBtn = document.getElementById('back-to-top-btn')
+  const cartBar = document.getElementById('cart-bar')
 
   window.addEventListener('scroll', () => {
     const y = window.scrollY
-
-    // الهيدر نفسه بيمشي طبيعي مع السكرول (مفيش أي تحكم فيه هنا خالص).
-    // العتبة دي بتتحكم بس في ظهور اللوجو + الاسم المصغّر جنب شريط التصنيفات
-    // في نفس لحظة ما الهيدر الكبير يختفي تمامًا تحت شريط التصنيفات الثابت
-    if (!isShrunk && y > stickyThreshold) {
-      isShrunk = true
-      stickyBar.classList.add('shrunk')
-    } else if (isShrunk && y < stickyThreshold - 20) {
-      isShrunk = false
-      stickyBar.classList.remove('shrunk')
-    }
 
     // Show back-to-top after 400px or near bottom
     const nearBottom = (window.innerHeight + y) >= (document.body.scrollHeight - 120)
