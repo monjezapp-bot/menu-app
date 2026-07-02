@@ -156,19 +156,19 @@
     ══════════════════════════════════════════ */
     .hero-wrap {
       position: relative; z-index: 25;
-      overflow: hidden; /* يقطع الهيدر بصرياً وهو بيخرج لفوق، بدل ما يفضل ظاهر تحت باقي المحتوى */
-      max-height: 340px;
-      transition: max-height 0.28s cubic-bezier(0.4, 0, 0.2, 1);
+      overflow: hidden;
+      height: var(--hero-h, 310px); /* بيتحدد بدقة من JS بعد الرندر، عشان الانيميشن يبدأ فورًا بدون تأخير */
+      transition: height 0.32s cubic-bezier(0.4, 0, 0.2, 1);
     }
 
     .hero-inner {
-      transition: transform 0.28s cubic-bezier(0.4, 0, 0.2, 1);
+      transition: transform 0.32s cubic-bezier(0.4, 0, 0.2, 1);
       transform: translateY(0);
       will-change: transform;
     }
 
-    /* Shrunk state — الهيدر كله (غلاف + كارت) يخرج لفوق الشاشة بالكامل كقطعة واحدة متماسكة */
-    .hero-wrap.shrunk { max-height: 0; }
+    /* Shrunk state — الهيدر كله (غلاف + كارت) يغرق لفوق كقطعة واحدة متماسكة */
+    .hero-wrap.shrunk { height: 0; }
     .hero-wrap.shrunk .hero-inner { transform: translateY(-100%); }
 
     /* صورة الغلاف + شريط الأيقونات العايمة فوقها */

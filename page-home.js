@@ -94,6 +94,18 @@ function initScrollBehavior() {
   const cartBar   = document.getElementById('cart-bar')
   let isShrunk = false
 
+  // نقيس ارتفاع الهيدر الحقيقي (صورة الغلاف + الكارت) بدل قيمة تقريبية ثابتة،
+  // عشان انيميشن الغرق لفوق يبدأ فورًا ويبقى قطعة واحدة متماسكة بدون "منطقة ميتة"
+  const measureHeroHeight = () => {
+    if (!heroWrap.classList.contains('shrunk')) {
+      heroWrap.style.setProperty('--hero-h', heroWrap.scrollHeight + 'px')
+    }
+  }
+  measureHeroHeight()
+  window.addEventListener('load', measureHeroHeight)
+  const coverImg = document.getElementById('hero-cover-img')
+  if (coverImg) coverImg.addEventListener('load', measureHeroHeight)
+
   window.addEventListener('scroll', () => {
     const y = window.scrollY
 
