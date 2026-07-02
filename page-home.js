@@ -93,12 +93,15 @@ function initScrollBehavior() {
   const backBtn   = document.getElementById('back-to-top-btn')
   const cartBar   = document.getElementById('cart-bar')
   let isShrunk = false
+  let heroFullHeight = 0
+  let collapseTimer = null
 
   // نقيس ارتفاع الهيدر الحقيقي (صورة الغلاف + الكارت) بدل قيمة تقريبية ثابتة،
   // عشان انيميشن الغرق لفوق يبدأ فورًا ويبقى قطعة واحدة متماسكة بدون "منطقة ميتة"
   const measureHeroHeight = () => {
     if (!heroWrap.classList.contains('shrunk')) {
-      heroWrap.style.setProperty('--hero-h', heroWrap.scrollHeight + 'px')
+      heroFullHeight = heroWrap.scrollHeight
+      heroWrap.style.setProperty('--hero-h', heroFullHeight + 'px')
     }
   }
   measureHeroHeight()
@@ -113,10 +116,17 @@ function initScrollBehavior() {
     // يمنع التبديل السريع المتكرر ("الرعشة") حول نقطة واحدة عند السحب الطبيعي
     if (!isShrunk && y > 100) {
       isShrunk = true
-      heroWrap.classList.add('shrunk')
-      stickyBar.classList.add('shrunk') // يظهر اللوجو + الاسم المصغّر داخل البطاقة الثابتة
+      heroWrap.classList.add('shrunk')       // يبدأ الغلاف والكارت يترفعوا سوا بالـ transform
+      stickyBar.classList.add('shrunk')      // يظهر اللوجو + الاسم المصغّر داخل البطاقة الثابتة
+      // نصفّر الـ height لحظيًا بعد ما الـ transform يخلص تمامًا (مش في نفس الوقت)
+      // عشان نمنع تصادم بين حركة الـ layout وحركة الـ compositor اللي بتسبب النغمشة
+      clearTimeout(collapseTimer)
+      collapseTimer = setTimeout(() => { heroWrap.style.height = '0px' }, 320)
     } else if (isShrunk && y < 60) {
       isShrunk = false
+      clearTimeout(collapseTimer)
+      // نرجّع الـ height فورًا (من غير أي transition) قبل ما نبدأ ننزّل الكارت بالـ transform
+      heroWrap.style.height = heroFullHeight + 'px'
       heroWrap.classList.remove('shrunk')
       stickyBar.classList.remove('shrunk')
     }

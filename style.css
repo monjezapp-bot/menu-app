@@ -173,7 +173,10 @@
       position: relative; z-index: 25;
       overflow: hidden;
       height: var(--hero-h, 310px); /* بيتحدد بدقة من JS بعد الرندر، عشان الانيميشن يبدأ فورًا بدون تأخير */
-      transition: height 0.32s cubic-bezier(0.4, 0, 0.2, 1);
+      /* ملحوظة: عمدًا مفيش transition على height هنا.
+         الـ height بيتغيّر لحظيًا من page-home.js بعد ما الـ transform تحت يخلص تمامًا،
+         عشان نمنع تصادم بين تحريك الـ layout (height، بطيء) وتحريك الـ compositor (transform، سريع)
+         وده كان سبب "النغمشة" اللي بتحصل وقت السكرول. */
     }
 
     .hero-inner {
@@ -182,8 +185,7 @@
       will-change: transform;
     }
 
-    /* Shrunk state — الهيدر كله (غلاف + كارت) يغرق لفوق كقطعة واحدة متماسكة */
-    .hero-wrap.shrunk { height: 0; }
+    /* Shrunk state — الهيدر كله (غلاف + كارت) يغرق لفوق كقطعة واحدة متماسكة عبر transform فقط */
     .hero-wrap.shrunk .hero-inner { transform: translateY(-100%); }
 
     /* صورة الغلاف + شريط الأيقونات العايمة فوقها */
