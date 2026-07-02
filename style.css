@@ -117,14 +117,20 @@
       transition: bottom 0.2s ease;
     }
 
-    /* ── كل الـ fixed modals ── */
+    /* ── كل الـ fixed modals ──
+       ملاحظة: order-detail-sheet اتشال من هنا عمداً — هو الوحيد من المودالات دي
+       اللي معاه inline style بيحدد position:fixed;inset:0 مباشرة (left:0 صريح).
+       الـ inline style بيغلب left:50% الجايين من هنا (inline دايماً بيكسب)، لكن
+       مفيش حاجة inline بتلغي transform:translateX(-50%) — فبيتطبق لوحده من غير
+       شريكه، وبيزحزح المودال لليسار بمقدار نص عرضه (نص الشاشة بيطلع بره الشاشة).
+       توسيطه على الشاشات العريضة متكفّل بيه أصلاً flexbox (justify-content:center)
+       + max-width على الكارت الداخلي بتاعه، فمش محتاج القاعدة دي خالص. ── */
     #cart-sheet,
     #order-success-modal,
     #cust-auth-modal,
     #wallet-modal,
     #celebration-overlay,
-    #confirm-sheet,
-    #order-detail-sheet {
+    #confirm-sheet {
       max-width: var(--max);
       left: 50%;
       right: auto;
