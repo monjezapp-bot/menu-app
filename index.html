@@ -64,13 +64,42 @@
 
 
 
-  <!-- hidden elements for JS compatibility -->
-  <div id="hero-wrap" style="display:none"></div>
-  <div id="hero-section" style="display:none"></div>
-  <div id="hero-full" style="display:none"></div>
-  <img id="restaurant-logo" src="" alt="" style="display:none" />
-  <h1 id="restaurant-name" style="display:none"></h1>
+  <!-- رابط اتصال مخفي (JS compatibility) -->
   <a id="call-restaurant-btn" href="#" style="display:none"></a>
+
+  <!-- ══════════════════════════════════════════
+       الهيدر الكبير: صورة غلاف + كارت عائم
+       (يتقلّص ويختفي تلقائياً وقت السكرول عبر كلاس shrunk — نفس initScrollBehavior الحالية)
+  ══════════════════════════════════════════ -->
+  <div class="hero-wrap" id="hero-wrap">
+    <div class="hero" id="hero-section">
+      <img id="hero-cover-img" class="hero-cover-img" src="" alt="" />
+      <div class="hero-icons">
+        <button class="hero-icon-btn" onclick="openSearchOverlay()" aria-label="بحث">
+          <svg width="18" height="18" fill="none" stroke="#333" stroke-width="2.2" viewBox="0 0 24 24">
+            <circle cx="11" cy="11" r="8"/><path d="m21 21-4.35-4.35"/>
+          </svg>
+        </button>
+      </div>
+    </div>
+
+    <div class="hero-card" id="hero-full">
+      <div class="hero-card-row">
+        <h1 id="restaurant-name"></h1>
+        <img id="restaurant-logo" src="" alt="" />
+      </div>
+      <div class="hero-card-meta">
+        <div class="hero-chip">
+          <svg width="12" height="12" fill="#f59e0b" viewBox="0 0 24 24"><path d="M12 2l3.09 6.26L22 9.27l-5 4.87 1.18 6.88L12 17.77l-6.18 3.25L7 14.14 2 9.27l6.91-1.01L12 2z"/></svg>
+          <span id="strip-rating">5.0</span>
+        </div>
+        <div class="hero-chip">
+          <svg width="12" height="12" fill="none" stroke="#888" stroke-width="2.2" viewBox="0 0 24 24"><circle cx="12" cy="12" r="10"/><polyline points="12 6 12 12 16 14"/></svg>
+          <span id="strip-time">-- د</span>
+        </div>
+      </div>
+    </div>
+  </div>
 
   <!-- شريط/بطاقة ثابتة دائماً: لوجو مصغّر + اسم المطعم (يظهر فقط بعد السكرول) + البحث + التصنيفات -->
   <div class="sticky-bar" id="sticky-bar">
@@ -126,16 +155,7 @@
       <svg width="16" height="16" fill="none" stroke="#666" stroke-width="2.2" viewBox="0 0 24 24"><path d="M18 8A6 6 0 006 8c0 7-3 9-3 9h18s-3-2-3-9"/><path d="M13.73 21a2 2 0 01-3.46 0"/></svg>
       <span id="notif-badge" style="display:none;position:absolute;top:-3px;right:-3px;background:#ef4444;color:#fff;font-size:9px;font-weight:900;border-radius:10px;padding:1px 5px;min-width:16px;text-align:center;border:2px solid var(--bg)"></span>
     </button>
-    <!-- تقييم -->
-    <div style="display:flex;align-items:center;gap:3px;background:#fff;border-radius:20px;padding:6px 10px;border:1.5px solid #eee;box-shadow:0 1px 6px rgba(0,0,0,0.07);flex-shrink:0">
-      <svg width="12" height="12" fill="#f59e0b" viewBox="0 0 24 24"><path d="M12 2l3.09 6.26L22 9.27l-5 4.87 1.18 6.88L12 17.77l-6.18 3.25L7 14.14 2 9.27l6.91-1.01L12 2z"/></svg>
-      <span id="strip-rating" style="font-size:12px;font-weight:800;color:#1a1a1a">5.0</span>
-    </div>
-    <!-- وقت التوصيل -->
-    <div style="display:flex;align-items:center;gap:3px;background:#fff;border-radius:20px;padding:6px 10px;border:1.5px solid #eee;box-shadow:0 1px 6px rgba(0,0,0,0.07);flex-shrink:0">
-      <svg width="12" height="12" fill="none" stroke="#888" stroke-width="2.2" viewBox="0 0 24 24"><circle cx="12" cy="12" r="10"/><polyline points="12 6 12 12 16 14"/></svg>
-      <span id="strip-time" style="font-size:12px;font-weight:700;color:#555">-- د</span>
-    </div>
+    <!-- ملاحظة: التقييم ووقت التوصيل بقوا جوه الكارت العائم فوق الغلاف (hero-card) بنفس الـ IDs -->
     <!-- spacer -->
     <div style="flex:1"></div>
     <!-- زر Install PWA -->
