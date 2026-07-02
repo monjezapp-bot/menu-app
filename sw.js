@@ -1,49 +1,37 @@
-// Service Worker — لوحة تحكم التاجر (إشعارات الطلبات الجديدة)
+const CACHE_NAME = 'menus-admin-v2';
+const CORE_ASSETS = ['./manifest.json', './icon-192.png', './icon-512.png'];
 
-self.addEventListener('install', () => {
-  self.skipWaiting()
-})
+self.addEventListener('install', (event) => {
+  event.waitUntil(
+    caches.open(CACHE_NAME).then((cache) => cache.addAll(CORE_ASSETS)).catch(() => {})
+  );
+  self.skipWaiting();
+});
 
 self.addEventListener('activate', (event) => {
-  event.waitUntil(self.clients.claim())
-})
-
-// استقبال إشعار Push جديد (طلب جديد من العميل)
-self.addEventListener('push', (event) => {
-  let data = {}
-  try {
-    data = event.data ? event.data.json() : {}
-  } catch (e) {
-    data = { title: 'طلب جديد', body: event.data ? event.data.text() : '' }
-  }
-
-  const title = data.title || '🛎️ طلب جديد'
-  const options = {
-    body: data.body || 'لديك طلب جديد في انتظار التأكيد',
-    icon: './dash-icon-192.png',
-    badge: './dash-icon-192.png',
-    tag: data.tag || 'new-order',
-    data: { url: data.url || './dashboard.html' },
-    vibrate: [200, 100, 200],
-    requireInteraction: true
-  }
-
-  event.waitUntil(self.registration.showNotification(title, options))
-})
-
-// عند الضغط على الإشعار: افتح الداش بورد (أو ركّز على نافذة مفتوحة بالفعل)
-self.addEventListener('notificationclick', (event) => {
-  event.notification.close()
-  const targetUrl = (event.notification.data && event.notification.data.url) || './dashboard.html'
-
   event.waitUntil(
-    self.clients.matchAll({ type: 'window', includeUncontrolled: true }).then((clientsArr) => {
-      for (const client of clientsArr) {
-        if (client.url.includes('dashboard.html') && 'focus' in client) {
-          return client.focus()
-        }
-      }
-      if (self.clients.openWindow) return self.clients.openWindow(targetUrl)
-    })
-  )
-})
+    caches.keys().then((keys) =>
+      Promise.all(keys.filter((k) => k !== CACHE_NAME).map((k) => caches.delete(k)))
+    )
+  );
+  self.clients.claim();
+});
+
+// Network-first for HTML/data so updates always show immediately.
+// Cache-first only for static assets (icons, manifest) that rarely change.
+self.addEventListener('fetch', (event) => {
+  const url = event.request.url;
+  if (url.includes('supabase.co')) return; // never cache live data
+
+  const isHTML = event.request.mode === 'navigate' || url.endsWith('.html');
+  if (isHTML) {
+    event.respondWith(
+      fetch(event.request).catch(() => caches.match(event.request))
+    );
+    return;
+  }
+
+  event.respondWith(
+    caches.match(event.request).then((cached) => cached || fetch(event.request))
+  );
+});

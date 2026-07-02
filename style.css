@@ -157,15 +157,14 @@
     .hero-wrap {
       position: relative; z-index: 25;
       overflow: hidden; /* يقطع الهيدر بصرياً وهو بيخرج لفوق، بدل ما يفضل ظاهر تحت باقي المحتوى */
-      max-height: 420px; /* غلاف + الكارت العائم — مساحة أمان كافية حتى لو الاسم اتلف سطرين */
+      max-height: 230px;
       transition: max-height 0.28s cubic-bezier(0.4, 0, 0.2, 1);
     }
 
     .hero {
       background: linear-gradient(135deg, var(--brand2) 0%, var(--brand) 100%);
-      min-height: 190px;
+      padding: 30px 20px 40px;
       position: relative;
-      overflow: hidden;
       transition: transform 0.28s cubic-bezier(0.4, 0, 0.2, 1);
       transform: translateY(0);
       will-change: transform;
@@ -176,70 +175,26 @@
       pointer-events: none;
     }
 
-    /* صورة الغلاف نفسها فوق التدرج (fallback لو الصورة لسه بتحمّل) */
-    .hero-cover-img {
-      display: none;
-      position: absolute; inset: 0;
-      width: 100%; height: 100%;
-      object-fit: cover;
-    }
-
-    /* الأيقونات العائمة فوق الغلاف (بحث فقط حالياً) */
-    .hero-icons {
-      position: absolute; top: 14px; left: 14px; right: 14px;
-      display: flex; align-items: center; justify-content: flex-end;
-      z-index: 2;
-    }
-    .hero-icon-btn {
-      width: 38px; height: 38px; border-radius: 50%;
-      background: #fff; border: none; cursor: pointer;
-      display: flex; align-items: center; justify-content: center;
-      box-shadow: 0 2px 10px rgba(0,0,0,0.18);
-      flex-shrink: 0;
-    }
-    .hero-icon-btn:active { background: #f5f5f5; }
-
-    /* الكارت الأبيض العائم فوق الغلاف (لوجو + اسم + تقييم + وقت التوصيل) */
-    .hero-card {
-      position: relative; z-index: 3;
-      background: #fff;
-      border-radius: 20px;
-      margin: -34px 14px 0;
-      padding: 16px;
-      box-shadow: 0 10px 28px rgba(0,0,0,0.12);
-      transition: opacity 0.2s ease;
-    }
-    .hero-card-row {
-      display: flex; align-items: center; justify-content: space-between; gap: 12px;
-    }
-    .hero-card-row h1 {
-      flex: 1;
-      font-size: 17px; font-weight: 900; color: #1a1a1a;
-      line-height: 1.3;
-    }
-    .hero-card-row img {
-      width: 46px; height: 46px; border-radius: 12px; object-fit: cover;
-      border: 1.5px solid #f0f0f0; flex-shrink: 0; display: none;
-    }
-    .hero-card-meta {
-      display: flex; align-items: center; gap: 8px; margin-top: 12px;
-    }
-    .hero-chip {
-      display: flex; align-items: center; gap: 4px;
-      background: #f7f7f7; border-radius: 20px; padding: 6px 10px;
-      border: 1px solid #f0f0f0; flex-shrink: 0;
-    }
-    .hero-chip span { font-size: 12px; font-weight: 800; color: #1a1a1a; }
-
-    /* Shrunk state — الهيدر كله (غلاف + كارت) يخرج لفوق الشاشة بالكامل كقطعة واحدة متماسكة */
+    /* Shrunk state — الهيدر كله (غلاف + اسم) يخرج لفوق الشاشة بالكامل كقطعة واحدة متماسكة */
     .hero-wrap.shrunk { max-height: 0; }
     .hero-wrap.shrunk .hero { transform: translateY(-100%); }
-    .hero-wrap.shrunk .hero-card { opacity: 0; }
 
     .hero-full-content {
       display: flex; position: relative; z-index: 1; align-items: center; gap: 14px;
     }
 
+    .hero-mini {
+      display: flex !important;
+      align-items: center;
+      gap: 10px;
+      padding: 10px 14px;
+      background: #fff;
+      border-bottom: 1px solid #f0f0f0;
+    }
+    .sticky-bar.shrunk .hero-mini { display: flex !important; }
+
+    /* شيل الـ hero-wrap من الـ sticky */
+    .hero-wrap { display: none !important; }
     .sticky-bar:not(.shrunk) .search-wrap { display: none !important; }
 
     /* الشريط الثابت دائماً: البحث + التصنيفات — لا يختفي ولا يتقلّص أبداً */
@@ -249,6 +204,9 @@
     }
     .sticky-bar:not(.shrunk) .search-wrap { padding-top: 14px; }
 
+    /* Hero: mini mode (بطاقة بيضاء فيها لوجو + اسم + بحث) */
+    .hero-mini img       { width: 32px; height: 32px; border-radius: 9px; object-fit: cover; border: 1.5px solid #eee; }
+    .hero-mini h2        { color: #1a1a1a; font-size: 15px; font-weight: 800; flex: 1; }
     .search-icon-btn {
       width: 36px; height: 36px; border-radius: 50%;
       background: #fff;

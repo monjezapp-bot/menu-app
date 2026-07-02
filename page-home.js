@@ -3,19 +3,22 @@
 // ── HEADER ────────────────────────────────────────────────────────────
 function renderHeader() {
   document.title = S.restaurant.name
-  document.getElementById('restaurant-name').textContent = S.restaurant.name
+  document.getElementById('mini-name').textContent = S.restaurant.name
 
   if (S.restaurant.logo_url) {
-    const heroLogo = document.getElementById('restaurant-logo')
-    heroLogo.src = S.restaurant.logo_url
-    heroLogo.style.display = 'block'
+    const ml = document.getElementById('mini-logo')
+    ml.src = S.restaurant.logo_url
+    ml.style.display = 'block'
   }
 
-  // صورة الغلاف الكبيرة فوق (الهيرو) — نفس الحقل cover_url القديم
+  // غلاف المطعم كـ background للـ mini header
   if (S.restaurant.cover_url) {
-    const coverImg = document.getElementById('hero-cover-img')
-    coverImg.src = S.restaurant.cover_url
-    coverImg.style.display = 'block'
+    const miniHeader = document.getElementById('hero-mini')
+    miniHeader.style.background   = `linear-gradient(rgba(0,0,0,0.55),rgba(0,0,0,0.55)), url('${S.restaurant.cover_url}') center/cover`
+    miniHeader.style.borderBottom = 'none'
+    // اجعل النصوص بيضاء
+    const nameEl = document.getElementById('mini-name')
+    if (nameEl) nameEl.style.color = '#fff'
   }
 
   // رقم التواصل
