@@ -2476,6 +2476,10 @@ function renderOrders() {
   const statusColor = { pending:'bg-yellow-50 text-yellow-600', confirmed:'bg-blue-50 text-blue-600', ready:'bg-purple-50 text-purple-600', delivering:'bg-indigo-50 text-indigo-600', delivered:'bg-green-50 text-green-600', cancelled:'bg-red-50 text-red-500' }
   // الزر التالي المناسب لكل حالة (يدفع الطلب للمرحلة التالية في تدفق واحد بسيط)
   const nextActionBtn = {
+    pending:    `<div class="flex gap-2">
+                   <button onclick="acceptOrderDirect('{ID}')" class="flex-1 text-xs font-bold bg-green-500 text-white px-3 py-1.5 rounded-xl">✅ قبول الطلب</button>
+                   <button onclick="rejectOrderDirect('{ID}')" class="flex-1 text-xs font-bold bg-red-50 text-red-600 border border-red-200 px-3 py-1.5 rounded-xl">❌ رفض</button>
+                 </div>`,
     confirmed:  `<button onclick="updateOrderStatus('{ID}','ready')" class="text-xs font-bold bg-purple-500 text-white px-3 py-1.5 rounded-xl">📦 تم التجهيز</button>`,
     ready:      `<button onclick="updateOrderStatus('{ID}','delivering')" class="text-xs font-bold bg-indigo-500 text-white px-3 py-1.5 rounded-xl">🛵 جاري التوصيل</button>`,
     delivering: `<button onclick="updateOrderStatus('{ID}','delivered')" class="text-xs font-bold bg-green-500 text-white px-3 py-1.5 rounded-xl">✅ تم التسليم</button>`
@@ -2491,8 +2495,8 @@ function renderOrders() {
         ${o.delivery_fee ? `<div class="flex justify-between text-sm"><span class="text-gray-500">🛵 رسوم التوصيل</span><span class="font-bold text-gray-700">${Number(o.delivery_fee).toFixed(2)} ج.م</span></div>` : ''}
         <div class="flex justify-between text-sm font-extrabold pt-2 border-t border-gray-100"><span>الإجمالي</span><span class="text-orange-500">${Number(o.total).toFixed(2)} ج.م</span></div>
       </div>
-      ${o.status === 'cancelled' && o.cancel_reason ? `<p class="text-xs text-red-500 bg-red-50 rounded-xl px-3 py-2 mt-2 font-bold">سبب الرفض: ${o.cancel_reason}</p>` : ''}
-      ${nextActionBtn[o.status] ? `<div class="mt-3">${nextActionBtn[o.status].replace('{ID}', o.id).replace('onclick="', 'onclick="event.stopPropagation();')}</div>` : ''}
+      ${o.status === 'cancelled' && o.cancel_reason ? `<p class="text-xs text-red-500 bg-red-50 rounded-xl px-3 py-2 mt-2 font-bold">${o.cancel_reason.includes('بواسطة العميل') ? 'ألغاه العميل' : 'سبب الرفض'}: ${o.cancel_reason}</p>` : ''}
+      ${nextActionBtn[o.status] ? `<div class="mt-3">${nextActionBtn[o.status].replace(/\{ID\}/g, o.id).replace(/onclick="/g, 'onclick="event.stopPropagation();')}</div>` : ''}
       <div class="flex items-center justify-between mt-2">
         <p class="text-xs text-gray-300">${new Date(o.created_at).toLocaleString('ar-EG')}</p>
         <p class="text-xs text-gray-400 font-bold">التفاصيل ‹</p>
@@ -2551,9 +2555,9 @@ function openOrderDetailModal(orderId) {
   totals.push(`<div class="flex justify-between text-sm font-extrabold pt-2 border-t border-gray-100"><span>الإجمالي</span><span class="text-orange-500">${Number(order.total).toFixed(2)} ج.م</span></div>`)
   document.getElementById('od-totals').innerHTML = totals.join('')
 
-  // سبب الرفض
+  // سبب الرفض / الإلغاء
   const reasonEl = document.getElementById('od-cancel-reason')
-  if (order.status === 'cancelled' && order.cancel_reason) { reasonEl.textContent = `سبب الرفض: ${order.cancel_reason}`; reasonEl.classList.remove('hidden') }
+  if (order.status === 'cancelled' && order.cancel_reason) { reasonEl.textContent = `${order.cancel_reason.includes('بواسطة العميل') ? 'ألغاه العميل' : 'سبب الرفض'}: ${order.cancel_reason}`; reasonEl.classList.remove('hidden') }
   else reasonEl.classList.add('hidden')
 
   // زر الانتقال للحالة التالية (نفس منطق البطاقة)
@@ -2563,7 +2567,11 @@ function openOrderDetailModal(orderId) {
     delivering: { label: '✅ تم التسليم',    next: 'delivered',  cls: 'bg-green-500' }
   }[order.status]
   document.getElementById('od-actions').innerHTML =
-    (nextAction ? `<button onclick="updateOrderStatus('${order.id}','${nextAction.next}');closeOrderDetailModal()" class="w-full ${nextAction.cls} text-white font-extrabold rounded-xl py-3 text-sm">${nextAction.label}</button>` : '')
+    (order.status === 'pending' ? `
+      <button onclick="acceptOrderDirect('${order.id}');closeOrderDetailModal()" class="w-full bg-green-500 text-white font-extrabold rounded-xl py-3 text-sm">✅ قبول الطلب</button>
+      <button onclick="rejectOrderDirect('${order.id}')" class="w-full bg-red-50 text-red-600 font-extrabold rounded-xl py-3 text-sm border border-red-200 mt-2">❌ رفض الطلب</button>
+    ` : '')
+    + (nextAction ? `<button onclick="updateOrderStatus('${order.id}','${nextAction.next}');closeOrderDetailModal()" class="w-full ${nextAction.cls} text-white font-extrabold rounded-xl py-3 text-sm">${nextAction.label}</button>` : '')
     + (order.status === 'confirmed' ? `<button onclick="openCancelConfirmedModal('${order.id}')" class="w-full bg-red-50 text-red-600 font-extrabold rounded-xl py-3 text-sm border border-red-200">❌ إلغاء الطلب (بعد القبول)</button>` : '')
 
   document.getElementById('modal-order-detail').classList.remove('hidden')
@@ -2776,6 +2784,8 @@ function startRealtimeOrders() {
 // طابور الطلبات الجديدة المعلّقة — كل طلب جديد يُضاف للطابور، ولا يُفقد أي طلب
 // لو وصلت طلبات متعددة في نفس اللحظة. الـ popup يعرض طلب واحد بالترتيب، وينتقل للتالي تلقائياً.
 let _pendingOrdersQueue = []
+// الطلب المستهدف حالياً بمودال "سبب الرفض" — ممكن يكون من طابور البوب-أب، أو طلب اتقبل رفضه مباشرة من الليستة/التفاصيل
+let _rejectTargetOrder = null
 
 function handleIncomingOrder(order) {
   _pendingOrdersQueue.push(order)
@@ -2800,11 +2810,21 @@ function handleOrderUpdatedElsewhere(order) {
     return
   }
   const idx = _pendingOrdersQueue.findIndex(o => o.id === order.id)
-  if (idx === -1) return
-  const wasCurrentlyShown = idx === 0
-  _pendingOrdersQueue.splice(idx, 1)
-  if (wasCurrentlyShown) advanceToNextPendingOrder()
-  else updateQueueCounter()
+  if (idx !== -1) {
+    const wasCurrentlyShown = idx === 0
+    _pendingOrdersQueue.splice(idx, 1)
+    if (wasCurrentlyShown) advanceToNextPendingOrder()
+    else updateQueueCounter()
+  }
+  // تنبيه صوتي + رسالة فورية للتاجر لو العميل هو اللي لغى طلب كان مقبول بالفعل (بعد التأكيد)،
+  // عشان التاجر يعرف فوراً ويوقف تجهيزه بدل ما يكتشف بالصدفة لما يفتح الليستة
+  if (order.status === 'cancelled' && order.cancel_reason && order.cancel_reason.includes('بواسطة العميل')) {
+    const wasAlreadyCancelled = state.orders.find(o => o.id === order.id)?.status === 'cancelled'
+    if (!wasAlreadyCancelled) {
+      showToast(`❌ العميل ألغى الطلب ${order.order_number}`)
+      playAlarm()
+    }
+  }
   loadOrders()
 }
 function showNewOrderPopup(order) {
@@ -2843,15 +2863,38 @@ function advanceToNextPendingOrder() {
 async function confirmNewOrder() {
   if (!_pendingOrdersQueue.length) return
   const id = _pendingOrdersQueue[0].id
-  await db.from('orders').update({ status:'confirmed', confirmed_at: new Date().toISOString() }).eq('id', id)
+  await db.from('orders').update({ status:'confirmed', confirmed_at: new Date().toISOString() }).eq('id', id).eq('status', 'pending')
   showToast('✅ تم قبول الطلب')
   _pendingOrdersQueue.shift()
   advanceToNextPendingOrder()
   loadOrders()
 }
+// قبول/رفض طلب مباشرة من بطاقة الطلب أو مودال التفاصيل — لا يعتمد على ظهور البوب-أب أصلاً،
+// عشان لو التاجر فوّت لحظة وصول الطلب (قفل البوب-أب أو مكان تانٍ في التطبيق) يقدر لسه يقبل/يرفض الطلب من الليستة العادية.
+async function acceptOrderDirect(id) {
+  const { error } = await db.from('orders')
+    .update({ status: 'confirmed', confirmed_at: new Date().toISOString() })
+    .eq('id', id).eq('status', 'pending')
+  if (error) { showToast('تعذّر قبول الطلب'); return }
+  showToast('✅ تم قبول الطلب')
+  // لو الطلب ده كان معروض في طابور البوب-أب بالفعل، نشيله من الطابور ونحدّث العرض بدل ما يفضل معروض تاني بالغلط
+  const idx = _pendingOrdersQueue.findIndex(o => o.id === id)
+  if (idx !== -1) {
+    const wasCurrentlyShown = idx === 0
+    _pendingOrdersQueue.splice(idx, 1)
+    if (wasCurrentlyShown) advanceToNextPendingOrder()
+    else updateQueueCounter()
+  }
+  loadOrders()
+}
+function rejectOrderDirect(id) {
+  const order = state.orders.find(o => o.id === id)
+  if (!order) return
+  openRejectReasonModal(order)
+}
 function rejectNewOrder() {
   if (!_pendingOrdersQueue.length) return
-  openRejectReasonModal()
+  openRejectReasonModal(_pendingOrdersQueue[0])
 }
 function dismissNewOrderPopup() {
   // ملاحظة: لا يُستخدم هذا لإغلاق popup الطلب الإجباري بدون قرار — فقط كجزء من تدفق التأكيد/الرفض
@@ -2861,7 +2904,9 @@ function dismissNewOrderPopup() {
 
 // ── REJECT REASON ────────────────────────────────────────────────────
 const REJECT_REASONS = ['غير متوفر حالياً', 'المطعم مغلق الآن', 'تأخير كبير في التحضير']
-function openRejectReasonModal() {
+function openRejectReasonModal(order) {
+  _rejectTargetOrder = order || _pendingOrdersQueue[0] || null
+  if (!_rejectTargetOrder) return
   const wrap = document.getElementById('reject-reason-list')
   wrap.innerHTML = REJECT_REASONS.map(r => `<button onclick="submitRejectReason('${r.replace(/'/g, "\\'")}')" class="w-full text-right border border-gray-200 rounded-xl px-4 py-3 text-sm font-bold text-gray-700 hover:border-red-300 hover:bg-red-50 transition-colors">${r}</button>`).join('')
   document.getElementById('reject-custom-reason').value = ''
@@ -2880,8 +2925,8 @@ function submitRejectCustomReason() {
   submitRejectReason(txt)
 }
 async function submitRejectReason(reason) {
-  if (!_pendingOrdersQueue.length) return
-  const order = _pendingOrdersQueue[0]
+  const order = _rejectTargetOrder
+  if (!order) return
   const transferred = await tryTransferToNextBranch(order, reason)
   if (!transferred) {
     await db.from('orders').update({ status:'cancelled', cancel_reason: reason }).eq('id', order.id)
@@ -2890,8 +2935,15 @@ async function submitRejectReason(reason) {
     showToast('❌ تم رفض الطلب')
   }
   closeRejectReasonModal()
-  _pendingOrdersQueue.shift()
-  advanceToNextPendingOrder()
+  closeOrderDetailModal()
+  const idx = _pendingOrdersQueue.findIndex(o => o.id === order.id)
+  if (idx !== -1) {
+    const wasCurrentlyShown = idx === 0
+    _pendingOrdersQueue.splice(idx, 1)
+    if (wasCurrentlyShown) advanceToNextPendingOrder()
+    else updateQueueCounter()
+  }
+  _rejectTargetOrder = null
   loadOrders()
 }
 // عند رفض الفرع للطلب، يبحث عن أقرب فرع تالٍ لم يُجرَّب بعد لنفس الطلب، ويحوّل الطلب إليه تلقائياً

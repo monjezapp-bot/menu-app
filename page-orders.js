@@ -183,7 +183,7 @@ async function openOrderDetail(orderId) {
         if (o.note)              rows.push(`📝 ${o.note}`)
         return rows.length ? `<div style="margin-top:12px;background:#f9f9f9;border-radius:12px;padding:12px 14px">${rows.map(r => `<p style="font-size:12px;color:#888;font-weight:600;margin-bottom:4px;overflow-wrap:anywhere">${r}</p>`).join('')}</div>` : ''
       })()}
-      ${o.status === 'cancelled' && o.cancel_reason ? `<div style="margin-top:12px;background:#fef2f2;border-radius:12px;padding:12px 14px"><p style="font-size:12px;color:#ef4444;font-weight:700;overflow-wrap:anywhere">سبب الرفض: ${o.cancel_reason}</p></div>` : ''}
+      ${o.status === 'cancelled' && o.cancel_reason ? `<div style="margin-top:12px;background:#fef2f2;border-radius:12px;padding:12px 14px"><p style="font-size:12px;color:#ef4444;font-weight:700;overflow-wrap:anywhere">${o.cancel_reason.includes('بواسطة العميل') ? 'تم الإلغاء' : 'سبب الرفض'}: ${o.cancel_reason}</p></div>` : ''}
       ${isOrderLateEnoughToCancel(o) ? `
       <button onclick="confirmLateCancelFromDetail('${o.id}')" style="width:100%;margin-top:12px;background:#fef2f2;color:#ef4444;font-size:13px;font-weight:800;border-radius:14px;padding:13px;border:1.5px solid #fecaca;cursor:pointer;font-family:'Rubik',sans-serif">
         ❌ الطلب تأخر عن الوقت المتوقع — إلغاء الطلب

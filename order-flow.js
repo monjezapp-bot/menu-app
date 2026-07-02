@@ -315,11 +315,14 @@ function contactRestaurantAboutOrder(orderNumber) {
 }
 
 // ── CANCEL ORDER BY CUSTOMER ─────────────────────────────────────────
-// قاعدة: قبل قبول التاجر (pending) الإلغاء متاح بلا قيود.
+// قاعدة: قبل قبول التاجر (pending) الإلغاء ممنوع أول 10 دقايق (فرصة عادلة للمطعم يقبل الطلب)،
+// وبعد 10 دقايق من غير قبول، يتاح الإلغاء للعميل تلقائيًا.
 // بعد القبول (confirmed) فيه مهلة دقيقتين بالظبط من وقت القبول، وبعدها يُمنع الإلغاء نهائيًا.
 const CANCEL_GRACE_SECONDS = 120
-let _cancelGraceInterval = null
-let _lateCancelInterval  = null
+const PENDING_CANCEL_WAIT_SECONDS = 600 // 10 دقايق
+let _cancelGraceInterval  = null
+let _lateCancelInterval   = null
+let _pendingCancelTimeout = null
 
 function showCancelButton(visible, lateMode) {
   const btn = document.getElementById('cancel-order-btn')
@@ -331,6 +334,16 @@ function showCancelButton(visible, lateMode) {
     btn.textContent = lateMode ? '❌ إلغاء الطلب — تأخر عن الوقت المتوقع' : '❌ إلغاء الطلب'
   }
   if ((!visible || lateMode) && countdownEl) countdownEl.classList.add('hidden')
+}
+
+// يمنع الإلغاء أول 10 دقايق من وقت إنشاء الطلب، ثم يتيحه تلقائيًا لو المطعم لسه مقبلش
+function startPendingCancelWatch(createdAt) {
+  clearTimeout(_pendingCancelTimeout)
+  const startMs   = createdAt ? new Date(createdAt).getTime() : Date.now()
+  const remaining = PENDING_CANCEL_WAIT_SECONDS - (Date.now() - startMs) / 1000
+  if (remaining <= 0) { showCancelButton(true); return }
+  showCancelButton(false)
+  _pendingCancelTimeout = setTimeout(() => showCancelButton(true), remaining * 1000)
 }
 
 function startCancelGracePeriod(confirmedAt) {
@@ -477,7 +490,7 @@ function setSuccessModalVisual(state, cancelReason, order) {
   stepsEl.classList.add('hidden')
   msgEl.dataset.state = state
   showCancelButton(false); clearTimeout(_cancelGraceInterval)
-  if (state !== 'pending') { delayEl.classList.add('hidden'); clearTimeout(_orderDelayTimeout) }
+  if (state !== 'pending') { delayEl.classList.add('hidden'); clearTimeout(_orderDelayTimeout); clearTimeout(_pendingCancelTimeout) }
 
   const TRACKING_STATES = ['confirmed', 'ready', 'delivering', 'delivered']
   if (TRACKING_STATES.includes(state)) {
@@ -489,9 +502,9 @@ function setSuccessModalVisual(state, cancelReason, order) {
   if (state === 'pending') {
     iconEl.textContent = '⏳'
     titleEl.textContent = 'تم استلام طلبك!'
-    msgEl.textContent = '🔔 في انتظار تأكيد المطعم...'
+    msgEl.textContent = '🔔 في انتظار تأكيد المطعم... (تقدر تلغي الطلب لو لم يستجيب المطعم خلال 10 دقايق)'
     msgEl.style.color = '#aaa'
-    showCancelButton(true) // قبل قبول التاجر: الإلغاء متاح دايمًا بدون مهلة
+    startPendingCancelWatch(order?.created_at)
   } else if (state === 'confirmed') {
     iconEl.textContent = '👨‍🍳'
     titleEl.textContent = 'تم تأكيد طلبك!'
@@ -519,9 +532,10 @@ function setSuccessModalVisual(state, cancelReason, order) {
     document.getElementById('confirm-receipt-btn').classList.add('hidden')
     clearTimeout(_autoConfirmTimeout)
   } else if (state === 'cancelled') {
-    iconEl.textContent = '❌'
-    titleEl.textContent = 'تعذّر قبول الطلب'
-    msgEl.textContent = 'للأسف المطعم لم يستطع تنفيذ طلبك'
+    const cancelledByCustomer = !!(cancelReason && cancelReason.includes('بواسطة العميل'))
+    iconEl.textContent = cancelledByCustomer ? '↩️' : '❌'
+    titleEl.textContent = cancelledByCustomer ? 'تم إلغاء طلبك' : 'تعذّر قبول الطلب'
+    msgEl.textContent   = cancelledByCustomer ? 'تم إلغاء الطلب بنجاح بناءً على طلبك' : 'للأسف المطعم لم يستطع تنفيذ طلبك'
     msgEl.style.color = '#ef4444'
     if (cancelReason) {
       reasonEl.textContent = `السبب: ${cancelReason}`
