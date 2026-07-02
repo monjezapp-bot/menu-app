@@ -265,16 +265,6 @@
     <div id="orders-page-list"></div>
   </div>
 
-  <!-- Order Detail Sheet -->
-  <div id="order-detail-sheet" style="display:none;position:fixed;inset:0;z-index:100;background:rgba(0,0,0,0.5);align-items:flex-end;justify-content:center">
-    <div style="background:#fff;border-radius:24px 24px 0 0;padding:24px 20px 40px;width:100%;max-width:480px;max-height:85vh;overflow-y:auto;overflow-x:hidden;box-sizing:border-box">
-      <div style="display:flex;justify-content:space-between;align-items:center;margin-bottom:20px">
-        <p style="font-size:16px;font-weight:900;color:#1a1a1a" id="ods-num"></p>
-        <button onclick="closeOrderDetail()" style="width:32px;height:32px;border-radius:50%;background:#f5f5f5;border:none;cursor:pointer;font-size:16px">✕</button>
-      </div>
-      <div id="ods-body"></div>
-    </div>
-  </div>
 
 </div>
 
@@ -802,6 +792,20 @@
             style="width:100%;background:var(--brand);color:#fff;font-size:15px;font-weight:900;border-radius:16px;padding:14px;margin-top:8px">
       تمام 👍
     </button>
+  </div>
+</div>
+
+<!-- ══════════════════════════════════════════
+     ORDER DETAIL SHEET (top-level — يجب أن يبقى مستقلاً عن أي صفحة/مودال آخر
+     عشان يشتغل من أي مكان: من "طلباتي" أو من فوق مودال التتبع مباشرة بعد الشيك أوت)
+══════════════════════════════════════════ -->
+<div id="order-detail-sheet" style="display:none;position:fixed;inset:0;z-index:100;background:rgba(0,0,0,0.5);align-items:flex-end;justify-content:center">
+  <div style="background:#fff;border-radius:24px 24px 0 0;padding:24px 20px 40px;width:100%;max-width:480px;max-height:85vh;overflow-y:auto;overflow-x:hidden;box-sizing:border-box">
+    <div style="display:flex;justify-content:space-between;align-items:center;margin-bottom:20px">
+      <p style="font-size:16px;font-weight:900;color:#1a1a1a" id="ods-num"></p>
+      <button onclick="closeOrderDetail()" style="width:32px;height:32px;border-radius:50%;background:#f5f5f5;border:none;cursor:pointer;font-size:16px">✕</button>
+    </div>
+    <div id="ods-body"></div>
   </div>
 </div>
 

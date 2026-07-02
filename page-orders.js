@@ -216,5 +216,11 @@ function closeOrderDetail() {
   const sheet = document.getElementById('order-detail-sheet')
   if (sheet) sheet.style.display = 'none'
   _unlockBodyScroll()
+  // لو الشيت اتفتح من فوق مودال التتبع (تفاصيل الطلب)، رجّع مودال التتبع تاني بدل ما تسيب العميل بره خالص
+  if (typeof _reopenTrackingAfterDetail !== 'undefined' && _reopenTrackingAfterDetail) {
+    const orderId = _reopenTrackingAfterDetail
+    _reopenTrackingAfterDetail = null
+    reopenOrderTracking(orderId)
+  }
 }
 

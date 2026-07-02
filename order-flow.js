@@ -296,12 +296,19 @@ async function reopenOrderTracking(orderId) {
 }
 
 // ── VIEW DETAILS WHILE TRACKING ─────────────────────────────────────────
-// يفتح شيت تفاصيل الطلب الكامل (نفس المستخدم في صفحة "طلباتي") مباشرة من فوق مودال التتبع،
-// عشان العميل يتأكد من كل بيانات طلبه (المنتجات، العنوان، رقم التواصل...) لو حسّ إن في خطأ
+// يفتح شيت تفاصيل الطلب الكامل (نفس المستخدم في صفحة "طلباتي") من فوق مودال التتبع،
+// عشان العميل يتأكد من كل بيانات طلبه (المنتجات، العنوان، رقم التواصل...) لو حسّ إن في خطأ.
+// لازم نقفل مودال التتبع الأول (closeSuccessModal) قبل ما نفتح الشيت، وإلا الاتنين
+// (كل واحد fixed inset:0 بخلفية شبه شفافة) بيترسموا فوق بعض ويطلع تداخل/تقطيع في النص.
+// بنسجّل إن التتبع كان مفتوح عشان نرجّعه تلقائي لما العميل يقفل شيت التفاصيل.
 function viewTrackedOrderDetail() {
   const orderId = document.getElementById('order-success-modal').dataset.orderId
-  if (orderId) openOrderDetail(orderId)
+  if (!orderId) return
+  closeSuccessModal()
+  _reopenTrackingAfterDetail = orderId
+  openOrderDetail(orderId)
 }
+let _reopenTrackingAfterDetail = null
 
 // ── CONTACT RESTAURANT ABOUT AN ORDER ──────────────────────────────────
 // يفتح واتساب المطعم مباشرة برسالة جاهزة تتضمن رقم الطلب — يُستخدم من مودال التتبع
