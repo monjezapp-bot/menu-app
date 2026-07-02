@@ -1580,11 +1580,31 @@ async function saveDiscountCode() {
     is_active: active, restaurant_id: state.restaurant.id,
     target_type: targetType, target_customer_ids: targetCustomerIds, target_percent: targetPercent
   }
-  if (id) await db.from('discount_codes').update(payload).eq('id', id)
-  else    await db.from('discount_codes').insert(payload)
+  if (id) {
+    await db.from('discount_codes').update(payload).eq('id', id)
+  } else {
+    const { data: created } = await db.from('discount_codes').insert(payload).select('id').single()
+    await notifyDiscountCodeCreated(payload, created?.id)
+  }
   closeDiscountCodeModal()
   await loadDiscountCodes()
   showToast(id ? 'تم تعديل الكود ✅' : 'تم إنشاء الكود ✅')
+}
+
+// ── إشعار العملاء بكود خصم جديد — عام لكل العملاء، أو موجّه فقط للقائمة المستهدفة ─────
+async function notifyDiscountCodeCreated(payload, codeId) {
+  let recipientIds = payload.target_customer_ids
+  if (payload.target_type === 'public') {
+    if (!_allCustomers.length) await loadCustomers()
+    recipientIds = _allCustomers.map(c => c.id)
+  }
+  if (!recipientIds || !recipientIds.length) return
+  const title = payload.target_type === 'public' ? '🎁 كود خصم جديد!' : '🎁 كود خصم خاص بك!'
+  const body  = `استخدم الكود ${payload.code} واحصل على خصم ${Number(payload.discount_egp).toFixed(2)} ج.م على طلبك القادم`
+  const rows = recipientIds.map(cid => ({
+    customer_id: cid, restaurant_id: state.restaurant.id, type: 'promo', title, body
+  }))
+  await db.from('notifications').insert(rows).catch(() => {})
 }
 
 async function deleteDiscountCode(id) {
@@ -2438,6 +2458,7 @@ async function giftCoins(customerId, customerName) {
     customer_id: customerId, restaurant_id: state.restaurant.id,
     type: 'gift', amount: coins, note: `هدية من المطعم`
   })
+  await insertCustomerNotification(customerId, 'coins', '🎀 هدية من المطعم!', `${state.restaurant.name} أهداك ${coins.toLocaleString('ar-EG')} كوين — شوفها في محفظتك`)
   showToast(`تم إهداء ${coins.toLocaleString('ar-EG')} كوين ✅`)
   loadCustomers()
 }
@@ -2612,6 +2633,8 @@ async function cancelConfirmedOrder(orderId, reason) {
       compensationMsg = ' — تنبيه: العميل زائر بدون حساب، لم يتم إرسال تعويض تلقائي'
     }
   }
+  await insertCustomerNotification(order.customer_id, 'order_cancelled', '❌ تم إلغاء طلبك',
+    `للأسف تم إلغاء طلبك ${order.order_number} بعد قبوله. السبب: ${reason}` + (compensationMsg.includes('تعويض العميل') ? ' — تم تعويضك بكوينز في محفظتك 🎁' : ''), orderId)
   showToast('❌ تم إلغاء الطلب' + compensationMsg)
   await loadOrders()
 }
@@ -2620,8 +2643,35 @@ async function updateOrderStatus(id, status) {
   const payload = { status }
   if (timestampField) payload[timestampField] = new Date().toISOString()
   await db.from('orders').update(payload).eq('id', id)
+  await notifyCustomerOrderStatus(id, status)
   await loadOrders()
   showToast('تم تحديث حالة الطلب')
+}
+
+// ── إشعارات العميل ────────────────────────────────────────────────────
+// جدول notifications كان موجود من غير أي INSERT في أي مكان بالتطبيق — يعني جرس الإشعارات
+// عند العميل كان فاضي دايماً مهما حصل. الدالة دي نقطة مركزية لإضافة إشعار لعميل مسجّل (له حساب).
+async function insertCustomerNotification(customerId, type, title, body, orderId) {
+  if (!customerId) return // عميل زائر بدون حساب — لا يوجد جرس إشعارات نحفظ له فيه شيء
+  try {
+    await db.from('notifications').insert({
+      customer_id: customerId, restaurant_id: state.restaurant.id,
+      order_id: orderId || null, type, title, body
+    })
+  } catch (e) { /* الإشعار ليس حرجاً لسير العمل — نتجاهل أي خطأ بصمت */ }
+}
+async function notifyCustomerOrderStatus(orderId, status) {
+  const order = state.orders.find(o => o.id === orderId)
+  if (!order) return
+  const messages = {
+    confirmed:  { title: '✅ تم تأكيد طلبك',   body: `المطعم بدأ في تجهيز طلبك ${order.order_number}` },
+    ready:      { title: '📦 طلبك جاهز',        body: `طلبك ${order.order_number} جاهز وفي انتظار التوصيل` },
+    delivering: { title: '🛵 طلبك في الطريق',   body: `المندوب في الطريق إليك مع طلبك ${order.order_number}` },
+    delivered:  { title: '🎉 تم التسليم',       body: `نتمنى أن تكون استمتعت بطلبك ${order.order_number}` },
+  }
+  const m = messages[status]
+  if (!m) return
+  await insertCustomerNotification(order.customer_id, `order_${status}`, m.title, m.body, orderId)
 }
 
 // ── ANALYTICS ─────────────────────────────────────────────────────────
@@ -2835,6 +2885,8 @@ async function submitRejectReason(reason) {
   const transferred = await tryTransferToNextBranch(order, reason)
   if (!transferred) {
     await db.from('orders').update({ status:'cancelled', cancel_reason: reason }).eq('id', order.id)
+    await insertCustomerNotification(order.customer_id, 'order_cancelled', '❌ تعذّر تنفيذ طلبك',
+      `للأسف تعذّر تنفيذ طلبك ${order.order_number}. السبب: ${reason}`, order.id)
     showToast('❌ تم رفض الطلب')
   }
   closeRejectReasonModal()
