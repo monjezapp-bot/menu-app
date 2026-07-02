@@ -157,7 +157,7 @@
     .hero-wrap {
       position: relative; z-index: 25;
       overflow: hidden; /* يقطع الهيدر بصرياً وهو بيخرج لفوق، بدل ما يفضل ظاهر تحت باقي المحتوى */
-      max-height: 310px; /* غلاف (190px) + الكارت العائم المتراكب فوقه */
+      max-height: 420px; /* غلاف + الكارت العائم — مساحة أمان كافية حتى لو الاسم اتلف سطرين */
       transition: max-height 0.28s cubic-bezier(0.4, 0, 0.2, 1);
     }
 
@@ -213,8 +213,9 @@
       display: flex; align-items: center; justify-content: space-between; gap: 12px;
     }
     .hero-card-row h1 {
+      flex: 1;
       font-size: 17px; font-weight: 900; color: #1a1a1a;
-      overflow: hidden; text-overflow: ellipsis; white-space: nowrap;
+      line-height: 1.3;
     }
     .hero-card-row img {
       width: 46px; height: 46px; border-radius: 12px; object-fit: cover;
@@ -239,8 +240,10 @@
       display: flex; position: relative; z-index: 1; align-items: center; gap: 14px;
     }
 
+    /* الشريط المصغّر (لوجو + اسم + بحث + سلة + محفظة) — يظهر بس بعد ما الهيدر الكبير يختفي بالسكرول،
+       عشان الحركة تبقى قطعة واحدة متماسكة بدل شريطين ظاهرين فوق بعض */
     .hero-mini {
-      display: flex !important;
+      display: none;
       align-items: center;
       gap: 10px;
       padding: 10px 14px;
