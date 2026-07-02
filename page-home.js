@@ -366,7 +366,7 @@ function prodCardHTML(p) {
       <h3>${p.name}</h3>
       ${priceHTML}
       ${unavailable
-        ? `<span style="font-size:10px;background:#f0f0f0;color:#999;font-weight:700;padding:3px 8px;border-radius:8px;display:inline-block;margin-top:4px">غير متوفر</span>`
+        ? `<span style="font-size:10px;background:#f0f0f0;color:#999;font-weight:700;padding:4px 8px;border-radius:8px;display:inline-block;margin-top:4px">غير متوفر</span>`
         : ci
           ? `<div class="qty-row" onclick="event.stopPropagation()">
                <div class="qty-btn" onclick="cQty('${p.id}','product',-1)">−</div>

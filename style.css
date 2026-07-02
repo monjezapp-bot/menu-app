@@ -25,6 +25,21 @@
       --bg: #F5F5F5;
       --max: 480px;
       --nav-h: 64px;
+
+      /* ── Spacing scale (حملة توحيد التنسيق — تطبيق العملاء) ── */
+      --sp-1: 4px;
+      --sp-2: 8px;
+      --sp-3: 12px;
+      --sp-4: 16px;   /* padding الجانبي الافتراضي للصفحة */
+      --sp-5: 20px;
+      --sp-6: 24px;
+      --sp-7: 28px;
+      --sp-8: 32px;
+
+      --radius-sm: 10px;   /* شيبس/أزرار صغيرة */
+      --radius-md: 14px;   /* كروت */
+      --radius-lg: 20px;   /* مودالات/شيتس */
+      --radius-full: 100px;
     }
 
     html {
@@ -183,8 +198,8 @@
     }
     .hero-top-row {
       position: absolute; top: 0; left: 0; right: 0; z-index: 2;
-      display: flex; align-items: center; gap: 10px;
-      padding: 14px;
+      display: flex; align-items: center; gap: var(--sp-3);
+      padding: var(--sp-4);
     }
     .hero-icon-btn {
       position: relative; width: 36px; height: 36px; border-radius: 50%;
@@ -203,31 +218,31 @@
     /* كارت معلومات المطعم — عايم فوق حافة صورة الغلاف */
     .hero-card {
       position: relative; z-index: 3;
-      margin: -34px 14px 0;
+      margin: -34px var(--sp-4) 0;
       background: #fff; border-radius: 22px;
-      padding: 16px 16px 14px;
+      padding: var(--sp-4);
       box-shadow: 0 8px 28px rgba(0,0,0,0.12);
     }
-    .hero-card-top { display: flex; align-items: flex-start; justify-content: space-between; gap: 10px; }
+    .hero-card-top { display: flex; align-items: flex-start; justify-content: space-between; gap: var(--sp-3); }
     .hero-card-name { font-size: 18px; font-weight: 900; color: #1a1a1a; margin-bottom: 3px; }
     .hero-card-tagline {
       font-size: 12px; color: #999; font-weight: 600;
       overflow: hidden; text-overflow: ellipsis; white-space: nowrap;
     }
     .hero-card-logo { width: 46px; height: 46px; border-radius: 14px; object-fit: cover; border: 1.5px solid #f0f0f0; flex-shrink: 0; }
-    .hero-card-badges { display: flex; align-items: center; gap: 8px; margin-top: 10px; flex-wrap: wrap; }
-    .hero-badge { display: flex; align-items: center; gap: 4px; font-size: 11px; font-weight: 800; border-radius: 20px; padding: 5px 10px; }
+    .hero-card-badges { display: flex; align-items: center; gap: var(--sp-2); margin-top: var(--sp-3); flex-wrap: wrap; }
+    .hero-badge { display: flex; align-items: center; gap: var(--sp-1); font-size: 11px; font-weight: 800; border-radius: 20px; padding: var(--sp-1) var(--sp-3); }
     .hero-badge-rating { background: #fff8e1; color: #92660a; }
     .hero-badge-call { background: #f0fdf4; color: #16a34a; text-decoration: none; }
-    .hero-card-meta { display: flex; align-items: center; gap: 6px; font-size: 11.5px; color: #888; font-weight: 600; margin-top: 10px; }
+    .hero-card-meta { display: flex; align-items: center; gap: var(--sp-2); font-size: 11.5px; color: #888; font-weight: 600; margin-top: var(--sp-3); }
     .hero-meta-dot { color: #ddd; }
 
     /* Hero mini (الشريط المصغّر) — يظهر فقط بعد السكرول (shrunk)، بديل الهيدر الكامل */
     .hero-mini {
       display: none;
       align-items: center;
-      gap: 10px;
-      padding: 10px 14px;
+      gap: var(--sp-3);
+      padding: var(--sp-3) var(--sp-4);
       background: #fff;
       border-bottom: 1px solid #f0f0f0;
     }
@@ -240,7 +255,7 @@
       position: sticky; top: 0; z-index: 25;
       background: var(--bg);
     }
-    .sticky-bar:not(.shrunk) .search-wrap { padding-top: 14px; }
+    .sticky-bar:not(.shrunk) .search-wrap { padding-top: var(--sp-4); }
 
     /* Hero: mini mode (بطاقة بيضاء فيها لوجو + اسم + بحث) */
     .hero-mini img       { width: 32px; height: 32px; border-radius: 9px; object-fit: cover; border: 1.5px solid #eee; }
@@ -279,7 +294,7 @@
     ══════════════════════════════════════════ */
     .search-wrap {
       position: relative;
-      margin: 0 16px 14px;
+      margin: 0 var(--sp-4) var(--sp-4);
       z-index: 10;
     }
     .sticky-bar.shrunk .search-wrap { display: none; } /* في الحالة المصغّرة، البحث يصبح أيقونة دائرية بدل الخانة الكاملة */
@@ -320,8 +335,8 @@
       border: 1px solid #f0f0f0; z-index: 20;
     }
     .suggestion-item {
-      display: flex; align-items: center; gap: 12px;
-      padding: 11px 14px; cursor: pointer; transition: background 0.15s;
+      display: flex; align-items: center; gap: var(--sp-3);
+      padding: var(--sp-3) var(--sp-4); cursor: pointer; transition: background 0.15s;
     }
     .suggestion-item:hover               { background: #fff8f3; }
     .suggestion-item:not(:last-child)    { border-bottom: 1px solid #f5f5f5; }
@@ -346,10 +361,10 @@
       background: linear-gradient(to right, #fff 60%, transparent);
       pointer-events: none; z-index: 2;
     }
-    .cat-tabs { display: flex; overflow-x: auto; padding: 0 12px; -ms-overflow-style: none; scrollbar-width: none; }
+    .cat-tabs { display: flex; overflow-x: auto; padding: 0 var(--sp-4); -ms-overflow-style: none; scrollbar-width: none; }
     .cat-tabs::-webkit-scrollbar { display: none; }
     .cat-tab {
-      flex-shrink: 0; padding: 14px 16px 12px;
+      flex-shrink: 0; padding: var(--sp-4) var(--sp-4) var(--sp-3);
       font-size: 13px; font-weight: 600; color: #999;
       cursor: pointer; white-space: nowrap;
       border-bottom: 3px solid transparent;
@@ -362,11 +377,11 @@
        ANNOUNCEMENT BANNER
     ══════════════════════════════════════════ */
     .announcement-bar {
-      margin: 12px 16px 0;
+      margin: var(--sp-3) var(--sp-4) 0;
       background: linear-gradient(135deg, #fff8f3, #fff3ea);
       border: 1.5px solid #ffe0c8;
-      border-radius: 14px; padding: 10px 14px;
-      display: flex; align-items: flex-start; gap: 8px;
+      border-radius: var(--radius-md); padding: var(--sp-3) var(--sp-4);
+      display: flex; align-items: flex-start; gap: var(--sp-2);
       font-size: 13px; color: #7a3c00; font-weight: 600; line-height: 1.5;
     }
     .announcement-bar .ann-icon { font-size: 16px; flex-shrink: 0; margin-top: 1px; }
@@ -374,18 +389,18 @@
     /* ══════════════════════════════════════════
        AD BANNERS
     ══════════════════════════════════════════ */
-    .ad-banner-wrap          { margin: 12px 16px 0; border-radius: 16px; overflow: hidden; position: relative; }
+    .ad-banner-wrap          { margin: var(--sp-3) var(--sp-4) 0; border-radius: 16px; overflow: hidden; position: relative; }
     .ad-banner-wrap img      { width: 100%; display: block; border-radius: 16px; max-height: 140px; object-fit: cover; cursor: pointer; transition: opacity 0.2s; }
     .ad-banner-wrap img:active { opacity: 0.85; }
-    .ad-banner-dots          { display: flex; justify-content: center; gap: 5px; padding: 6px 0 2px; }
+    .ad-banner-dots          { display: flex; justify-content: center; gap: var(--sp-1); padding: var(--sp-2) 0 var(--sp-1); }
     .ad-dot                  { width: 6px; height: 6px; border-radius: 50%; background: #ddd; transition: background 0.3s, width 0.3s; }
     .ad-dot.active           { background: var(--brand); width: 18px; border-radius: 3px; }
 
     /* ══════════════════════════════════════════
        SECTION TITLE + PRODUCTS GRID
     ══════════════════════════════════════════ */
-    .section-title  { font-size: 18px; font-weight: 900; color: #1a1a1a; padding: 20px 16px 12px; letter-spacing: -0.3px; }
-    .products-grid  { display: grid; grid-template-columns: 1fr 1fr; gap: 10px; padding: 0 16px; }
+    .section-title  { font-size: 18px; font-weight: 900; color: #1a1a1a; padding: var(--sp-5) var(--sp-4) var(--sp-3); letter-spacing: -0.3px; }
+    .products-grid  { display: grid; grid-template-columns: 1fr 1fr; gap: var(--sp-3); padding: 0 var(--sp-4); }
 
     /* ══════════════════════════════════════════
        PRODUCT CARD
@@ -406,10 +421,10 @@
       font-size: 38px;
       background: linear-gradient(135deg, #f8f8f8, #f0f0f0);
     }
-    .prod-card .info            { padding: 10px 10px 12px; }
+    .prod-card .info            { padding: var(--sp-3); }
     .prod-card h3               {
       font-size: 13px; font-weight: 700; color: #1a1a1a;
-      line-height: 1.45; margin-bottom: 6px;
+      line-height: 1.45; margin-bottom: var(--sp-2);
       display: -webkit-box; -webkit-line-clamp: 2; -webkit-box-orient: vertical; overflow: hidden;
     }
     /* Price variants */
@@ -419,7 +434,7 @@
     .price-normal { font-size: 15px; font-weight: 900; color: var(--brand); }
 
     /* Quantity control on card */
-    .qty-row { display: flex; align-items: center; gap: 6px; margin-top: 8px; }
+    .qty-row { display: flex; align-items: center; gap: var(--sp-2); margin-top: var(--sp-2); }
     .qty-btn {
       width: 28px; height: 28px; border-radius: 8px;
       display: flex; align-items: center; justify-content: center;
@@ -430,7 +445,7 @@
 
     /* Badges on card */
     .add-btn {
-      position: absolute; bottom: 8px; left: 8px;
+      position: absolute; bottom: var(--sp-2); left: var(--sp-2);
       width: 36px; height: 36px; border-radius: 50%;
       background: #fff; color: var(--brand);
       display: flex; align-items: center; justify-content: center;
@@ -439,8 +454,8 @@
       transition: transform 0.15s; border: none; line-height: 1;
     }
     .add-btn:active      { transform: scale(0.85); }
-    .offer-badge         { position: absolute; top: 8px; right: 8px; background: var(--brand); color: #fff; font-size: 10px; font-weight: 900; padding: 3px 9px; border-radius: 20px; }
-    .disc-pct            { position: absolute; top: 8px; left: 8px; background: #ff3b30; color: #fff; font-size: 9px; font-weight: 900; padding: 2px 7px; border-radius: 20px; }
+    .offer-badge         { position: absolute; top: var(--sp-2); right: var(--sp-2); background: var(--brand); color: #fff; font-size: 10px; font-weight: 900; padding: var(--sp-1) var(--sp-2); border-radius: 20px; }
+    .disc-pct            { position: absolute; top: var(--sp-2); left: var(--sp-2); background: #ff3b30; color: #fff; font-size: 9px; font-weight: 900; padding: var(--sp-1) var(--sp-2); border-radius: 20px; }
     .unavail-overlay     { position: absolute; inset: 0; background: rgba(255,255,255,0.55); }
 
     /* ══════════════════════════════════════════
