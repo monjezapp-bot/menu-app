@@ -1,4 +1,4 @@
-const CACHE_NAME = 'menus-admin-v2';
+const CACHE_NAME = 'menus-customer-v3';
 const CORE_ASSETS = ['./manifest.json', './icon-192.png', './icon-512.png'];
 
 self.addEventListener('install', (event) => {
@@ -17,14 +17,16 @@ self.addEventListener('activate', (event) => {
   self.clients.claim();
 });
 
-// Network-first for HTML/data so updates always show immediately.
-// Cache-first only for static assets (icons, manifest) that rarely change.
+// Network-first لكل ملفات التطبيق (HTML + JS + CSS) — عشان أي تحديث يوصل فوراً
+// من غير ما المستخدم يفضل شغال بنسخة قديمة كاش من الجهاز، خصوصاً إن المشروع
+// لسه بيتطور بسرعة. Cache-first بس للأيقونات/manifest اللي نادراً ما تتغير.
 self.addEventListener('fetch', (event) => {
   const url = event.request.url;
   if (url.includes('supabase.co')) return; // never cache live data
 
-  const isHTML = event.request.mode === 'navigate' || url.endsWith('.html');
-  if (isHTML) {
+  const isAppShell = event.request.mode === 'navigate' ||
+                      url.endsWith('.html') || url.endsWith('.js') || url.endsWith('.css');
+  if (isAppShell) {
     event.respondWith(
       fetch(event.request).catch(() => caches.match(event.request))
     );
