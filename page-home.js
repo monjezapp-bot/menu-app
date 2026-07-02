@@ -3,14 +3,9 @@
 // ── HEADER ────────────────────────────────────────────────────────────
 function renderHeader() {
   document.title = S.restaurant.name
-  document.getElementById('mini-name').textContent = S.restaurant.name
   document.getElementById('restaurant-name').textContent = S.restaurant.name
 
   if (S.restaurant.logo_url) {
-    const ml = document.getElementById('mini-logo')
-    ml.src = S.restaurant.logo_url
-    ml.style.display = 'block'
-
     const heroLogo = document.getElementById('restaurant-logo')
     heroLogo.src = S.restaurant.logo_url
     heroLogo.style.display = 'block'
