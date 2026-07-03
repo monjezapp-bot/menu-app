@@ -250,6 +250,104 @@ function initScrollSpy() {
   setTimeout(() => document.querySelectorAll('[id^="sec-"]').forEach(el => observer.observe(el)), 300)
 }
 
+// ── SCROLL-ROWS: توزيع المنتجات على صفوف بالتساوي ──────────────────────
+// القاعدة: نبدأ بصفين (2). لو عدد المنتجات بيتقسم عليهم بالظبط وبدون ما
+// أي صف يتعدى 10 منتجات، نستخدمهم. لو مش بيتقسم بالظبط، نزوّد صف (3،4،5...)
+// لحد ما نلاقي عدد صفوف يوزّع المنتجات بالتساوي. لو محدش من الصفوف من 2
+// لحد 5 وزّع المنتجات بالظبط، نرجع لأقل عدد صفوف بيخلي كل صف ≤ 10 منتجات
+// (وبفرق منتج واحد بالكتير بين الصفوف).
+function computeRowsLayout(items) {
+  const N = items.length
+  if (N <= 1) return N ? [items] : []
+  const MAX_PER_ROW = 10
+  const MAX_ROWS_PREFERRED = 5
+  let rows = null
+
+  for (let r = 2; r <= MAX_ROWS_PREFERRED; r++) {
+    if (N % r === 0 && (N / r) <= MAX_PER_ROW) { rows = r; break }
+  }
+  if (rows === null) {
+    for (let r = 2; ; r++) {
+      if (Math.ceil(N / r) <= MAX_PER_ROW) { rows = r; break }
+      if (r > 50) { rows = Math.ceil(N / MAX_PER_ROW); break } // حماية من اللوب اللانهائي
+    }
+  }
+
+  const base  = Math.floor(N / rows)
+  const extra = N % rows
+  const result = []
+  let idx = 0
+  for (let i = 0; i < rows; i++) {
+    const count = base + (i < extra ? 1 : 0)
+    if (count > 0) result.push(items.slice(idx, idx + count))
+    idx += count
+  }
+  return result
+}
+
+// مقاس كارت المنتج بيصغر تلقائيًا كل ما زاد عدد الصفوف
+function rowsCardWidth(numRows) {
+  if (numRows <= 2) return 130
+  if (numRows === 3) return 112
+  if (numRows === 4) return 98
+  if (numRows === 5) return 88
+  return Math.max(70, 88 - (numRows - 5) * 6)
+}
+
+function renderScrollRowsHTML(items) {
+  const rows  = computeRowsLayout(items)
+  const cardW = rowsCardWidth(rows.length)
+  const rowsHTML = rows.map(rowItems =>
+    `<div class="scroll-row">${rowItems.map(p => prodCardHTML(p)).join('')}</div>`
+  ).join('')
+  return `<div class="products-scroll-rows" data-autoscroll="1" style="--rowcard-w:${cardW}px">${rowsHTML}</div>`
+}
+
+// ── SCROLL-ROWS: حركة تلقائية (تروح وترجع) وتقف عند لمس المستخدم ───────
+let _rowsAutoScrollStoppers = []
+function stopAllRowsAutoScroll() {
+  _rowsAutoScrollStoppers.forEach(stop => stop())
+  _rowsAutoScrollStoppers = []
+}
+function initRowsAutoScroll() {
+  stopAllRowsAutoScroll()
+  document.querySelectorAll('.products-scroll-rows[data-autoscroll="1"]').forEach(el => {
+    let dir = 1, paused = false, stopped = false, resumeTimer = null, rafId = null
+    const SPEED = 0.45 // بكسل لكل فريم تقريبًا
+
+    function step() {
+      if (stopped) return
+      if (!paused) {
+        const max = el.scrollWidth - el.clientWidth
+        if (max > 1) {
+          el.scrollLeft += SPEED * dir
+          if (el.scrollLeft >= max) { el.scrollLeft = max; dir = -1 }
+          else if (el.scrollLeft <= 0) { el.scrollLeft = 0; dir = 1 }
+        }
+      }
+      rafId = requestAnimationFrame(step)
+    }
+    function pause() { paused = true; clearTimeout(resumeTimer) }
+    function scheduleResume() {
+      clearTimeout(resumeTimer)
+      resumeTimer = setTimeout(() => { paused = false }, 2500)
+    }
+
+    el.addEventListener('pointerdown', pause,        { passive: true })
+    el.addEventListener('touchstart',  pause,        { passive: true })
+    el.addEventListener('pointerup',   scheduleResume, { passive: true })
+    el.addEventListener('touchend',    scheduleResume, { passive: true })
+    el.addEventListener('mouseleave',  scheduleResume, { passive: true })
+
+    rafId = requestAnimationFrame(step)
+    _rowsAutoScrollStoppers.push(() => {
+      stopped = true
+      clearTimeout(resumeTimer)
+      if (rafId) cancelAnimationFrame(rafId)
+    })
+  })
+}
+
 // ── RENDER ALL SECTIONS ───────────────────────────────────────────────
 function renderAllSections(filtered) {
   const wrap  = document.getElementById('products-wrapper')
@@ -269,7 +367,9 @@ function renderAllSections(filtered) {
       ? `<div class="products-list">${items.map(p => prodCardListHTML(p)).join('')}</div>`
       : style === 'scroll'
         ? `<div class="products-scroll">${items.map(p => prodCardHTML(p)).join('')}</div>`
-        : `<div class="products-grid">${items.map(p => prodCardHTML(p)).join('')}</div>`
+        : style === 'rows'
+          ? renderScrollRowsHTML(items)
+          : `<div class="products-grid">${items.map(p => prodCardHTML(p)).join('')}</div>`
     return `<div id="sec-${cat.id}" class="fade-up" style="margin-top:4px">
       <p class="section-title">${cat.name}</p>
       ${body}
@@ -305,6 +405,7 @@ function renderAllSections(filtered) {
     </div>` : ''
 
   wrap.innerHTML = prodsHTML + bundlesHTML + uncatHTML
+  setTimeout(initRowsAutoScroll, 60)
 }
 
 // ── PRODUCT CARD HTML ─────────────────────────────────────────────────

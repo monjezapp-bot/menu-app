@@ -404,6 +404,31 @@
     .products-scroll .prod-card { flex: 0 0 148px; scroll-snap-align: start; }
 
     /* ══════════════════════════════════════════
+       PRODUCTS HORIZONTAL SCROLL — MULTI-ROW STYLE
+       (سحب أفقي مقسّم على صفوف)
+    ══════════════════════════════════════════ */
+    .products-scroll-rows {
+      display: flex; flex-direction: column; gap: var(--sp-2);
+      overflow-x: auto; padding: 0 var(--sp-4) var(--sp-2);
+      scroll-snap-type: x proximity; -webkit-overflow-scrolling: touch;
+    }
+    .products-scroll-rows::-webkit-scrollbar { display: none; }
+    .scroll-row { display: flex; gap: var(--sp-2); }
+    .products-scroll-rows .prod-card {
+      flex: 0 0 var(--rowcard-w, 110px);
+      width: var(--rowcard-w, 110px);
+      scroll-snap-align: start;
+    }
+    .products-scroll-rows .prod-card .info { padding: var(--sp-2); }
+    .products-scroll-rows .prod-card h3    { font-size: 11px; -webkit-line-clamp: 2; margin-bottom: 4px; }
+    .products-scroll-rows .prod-card .price-new,
+    .products-scroll-rows .prod-card .price-normal { font-size: 12px; }
+    .products-scroll-rows .prod-card .price-old    { font-size: 9px; }
+    .products-scroll-rows .prod-card .add-btn      { width: 28px; height: 28px; font-size: 18px; }
+    .products-scroll-rows .prod-card .qty-btn      { width: 24px; height: 24px; font-size: 13px; }
+    .products-scroll-rows .prod-card .thumb .no-img { font-size: 26px; }
+
+    /* ══════════════════════════════════════════
        PRODUCT CARD
     ══════════════════════════════════════════ */
     .prod-card {
