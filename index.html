@@ -81,6 +81,11 @@
             </svg>
           </button>
           <div style="flex:1"></div>
+          <button class="hero-icon-btn" id="header-login-btn" onclick="openCustAuth()" aria-label="تسجيل الدخول"
+                  style="width:auto;border-radius:20px;padding:0 14px;gap:6px;display:none">
+            <svg width="14" height="14" fill="none" stroke="#fff" stroke-width="2.2" viewBox="0 0 24 24"><path d="M15 3h4a2 2 0 012 2v14a2 2 0 01-2 2h-4"/><path d="M10 17l5-5-5-5"/><path d="M15 12H3"/></svg>
+            <span style="font-size:12px;font-weight:800;color:#fff">تسجيل الدخول</span>
+          </button>
           <button class="hero-icon-btn" id="notif-btn" onclick="toggleNotifPanel()" aria-label="الإشعارات">
             <svg width="16" height="16" fill="none" stroke="#fff" stroke-width="2.2" viewBox="0 0 24 24"><path d="M18 8A6 6 0 006 8c0 7-3 9-3 9h18s-3-2-3-9"/><path d="M13.73 21a2 2 0 01-3.46 0"/></svg>
             <span id="notif-badge" class="hero-icon-badge" style="display:none"></span>
@@ -148,10 +153,15 @@
   </div>
 
   <!-- لوحة الإشعارات -->
-  <div id="notif-panel" style="display:none;position:absolute;top:0;right:14px;left:14px;background:#fff;border-radius:20px;box-shadow:0 8px 32px rgba(0,0,0,0.14);border:1px solid #f0f0f0;z-index:55;max-height:320px;overflow-y:auto">
+  <div id="notif-panel" style="display:none;position:fixed;background:#fff;border-radius:20px;box-shadow:0 8px 32px rgba(0,0,0,0.22);border:1px solid #f0f0f0;z-index:62;max-height:320px;overflow-y:auto">
     <div style="display:flex;align-items:center;justify-content:space-between;padding:14px 16px 10px;border-bottom:1px solid #f5f5f5;position:sticky;top:0;background:#fff;border-radius:20px 20px 0 0">
       <p style="font-size:14px;font-weight:900;color:#1a1a1a">الإشعارات</p>
-      <button onclick="markAllNotifsRead()" style="font-size:11px;color:var(--brand);font-weight:700;background:none;border:none;cursor:pointer">تحديد الكل كمقروء</button>
+      <div style="display:flex;align-items:center;gap:10px">
+        <button onclick="markAllNotifsRead()" style="font-size:11px;color:var(--brand);font-weight:700;background:none;border:none;cursor:pointer">تحديد الكل كمقروء</button>
+        <button onclick="toggleNotifPanel()" aria-label="إغلاق" style="width:22px;height:22px;flex-shrink:0;border-radius:50%;background:#f5f5f5;border:none;display:flex;align-items:center;justify-content:center;cursor:pointer;padding:0">
+          <svg width="12" height="12" fill="none" stroke="#888" stroke-width="2.6" viewBox="0 0 24 24"><path d="m6 9 6 6 6-6"/></svg>
+        </button>
+      </div>
     </div>
     <div id="notif-list" style="padding:8px 0">
       <p style="font-size:13px;color:#bbb;text-align:center;padding:24px 0">لا توجد إشعارات</p>

@@ -491,6 +491,10 @@ function updateWalletBadge() {
   const badge = document.getElementById('wallet-mini-badge')
   const icon  = document.getElementById('wallet-mini-icon')
   const label = document.getElementById('wallet-mini-label')
+
+  const loginBtn = document.getElementById('header-login-btn')
+  if (loginBtn) loginBtn.style.display = S.customer ? 'none' : 'flex'
+
   if (!badge || !icon || !label) return
 
   if (S.customer && (S.customer.coins_balance > 0)) {
@@ -786,9 +790,26 @@ function renderInfoStrip() {
 let _notifPanelOpen = false
 let _notifications  = []
 
+function positionNotifPanel() {
+  const panel = document.getElementById('notif-panel')
+  const btn   = document.getElementById('notif-btn')
+  if (!panel || !btn) return
+  const margin = 14
+  const rect   = btn.getBoundingClientRect()
+  const width  = Math.min(320, window.innerWidth - margin * 2)
+  panel.style.width = width + 'px'
+  let right = window.innerWidth - rect.right
+  right = Math.max(margin, Math.min(right, window.innerWidth - width - margin))
+  panel.style.right     = right + 'px'
+  panel.style.left      = 'auto'
+  panel.style.top       = (rect.bottom + 8) + 'px'
+  panel.style.maxHeight = Math.max(160, Math.min(320, window.innerHeight - rect.bottom - 24)) + 'px'
+}
+
 function toggleNotifPanel() {
   _notifPanelOpen = !_notifPanelOpen
   const panel = document.getElementById('notif-panel')
+  if (_notifPanelOpen) positionNotifPanel()
   panel.style.display = _notifPanelOpen ? 'block' : 'none'
   if (_notifPanelOpen && S.customer) loadNotifications()
 }
@@ -799,6 +820,19 @@ document.addEventListener('click', e => {
     const panel = document.getElementById('notif-panel')
     if (panel) panel.style.display = 'none'
   }
+})
+
+// إغلاق اللوحة عند السكرول أو تغيير حجم الشاشة عشان ما تفضلش عايمة في مكان غلط
+window.addEventListener('scroll', () => {
+  if (_notifPanelOpen) {
+    _notifPanelOpen = false
+    const panel = document.getElementById('notif-panel')
+    if (panel) panel.style.display = 'none'
+  }
+}, { passive: true })
+
+window.addEventListener('resize', () => {
+  if (_notifPanelOpen) positionNotifPanel()
 })
 
 async function loadNotifications() {
