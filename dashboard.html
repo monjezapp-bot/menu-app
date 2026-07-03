@@ -337,6 +337,12 @@
 
         <hr class="border-gray-100" />
 
+        <div><label class="text-xs font-bold text-gray-500 mb-1 block">نبذة عن المتجر</label>
+          <textarea id="set-about" maxlength="300" rows="3" placeholder="اكتب وصف قصير عن مطعمك يظهر للعملاء في المنيو..." class="w-full border border-gray-200 rounded-xl px-4 py-3 text-sm focus:outline-none focus:ring-2 focus:ring-orange-400 resize-none"></textarea>
+          <p class="text-[11px] text-gray-400 mt-1">هيظهر للعميل أعلى المنيو تحت اسم المطعم — حد أقصى 300 حرف</p></div>
+
+        <hr class="border-gray-100" />
+
         <div><label class="text-xs font-bold text-gray-500 mb-1 block">رقم تواصل المتجر (للعملاء)</label>
           <input id="set-whatsapp" type="text" placeholder="01012345678 أو 201012345678" class="w-full border border-gray-200 rounded-xl px-4 py-3 text-sm focus:outline-none focus:ring-2 focus:ring-orange-400" />
           <p class="text-[11px] text-gray-400 mt-1">هيظهر للعميل كرقم اتصال مباشر بالمطعم — اكتبه بأي صيغة وسيتم ضبطه تلقائياً</p></div>
@@ -604,7 +610,7 @@
     <div>
       <label class="text-xs font-bold text-gray-500 mb-1 block">طريقة عرض المنتجات</label>
       <input type="hidden" id="cm-style" value="grid" />
-      <div class="grid grid-cols-4 gap-2">
+      <div class="grid grid-cols-3 gap-2">
         <button type="button" onclick="setCatStyle('grid')" id="cm-style-grid" class="cat-style-btn border-2 border-gray-200 text-gray-500 rounded-xl py-3 px-2 text-center transition-colors">
           <div class="text-lg mb-1">▦</div><div class="text-[11px] font-bold">شبكة</div>
         </button>
@@ -613,9 +619,6 @@
         </button>
         <button type="button" onclick="setCatStyle('scroll')" id="cm-style-scroll" class="cat-style-btn border-2 border-gray-200 text-gray-500 rounded-xl py-3 px-2 text-center transition-colors">
           <div class="text-lg mb-1">⇄</div><div class="text-[11px] font-bold">سحب أفقي</div>
-        </button>
-        <button type="button" onclick="setCatStyle('rows')" id="cm-style-rows" class="cat-style-btn border-2 border-gray-200 text-gray-500 rounded-xl py-3 px-2 text-center transition-colors">
-          <div class="text-lg mb-1">⊞</div><div class="text-[11px] font-bold">سحب صفوف</div>
         </button>
       </div>
     </div>
@@ -1317,6 +1320,7 @@ async function loadDashboard(r, branches) {
 
   // Populate settings
   document.getElementById('set-name').value     = r.name
+  document.getElementById('set-about').value    = r.about_text || ''
   document.getElementById('set-whatsapp').value = r.whatsapp
   document.getElementById('set-logo').value     = r.logo_url  || ''
   document.getElementById('set-cover').value    = r.cover_url || ''
@@ -1798,7 +1802,7 @@ async function loadCategories() {
 function renderCategories() {
   const el = document.getElementById('categories-list')
   if (!state.categories.length) { el.innerHTML = `<p class="text-center text-gray-400 text-sm py-8">لا توجد تصنيفات بعد</p>`; return }
-  const styleLbl = { grid: '▦ شبكة', list: '☰ قائمة', scroll: '⇄ سحب أفقي', rows: '⊞ سحب صفوف' }
+  const styleLbl = { grid: '▦ شبكة', list: '☰ قائمة', scroll: '⇄ سحب أفقي' }
   el.innerHTML = state.categories.map((c, i) => `
     <div class="bg-white rounded-2xl p-4 shadow-sm flex items-center justify-between">
       <div class="flex items-center gap-2">
@@ -1823,7 +1827,7 @@ function updateCategorySelect() {
 }
 function setCatStyle(style) {
   document.getElementById('cm-style').value = style
-  ;['grid','list','scroll','rows'].forEach(s => {
+  ;['grid','list','scroll'].forEach(s => {
     const btn = document.getElementById('cm-style-' + s)
     btn.classList.toggle('border-orange-500', s === style)
     btn.classList.toggle('text-orange-600', s === style)
@@ -2892,6 +2896,7 @@ function normalizePhone(raw) {
 }
 async function saveSettings() {
   const name        = document.getElementById('set-name').value.trim()
+  const about_text  = document.getElementById('set-about').value.trim() || null
   const whatsappRaw  = document.getElementById('set-whatsapp').value.trim()
   const logo_url = document.getElementById('set-logo').value.trim()  || null
   const cover_url= document.getElementById('set-cover').value.trim() || null
@@ -2908,9 +2913,9 @@ async function saveSettings() {
   const whatsapp = ph.value
   document.getElementById('set-whatsapp').value = whatsapp
 
-  settingsSnapshot = { name, whatsapp, logo_url, primary }
+  settingsSnapshot = { name, about_text, whatsapp, logo_url, primary }
 
-  const updatePayload = { name, whatsapp, logo_url, cover_url, theme: { primary, secondary:'#1A1A1A' }, price_per_km: price_per_km ?? null, lat: restLat, lng: restLng }
+  const updatePayload = { name, about_text, whatsapp, logo_url, cover_url, theme: { primary, secondary:'#1A1A1A' }, price_per_km: price_per_km ?? null, lat: restLat, lng: restLng }
   // كلمة سر الأدمن — تُحفظ فقط لو القسم ظاهر (يعني الدخول الحالي أدمن)
   const apEl = document.getElementById('set-admin-passcode')
   const apSectionVisible = apEl && !document.getElementById('admin-passcode-section').classList.contains('hidden')
@@ -2919,7 +2924,7 @@ async function saveSettings() {
   const { error } = await db.from('restaurants').update(updatePayload).eq('id', state.restaurant.id)
   if (error) { msgEl.textContent='حدث خطأ أثناء الحفظ'; msgEl.className='text-center text-sm text-red-500' }
   else {
-    state.restaurant.name=name; state.restaurant.price_per_km=price_per_km; state.restaurant.lat=restLat; state.restaurant.lng=restLng
+    state.restaurant.name=name; state.restaurant.about_text=about_text; state.restaurant.price_per_km=price_per_km; state.restaurant.lat=restLat; state.restaurant.lng=restLng
     if (apSectionVisible) state.restaurant.admin_passcode = updatePayload.admin_passcode
     document.getElementById('dash-restaurant-name').textContent=name; document.getElementById('undo-settings-btn').classList.remove('hidden'); msgEl.textContent='تم الحفظ بنجاح ✅'; msgEl.className='text-center text-sm text-green-500'; showToast('تم حفظ الإعدادات ✅')
   }
@@ -2929,6 +2934,7 @@ async function saveSettings() {
 function undoSettings() {
   if (!settingsSnapshot) return
   document.getElementById('set-name').value     = settingsSnapshot.name
+  document.getElementById('set-about').value    = settingsSnapshot.about_text || ''
   document.getElementById('set-whatsapp').value = settingsSnapshot.whatsapp
   document.getElementById('set-logo').value     = settingsSnapshot.logo_url || ''
   document.getElementById('set-color').value     = settingsSnapshot.primary

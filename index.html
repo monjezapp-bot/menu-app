@@ -107,10 +107,6 @@
             <svg width="12" height="12" fill="#f59e0b" viewBox="0 0 24 24"><path d="M12 2l3.09 6.26L22 9.27l-5 4.87 1.18 6.88L12 17.77l-6.18 3.25L7 14.14 2 9.27l6.91-1.01L12 2z"/></svg>
             <span id="strip-rating">5.0</span>
           </div>
-          <a id="call-restaurant-btn" class="hero-badge hero-badge-call" href="#" style="display:none">
-            <svg width="12" height="12" fill="none" stroke="#16a34a" stroke-width="2.4" viewBox="0 0 24 24"><path d="M22 16.92v3a2 2 0 01-2.18 2 19.79 19.79 0 01-8.63-3.07 19.5 19.5 0 01-6-6 19.79 19.79 0 01-3.07-8.67A2 2 0 014.11 2h3a2 2 0 012 1.72c.127.96.361 1.903.7 2.81a2 2 0 01-.45 2.11L8.09 9.91a16 16 0 006 6l1.27-1.27a2 2 0 012.11-.45c.907.339 1.85.573 2.81.7A2 2 0 0122 16.92z"/></svg>
-            تواصل
-          </a>
         </div>
         <div class="hero-card-meta">
           <svg width="12" height="12" fill="none" stroke="#888" stroke-width="2.2" viewBox="0 0 24 24"><circle cx="12" cy="12" r="10"/><polyline points="12 6 12 12 16 14"/></svg>
@@ -118,6 +114,7 @@
           <span class="hero-meta-dot">•</span>
           <span>التوصيل بواسطة المطعم</span>
         </div>
+        <p id="hero-card-about" class="hero-card-about hidden"></p>
       </div>
     </div>
   </div>
@@ -388,6 +385,9 @@
       <button onclick="switchPage('home')" style="width:100%;background:#f5f5f5;color:#888;font-size:13px;font-weight:700;border-radius:14px;padding:13px;border:none;cursor:pointer;font-family:'Rubik',sans-serif">
         تصفح المنيو بدون تسجيل 👀
       </button>
+      <button onclick="openSupportContact()" style="width:100%;background:transparent;color:#aaa;font-size:12px;font-weight:700;border:none;cursor:pointer;font-family:'Rubik',sans-serif;margin-top:14px;display:flex;align-items:center;justify-content:center;gap:6px">
+        <span>🎧</span><span>تواصل مع الدعم</span>
+      </button>
       <p style="font-size:11px;color:#ccc;text-align:center;margin-top:16px;line-height:1.6">بالمتابعة، أنت توافق على شروط الاستخدام وسياسة الخصوصية</p>
     </div>
   </div>
@@ -428,8 +428,11 @@
         <button onclick="openAccountSubPage('referral')" style="width:100%;display:flex;align-items:center;gap:12px;padding:16px;border:none;border-bottom:1px solid #f5f5f5;background:#fff;cursor:pointer;font-family:'Rubik',sans-serif">
           <span style="font-size:20px">🔗</span><span style="font-size:14px;font-weight:700;color:#1a1a1a;flex:1;text-align:right">شارك واكسب</span>
         </button>
-        <button onclick="switchPage('orders')" style="width:100%;display:flex;align-items:center;gap:12px;padding:16px;border:none;background:#fff;cursor:pointer;font-family:'Rubik',sans-serif">
+        <button onclick="switchPage('orders')" style="width:100%;display:flex;align-items:center;gap:12px;padding:16px;border:none;border-bottom:1px solid #f5f5f5;background:#fff;cursor:pointer;font-family:'Rubik',sans-serif">
           <span style="font-size:20px">📋</span><span style="font-size:14px;font-weight:700;color:#1a1a1a;flex:1;text-align:right">طلباتي</span>
+        </button>
+        <button onclick="openSupportContact()" style="width:100%;display:flex;align-items:center;gap:12px;padding:16px;border:none;background:#fff;cursor:pointer;font-family:'Rubik',sans-serif">
+          <span style="font-size:20px">🎧</span><span style="font-size:14px;font-weight:700;color:#1a1a1a;flex:1;text-align:right">تواصل مع الدعم</span>
         </button>
       </div>
 

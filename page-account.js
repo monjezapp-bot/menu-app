@@ -2,6 +2,13 @@
 
 // ── صفحة حسابك ───────────────────────────────────────────────────────
 // ── CONFIRM LOGOUT ────────────────────────────────────────────────────
+// ── التواصل مع الدعم (نُقلت من الهيدر إلى صفحة الحساب) ─────────────────
+function openSupportContact() {
+  const phone = normalizeWhatsAppNumber(S.restaurant?.whatsapp)
+  if (!phone) { showToast('رقم التواصل غير متوفر حالياً'); return }
+  window.location.href = `tel:+${phone}`
+}
+
 function confirmLogout() {
   showConfirmSheet('تسجيل الخروج', '<p style="font-size:14px;color:#555;line-height:1.7">هل أنت متأكد من تسجيل الخروج؟<br>ستظل بياناتك محفوظة وتقدر ترجع في أي وقت.</p>', custLogout, 'تسجيل خروج')
 }
