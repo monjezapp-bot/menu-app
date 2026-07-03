@@ -315,9 +315,9 @@
       </div>
     </div>
 
-    <!-- Profile Tab (الملف الشخصي) -->
+    <!-- Profile Tab (ملف المتجر) -->
     <div id="tab-content-profile" class="hidden fade-up">
-      <h2 class="font-extrabold text-gray-800 mb-4">👤 الملف الشخصي</h2>
+      <h2 class="font-extrabold text-gray-800 mb-4">🏪 ملف المتجر</h2>
 
       <!-- رابط المنيو لمشاركته مع العملاء -->
       <div class="bg-orange-50 rounded-2xl p-5 mb-4">
@@ -329,19 +329,18 @@
         </div>
       </div>
 
-      <!-- ── بيانات المتجر ── -->
+      <!-- ── بيانات المتجر (اسم + موقع وتواصل + كلمة سر الأدمن) ── -->
       <p class="text-xs font-extrabold text-gray-400 mb-2 mt-5">🏪 بيانات المتجر</p>
       <div class="bg-white rounded-2xl p-5 shadow-sm space-y-4">
         <div><label class="text-xs font-bold text-gray-500 mb-1 block">اسم المطعم</label>
           <input id="set-name" type="text" class="w-full border border-gray-200 rounded-xl px-4 py-3 text-sm focus:outline-none focus:ring-2 focus:ring-orange-400" /></div>
-      </div>
 
-      <!-- ── الموقع والتواصل ── -->
-      <p class="text-xs font-extrabold text-gray-400 mb-2 mt-5">📍 الموقع والتواصل</p>
-      <div class="bg-white rounded-2xl p-5 shadow-sm space-y-4">
+        <hr class="border-gray-100" />
+
         <div><label class="text-xs font-bold text-gray-500 mb-1 block">رقم تواصل المتجر (للعملاء)</label>
           <input id="set-whatsapp" type="text" placeholder="01012345678 أو 201012345678" class="w-full border border-gray-200 rounded-xl px-4 py-3 text-sm focus:outline-none focus:ring-2 focus:ring-orange-400" />
           <p class="text-[11px] text-gray-400 mt-1">هيظهر للعميل كرقم اتصال مباشر بالمطعم — اكتبه بأي صيغة وسيتم ضبطه تلقائياً</p></div>
+
         <div>
           <label class="text-xs font-bold text-gray-500 mb-1 block">📍 موقع المطعم على الخريطة</label>
           <button onclick="openRestaurantMapPicker()" id="set-location-btn" class="w-full border border-gray-200 rounded-xl px-4 py-3 text-sm text-gray-500 text-right flex items-center gap-2">
@@ -351,6 +350,16 @@
           <input type="hidden" id="set-restaurant-lng" />
           <p class="text-[11px] text-gray-400 mt-1">يُستخدم كنقطة انطلاق لحساب مسافة التوصيل لو لم تُضف فروعاً منفصلة</p>
         </div>
+
+        <div id="admin-passcode-section" class="hidden space-y-4">
+          <hr class="border-gray-100" />
+          <p class="text-xs font-extrabold text-gray-500">🔐 كلمة سر الأدمن</p>
+          <div>
+            <label class="text-xs font-bold text-gray-500 mb-1 block">كلمة سر الأدمن (تمنح وصولاً كاملاً)</label>
+            <input id="set-admin-passcode" type="text" placeholder="اتركها فارغة إن لم تريد كلمة سر للأدمن"
+                   class="w-full border border-gray-200 rounded-xl px-4 py-3 text-sm focus:outline-none focus:ring-2 focus:ring-orange-400" />
+          </div>
+        </div>
       </div>
 
       <div class="flex gap-3 mt-4">
@@ -359,16 +368,8 @@
       </div>
       <p id="settings-msg" class="text-center text-sm hidden mt-2"></p>
 
-      <!-- إدارة كلمة سر الأدمن وتبديل الوضع — للأدمن فقط -->
-      <div id="admin-passcode-section" class="hidden bg-white rounded-2xl p-5 shadow-sm space-y-4 mt-4">
-        <h3 class="font-bold text-gray-700">🔐 كلمة سر الأدمن</h3>
-        <div>
-          <label class="text-xs font-bold text-gray-500 mb-1 block">كلمة سر الأدمن (تمنح وصولاً كاملاً)</label>
-          <input id="set-admin-passcode" type="text" placeholder="اتركها فارغة إن لم تريد كلمة سر للأدمن"
-                 class="w-full border border-gray-200 rounded-xl px-4 py-3 text-sm focus:outline-none focus:ring-2 focus:ring-orange-400" />
-        </div>
-        <button onclick="saveAdminPasscode()" class="w-full bg-orange-500 text-white font-bold rounded-xl py-3">حفظ كلمة سر الأدمن</button>
-        <hr class="border-gray-100" />
+      <!-- تبديل وضع الدخول — للأدمن فقط -->
+      <div id="admin-switch-role-section" class="hidden bg-white rounded-2xl p-5 shadow-sm mt-4">
         <button onclick="switchRole()" class="w-full bg-gray-100 text-gray-600 font-bold rounded-xl py-2.5 text-sm">🔄 تبديل وضع الدخول (دخول كفرع)</button>
       </div>
     </div>
@@ -978,7 +979,7 @@ Object.entries(SECTION_TABS).forEach(([sec, tabs]) => tabs.forEach(t => TAB_TO_S
 const TAB_SUBLABEL = {
   products: 'المنتجات', categories: 'التصنيفات',
   bundles: '🎁 العروض', banners: '📢 البنرات', analytics: '📊 الإحصائيات', customers: '👥 العملاء', loyalty: '🎁 هدايا الولاء',
-  profile: '👤 الملف الشخصي', appearance: '🎨 المظهر', branches: '🏬 الفروع', delivery: '🚚 التوصيل'
+  profile: '🏪 ملف المتجر', appearance: '🎨 المظهر', branches: '🏬 الفروع', delivery: '🚚 التوصيل'
 }
 let _lastTabInSection = { orders: 'orders', products: 'products', marketing: 'bundles', store: 'profile' }
 
@@ -1226,6 +1227,8 @@ function applyRoleUI() {
   // قسم admin-passcode في الإعدادات
   const apSection = document.getElementById('admin-passcode-section')
   if (apSection) apSection.classList.toggle('hidden', !isAdmin)
+  const asrSection = document.getElementById('admin-switch-role-section')
+  if (asrSection) asrSection.classList.toggle('hidden', !isAdmin)
   const loySection = document.getElementById('loyalty-section')
   if (loySection) loySection.classList.toggle('hidden', !isAdmin)
   const ccSection = document.getElementById('cancel-compensation-section')
@@ -1372,13 +1375,6 @@ async function loadDashboard(r, branches) {
     if (url) { document.getElementById('logo-preview').src = url; wrap.classList.remove('hidden') }
     else wrap.classList.add('hidden')
   })
-}
-
-async function saveAdminPasscode() {
-  const pass = document.getElementById('set-admin-passcode').value.trim()
-  await db.from('restaurants').update({ admin_passcode: pass || null }).eq('id', state.restaurant.id)
-  state.restaurant.admin_passcode = pass || null
-  showToast(pass ? 'تم حفظ كلمة سر الأدمن ✅' : 'تم إزالة كلمة سر الأدمن')
 }
 
 // ── LOYALTY SETTINGS ──────────────────────────────────────────────────
@@ -2860,9 +2856,20 @@ async function saveSettings() {
   document.getElementById('set-whatsapp').value = whatsapp
 
   settingsSnapshot = { name, whatsapp, logo_url, primary }
-  const { error } = await db.from('restaurants').update({ name, whatsapp, logo_url, cover_url, theme: { primary, secondary:'#1A1A1A' }, price_per_km: price_per_km ?? null, lat: restLat, lng: restLng }).eq('id', state.restaurant.id)
+
+  const updatePayload = { name, whatsapp, logo_url, cover_url, theme: { primary, secondary:'#1A1A1A' }, price_per_km: price_per_km ?? null, lat: restLat, lng: restLng }
+  // كلمة سر الأدمن — تُحفظ فقط لو القسم ظاهر (يعني الدخول الحالي أدمن)
+  const apEl = document.getElementById('set-admin-passcode')
+  const apSectionVisible = apEl && !document.getElementById('admin-passcode-section').classList.contains('hidden')
+  if (apSectionVisible) updatePayload.admin_passcode = apEl.value.trim() || null
+
+  const { error } = await db.from('restaurants').update(updatePayload).eq('id', state.restaurant.id)
   if (error) { msgEl.textContent='حدث خطأ أثناء الحفظ'; msgEl.className='text-center text-sm text-red-500' }
-  else { state.restaurant.name=name; state.restaurant.price_per_km=price_per_km; state.restaurant.lat=restLat; state.restaurant.lng=restLng; document.getElementById('dash-restaurant-name').textContent=name; document.getElementById('undo-settings-btn').classList.remove('hidden'); msgEl.textContent='تم الحفظ بنجاح ✅'; msgEl.className='text-center text-sm text-green-500'; showToast('تم حفظ الإعدادات ✅') }
+  else {
+    state.restaurant.name=name; state.restaurant.price_per_km=price_per_km; state.restaurant.lat=restLat; state.restaurant.lng=restLng
+    if (apSectionVisible) state.restaurant.admin_passcode = updatePayload.admin_passcode
+    document.getElementById('dash-restaurant-name').textContent=name; document.getElementById('undo-settings-btn').classList.remove('hidden'); msgEl.textContent='تم الحفظ بنجاح ✅'; msgEl.className='text-center text-sm text-green-500'; showToast('تم حفظ الإعدادات ✅')
+  }
   msgEl.classList.remove('hidden')
   setTimeout(() => msgEl.classList.add('hidden'), 3000)
 }
