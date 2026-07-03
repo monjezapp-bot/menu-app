@@ -181,7 +181,7 @@ function closeModal(fromPopstate) {
 
 // ── BUNDLE MODAL ──────────────────────────────────────────────────────
 function openBundleModal(bid) {
-  const b = S.bundles.find(x => x.id === bid); if (!b) return
+  const b = S.bundles.find(x => String(x.id) === String(bid)); if (!b) return
 
   const itemsHTML = b.items && Array.isArray(b.items) && b.items.length
     ? `<div style="margin:14px 0 0">
@@ -190,7 +190,7 @@ function openBundleModal(bid) {
           <div style="display:flex;align-items:center;gap:10px;padding:9px 0;border-bottom:1px solid #f5f5f5">
             <span style="color:var(--brand);font-weight:900;font-size:14px">✓</span>
             <span style="font-size:13px;color:#444;font-weight:600">${item.name || item}</span>
-            ${item.qty ? `<span style="font-size:12px;color:#aaa;margin-right:auto">× ${item.qty}</span>` : ''}
+            ${item.quantity ? `<span style="font-size:12px;color:#aaa;margin-right:auto">× ${item.quantity}</span>` : ''}
           </div>`).join('')}
       </div>`
     : ''
@@ -238,8 +238,8 @@ function quickAdd(pid) {
   document.querySelectorAll(`.prod-card .add-btn[onclick*="quickAdd('${pid}')"]`).forEach(btn => btn.style.display = 'none')
 }
 function addBundleToCart(bid) {
-  const b  = S.bundles.find(x => x.id === bid); if (!b) return
-  const ci = S.cart.find(c => c.id === bid && c.type === 'bundle')
+  const b  = S.bundles.find(x => String(x.id) === String(bid)); if (!b) return
+  const ci = S.cart.find(c => String(c.id) === String(bid) && c.type === 'bundle')
   if (ci) { ci.qty += 1 } else { S.cart.push({ id: bid, type: 'bundle', name: b.name, price: Number(b.price), image_url: b.image_url, qty: 1 }) }
   saveCart(); updateCartUI()
 }
