@@ -150,130 +150,6 @@
       <div id="banners-list" class="space-y-3"></div>
     </div>
 
-    <!-- Loyalty Tab -->
-    <div id="tab-content-loyalty" class="hidden fade-up">
-      <div data-admin-only="1" class="bg-white rounded-2xl p-5 shadow-sm space-y-5">
-        <h2 class="font-extrabold text-gray-800">🎁 هدايا الولاء</h2>
-
-        <!-- التسعير والتوصيل -->
-        <div class="border-t border-gray-100 pt-4">
-          <p class="text-xs font-extrabold text-gray-500 mb-2">🚚 التسعير والتوصيل</p>
-          <label class="text-xs font-bold text-gray-500 mb-1 block">سعر التوصيل لكل كيلومتر (ج.م)</label>
-          <input id="set-price-per-km" type="number" step="0.5" min="0" placeholder="مثال: 5 — اتركه 0 أو فارغاً لعدم احتساب رسوم توصيل" class="w-full border border-gray-200 rounded-xl px-4 py-3 text-sm focus:outline-none focus:ring-2 focus:ring-orange-400" />
-          <p class="text-[11px] text-gray-400 mt-1">تُضاف رسوم التوصيل تلقائياً للفاتورة بناءً على المسافة بين موقع العميل وأقرب فرع</p>
-          <button onclick="saveSettings()" class="w-full bg-orange-500 text-white font-bold rounded-xl py-3 mt-3">حفظ سعر التوصيل</button>
-        </div>
-
-        <!-- إعدادات الولاء والكوينز -->
-        <div id="loyalty-section" class="hidden border-t border-gray-100 pt-4 space-y-4">
-          <div class="flex items-center justify-between">
-            <p class="text-xs font-extrabold text-gray-500">🪙 نظام الكوينز</p>
-            <div class="flex items-center gap-2">
-              <span class="text-xs text-gray-400">تفعيل النظام كله</span>
-              <input id="set-loyalty-enabled" type="checkbox" class="w-5 h-5 accent-orange-500" onchange="toggleLoyaltySection()" />
-            </div>
-          </div>
-          <div id="loyalty-fields" class="hidden space-y-4">
-            <p class="text-xs text-gray-400">1,000 كوين = 1 ج.م — كل القيم بالكوين إلا كود الخصم المخصص (بالجنيه)</p>
-
-            <!-- بونص الترحيب -->
-            <div class="border border-gray-100 rounded-xl p-3 space-y-2">
-              <div class="flex items-center justify-between">
-                <label class="text-xs font-bold text-gray-600">🎁 بونص الترحيب عند أول تسجيل</label>
-                <input id="set-welcome-enabled" type="checkbox" class="w-5 h-5 accent-orange-500" onchange="toggleLoyaltySubfield('welcome')" />
-              </div>
-              <input id="set-welcome-coins" type="number" min="0" placeholder="10000" class="hidden w-full border border-gray-200 rounded-xl px-4 py-3 text-sm focus:outline-none focus:ring-2 focus:ring-orange-400" />
-              <p class="text-[11px] text-gray-400">يتحول تلقائياً لرصيد نقدي بالمحفظة فوراً، ليستخدمه العميل في أول أوردر</p>
-            </div>
-
-            <!-- بونص الإحالة -->
-            <div class="border border-gray-100 rounded-xl p-3 space-y-2">
-              <div class="flex items-center justify-between">
-                <label class="text-xs font-bold text-gray-600">🔗 بونص الإحالة للمُحيل</label>
-                <input id="set-referral-enabled" type="checkbox" class="w-5 h-5 accent-orange-500" onchange="toggleLoyaltySubfield('referral')" />
-              </div>
-              <input id="set-referral-coins" type="number" min="0" placeholder="5000" class="hidden w-full border border-gray-200 rounded-xl px-4 py-3 text-sm focus:outline-none focus:ring-2 focus:ring-orange-400" />
-              <p class="text-[11px] text-gray-400">يتحول تلقائياً لرصيد نقدي بالمحفظة فوراً عند نجاح الإحالة</p>
-            </div>
-
-            <!-- هدية عيد الميلاد -->
-            <div class="border border-gray-100 rounded-xl p-3 space-y-2">
-              <div class="flex items-center justify-between">
-                <label class="text-xs font-bold text-gray-600">🎂 هدية عيد الميلاد</label>
-                <input id="set-birthday-enabled" type="checkbox" class="w-5 h-5 accent-orange-500" onchange="toggleLoyaltySubfield('birthday')" />
-              </div>
-              <input id="set-birthday-coins" type="number" min="0" placeholder="3000" class="hidden w-full border border-gray-200 rounded-xl px-4 py-3 text-sm focus:outline-none focus:ring-2 focus:ring-orange-400" />
-            </div>
-
-            <!-- هدية الشراء (الولاء على الطلبات) -->
-            <div class="border border-gray-100 rounded-xl p-3 space-y-2">
-              <div class="flex items-center justify-between">
-                <label class="text-xs font-bold text-gray-600">🛍️ هدية الشراء (مع كل أوردر)</label>
-                <input id="set-purchase-reward-enabled" type="checkbox" class="w-5 h-5 accent-orange-500" onchange="toggleLoyaltySubfield('purchaseReward')" />
-              </div>
-              <div id="purchase-reward-fields" class="hidden space-y-2">
-                <div class="flex gap-2">
-                  <label class="flex-1 flex items-center gap-1.5 text-xs border border-gray-200 rounded-lg px-3 py-2 cursor-pointer">
-                    <input type="radio" name="purchase-reward-mode" value="per_product" onchange="togglePurchaseRewardMode()" /> لكل منتج
-                  </label>
-                  <label class="flex-1 flex items-center gap-1.5 text-xs border border-gray-200 rounded-lg px-3 py-2 cursor-pointer">
-                    <input type="radio" name="purchase-reward-mode" value="per_100_egp" onchange="togglePurchaseRewardMode()" /> لكل 100 ج.م من الفاتورة
-                  </label>
-                </div>
-                <p id="purchase-reward-per-product-note" class="hidden text-[11px] text-gray-400">القيمة تُحدَّد لكل منتج على حدة من صفحة المنتجات</p>
-                <input id="set-purchase-reward-per-100" type="number" min="0" placeholder="500" class="hidden w-full border border-gray-200 rounded-xl px-4 py-3 text-sm focus:outline-none focus:ring-2 focus:ring-orange-400" />
-              </div>
-            </div>
-
-            <!-- قسيمة الشراء (حد أدنى) -->
-            <div class="border border-gray-100 rounded-xl p-3 space-y-2">
-              <div class="flex items-center justify-between">
-                <label class="text-xs font-bold text-gray-600">🎟️ قسيمة شراء عند الوصول لحد أدنى</label>
-                <input id="set-purchase-voucher-enabled" type="checkbox" class="w-5 h-5 accent-orange-500" onchange="toggleLoyaltySubfield('purchaseVoucher')" />
-              </div>
-              <div id="purchase-voucher-fields" class="hidden space-y-2">
-                <div><label class="text-[11px] text-gray-500 mb-1 block">الحد الأدنى لقيمة الفاتورة (ج.م)</label>
-                  <input id="set-purchase-voucher-min" type="number" min="0" placeholder="100" class="w-full border border-gray-200 rounded-xl px-4 py-3 text-sm focus:outline-none focus:ring-2 focus:ring-orange-400" /></div>
-                <div><label class="text-[11px] text-gray-500 mb-1 block">قيمة القسيمة (كوين)</label>
-                  <input id="set-purchase-voucher-coins" type="number" min="0" placeholder="5000" class="w-full border border-gray-200 rounded-xl px-4 py-3 text-sm focus:outline-none focus:ring-2 focus:ring-orange-400" /></div>
-              </div>
-            </div>
-
-            <div><label class="text-xs font-bold text-gray-500 mb-1 block">⬇️ الحد الأدنى للاسترداد (كوين) — مثال: 100,000 = 100 ج.م</label>
-              <input id="set-min-redeem" type="number" min="0" placeholder="100000" class="w-full border border-gray-200 rounded-xl px-4 py-3 text-sm focus:outline-none focus:ring-2 focus:ring-orange-400" /></div>
-
-            <button onclick="saveLoyaltySettings()" class="w-full bg-orange-500 text-white font-bold rounded-xl py-3">حفظ إعدادات الكوينز</button>
-          </div>
-        </div>
-
-        <!-- تعويض إلغاء الطلب بعد القبول -->
-        <div id="cancel-compensation-section" class="hidden border-t border-gray-100 pt-4 space-y-3">
-          <div class="flex items-center justify-between">
-            <p class="text-xs font-extrabold text-gray-500">🎁 تعويض العميل عند إلغاء طلب مؤكد</p>
-            <input id="set-cancel-comp-enabled" type="checkbox" class="w-5 h-5 accent-orange-500" onchange="toggleCancelCompensationFields()" />
-          </div>
-          <p class="text-[11px] text-gray-400 leading-relaxed">
-            لو اضطريت تلغي طلب بعد ما تكون قبلته (يعني قبل مرحلة "تم التجهيز") — بعد التواصل مع العميل وكتابة سبب الإلغاء،
-            هيتم تعويضه تلقائياً بعدد كوينز ثابت تحدده هنا. الإلغاء قبل قبول الطلب أصلاً (رفض الطلب الجديد) لا يدخل في هذا النظام ولا يستحق تعويض.
-          </p>
-          <div id="cancel-comp-fields" class="hidden">
-            <label class="text-xs font-bold text-gray-500 mb-1 block">عدد كوينز التعويض — مثال: 1000 كوين = 1 ج.م</label>
-            <input id="set-cancel-comp-coins" type="number" min="0" step="100" placeholder="مثال: 1000" class="w-full border border-gray-200 rounded-xl px-4 py-3 text-sm focus:outline-none focus:ring-2 focus:ring-orange-400" />
-          </div>
-          <button onclick="saveCancelCompensationSettings()" class="w-full bg-orange-500 text-white font-bold rounded-xl py-3">حفظ إعدادات التعويض</button>
-        </div>
-
-        <!-- أكواد الخصم -->
-        <div id="discount-codes-section" class="hidden border-t border-gray-100 pt-4 space-y-4">
-          <div class="flex items-center justify-between">
-            <p class="text-xs font-extrabold text-gray-500">🏷️ أكواد الخصم</p>
-            <button onclick="openDiscountCodeModal()" class="bg-orange-500 text-white text-xs font-bold px-4 py-2 rounded-xl">+ كود جديد</button>
-          </div>
-          <div id="discount-codes-list" class="space-y-2"></div>
-        </div>
-      </div>
-    </div>
-
     <!-- Orders Tab (الصفحة الرئيسية) -->
     <div id="tab-content-orders" class="fade-up">
       <h2 class="font-extrabold text-gray-800 mb-4">الطلبات</h2>
@@ -326,9 +202,122 @@
       </div>
     </div>
 
-    <!-- Settings Tab -->
-    <div id="tab-content-settings" class="hidden fade-up">
-      <h2 class="font-extrabold text-gray-800 mb-4">🏪 المتجر</h2>
+
+    <!-- Loyalty Gifts Tab (هدايا الولاء) -->
+    <div id="tab-content-loyalty" class="hidden fade-up">
+      <h2 class="font-extrabold text-gray-800 mb-4">🎁 هدايا الولاء</h2>
+
+      <!-- إعدادات الولاء والكوينز -->
+      <div id="loyalty-section" class="hidden bg-white rounded-2xl p-5 shadow-sm space-y-4">
+        <div class="flex items-center justify-between">
+          <h3 class="font-bold text-gray-700">🪙 نظام الكوينز</h3>
+          <div class="flex items-center gap-2">
+            <input id="set-loyalty-enabled" type="checkbox" class="w-5 h-5 accent-orange-500" onchange="toggleLoyaltySection()" />
+          </div>
+        </div>
+        <div id="loyalty-fields" class="hidden space-y-4">
+          <p class="text-xs text-gray-400">1,000 كوين = 1 ج.م — كل القيم بالكوين إلا كود الخصم المخصص (بالجنيه)</p>
+
+          <!-- بونص الترحيب -->
+          <div class="border border-gray-100 rounded-xl p-3 space-y-2">
+            <div class="flex items-center justify-between">
+              <label class="text-xs font-bold text-gray-600">🎁 بونص الترحيب عند أول تسجيل</label>
+              <input id="set-welcome-enabled" type="checkbox" class="w-5 h-5 accent-orange-500" onchange="toggleLoyaltySubfield('welcome')" />
+            </div>
+            <input id="set-welcome-coins" type="number" min="0" placeholder="10000" class="hidden w-full border border-gray-200 rounded-xl px-4 py-3 text-sm focus:outline-none focus:ring-2 focus:ring-orange-400" />
+            <p class="text-[11px] text-gray-400">يتحول تلقائياً لرصيد نقدي بالمحفظة فوراً، ليستخدمه العميل في أول أوردر</p>
+          </div>
+
+          <!-- بونص الإحالة -->
+          <div class="border border-gray-100 rounded-xl p-3 space-y-2">
+            <div class="flex items-center justify-between">
+              <label class="text-xs font-bold text-gray-600">🔗 بونص الإحالة للمُحيل</label>
+              <input id="set-referral-enabled" type="checkbox" class="w-5 h-5 accent-orange-500" onchange="toggleLoyaltySubfield('referral')" />
+            </div>
+            <input id="set-referral-coins" type="number" min="0" placeholder="5000" class="hidden w-full border border-gray-200 rounded-xl px-4 py-3 text-sm focus:outline-none focus:ring-2 focus:ring-orange-400" />
+            <p class="text-[11px] text-gray-400">يتحول تلقائياً لرصيد نقدي بالمحفظة فوراً عند نجاح الإحالة</p>
+          </div>
+
+          <!-- هدية عيد الميلاد -->
+          <div class="border border-gray-100 rounded-xl p-3 space-y-2">
+            <div class="flex items-center justify-between">
+              <label class="text-xs font-bold text-gray-600">🎂 هدية عيد الميلاد</label>
+              <input id="set-birthday-enabled" type="checkbox" class="w-5 h-5 accent-orange-500" onchange="toggleLoyaltySubfield('birthday')" />
+            </div>
+            <input id="set-birthday-coins" type="number" min="0" placeholder="3000" class="hidden w-full border border-gray-200 rounded-xl px-4 py-3 text-sm focus:outline-none focus:ring-2 focus:ring-orange-400" />
+          </div>
+
+          <!-- هدية الشراء (الولاء على الطلبات) -->
+          <div class="border border-gray-100 rounded-xl p-3 space-y-2">
+            <div class="flex items-center justify-between">
+              <label class="text-xs font-bold text-gray-600">🛍️ هدية الشراء (مع كل أوردر)</label>
+              <input id="set-purchase-reward-enabled" type="checkbox" class="w-5 h-5 accent-orange-500" onchange="toggleLoyaltySubfield('purchaseReward')" />
+            </div>
+            <div id="purchase-reward-fields" class="hidden space-y-2">
+              <div class="flex gap-2">
+                <label class="flex-1 flex items-center gap-1.5 text-xs border border-gray-200 rounded-lg px-3 py-2 cursor-pointer">
+                  <input type="radio" name="purchase-reward-mode" value="per_product" onchange="togglePurchaseRewardMode()" /> لكل منتج
+                </label>
+                <label class="flex-1 flex items-center gap-1.5 text-xs border border-gray-200 rounded-lg px-3 py-2 cursor-pointer">
+                  <input type="radio" name="purchase-reward-mode" value="per_100_egp" onchange="togglePurchaseRewardMode()" /> لكل 100 ج.م من الفاتورة
+                </label>
+              </div>
+              <p id="purchase-reward-per-product-note" class="hidden text-[11px] text-gray-400">القيمة تُحدَّد لكل منتج على حدة من صفحة المنتجات</p>
+              <input id="set-purchase-reward-per-100" type="number" min="0" placeholder="500" class="hidden w-full border border-gray-200 rounded-xl px-4 py-3 text-sm focus:outline-none focus:ring-2 focus:ring-orange-400" />
+            </div>
+          </div>
+
+          <!-- قسيمة الشراء (حد أدنى) -->
+          <div class="border border-gray-100 rounded-xl p-3 space-y-2">
+            <div class="flex items-center justify-between">
+              <label class="text-xs font-bold text-gray-600">🎟️ قسيمة شراء عند الوصول لحد أدنى</label>
+              <input id="set-purchase-voucher-enabled" type="checkbox" class="w-5 h-5 accent-orange-500" onchange="toggleLoyaltySubfield('purchaseVoucher')" />
+            </div>
+            <div id="purchase-voucher-fields" class="hidden space-y-2">
+              <div><label class="text-[11px] text-gray-500 mb-1 block">الحد الأدنى لقيمة الفاتورة (ج.م)</label>
+                <input id="set-purchase-voucher-min" type="number" min="0" placeholder="100" class="w-full border border-gray-200 rounded-xl px-4 py-3 text-sm focus:outline-none focus:ring-2 focus:ring-orange-400" /></div>
+              <div><label class="text-[11px] text-gray-500 mb-1 block">قيمة القسيمة (كوين)</label>
+                <input id="set-purchase-voucher-coins" type="number" min="0" placeholder="5000" class="w-full border border-gray-200 rounded-xl px-4 py-3 text-sm focus:outline-none focus:ring-2 focus:ring-orange-400" /></div>
+            </div>
+          </div>
+
+          <div><label class="text-xs font-bold text-gray-500 mb-1 block">⬇️ الحد الأدنى للاسترداد (كوين) — مثال: 100,000 = 100 ج.م</label>
+            <input id="set-min-redeem" type="number" min="0" placeholder="100000" class="w-full border border-gray-200 rounded-xl px-4 py-3 text-sm focus:outline-none focus:ring-2 focus:ring-orange-400" /></div>
+
+          <button onclick="saveLoyaltySettings()" class="w-full bg-orange-500 text-white font-bold rounded-xl py-3">حفظ إعدادات الكوينز</button>
+        </div>
+      </div>
+
+      <!-- تعويض إلغاء الطلب بعد القبول -->
+      <div id="cancel-compensation-section" class="hidden bg-white rounded-2xl p-5 shadow-sm space-y-3 mt-4">
+        <div class="flex items-center justify-between">
+          <h3 class="font-bold text-gray-700">🎁 تعويض العميل عند إلغاء طلب مؤكد</h3>
+          <input id="set-cancel-comp-enabled" type="checkbox" class="w-5 h-5 accent-orange-500" onchange="toggleCancelCompensationFields()" />
+        </div>
+        <p class="text-[11px] text-gray-400 leading-relaxed">
+          لو اضطريت تلغي طلب بعد ما تكون قبلته (يعني قبل مرحلة "تم التجهيز") — بعد التواصل مع العميل وكتابة سبب الإلغاء،
+          هيتم تعويضه تلقائياً بعدد كوينز ثابت تحدده هنا. الإلغاء قبل قبول الطلب أصلاً (رفض الطلب الجديد) لا يدخل في هذا النظام ولا يستحق تعويض.
+        </p>
+        <div id="cancel-comp-fields" class="hidden">
+          <label class="text-xs font-bold text-gray-500 mb-1 block">عدد كوينز التعويض — مثال: 1000 كوين = 1 ج.م</label>
+          <input id="set-cancel-comp-coins" type="number" min="0" step="100" placeholder="مثال: 1000" class="w-full border border-gray-200 rounded-xl px-4 py-3 text-sm focus:outline-none focus:ring-2 focus:ring-orange-400" />
+        </div>
+        <button onclick="saveCancelCompensationSettings()" class="w-full bg-orange-500 text-white font-bold rounded-xl py-3">حفظ إعدادات التعويض</button>
+      </div>
+
+      <!-- أكواد الخصم -->
+      <div id="discount-codes-section" class="hidden bg-white rounded-2xl p-5 shadow-sm space-y-4 mt-4">
+        <div class="flex items-center justify-between">
+          <h3 class="font-bold text-gray-700">🏷️ أكواد الخصم</h3>
+          <button onclick="openDiscountCodeModal()" class="bg-orange-500 text-white text-xs font-bold px-4 py-2 rounded-xl">+ كود جديد</button>
+        </div>
+        <div id="discount-codes-list" class="space-y-2"></div>
+      </div>
+    </div>
+
+    <!-- Profile Tab (الملف الشخصي) -->
+    <div id="tab-content-profile" class="hidden fade-up">
+      <h2 class="font-extrabold text-gray-800 mb-4">👤 الملف الشخصي</h2>
 
       <!-- رابط المنيو لمشاركته مع العملاء -->
       <div class="bg-orange-50 rounded-2xl p-5 mb-4">
@@ -340,24 +329,53 @@
         </div>
       </div>
 
-      <!-- ── الملف الشخصي ── -->
-      <p class="text-xs font-extrabold text-gray-400 mb-2 mt-5">👤 الملف الشخصي</p>
+      <!-- ── بيانات المتجر ── -->
+      <p class="text-xs font-extrabold text-gray-400 mb-2 mt-5">🏪 بيانات المتجر</p>
       <div class="bg-white rounded-2xl p-5 shadow-sm space-y-4">
         <div><label class="text-xs font-bold text-gray-500 mb-1 block">اسم المطعم</label>
           <input id="set-name" type="text" class="w-full border border-gray-200 rounded-xl px-4 py-3 text-sm focus:outline-none focus:ring-2 focus:ring-orange-400" /></div>
-        <div id="admin-passcode-section" class="hidden pt-2 border-t border-gray-100">
-          <label class="text-xs font-bold text-gray-500 mb-1 block">🔐 كلمة سر الأدمن (تمنح وصولاً كاملاً)</label>
-          <input id="set-admin-passcode" type="text" placeholder="اتركها فارغة إن لم تريد كلمة سر للأدمن"
-                 class="w-full border border-gray-200 rounded-xl px-4 py-3 text-sm focus:outline-none focus:ring-2 focus:ring-orange-400" />
-          <div class="flex gap-2 mt-2">
-            <button onclick="saveAdminPasscode()" class="flex-1 bg-orange-500 text-white text-xs font-bold rounded-xl py-2.5">حفظ كلمة السر</button>
-            <button onclick="switchRole()" class="flex-1 bg-gray-100 text-gray-600 text-xs font-bold rounded-xl py-2.5">🔄 تبديل وضع الدخول</button>
-          </div>
+      </div>
+
+      <!-- ── الموقع والتواصل ── -->
+      <p class="text-xs font-extrabold text-gray-400 mb-2 mt-5">📍 الموقع والتواصل</p>
+      <div class="bg-white rounded-2xl p-5 shadow-sm space-y-4">
+        <div><label class="text-xs font-bold text-gray-500 mb-1 block">رقم تواصل المتجر (للعملاء)</label>
+          <input id="set-whatsapp" type="text" placeholder="01012345678 أو 201012345678" class="w-full border border-gray-200 rounded-xl px-4 py-3 text-sm focus:outline-none focus:ring-2 focus:ring-orange-400" />
+          <p class="text-[11px] text-gray-400 mt-1">هيظهر للعميل كرقم اتصال مباشر بالمطعم — اكتبه بأي صيغة وسيتم ضبطه تلقائياً</p></div>
+        <div>
+          <label class="text-xs font-bold text-gray-500 mb-1 block">📍 موقع المطعم على الخريطة</label>
+          <button onclick="openRestaurantMapPicker()" id="set-location-btn" class="w-full border border-gray-200 rounded-xl px-4 py-3 text-sm text-gray-500 text-right flex items-center gap-2">
+            <span>📍</span><span id="set-location-label">اضغط لتحديد موقع المطعم</span>
+          </button>
+          <input type="hidden" id="set-restaurant-lat" />
+          <input type="hidden" id="set-restaurant-lng" />
+          <p class="text-[11px] text-gray-400 mt-1">يُستخدم كنقطة انطلاق لحساب مسافة التوصيل لو لم تُضف فروعاً منفصلة</p>
         </div>
       </div>
 
-      <!-- ── المظهر ── -->
-      <p class="text-xs font-extrabold text-gray-400 mb-2 mt-5">🎨 المظهر</p>
+      <div class="flex gap-3 mt-4">
+        <button onclick="saveSettings()" class="flex-1 bg-orange-500 text-white font-bold rounded-xl py-3">حفظ كل التعديلات أعلاه</button>
+        <button onclick="undoSettings()" id="undo-settings-btn" class="flex-1 bg-gray-100 text-gray-600 font-bold rounded-xl py-3 hidden">↩ تراجع</button>
+      </div>
+      <p id="settings-msg" class="text-center text-sm hidden mt-2"></p>
+
+      <!-- إدارة كلمة سر الأدمن وتبديل الوضع — للأدمن فقط -->
+      <div id="admin-passcode-section" class="hidden bg-white rounded-2xl p-5 shadow-sm space-y-4 mt-4">
+        <h3 class="font-bold text-gray-700">🔐 كلمة سر الأدمن</h3>
+        <div>
+          <label class="text-xs font-bold text-gray-500 mb-1 block">كلمة سر الأدمن (تمنح وصولاً كاملاً)</label>
+          <input id="set-admin-passcode" type="text" placeholder="اتركها فارغة إن لم تريد كلمة سر للأدمن"
+                 class="w-full border border-gray-200 rounded-xl px-4 py-3 text-sm focus:outline-none focus:ring-2 focus:ring-orange-400" />
+        </div>
+        <button onclick="saveAdminPasscode()" class="w-full bg-orange-500 text-white font-bold rounded-xl py-3">حفظ كلمة سر الأدمن</button>
+        <hr class="border-gray-100" />
+        <button onclick="switchRole()" class="w-full bg-gray-100 text-gray-600 font-bold rounded-xl py-2.5 text-sm">🔄 تبديل وضع الدخول (دخول كفرع)</button>
+      </div>
+    </div>
+
+    <!-- Appearance Tab (المظهر) -->
+    <div id="tab-content-appearance" class="hidden fade-up">
+      <h2 class="font-extrabold text-gray-800 mb-4">🎨 المظهر</h2>
       <div class="bg-white rounded-2xl p-5 shadow-sm space-y-4">
         <div>
           <label class="text-xs font-bold text-gray-500 mb-1 block">اللون الرئيسي</label>
@@ -385,29 +403,22 @@
           <p id="cover-upload-msg" class="text-xs text-gray-400 mt-1 hidden"></p>
         </div>
       </div>
-
-      <!-- ── الموقع والتواصل ── -->
-      <p class="text-xs font-extrabold text-gray-400 mb-2 mt-5">📍 الموقع والتواصل</p>
-      <div class="bg-white rounded-2xl p-5 shadow-sm space-y-4">
-        <div><label class="text-xs font-bold text-gray-500 mb-1 block">رقم تواصل المطعم (للعملاء)</label>
-          <input id="set-whatsapp" type="text" placeholder="01012345678 أو 201012345678" class="w-full border border-gray-200 rounded-xl px-4 py-3 text-sm focus:outline-none focus:ring-2 focus:ring-orange-400" />
-          <p class="text-[11px] text-gray-400 mt-1">هيظهر للعميل كرقم اتصال مباشر بالمطعم — اكتبه بأي صيغة وسيتم ضبطه تلقائياً</p></div>
-        <div>
-          <label class="text-xs font-bold text-gray-500 mb-1 block">📍 موقع المطعم على الخريطة</label>
-          <button onclick="openRestaurantMapPicker()" id="set-location-btn" class="w-full border border-gray-200 rounded-xl px-4 py-3 text-sm text-gray-500 text-right flex items-center gap-2">
-            <span>📍</span><span id="set-location-label">اضغط لتحديد موقع المطعم</span>
-          </button>
-          <input type="hidden" id="set-restaurant-lat" />
-          <input type="hidden" id="set-restaurant-lng" />
-          <p class="text-[11px] text-gray-400 mt-1">يُستخدم كنقطة انطلاق لحساب مسافة التوصيل لو لم تُضف فروعاً منفصلة</p>
-        </div>
-      </div>
-
       <div class="flex gap-3 mt-4">
         <button onclick="saveSettings()" class="flex-1 bg-orange-500 text-white font-bold rounded-xl py-3">حفظ كل التعديلات أعلاه</button>
-        <button onclick="undoSettings()" id="undo-settings-btn" class="flex-1 bg-gray-100 text-gray-600 font-bold rounded-xl py-3 hidden">↩ تراجع</button>
       </div>
-      <p id="settings-msg" class="text-center text-sm hidden mt-2"></p>
+    </div>
+
+    <!-- Delivery Pricing Tab (تسعير التوصيل) -->
+    <div id="tab-content-delivery" class="hidden fade-up">
+      <h2 class="font-extrabold text-gray-800 mb-4">🚚 تسعير التوصيل</h2>
+      <div class="bg-white rounded-2xl p-5 shadow-sm space-y-4">
+        <div><label class="text-xs font-bold text-gray-500 mb-1 block">سعر التوصيل لكل كيلومتر (ج.م)</label>
+          <input id="set-price-per-km" type="number" step="0.5" min="0" placeholder="مثال: 5 — اتركه 0 أو فارغاً لعدم احتساب رسوم توصيل" class="w-full border border-gray-200 rounded-xl px-4 py-3 text-sm focus:outline-none focus:ring-2 focus:ring-orange-400" />
+          <p class="text-[11px] text-gray-400 mt-1">تُضاف رسوم التوصيل تلقائياً للفاتورة بناءً على المسافة بين موقع العميل وأقرب فرع</p></div>
+      </div>
+      <div class="flex gap-3 mt-4">
+        <button onclick="saveSettings()" class="flex-1 bg-orange-500 text-white font-bold rounded-xl py-3">حفظ كل التعديلات أعلاه</button>
+      </div>
     </div>
 
     <!-- Branches Tab -->
@@ -959,17 +970,17 @@ let activeProductFilter = 'all'
 const SECTION_TABS = {
   orders:     ['orders'],
   products:   ['products', 'categories'],
-  marketing:  ['bundles', 'banners', 'loyalty', 'analytics', 'customers'],
-  store:      ['settings', 'branches']
+  marketing:  ['bundles', 'banners', 'analytics', 'customers', 'loyalty'],
+  store:      ['profile', 'appearance', 'branches', 'delivery']
 }
 const TAB_TO_SECTION = {}
 Object.entries(SECTION_TABS).forEach(([sec, tabs]) => tabs.forEach(t => TAB_TO_SECTION[t] = sec))
 const TAB_SUBLABEL = {
   products: 'المنتجات', categories: 'التصنيفات',
-  bundles: '🎁 العروض', banners: '📢 البنرات', loyalty: '🎁 هدايا الولاء', analytics: '📊 الإحصائيات', customers: '👥 العملاء',
-  settings: '⚙️ الإعدادات', branches: '🏬 الفروع'
+  bundles: '🎁 العروض', banners: '📢 البنرات', analytics: '📊 الإحصائيات', customers: '👥 العملاء', loyalty: '🎁 هدايا الولاء',
+  profile: '👤 الملف الشخصي', appearance: '🎨 المظهر', branches: '🏬 الفروع', delivery: '🚚 التوصيل'
 }
-let _lastTabInSection = { orders: 'orders', products: 'products', marketing: 'bundles', store: 'settings' }
+let _lastTabInSection = { orders: 'orders', products: 'products', marketing: 'bundles', store: 'profile' }
 
 // ── تصنيفات (buckets) صفحة الطلبات الرئيسية ─────────────────────────────
 const ORDER_BUCKETS = {
@@ -1229,7 +1240,7 @@ function applyRoleUI() {
       const el = document.getElementById('tab-content-' + t)
       return el && !el.classList.contains('hidden')
     })
-    if (['settings', 'analytics', 'branches', 'customers', 'loyalty'].includes(currentTab)) showSection('orders')
+    if (['profile', 'appearance', 'delivery', 'analytics', 'branches', 'customers', 'loyalty'].includes(currentTab)) showSection('orders')
   }
   // تحديث شريط التبويبات الفرعية الحالي (لإخفاء تبويبات الأدمن فيه لو لزم)
   const activeSection = Object.keys(SECTION_TABS).find(sec => {
@@ -3154,13 +3165,13 @@ function renderSubTabsBar(section) {
   // إخفاء التبويبات المخصصة للأدمن فقط لو الدخول بصلاحية فرع
   if (_role && _role !== 'admin') {
     bar.querySelectorAll('button[data-admin-tab]').forEach(btn => {
-      if (['analytics', 'customers', 'branches', 'settings', 'loyalty'].includes(btn.getAttribute('data-admin-tab'))) btn.style.display = 'none'
+      if (['analytics', 'customers', 'branches', 'profile', 'appearance', 'delivery', 'loyalty'].includes(btn.getAttribute('data-admin-tab'))) btn.style.display = 'none'
     })
   }
 }
 
 function showTab(name) {
-  const tabs = ['products','categories','bundles','banners','loyalty','orders','customers','analytics','branches','settings']
+  const tabs = ['products','categories','bundles','banners','orders','customers','analytics','branches','profile','appearance','delivery','loyalty']
   tabs.forEach(t => document.getElementById('tab-content-' + t).classList.add('hidden'))
   document.getElementById('tab-content-' + name).classList.remove('hidden')
 
