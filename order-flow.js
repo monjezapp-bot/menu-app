@@ -400,15 +400,71 @@ async function doCancelOrder(orderId) {
     if (_orderTrackChannel) { db.removeChannel(_orderTrackChannel); _orderTrackChannel = null }
     return
   }
-  const { error } = await db.from('orders')
-    .update({ status: 'cancelled', cancel_reason: 'تم الإلغاء بواسطة العميل' })
+  const { data: cancelled, error } = await db.from('orders')
+    .update({ status: 'cancelled', cancel_reason: 'تم الإلغاء بواسطة العميل', refunded_at: new Date().toISOString() })
     .eq('id', orderId)
     .in('status', ['pending', 'confirmed']) // حماية إضافية: منع الإلغاء لو الحالة تخطّت confirmed فعليًا على السيرفر
+    .select('id, customer_id, restaurant_id, wallet_amount_used, coins_redeemed')
+    .maybeSingle()
   if (btn) { btn.disabled = false; btn.textContent = '❌ إلغاء الطلب' }
-  if (error) { showToast('تعذّر إلغاء الطلب، حاول تاني'); return }
+  if (error || !cancelled) { showToast('تعذّر إلغاء الطلب، حاول تاني'); return }
   clearInterval(_cancelGraceInterval)
+  const refund = await refundOrderPayment(cancelled)
+  const refundMsg = refundToastMessage(refund)
+  if (refundMsg) showToast(refundMsg)
   setSuccessModalVisual('cancelled', 'تم الإلغاء بواسطة العميل')
   if (_orderTrackChannel) { db.removeChannel(_orderTrackChannel); _orderTrackChannel = null }
+}
+
+// ── استرجاع رصيد المحفظة والكوينز المستخدمة في الطلب عند إلغائه ────────
+// بيتنفّذ من أي مسار إلغاء (العميل نفسه، أو رفض/إلغاء التاجر من الداشبورد).
+// الحماية من الاسترجاع المزدوج بتيجي من إن تحديث status لـ 'cancelled' نفسه
+// بيبقى مسموح مرة واحدة بس (بعد كده الطلب مش هيقع في شرط .in('status', [...]) تاني).
+async function refundOrderPayment(order) {
+  if (!order?.customer_id) return null
+  const walletAmt = Number(order.wallet_amount_used || 0)
+  const coinsAmt  = Number(order.coins_redeemed || 0)
+  if (walletAmt <= 0 && coinsAmt <= 0) return null
+
+  const { data: cust } = await db.from('menu_customers')
+    .select('wallet_balance, coins_balance').eq('id', order.customer_id).single()
+  if (!cust) return null
+
+  const updates = {}
+  if (walletAmt > 0) updates.wallet_balance = Number(cust.wallet_balance || 0) + walletAmt
+  if (coinsAmt  > 0) updates.coins_balance  = (cust.coins_balance || 0) + coinsAmt
+  await db.from('menu_customers').update(updates).eq('id', order.customer_id)
+
+  const txs = []
+  if (walletAmt > 0) txs.push({
+    customer_id: order.customer_id, restaurant_id: order.restaurant_id,
+    type: 'wallet_refund', amount: Math.round(walletAmt), order_id: order.id,
+    note: 'استرجاع رصيد المحفظة بعد إلغاء الطلب'
+  })
+  if (coinsAmt > 0) txs.push({
+    customer_id: order.customer_id, restaurant_id: order.restaurant_id,
+    type: 'refund', amount: coinsAmt, order_id: order.id,
+    note: 'استرجاع كوينز بعد إلغاء الطلب'
+  })
+  if (txs.length) await db.from('coin_transactions').insert(txs)
+
+  // لو ده حساب العميل الحالي، حدّث الحالة محليًا عشان يشوف رصيده الجديد فورًا
+  if (S.customer && S.customer.id === order.customer_id) {
+    if (walletAmt > 0) S.customer.wallet_balance = updates.wallet_balance
+    if (coinsAmt  > 0) S.customer.coins_balance  = updates.coins_balance
+    updateWalletBadge()
+  }
+
+  return { walletAmt, coinsAmt }
+}
+
+// رسالة قصيرة تتعرض للعميل بعد الإلغاء توضّح إن المبلغ رجع لمحفظته
+function refundToastMessage(refund) {
+  if (!refund) return null
+  const parts = []
+  if (refund.walletAmt > 0) parts.push(`${refund.walletAmt.toFixed(2)} ج.م لرصيد المحفظة`)
+  if (refund.coinsAmt  > 0) parts.push(`${refund.coinsAmt.toLocaleString('en-US')} كوين`)
+  return parts.length ? `💰 تم استرجاع ${parts.join(' و')}` : null
 }
 
 // ── LATE CANCELLATION (تأخر الطلب عن وقت التحضير المقدر + ساعة) ─────────
@@ -451,12 +507,16 @@ async function performLateCancel(orderId) {
     showToast('لسه الوقت المسموح بإلغاء الطلب لم يحن')
     return false
   }
-  const { error } = await db.from('orders')
-    .update({ status: 'cancelled', cancel_reason: 'تم الإلغاء بواسطة العميل بسبب تأخر الطلب عن الوقت المتوقع' })
+  const { data: cancelled, error } = await db.from('orders')
+    .update({ status: 'cancelled', cancel_reason: 'تم الإلغاء بواسطة العميل بسبب تأخر الطلب عن الوقت المتوقع', refunded_at: new Date().toISOString() })
     .eq('id', orderId)
     .in('status', ['confirmed', 'ready', 'delivering'])
-  if (error) { showToast('تعذّر إلغاء الطلب، حاول تاني'); return false }
-  showToast('❌ تم إلغاء الطلب')
+    .select('id, customer_id, restaurant_id, wallet_amount_used, coins_redeemed')
+    .maybeSingle()
+  if (error || !cancelled) { showToast('تعذّر إلغاء الطلب، حاول تاني'); return false }
+  const refund = await refundOrderPayment(cancelled)
+  const refundMsg = refundToastMessage(refund)
+  showToast(refundMsg ? `❌ تم إلغاء الطلب — ${refundMsg}` : '❌ تم إلغاء الطلب')
   return true
 }
 

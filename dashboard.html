@@ -2611,15 +2611,59 @@ async function submitCancelConfirmedOrder() {
   closeOrderDetailModal()
   await cancelConfirmedOrder(orderId, reason)
 }
+// ── استرجاع رصيد المحفظة والكوينز المستخدمة في الطلب عند إلغائه ────────
+// نفس المنطق المستخدم في تطبيق العميل، لكن هنا بصلاحية التاجر (owner_update_orders على orders،
+// و mc_owner_read/ما يعادلها من صلاحيات على menu_customers و coin_transactions عبر restaurant ownership).
+async function refundOrderPayment(order) {
+  if (!order?.customer_id) return null
+  const walletAmt = Number(order.wallet_amount_used || 0)
+  const coinsAmt  = Number(order.coins_redeemed || 0)
+  if (walletAmt <= 0 && coinsAmt <= 0) return null
+
+  const { data: cust } = await db.from('menu_customers')
+    .select('wallet_balance, coins_balance').eq('id', order.customer_id).single()
+  if (!cust) return null
+
+  const updates = {}
+  if (walletAmt > 0) updates.wallet_balance = Number(cust.wallet_balance || 0) + walletAmt
+  if (coinsAmt  > 0) updates.coins_balance  = (cust.coins_balance || 0) + coinsAmt
+  await db.from('menu_customers').update(updates).eq('id', order.customer_id)
+
+  const txs = []
+  if (walletAmt > 0) txs.push({
+    customer_id: order.customer_id, restaurant_id: order.restaurant_id,
+    type: 'wallet_refund', amount: Math.round(walletAmt), order_id: order.id,
+    note: 'استرجاع رصيد المحفظة بعد إلغاء الطلب'
+  })
+  if (coinsAmt > 0) txs.push({
+    customer_id: order.customer_id, restaurant_id: order.restaurant_id,
+    type: 'refund', amount: coinsAmt, order_id: order.id,
+    note: 'استرجاع كوينز بعد إلغاء الطلب'
+  })
+  if (txs.length) await db.from('coin_transactions').insert(txs)
+
+  return { walletAmt, coinsAmt }
+}
+function refundNoticeText(refund) {
+  if (!refund) return ''
+  const parts = []
+  if (refund.walletAmt > 0) parts.push(`${refund.walletAmt.toFixed(2)} ج.م`)
+  if (refund.coinsAmt  > 0) parts.push(`${refund.coinsAmt.toLocaleString('ar-EG')} كوين`)
+  return parts.length ? parts.join(' و') : ''
+}
+
 async function cancelConfirmedOrder(orderId, reason) {
   const order = state.orders.find(o => o.id === orderId)
   if (!order) return
   // حماية: لا يُنفَّذ الإلغاء إلا لو الطلب لسه confirmed فعلياً على السيرفر (لم يتحول لـ ready في نفس اللحظة من مكان آخر)
   const { error } = await db.from('orders')
-    .update({ status: 'cancelled', cancel_reason: reason })
+    .update({ status: 'cancelled', cancel_reason: reason, refunded_at: new Date().toISOString() })
     .eq('id', orderId)
     .eq('status', 'confirmed')
   if (error) { showToast('تعذّر إلغاء الطلب'); return }
+
+  const refund = await refundOrderPayment(order)
+  const refundText = refundNoticeText(refund)
 
   let compensationMsg = ''
   if (state.restaurant.cancel_compensation_enabled) {
@@ -2641,9 +2685,10 @@ async function cancelConfirmedOrder(orderId, reason) {
       compensationMsg = ' — تنبيه: العميل زائر بدون حساب، لم يتم إرسال تعويض تلقائي'
     }
   }
+  const refundNotifPart = refundText ? ` — تم استرجاع ${refundText} لمحفظتك تلقائيًا` : ''
   await insertCustomerNotification(order.customer_id, 'order_cancelled', '❌ تم إلغاء طلبك',
-    `للأسف تم إلغاء طلبك ${order.order_number} بعد قبوله. السبب: ${reason}` + (compensationMsg.includes('تعويض العميل') ? ' — تم تعويضك بكوينز في محفظتك 🎁' : ''), orderId)
-  showToast('❌ تم إلغاء الطلب' + compensationMsg)
+    `للأسف تم إلغاء طلبك ${order.order_number} بعد قبوله. السبب: ${reason}` + refundNotifPart + (compensationMsg.includes('تعويض العميل') ? ' — تم تعويضك بكوينز في محفظتك 🎁' : ''), orderId)
+  showToast('❌ تم إلغاء الطلب' + (refundText ? ` — تم استرجاع ${refundText} للعميل` : '') + compensationMsg)
   await loadOrders()
 }
 async function updateOrderStatus(id, status) {
@@ -2929,10 +2974,15 @@ async function submitRejectReason(reason) {
   if (!order) return
   const transferred = await tryTransferToNextBranch(order, reason)
   if (!transferred) {
-    await db.from('orders').update({ status:'cancelled', cancel_reason: reason }).eq('id', order.id)
+    const { error } = await db.from('orders')
+      .update({ status:'cancelled', cancel_reason: reason, refunded_at: new Date().toISOString() })
+      .eq('id', order.id)
+      .eq('status', 'pending')
+    const refund = error ? null : await refundOrderPayment(order)
+    const refundText = refundNoticeText(refund)
     await insertCustomerNotification(order.customer_id, 'order_cancelled', '❌ تعذّر تنفيذ طلبك',
-      `للأسف تعذّر تنفيذ طلبك ${order.order_number}. السبب: ${reason}`, order.id)
-    showToast('❌ تم رفض الطلب')
+      `للأسف تعذّر تنفيذ طلبك ${order.order_number}. السبب: ${reason}` + (refundText ? ` — تم استرجاع ${refundText} لمحفظتك تلقائيًا` : ''), order.id)
+    showToast('❌ تم رفض الطلب' + (refundText ? ` — تم استرجاع ${refundText} للعميل` : ''))
   }
   closeRejectReasonModal()
   closeOrderDetailModal()
