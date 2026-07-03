@@ -89,24 +89,22 @@
     </div>
   </header>
 
-  <!-- Desktop Tabs -->
+  <!-- Desktop Tabs (الأقسام الرئيسية الأربعة) -->
   <div class="bg-white border-b border-gray-100 px-2 gap-1 sticky top-[69px] z-20 overflow-x-auto hidden md:flex">
-    <button onclick="showTab('products')"   id="tab-products-top"   class="tab-btn flex-shrink-0 py-3 px-3 text-sm font-bold text-gray-400 transition-colors tab-active">المنتجات</button>
-    <button onclick="showTab('categories')" id="tab-categories-top" class="tab-btn flex-shrink-0 py-3 px-3 text-sm font-bold text-gray-400 transition-colors">التصنيفات</button>
-    <button onclick="showTab('bundles')"    id="tab-bundles-top"    class="tab-btn flex-shrink-0 py-3 px-3 text-sm font-bold text-gray-400 transition-colors">العروض</button>
-    <button onclick="showTab('banners')"    id="tab-banners-top"    class="tab-btn flex-shrink-0 py-3 px-3 text-sm font-bold text-gray-400 transition-colors">📢 البنرات</button>
-    <button onclick="showTab('orders')"     id="tab-orders-top"     class="tab-btn flex-shrink-0 py-3 px-3 text-sm font-bold text-gray-400 transition-colors">الطلبات</button>
-    <button onclick="showTab('analytics')"  id="tab-analytics-top"  class="tab-btn flex-shrink-0 py-3 px-3 text-sm font-bold text-gray-400 transition-colors" data-admin-only="1">📊 إحصائيات</button>
-    <button onclick="showTab('customers')"  id="tab-customers-top"  class="tab-btn flex-shrink-0 py-3 px-3 text-sm font-bold text-gray-400 transition-colors" data-admin-only="1">👥 العملاء</button>
-    <button onclick="showTab('branches')"   id="tab-branches-top"   class="tab-btn flex-shrink-0 py-3 px-3 text-sm font-bold text-gray-400 transition-colors" data-admin-only="1">🏬 الفروع</button>
-    <button onclick="showTab('settings')"   id="tab-settings-top"   class="tab-btn flex-shrink-0 py-3 px-3 text-sm font-bold text-gray-400 transition-colors" data-admin-only="1">الإعدادات</button>
+    <button onclick="showSection('orders')"    id="sec-orders-top"    class="tab-btn flex-shrink-0 py-3 px-3 text-sm font-bold text-gray-400 transition-colors tab-active">🧾 الطلبات</button>
+    <button onclick="showSection('products')"  id="sec-products-top"  class="tab-btn flex-shrink-0 py-3 px-3 text-sm font-bold text-gray-400 transition-colors">📦 منتجاتي</button>
+    <button onclick="showSection('marketing')" id="sec-marketing-top" class="tab-btn flex-shrink-0 py-3 px-3 text-sm font-bold text-gray-400 transition-colors">📣 التسويق</button>
+    <button onclick="showSection('store')"     id="sec-store-top"     class="tab-btn flex-shrink-0 py-3 px-3 text-sm font-bold text-gray-400 transition-colors" data-admin-only="1">🏪 المتجر</button>
   </div>
+
+  <!-- شريط التبويبات الفرعية داخل القسم الحالي (يظهر للموبايل والديسكتوب لو القسم فيه أكتر من تبويب) -->
+  <div id="sub-tabs-bar" class="hidden bg-gray-50 border-b border-gray-100 px-4 py-2.5 gap-2 overflow-x-auto" style="-ms-overflow-style:none;scrollbar-width:none;"></div>
 
   <!-- Main Content -->
   <main class="p-4 max-w-2xl mx-auto pb-28">
 
     <!-- Products Tab -->
-    <div id="tab-content-products" class="fade-up">
+    <div id="tab-content-products" class="hidden fade-up">
       <div class="flex items-center justify-between mb-4">
         <h2 class="font-extrabold text-gray-800">المنتجات</h2>
         <button onclick="openProductModal()" class="bg-orange-500 text-white text-sm font-bold px-4 py-2 rounded-xl">+ إضافة منتج</button>
@@ -152,9 +150,21 @@
       <div id="banners-list" class="space-y-3"></div>
     </div>
 
-    <!-- Orders Tab -->
-    <div id="tab-content-orders" class="hidden fade-up">
-      <h2 class="font-extrabold text-gray-800 mb-4">الطلبات الواردة</h2>
+    <!-- Orders Tab (الصفحة الرئيسية) -->
+    <div id="tab-content-orders" class="fade-up">
+      <h2 class="font-extrabold text-gray-800 mb-4">الطلبات</h2>
+
+      <!-- بطاقة تلخيص الطلبات -->
+      <div class="bg-white rounded-2xl shadow-sm p-4 mb-3 grid grid-cols-4 gap-2">
+        <div class="text-center"><p class="text-xl font-extrabold text-yellow-500" id="obucket-count-incoming">0</p><p class="text-[11px] text-gray-400 font-bold mt-0.5">واردة</p></div>
+        <div class="text-center border-r border-gray-100"><p class="text-xl font-extrabold text-blue-500" id="obucket-count-inprogress">0</p><p class="text-[11px] text-gray-400 font-bold mt-0.5">قيد التجهيز</p></div>
+        <div class="text-center border-r border-gray-100"><p class="text-xl font-extrabold text-green-500" id="obucket-count-success">0</p><p class="text-[11px] text-gray-400 font-bold mt-0.5">ناجحة</p></div>
+        <div class="text-center border-r border-gray-100"><p class="text-xl font-extrabold text-red-500" id="obucket-count-cancelled">0</p><p class="text-[11px] text-gray-400 font-bold mt-0.5">ملغية</p></div>
+      </div>
+
+      <!-- شريط تصنيفات الحالة -->
+      <div id="order-bucket-tabs" class="flex gap-2 overflow-x-auto pb-2 mb-3 -mx-4 px-4" style="-ms-overflow-style:none;scrollbar-width:none;"></div>
+
       <div id="orders-list" class="space-y-4"></div>
     </div>
 
@@ -194,7 +204,7 @@
 
     <!-- Settings Tab -->
     <div id="tab-content-settings" class="hidden fade-up">
-      <h2 class="font-extrabold text-gray-800 mb-4">إعدادات المطعم</h2>
+      <h2 class="font-extrabold text-gray-800 mb-4">🏪 المتجر</h2>
 
       <!-- رابط المنيو لمشاركته مع العملاء -->
       <div class="bg-orange-50 rounded-2xl p-5 mb-4">
@@ -206,24 +216,16 @@
         </div>
       </div>
 
+      <!-- ── الملف الشخصي ── -->
+      <p class="text-xs font-extrabold text-gray-400 mb-2 mt-5">👤 الملف الشخصي</p>
       <div class="bg-white rounded-2xl p-5 shadow-sm space-y-4">
         <div><label class="text-xs font-bold text-gray-500 mb-1 block">اسم المطعم</label>
           <input id="set-name" type="text" class="w-full border border-gray-200 rounded-xl px-4 py-3 text-sm focus:outline-none focus:ring-2 focus:ring-orange-400" /></div>
-        <div><label class="text-xs font-bold text-gray-500 mb-1 block">رقم تواصل المطعم (للعملاء)</label>
-          <input id="set-whatsapp" type="text" placeholder="01012345678 أو 201012345678" class="w-full border border-gray-200 rounded-xl px-4 py-3 text-sm focus:outline-none focus:ring-2 focus:ring-orange-400" />
-          <p class="text-[11px] text-gray-400 mt-1">هيظهر للعميل كرقم اتصال مباشر بالمطعم — اكتبه بأي صيغة وسيتم ضبطه تلقائياً</p></div>
-        <div><label class="text-xs font-bold text-gray-500 mb-1 block">سعر التوصيل لكل كيلومتر (ج.م)</label>
-          <input id="set-price-per-km" type="number" step="0.5" min="0" placeholder="مثال: 5 — اتركه 0 أو فارغاً لعدم احتساب رسوم توصيل" class="w-full border border-gray-200 rounded-xl px-4 py-3 text-sm focus:outline-none focus:ring-2 focus:ring-orange-400" />
-          <p class="text-[11px] text-gray-400 mt-1">تُضاف رسوم التوصيل تلقائياً للفاتورة بناءً على المسافة بين موقع العميل وأقرب فرع</p></div>
-        <div>
-          <label class="text-xs font-bold text-gray-500 mb-1 block">📍 موقع المطعم على الخريطة</label>
-          <button onclick="openRestaurantMapPicker()" id="set-location-btn" class="w-full border border-gray-200 rounded-xl px-4 py-3 text-sm text-gray-500 text-right flex items-center gap-2">
-            <span>📍</span><span id="set-location-label">اضغط لتحديد موقع المطعم</span>
-          </button>
-          <input type="hidden" id="set-restaurant-lat" />
-          <input type="hidden" id="set-restaurant-lng" />
-          <p class="text-[11px] text-gray-400 mt-1">يُستخدم كنقطة انطلاق لحساب مسافة التوصيل لو لم تُضف فروعاً منفصلة</p>
-        </div>
+      </div>
+
+      <!-- ── المظهر ── -->
+      <p class="text-xs font-extrabold text-gray-400 mb-2 mt-5">🎨 المظهر</p>
+      <div class="bg-white rounded-2xl p-5 shadow-sm space-y-4">
         <div>
           <label class="text-xs font-bold text-gray-500 mb-1 block">اللون الرئيسي</label>
           <div class="flex items-center gap-3">
@@ -249,12 +251,38 @@
           <div id="cover-preview-wrap" class="mt-2 hidden"><img id="cover-preview" src="" class="w-full h-24 rounded-xl object-cover border border-gray-200" /></div>
           <p id="cover-upload-msg" class="text-xs text-gray-400 mt-1 hidden"></p>
         </div>
-        <div class="flex gap-3">
-          <button onclick="saveSettings()" class="flex-1 bg-orange-500 text-white font-bold rounded-xl py-3">حفظ</button>
-          <button onclick="undoSettings()" id="undo-settings-btn" class="flex-1 bg-gray-100 text-gray-600 font-bold rounded-xl py-3 hidden">↩ تراجع</button>
-        </div>
-        <p id="settings-msg" class="text-center text-sm hidden"></p>
       </div>
+
+      <!-- ── الموقع والتواصل ── -->
+      <p class="text-xs font-extrabold text-gray-400 mb-2 mt-5">📍 الموقع والتواصل</p>
+      <div class="bg-white rounded-2xl p-5 shadow-sm space-y-4">
+        <div><label class="text-xs font-bold text-gray-500 mb-1 block">رقم تواصل المطعم (للعملاء)</label>
+          <input id="set-whatsapp" type="text" placeholder="01012345678 أو 201012345678" class="w-full border border-gray-200 rounded-xl px-4 py-3 text-sm focus:outline-none focus:ring-2 focus:ring-orange-400" />
+          <p class="text-[11px] text-gray-400 mt-1">هيظهر للعميل كرقم اتصال مباشر بالمطعم — اكتبه بأي صيغة وسيتم ضبطه تلقائياً</p></div>
+        <div>
+          <label class="text-xs font-bold text-gray-500 mb-1 block">📍 موقع المطعم على الخريطة</label>
+          <button onclick="openRestaurantMapPicker()" id="set-location-btn" class="w-full border border-gray-200 rounded-xl px-4 py-3 text-sm text-gray-500 text-right flex items-center gap-2">
+            <span>📍</span><span id="set-location-label">اضغط لتحديد موقع المطعم</span>
+          </button>
+          <input type="hidden" id="set-restaurant-lat" />
+          <input type="hidden" id="set-restaurant-lng" />
+          <p class="text-[11px] text-gray-400 mt-1">يُستخدم كنقطة انطلاق لحساب مسافة التوصيل لو لم تُضف فروعاً منفصلة</p>
+        </div>
+      </div>
+
+      <!-- ── التسعير والتوصيل ── -->
+      <p class="text-xs font-extrabold text-gray-400 mb-2 mt-5">🚚 التسعير والتوصيل</p>
+      <div class="bg-white rounded-2xl p-5 shadow-sm space-y-4">
+        <div><label class="text-xs font-bold text-gray-500 mb-1 block">سعر التوصيل لكل كيلومتر (ج.م)</label>
+          <input id="set-price-per-km" type="number" step="0.5" min="0" placeholder="مثال: 5 — اتركه 0 أو فارغاً لعدم احتساب رسوم توصيل" class="w-full border border-gray-200 rounded-xl px-4 py-3 text-sm focus:outline-none focus:ring-2 focus:ring-orange-400" />
+          <p class="text-[11px] text-gray-400 mt-1">تُضاف رسوم التوصيل تلقائياً للفاتورة بناءً على المسافة بين موقع العميل وأقرب فرع</p></div>
+      </div>
+
+      <div class="flex gap-3 mt-4">
+        <button onclick="saveSettings()" class="flex-1 bg-orange-500 text-white font-bold rounded-xl py-3">حفظ كل التعديلات أعلاه</button>
+        <button onclick="undoSettings()" id="undo-settings-btn" class="flex-1 bg-gray-100 text-gray-600 font-bold rounded-xl py-3 hidden">↩ تراجع</button>
+      </div>
+      <p id="settings-msg" class="text-center text-sm hidden mt-2"></p>
 
       <!-- إدارة كلمة سر الأدمن وتبديل الوضع — للأدمن فقط -->
       <div id="admin-passcode-section" class="hidden bg-white rounded-2xl p-5 shadow-sm space-y-4 mt-4">
@@ -717,41 +745,24 @@
 
 <!-- ══ BOTTOM NAV (mobile) ══ -->
 <nav class="bottom-nav md:hidden" id="bottom-nav">
-  <button class="bnav-btn active" id="bnav-products" onclick="showTab('products')">
-    <svg fill="none" stroke="currentColor" stroke-width="2" viewBox="0 0 24 24"><path d="M4 6h16M4 10h16M4 14h16M4 18h16"/></svg>
-    المنتجات
-  </button>
-  <button class="bnav-btn" id="bnav-orders" onclick="showTab('orders')">
+  <button class="bnav-btn active" id="bnav-orders" onclick="showSection('orders')">
     <svg fill="none" stroke="currentColor" stroke-width="2" viewBox="0 0 24 24"><path d="M9 5H7a2 2 0 00-2 2v12a2 2 0 002 2h10a2 2 0 002-2V7a2 2 0 00-2-2h-2M9 5a2 2 0 002 2h2a2 2 0 002-2M9 5a2 2 0 012-2h2a2 2 0 012 2"/></svg>
     الطلبات
     <span class="bnav-orders-badge" id="orders-badge"></span>
   </button>
-  <button class="bnav-btn" id="bnav-more" onclick="showMoreMenu()">
-    <svg fill="none" stroke="currentColor" stroke-width="2" viewBox="0 0 24 24"><circle cx="12" cy="5" r="1"/><circle cx="12" cy="12" r="1"/><circle cx="12" cy="19" r="1"/></svg>
-    المزيد
+  <button class="bnav-btn" id="bnav-products" onclick="showSection('products')">
+    <svg fill="none" stroke="currentColor" stroke-width="2" viewBox="0 0 24 24"><path d="M4 6h16M4 10h16M4 14h16M4 18h16"/></svg>
+    منتجاتي
   </button>
-  <button class="bnav-btn" id="bnav-settings" onclick="showTab('settings')">
+  <button class="bnav-btn" id="bnav-marketing" onclick="showSection('marketing')">
+    <svg fill="none" stroke="currentColor" stroke-width="2" viewBox="0 0 24 24"><path d="M11 5H6a2 2 0 00-2 2v3a2 2 0 00.586 1.414l7 7a2 2 0 002.828 0l5-5a2 2 0 000-2.828l-7-7A2 2 0 0011 5z"/><circle cx="8.5" cy="9.5" r="1"/></svg>
+    التسويق
+  </button>
+  <button class="bnav-btn" id="bnav-store" onclick="showSection('store')">
     <svg fill="none" stroke="currentColor" stroke-width="2" viewBox="0 0 24 24"><path d="M10.325 4.317c.426-1.756 2.924-1.756 3.35 0a1.724 1.724 0 002.573 1.066c1.543-.94 3.31.826 2.37 2.37a1.724 1.724 0 001.065 2.572c1.756.426 1.756 2.924 0 3.35a1.724 1.724 0 00-1.066 2.573c.94 1.543-.826 3.31-2.37 2.37a1.724 1.724 0 00-2.572 1.065c-.426 1.756-2.924 1.756-3.35 0a1.724 1.724 0 00-2.573-1.066c-1.543.94-3.31-.826-2.37-2.37a1.724 1.724 0 00-1.065-2.572c-1.756-.426-1.756-2.924 0-3.35a1.724 1.724 0 001.066-2.573c-.94-1.543.826-3.31 2.37-2.37.996.608 2.296.07 2.572-1.065z"/><circle cx="12" cy="12" r="3"/></svg>
-    الإعدادات
+    المتجر
   </button>
 </nav>
-
-<!-- ══ MORE MENU ══ -->
-<div id="more-menu" class="hidden fixed inset-0 z-50" onclick="hideMoreMenu()">
-  <div class="absolute inset-0 bg-black/40"></div>
-  <div class="absolute bottom-0 left-0 right-0 bg-white rounded-t-3xl p-4 pb-8" onclick="event.stopPropagation()">
-    <div class="w-10 h-1 bg-gray-200 rounded mx-auto mb-4"></div>
-    <div class="grid grid-cols-3 gap-3">
-      <button onclick="hideMoreMenu();showTab('categories')" class="flex flex-col items-center gap-2 bg-gray-50 rounded-2xl p-4"><span class="text-2xl">📂</span><span class="text-xs font-bold text-gray-600">التصنيفات</span></button>
-      <button onclick="hideMoreMenu();showTab('bundles')"    class="flex flex-col items-center gap-2 bg-gray-50 rounded-2xl p-4"><span class="text-2xl">🎁</span><span class="text-xs font-bold text-gray-600">العروض</span></button>
-      <button onclick="hideMoreMenu();showTab('banners')"    class="flex flex-col items-center gap-2 bg-gray-50 rounded-2xl p-4"><span class="text-2xl">📢</span><span class="text-xs font-bold text-gray-600">البنرات</span></button>
-      <button onclick="hideMoreMenu();showTab('analytics')"  class="flex flex-col items-center gap-2 bg-gray-50 rounded-2xl p-4"><span class="text-2xl">📊</span><span class="text-xs font-bold text-gray-600">إحصائيات</span></button>
-      <button onclick="hideMoreMenu();showTab('customers')"  class="flex flex-col items-center gap-2 bg-gray-50 rounded-2xl p-4"><span class="text-2xl">👥</span><span class="text-xs font-bold text-gray-600">العملاء</span></button>
-      <button onclick="hideMoreMenu();showTab('branches')"   class="flex flex-col items-center gap-2 bg-gray-50 rounded-2xl p-4"><span class="text-2xl">🏬</span><span class="text-xs font-bold text-gray-600">الفروع</span></button>
-      <button onclick="doLogout()" class="flex flex-col items-center gap-2 bg-red-50 rounded-2xl p-4 col-span-3"><span class="text-2xl">🚪</span><span class="text-xs font-bold text-red-500">تسجيل الخروج</span></button>
-    </div>
-  </div>
-</div>
 
 <!-- ══ CONFIRM DIALOG ══ -->
 <div id="confirm-dialog" class="hidden">
@@ -937,6 +948,33 @@ let _realtimeChannel = null
 let _audioCtx        = null
 let _alsoWith        = []
 let activeProductFilter = 'all'
+
+// ── الأقسام الرئيسية الأربعة (شريط التنقل الجديد) ───────────────────────
+// كل قسم رئيسي يحتوي تبويباً أو أكثر من التبويبات "الفرعية" القديمة.
+// showSection() تفتح القسم على آخر تبويب فرعي كان نشطاً فيه (أو الافتراضي لو أول مرة).
+const SECTION_TABS = {
+  orders:     ['orders'],
+  products:   ['products', 'categories'],
+  marketing:  ['bundles', 'banners', 'analytics', 'customers'],
+  store:      ['settings', 'branches']
+}
+const TAB_TO_SECTION = {}
+Object.entries(SECTION_TABS).forEach(([sec, tabs]) => tabs.forEach(t => TAB_TO_SECTION[t] = sec))
+const TAB_SUBLABEL = {
+  products: 'المنتجات', categories: 'التصنيفات',
+  bundles: '🎁 العروض', banners: '📢 البنرات', analytics: '📊 الإحصائيات', customers: '👥 العملاء',
+  settings: '⚙️ الإعدادات', branches: '🏬 الفروع'
+}
+let _lastTabInSection = { orders: 'orders', products: 'products', marketing: 'bundles', store: 'settings' }
+
+// ── تصنيفات (buckets) صفحة الطلبات الرئيسية ─────────────────────────────
+const ORDER_BUCKETS = {
+  incoming:   { label: 'واردة',       statuses: ['pending'] },
+  inprogress: { label: 'قيد التجهيز', statuses: ['confirmed', 'ready', 'delivering'] },
+  success:    { label: 'ناجحة',       statuses: ['delivered'] },
+  cancelled:  { label: 'ملغية',       statuses: ['cancelled'] }
+}
+let activeOrderBucket = 'incoming'
 
 // ── ROLE / PASSCODE STATE ──────────────────────────────────────────────
 // role: 'admin' | 'branch'
@@ -1164,23 +1202,12 @@ function switchRole() {
 // تطبيق صلاحيات الواجهة بعد تحديد الـ role
 function applyRoleUI() {
   const isAdmin = _role === 'admin'
-  // إخفاء/إظهار تبويبات admin-only في desktop nav
+  // إخفاء/إظهار قسم "المتجر" (إعدادات + فروع) بالكامل — للأدمن فقط
   document.querySelectorAll('[data-admin-only="1"]').forEach(el => {
     el.style.display = isAdmin ? '' : 'none'
   })
-  // more-menu: إخفاء analytics + branches لو مش أدمن
-  const moreMenuBtns = document.querySelectorAll('#more-menu button')
-  moreMenuBtns.forEach(btn => {
-    const fn = btn.getAttribute('onclick') || ''
-    if (!isAdmin && (fn.includes("'analytics'") || fn.includes("'branches'") || fn.includes("'customers'"))) {
-      btn.style.display = 'none'
-    } else {
-      btn.style.display = ''
-    }
-  })
-  // bottom nav: إخفاء settings لو مش أدمن
-  const bnavSettings = document.getElementById('bnav-settings')
-  if (bnavSettings) bnavSettings.style.display = isAdmin ? '' : 'none'
+  const bnavStore = document.getElementById('bnav-store')
+  if (bnavStore) bnavStore.style.display = isAdmin ? '' : 'none'
   // قسم admin-passcode في الإعدادات
   const apSection = document.getElementById('admin-passcode-section')
   if (apSection) apSection.classList.toggle('hidden', !isAdmin)
@@ -1192,16 +1219,21 @@ function applyRoleUI() {
   if (dcSection) dcSection.classList.toggle('hidden', !isAdmin)
   const pmLoyWrap = document.getElementById('pm-loyalty-coins-wrap')
   if (pmLoyWrap) pmLoyWrap.classList.toggle('hidden', !isAdmin || !state.restaurant?.loyalty_enabled || !state.restaurant?.purchase_reward_enabled || state.restaurant?.purchase_reward_mode !== 'per_product')
-  // لو مش أدمن وكان في settings → نحوله لـ orders
+  // لو مش أدمن وكان على تبويب مقصور على الأدمن (إعدادات/إحصائيات/فروع/عملاء) → نحوله لصفحة الطلبات
   if (!isAdmin) {
-    const activeTab = document.querySelector('.tab-btn.tab-active')
-    if (activeTab) {
-      const fn = activeTab.getAttribute('onclick') || ''
-      if (fn.includes("'settings'") || fn.includes("'analytics'") || fn.includes("'branches'") || fn.includes("'customers'")) {
-        showTab('orders')
-      }
-    }
+    const currentTab = Object.entries(_lastTabInSection).map(([, t]) => t).find(t => {
+      const el = document.getElementById('tab-content-' + t)
+      return el && !el.classList.contains('hidden')
+    })
+    if (['settings', 'analytics', 'branches', 'customers'].includes(currentTab)) showSection('orders')
   }
+  // تحديث شريط التبويبات الفرعية الحالي (لإخفاء تبويبات الأدمن فيه لو لزم)
+  const activeSection = Object.keys(SECTION_TABS).find(sec => {
+    const t = _lastTabInSection[sec]
+    const el = document.getElementById('tab-content-' + t)
+    return el && !el.classList.contains('hidden')
+  })
+  if (activeSection) renderSubTabsBar(activeSection)
 }
 
 // ── AUTH ──────────────────────────────────────────────────────────────
@@ -2469,9 +2501,29 @@ async function loadOrders() {
   state.orders = data || []
   renderOrders(); updateOrdersBadge(state.orders)
 }
+// يحدّث أرقام بطاقة التلخيص أعلى صفحة الطلبات (واردة/قيد التجهيز/ناجحة/ملغية)
+function updateOrdersSummaryCard() {
+  Object.keys(ORDER_BUCKETS).forEach(key => {
+    const n = state.orders.filter(o => ORDER_BUCKETS[key].statuses.includes(o.status)).length
+    const el = document.getElementById('obucket-count-' + key)
+    if (el) el.textContent = n
+  })
+}
+// يرسم شريط تصنيفات الحالة (واردة / قيد التجهيز / ناجحة / ملغية) فوق قائمة الطلبات
+function renderOrderBucketTabs() {
+  const el = document.getElementById('order-bucket-tabs'); if (!el) return
+  el.innerHTML = Object.entries(ORDER_BUCKETS).map(([key, b]) =>
+    `<button onclick="filterOrdersBucket('${key}')" class="flex-shrink-0 px-4 py-1.5 rounded-full text-sm font-bold border-2 transition-all ${key === activeOrderBucket ? 'bg-orange-500 text-white border-transparent' : 'bg-white text-gray-500 border-gray-200'}">${b.label}</button>`
+  ).join('')
+}
+function filterOrdersBucket(key) { activeOrderBucket = key; renderOrders() }
 function renderOrders() {
+  updateOrdersSummaryCard()
+  renderOrderBucketTabs()
   const el = document.getElementById('orders-list')
-  if (!state.orders.length) { el.innerHTML = `<p class="text-center text-gray-400 text-sm py-8">لا توجد طلبات بعد</p>`; return }
+  const bucketStatuses = ORDER_BUCKETS[activeOrderBucket].statuses
+  const filtered = state.orders.filter(o => bucketStatuses.includes(o.status))
+  if (!filtered.length) { el.innerHTML = `<p class="text-center text-gray-400 text-sm py-8">لا توجد طلبات ${ORDER_BUCKETS[activeOrderBucket].label} حالياً</p>`; return }
   const statusLabel = { pending:'جديد', confirmed:'جاري التجهيز', ready:'جاهز', delivering:'جاري التوصيل', delivered:'تم التسليم', cancelled:'ملغي' }
   const statusColor = { pending:'bg-yellow-50 text-yellow-600', confirmed:'bg-blue-50 text-blue-600', ready:'bg-purple-50 text-purple-600', delivering:'bg-indigo-50 text-indigo-600', delivered:'bg-green-50 text-green-600', cancelled:'bg-red-50 text-red-500' }
   // الزر التالي المناسب لكل حالة (يدفع الطلب للمرحلة التالية في تدفق واحد بسيط)
@@ -2484,7 +2536,7 @@ function renderOrders() {
     ready:      `<button onclick="updateOrderStatus('{ID}','delivering')" class="text-xs font-bold bg-indigo-500 text-white px-3 py-1.5 rounded-xl">🛵 جاري التوصيل</button>`,
     delivering: `<button onclick="updateOrderStatus('{ID}','delivered')" class="text-xs font-bold bg-green-500 text-white px-3 py-1.5 rounded-xl">✅ تم التسليم</button>`
   }
-  el.innerHTML = state.orders.map(o => `
+  el.innerHTML = filtered.map(o => `
     <div class="bg-white rounded-2xl p-4 shadow-sm cursor-pointer active:bg-gray-50 transition-colors" onclick="openOrderDetailModal('${o.id}')">
       <div class="flex items-center justify-between mb-3">
         <div><p class="font-extrabold text-gray-800">${o.order_number}</p>${o.table_number ? `<p class="text-xs text-gray-400">طاولة ${o.table_number}</p>` : ''}</div>
@@ -2835,7 +2887,11 @@ let _rejectTargetOrder = null
 function handleIncomingOrder(order) {
   _pendingOrdersQueue.push(order)
   startAlarmLoop()
-  updateOrdersBadge([...state.orders, order])
+  // يظهر فوراً في تصنيف "واردة" بصفحة الطلبات لو التاجر كان بالفعل فاتحها
+  if (!state.orders.some(o => o.id === order.id)) state.orders.unshift(order)
+  updateOrdersBadge(state.orders)
+  const ordersTabVisible = !document.getElementById('tab-content-orders').classList.contains('hidden')
+  if (ordersTabVisible) renderOrders()
   if (_pendingOrdersQueue.length === 1) {
     showNewOrderPopup(order) // مفيش طلب معروض حالياً، نعرض هذا فوراً
   } else {
@@ -3074,19 +3130,49 @@ async function uploadBannerImage(input) { const f = input.files[0]; if (!f) retu
 
 // ── UI HELPERS ────────────────────────────────────────────────────────
 function showScreen(name) { ['login','passcode','dashboard'].forEach(s => document.getElementById('screen-'+s).classList.add('hidden')); document.getElementById('screen-'+name).classList.remove('hidden') }
-function showMoreMenu()   { document.getElementById('more-menu').classList.remove('hidden'); _lockBodyScroll() }
-function hideMoreMenu()   { document.getElementById('more-menu').classList.add('hidden'); _unlockBodyScroll() }
+
+
+// showSection: يفتح القسم الرئيسي على آخر تبويب فرعي كان نشطاً فيه (أو الافتراضي أول مرة)
+function showSection(section) {
+  const tab = _lastTabInSection[section] || SECTION_TABS[section][0]
+  showTab(tab)
+}
+
+// يعرض شريط التبويبات الفرعية أسفل شريط الأقسام لو القسم الحالي فيه أكتر من تبويب واحد
+function renderSubTabsBar(section) {
+  const bar = document.getElementById('sub-tabs-bar')
+  if (!bar) return
+  const tabs = SECTION_TABS[section]
+  if (!tabs || tabs.length <= 1) { bar.classList.add('hidden'); bar.classList.remove('flex'); bar.innerHTML = ''; return }
+  const activeTab = _lastTabInSection[section]
+  bar.innerHTML = tabs.map(t => `<button data-admin-tab="${t}" onclick="showTab('${t}')" class="flex-shrink-0 px-4 py-1.5 rounded-full text-sm font-bold border-2 transition-all ${t === activeTab ? 'bg-orange-500 text-white border-transparent' : 'bg-white text-gray-500 border-gray-200'}">${TAB_SUBLABEL[t]}</button>`).join('')
+  bar.classList.remove('hidden'); bar.classList.add('flex')
+  // إخفاء التبويبات المخصصة للأدمن فقط لو الدخول بصلاحية فرع
+  if (_role && _role !== 'admin') {
+    bar.querySelectorAll('button[data-admin-tab]').forEach(btn => {
+      if (['analytics', 'customers', 'branches', 'settings'].includes(btn.getAttribute('data-admin-tab'))) btn.style.display = 'none'
+    })
+  }
+}
 
 function showTab(name) {
   const tabs = ['products','categories','bundles','banners','orders','customers','analytics','branches','settings']
-  tabs.forEach(t => {
-    document.getElementById('tab-content-' + t).classList.add('hidden')
-    const d = document.getElementById('tab-' + t + '-top'); if (d) { d.classList.remove('tab-active'); d.classList.add('text-gray-400') }
-  })
+  tabs.forEach(t => document.getElementById('tab-content-' + t).classList.add('hidden'))
   document.getElementById('tab-content-' + name).classList.remove('hidden')
-  const da = document.getElementById('tab-' + name + '-top'); if (da) { da.classList.add('tab-active'); da.classList.remove('text-gray-400') }
-  ;['products','orders','settings'].forEach(t => { const b = document.getElementById('bnav-'+t); if (b) b.classList.toggle('active', t===name) })
-  const moreBtn = document.getElementById('bnav-more'); if (moreBtn) moreBtn.classList.toggle('active', ['categories','bundles','banners','analytics','branches','customers'].includes(name))
+
+  const section = TAB_TO_SECTION[name]
+  _lastTabInSection[section] = name
+
+  // تحديث حالة أزرار الأقسام الرئيسية (شريط الديسكتوب + شريط الموبايل السفلي)
+  Object.keys(SECTION_TABS).forEach(sec => {
+    const topBtn = document.getElementById('sec-' + sec + '-top')
+    if (topBtn) { topBtn.classList.toggle('tab-active', sec === section); topBtn.classList.toggle('text-gray-400', sec !== section) }
+    const bnavBtn = document.getElementById('bnav-' + sec)
+    if (bnavBtn) bnavBtn.classList.toggle('active', sec === section)
+  })
+
+  renderSubTabsBar(section)
+
   if (name === 'orders')    loadOrders()
   if (name === 'bundles')   loadBundles()
   if (name === 'analytics') loadAnalytics()
