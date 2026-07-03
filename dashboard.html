@@ -3154,14 +3154,33 @@ function showSection(section) {
 }
 
 // يعرض شريط التبويبات الفرعية أسفل شريط الأقسام لو القسم الحالي فيه أكتر من تبويب واحد
+// قسم "المتجر" (store) بيتعرض كقائمة عمودية (زي قائمة الحساب)، وباقي الأقسام بيلز أفقية زي القديم
 function renderSubTabsBar(section) {
   const bar = document.getElementById('sub-tabs-bar')
   if (!bar) return
   const tabs = SECTION_TABS[section]
-  if (!tabs || tabs.length <= 1) { bar.classList.add('hidden'); bar.classList.remove('flex'); bar.innerHTML = ''; return }
+  if (!tabs || tabs.length <= 1) { bar.classList.add('hidden'); bar.classList.remove('flex', 'block'); bar.innerHTML = ''; return }
   const activeTab = _lastTabInSection[section]
-  bar.innerHTML = tabs.map(t => `<button data-admin-tab="${t}" onclick="showTab('${t}')" class="flex-shrink-0 px-4 py-1.5 rounded-full text-sm font-bold border-2 transition-all ${t === activeTab ? 'bg-orange-500 text-white border-transparent' : 'bg-white text-gray-500 border-gray-200'}">${TAB_SUBLABEL[t]}</button>`).join('')
-  bar.classList.remove('hidden'); bar.classList.add('flex')
+
+  if (section === 'store') {
+    bar.className = 'block bg-transparent border-b-0 px-4 py-3'
+    bar.innerHTML = `<div class="bg-white rounded-2xl shadow-sm divide-y divide-gray-100 overflow-hidden">${tabs.map(t => {
+      const parts = TAB_SUBLABEL[t].split(' ')
+      const icon  = parts[0]
+      const label = parts.slice(1).join(' ')
+      const isActive = t === activeTab
+      return `<button data-admin-tab="${t}" onclick="showTab('${t}')" class="w-full flex items-center justify-between px-5 py-4 text-right transition-colors ${isActive ? 'bg-orange-50' : 'bg-white'}">
+        <span class="text-sm font-bold ${isActive ? 'text-orange-500' : 'text-gray-800'}">${label}</span>
+        <span class="text-lg">${icon}</span>
+      </button>`
+    }).join('')}</div>`
+  } else {
+    bar.className = 'flex bg-gray-50 border-b border-gray-100 px-4 py-2.5 gap-2 overflow-x-auto'
+    bar.style.msOverflowStyle = 'none'; bar.style.scrollbarWidth = 'none'
+    bar.innerHTML = tabs.map(t => `<button data-admin-tab="${t}" onclick="showTab('${t}')" class="flex-shrink-0 px-4 py-1.5 rounded-full text-sm font-bold border-2 transition-all ${t === activeTab ? 'bg-orange-500 text-white border-transparent' : 'bg-white text-gray-500 border-gray-200'}">${TAB_SUBLABEL[t]}</button>`).join('')
+  }
+
+  bar.classList.remove('hidden')
   // إخفاء التبويبات المخصصة للأدمن فقط لو الدخول بصلاحية فرع
   if (_role && _role !== 'admin') {
     bar.querySelectorAll('button[data-admin-tab]').forEach(btn => {
