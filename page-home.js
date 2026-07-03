@@ -264,9 +264,15 @@ function renderAllSections(filtered) {
   const prodsHTML = S.categories.map(cat => {
     const items = prods.filter(p => p.category_id === cat.id)
     if (!items.length) return ''
+    const style = cat.display_style || 'grid'
+    const body  = style === 'list'
+      ? `<div class="products-list">${items.map(p => prodCardListHTML(p)).join('')}</div>`
+      : style === 'scroll'
+        ? `<div class="products-scroll">${items.map(p => prodCardHTML(p)).join('')}</div>`
+        : `<div class="products-grid">${items.map(p => prodCardHTML(p)).join('')}</div>`
     return `<div id="sec-${cat.id}" class="fade-up" style="margin-top:4px">
       <p class="section-title">${cat.name}</p>
-      <div class="products-grid">${items.map(p => prodCardHTML(p)).join('')}</div>
+      ${body}
     </div>`
   }).join('')
 
@@ -334,6 +340,43 @@ function prodCardHTML(p) {
                <div class="qty-btn" onclick="cQty('${p.id}','product',1)">+</div>
              </div>`
           : ''}
+    </div>
+  </div>`
+}
+
+// ── PRODUCT LIST-STYLE CARD HTML ──────────────────────────────────────
+function prodCardListHTML(p) {
+  const ci          = S.cart.find(c => c.id === p.id && c.type === 'product')
+  const hasDiscount = isDiscountActive(p)
+  const unavailable = p.availability === 'unavailable' || p.status === 'unavailable'
+  const discPct     = hasDiscount ? Math.round((1 - Number(p.discount_price) / Number(p.price)) * 100) : 0
+
+  const priceHTML = hasDiscount
+    ? `<div class="price-row"><span class="price-new">${fmt(p.discount_price)}</span><span class="price-old">${fmt(p.price)}</span></div>`
+    : `<span class="price-normal">${fmt(p.price)}</span>`
+
+  return `<div class="prod-card-list${unavailable ? ' opacity-60' : ''}"
+       onclick="${unavailable ? '' : `openModal('${p.id}')`}"
+       style="${unavailable ? 'cursor:default' : ''}">
+    <div class="info">
+      <h3>${p.name}</h3>
+      ${p.description ? `<p class="desc">${p.description}</p>` : ''}
+      ${priceHTML}
+      ${unavailable
+        ? `<span style="font-size:10px;background:#f0f0f0;color:#999;font-weight:700;padding:4px 8px;border-radius:8px;display:inline-block;margin-top:4px">غير متوفر</span>`
+        : ci
+          ? `<div class="qty-row" onclick="event.stopPropagation()">
+               <div class="qty-btn" onclick="cQty('${p.id}','product',-1)">−</div>
+               <span style="font-size:13px;font-weight:900;min-width:20px;text-align:center">${ci.qty}</span>
+               <div class="qty-btn" onclick="cQty('${p.id}','product',1)">+</div>
+             </div>`
+          : `<button class="add-btn-list" onclick="event.stopPropagation(); quickAdd('${p.id}')">+ أضف</button>`}
+    </div>
+    <div class="thumb">
+      ${p.image_url ? `<img src="${p.image_url}" alt="${p.name}" loading="lazy" onload="this.classList.add('loaded'); this.parentElement.classList.add('img-ready')" onerror="this.parentElement.classList.add('img-ready')" />` : `<div class="no-img">🍽️</div>`}
+      ${p.offer_badge ? `<div class="offer-badge">${p.offer_badge}</div>` : ''}
+      ${discPct >= 5 && !p.offer_badge ? `<div class="disc-pct">-${discPct}%</div>` : ''}
+      ${unavailable ? `<div class="unavail-overlay"></div>` : ''}
     </div>
   </div>`
 }

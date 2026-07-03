@@ -601,6 +601,21 @@
       <input id="cm-name" type="text" class="w-full border border-gray-200 rounded-xl px-4 py-3 text-sm focus:outline-none focus:ring-2 focus:ring-orange-400" /></div>
     <div><label class="text-xs font-bold text-gray-500 mb-1 block">أيقونة (إيموجي أو رابط)</label>
       <input id="cm-icon" type="text" placeholder="مثال: 🍔 أو https://..." class="w-full border border-gray-200 rounded-xl px-4 py-3 text-sm focus:outline-none focus:ring-2 focus:ring-orange-400" /></div>
+    <div>
+      <label class="text-xs font-bold text-gray-500 mb-1 block">طريقة عرض المنتجات</label>
+      <input type="hidden" id="cm-style" value="grid" />
+      <div class="grid grid-cols-3 gap-2">
+        <button type="button" onclick="setCatStyle('grid')" id="cm-style-grid" class="cat-style-btn border-2 border-gray-200 text-gray-500 rounded-xl py-3 px-2 text-center transition-colors">
+          <div class="text-lg mb-1">▦</div><div class="text-[11px] font-bold">شبكة</div>
+        </button>
+        <button type="button" onclick="setCatStyle('list')" id="cm-style-list" class="cat-style-btn border-2 border-gray-200 text-gray-500 rounded-xl py-3 px-2 text-center transition-colors">
+          <div class="text-lg mb-1">☰</div><div class="text-[11px] font-bold">قائمة</div>
+        </button>
+        <button type="button" onclick="setCatStyle('scroll')" id="cm-style-scroll" class="cat-style-btn border-2 border-gray-200 text-gray-500 rounded-xl py-3 px-2 text-center transition-colors">
+          <div class="text-lg mb-1">⇄</div><div class="text-[11px] font-bold">سحب أفقي</div>
+        </button>
+      </div>
+    </div>
     <p id="cm-error" class="text-red-500 text-xs hidden"></p>
     <div class="flex gap-3 pt-2">
       <button onclick="saveCat()"       class="flex-1 bg-orange-500 text-white font-bold rounded-xl py-3">حفظ</button>
@@ -1780,9 +1795,19 @@ async function loadCategories() {
 function renderCategories() {
   const el = document.getElementById('categories-list')
   if (!state.categories.length) { el.innerHTML = `<p class="text-center text-gray-400 text-sm py-8">لا توجد تصنيفات بعد</p>`; return }
-  el.innerHTML = state.categories.map(c => `
+  const styleLbl = { grid: '▦ شبكة', list: '☰ قائمة', scroll: '⇄ سحب أفقي' }
+  el.innerHTML = state.categories.map((c, i) => `
     <div class="bg-white rounded-2xl p-4 shadow-sm flex items-center justify-between">
-      <span class="font-bold text-gray-800">${c.name}</span>
+      <div class="flex items-center gap-2">
+        <div class="flex flex-col gap-1">
+          <button onclick="moveCat('${c.id}',-1)" ${i === 0 ? 'disabled' : ''} class="reorder-btn ${i === 0 ? 'opacity-30 pointer-events-none' : ''}">▲</button>
+          <button onclick="moveCat('${c.id}',1)" ${i === state.categories.length - 1 ? 'disabled' : ''} class="reorder-btn ${i === state.categories.length - 1 ? 'opacity-30 pointer-events-none' : ''}">▼</button>
+        </div>
+        <div>
+          <span class="font-bold text-gray-800">${c.name}</span>
+          <span class="block text-[10px] text-gray-400 font-bold mt-0.5">${styleLbl[c.display_style || 'grid']}</span>
+        </div>
+      </div>
       <div class="flex gap-2">
         <button onclick="openCatModal('${c.id}')" class="text-xs bg-gray-100 text-gray-600 font-bold px-3 py-2 rounded-xl">تعديل</button>
         <button onclick="deleteCat('${c.id}')"    class="text-xs bg-red-50 text-red-500 font-bold px-3 py-2 rounded-xl">حذف</button>
@@ -1793,11 +1818,21 @@ function updateCategorySelect() {
   const sel = document.getElementById('pm-category')
   sel.innerHTML = '<option value="" disabled>اختر تصنيف للمنتج...</option>' + state.categories.map(c => `<option value="${c.id}">${c.name}</option>`).join('')
 }
+function setCatStyle(style) {
+  document.getElementById('cm-style').value = style
+  ;['grid','list','scroll'].forEach(s => {
+    const btn = document.getElementById('cm-style-' + s)
+    btn.classList.toggle('border-orange-500', s === style)
+    btn.classList.toggle('text-orange-600', s === style)
+    btn.classList.toggle('border-gray-200', s !== style)
+    btn.classList.toggle('text-gray-500', s !== style)
+  })
+}
 function openCatModal(id = null) {
   document.getElementById('cm-id').value = id || ''
   document.getElementById('cm-error').classList.add('hidden')
-  if (id) { const c = state.categories.find(x => x.id === id); document.getElementById('cm-name').value = c.name; document.getElementById('cm-icon').value = c.icon_url || ''; document.getElementById('cat-modal-title').textContent = 'تعديل تصنيف' }
-  else    { document.getElementById('cm-name').value = ''; document.getElementById('cm-icon').value = ''; document.getElementById('cat-modal-title').textContent = 'إضافة تصنيف' }
+  if (id) { const c = state.categories.find(x => x.id === id); document.getElementById('cm-name').value = c.name; document.getElementById('cm-icon').value = c.icon_url || ''; document.getElementById('cat-modal-title').textContent = 'تعديل تصنيف'; setCatStyle(c.display_style || 'grid') }
+  else    { document.getElementById('cm-name').value = ''; document.getElementById('cm-icon').value = ''; document.getElementById('cat-modal-title').textContent = 'إضافة تصنيف'; setCatStyle('grid') }
   document.getElementById('modal-category').classList.remove('hidden')
   _lockBodyScroll()
   setTimeout(() => document.getElementById('cm-name').focus(), 100)
@@ -1814,10 +1849,25 @@ async function saveCat() {
   const errEl = document.getElementById('cm-error')
   if (!name) { errEl.textContent = 'اسم التصنيف مطلوب'; errEl.classList.remove('hidden'); return }
   errEl.classList.add('hidden')
-  const icon = document.getElementById('cm-icon').value.trim() || null
-  if (id) await db.from('categories').update({ name, icon_url: icon }).eq('id', id)
-  else    await db.from('categories').insert({ restaurant_id: state.restaurant.id, name, icon_url: icon, sort_order: state.categories.length })
+  const icon  = document.getElementById('cm-icon').value.trim() || null
+  const style = document.getElementById('cm-style').value || 'grid'
+  if (id) await db.from('categories').update({ name, icon_url: icon, display_style: style }).eq('id', id)
+  else    await db.from('categories').insert({ restaurant_id: state.restaurant.id, name, icon_url: icon, display_style: style, sort_order: state.categories.length })
   closeCatModal(); await loadCategories(); showToast(id ? 'تم تعديل التصنيف' : 'تم إضافة التصنيف')
+}
+async function moveCat(id, dir) {
+  const i = state.categories.findIndex(c => c.id === id)
+  const j = i + dir
+  if (i < 0 || j < 0 || j >= state.categories.length) return
+  const a = state.categories[i], b = state.categories[j]
+  const aOrder = a.sort_order, bOrder = b.sort_order
+  ;[state.categories[i], state.categories[j]] = [state.categories[j], state.categories[i]]
+  renderCategories()
+  await Promise.all([
+    db.from('categories').update({ sort_order: bOrder }).eq('id', a.id),
+    db.from('categories').update({ sort_order: aOrder }).eq('id', b.id)
+  ])
+  a.sort_order = bOrder; b.sort_order = aOrder
 }
 async function deleteCat(id) { const ok = await showConfirm('هل تريد حذف هذا التصنيف؟ المنتجات المرتبطة ستفقد تصنيفها.', 'حذف'); if (!ok) return; await db.from('categories').delete().eq('id', id); await loadCategories(); showToast('تم حذف التصنيف') }
 
