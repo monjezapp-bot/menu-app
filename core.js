@@ -188,7 +188,7 @@ async function loadData(slug) {
   S.restaurant = r
 
   const [catRes, prodRes, bundleRes, bannerRes, branchRes] = await Promise.all([
-    db.from('categories').select('id,name,sort_order,icon_url').eq('restaurant_id', r.id).order('sort_order'),
+    db.from('categories').select('id,name,sort_order,icon_url,display_style').eq('restaurant_id', r.id).order('sort_order'),
     db.from('products')
       .select('*')
       .eq('restaurant_id', r.id).neq('status', 'hidden').order('sort_order'),
