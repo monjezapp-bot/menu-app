@@ -1858,9 +1858,15 @@ async function saveCat() {
   errEl.classList.add('hidden')
   const icon  = document.getElementById('cm-icon').value.trim() || null
   const style = document.getElementById('cm-style').value || 'grid'
-  if (id) await db.from('categories').update({ name, icon_url: icon, display_style: style }).eq('id', id)
-  else    await db.from('categories').insert({ restaurant_id: state.restaurant.id, name, icon_url: icon, display_style: style, sort_order: state.categories.length })
-  closeCatModal(); await loadCategories(); showToast(id ? 'تم تعديل التصنيف' : 'تم إضافة التصنيف')
+  try {
+    const { error } = id
+      ? await db.from('categories').update({ name, icon_url: icon, display_style: style }).eq('id', id)
+      : await db.from('categories').insert({ restaurant_id: state.restaurant.id, name, icon_url: icon, display_style: style, sort_order: state.categories.length })
+    if (error) { errEl.textContent = 'خطأ: ' + error.message; errEl.classList.remove('hidden'); return }
+    closeCatModal(); await loadCategories(); showToast(id ? 'تم تعديل التصنيف' : 'تم إضافة التصنيف')
+  } catch (e) {
+    errEl.textContent = 'خطأ: ' + e.message; errEl.classList.remove('hidden')
+  }
 }
 async function moveCat(id, dir) {
   const i = state.categories.findIndex(c => c.id === id)
