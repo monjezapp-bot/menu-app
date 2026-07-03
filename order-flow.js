@@ -252,20 +252,25 @@ function showOrderDelayWarning() {
 }
 function handleOrderStatusChange(order) {
   if (['confirmed', 'ready', 'delivering', 'delivered', 'cancelled'].includes(order.status)) {
+    const isFinal = ['delivered', 'cancelled'].includes(order.status)
     if (isOrderMinimized(order.id)) {
-      // الطلب مُصغّر بمعرفة العميل: منفرضش المودال، التحديث هيظهر له لما يفتح "طلباتي"
-      if (['delivered', 'cancelled'].includes(order.status) && _orderTrackChannel) {
+      // الطلب مُصغّر بمعرفة العميل: منفرضش المودال الكامل، بس البطاقة العائمة تتحدّث
+      // بالحالة الجديدة عشان التتبع يفضل ظاهر من غير ما يحتاج يدخل "طلباتي"
+      updateGlobalOrderPill(isFinal ? null : order)
+      if (isFinal && _orderTrackChannel) {
         db.removeChannel(_orderTrackChannel); _orderTrackChannel = null
       }
       return
     }
     updateSuccessModalState(order.status, order.cancel_reason, order)
+    updateGlobalOrderPill(isFinal ? null : order)
   }
 }
 
 // ── MINIMIZE / RESTORE التتبع ────────────────────────────────────────
-// طلب مُصغّر = العميل ضغط (−)؛ بطاقة التتبع متبقاش بتفرض نفسها تلقائي،
-// والرجوع ليها يبقى فقط من صفحة "طلباتي" (active-order-tracker أو تفاصيل الطلب)
+// طلب مُصغّر = العميل ضغط "تمام"/رجوع؛ المودال الكامل مبيفرضش نفسه تلقائي بعدها،
+// لكن البطاقة العائمة الصغيرة (global-order-pill) تفضل ظاهرة فوق أي صفحة، والرجوع
+// للمودال الكامل يبقى من الضغط عليها، أو من صفحة "طلباتي" (active-order-tracker أو تفاصيل الطلب)
 function getMinimizedOrders() {
   try { return JSON.parse(localStorage.getItem('minimized_orders') || '[]') } catch(e) { return [] }
 }
@@ -275,24 +280,90 @@ function setOrderMinimized(orderId, minimized) {
   if (minimized) list.push(orderId)
   try { localStorage.setItem('minimized_orders', JSON.stringify(list)) } catch(e) {}
 }
-function minimizeSuccessModal() {
+async function minimizeSuccessModal() {
   const orderId = document.getElementById('order-success-modal').dataset.orderId
   if (orderId) setOrderMinimized(orderId, true)
   closeSuccessModal()
+  // اجلب أحدث حالة وأظهرها في البطاقة العائمة، عشان التتبع يفضل ظاهر قدام العميل
+  // في أي صفحة بدل ما يختفي تماماً لحد ما يدخل "طلباتي"
+  if (orderId) {
+    const { data: order } = await db.from('orders').select('*').eq('id', orderId).single()
+    if (order && !['delivered', 'cancelled'].includes(order.status)) updateGlobalOrderPill(order)
+  }
 }
-// إعادة فتح بطاقة التتبع يدويًا من صفحة طلباتي (بتجيب أحدث حالة من الداتابيز أولاً)
+// إعادة فتح بطاقة التتبع يدويًا (من صفحة طلباتي أو من البطاقة العائمة) — بتجيب أحدث حالة من الداتابيز أولاً
 async function reopenOrderTracking(orderId) {
   if (!orderId) return
   setOrderMinimized(orderId, false)
   const { data: order } = await db.from('orders').select('*').eq('id', orderId).single()
   if (!order) return
+  updateGlobalOrderPill(null) // هيفتح المودال الكامل، فمفيش داعي للبطاقة الصغيرة فوقه
   document.getElementById('order-success-modal').dataset.orderId = orderId
   document.getElementById('success-order-num').textContent = `رقم الطلب: ${order.order_number || ''}`
   document.getElementById('order-success-modal').classList.remove('hidden')
   document.documentElement.style.overflow = 'hidden'
-  pushModal('success', closeSuccessModal)
+  pushModal('success', minimizeSuccessModal)
   setSuccessModalVisual(order.status, order.cancel_reason, order)
   if (!['delivered', 'cancelled'].includes(order.status)) trackOrderStatus(orderId)
+}
+
+// ── GLOBAL FLOATING PILL (تتبع الطلب من أي صفحة) ────────────────────────
+// بطاقة صغيرة ثابتة فوق أي صفحة، تظهر طول ما فيه طلب نشط ومودال التتبع الكامل مقفول.
+// العميل له الحرية يقفلها (✕)؛ لو اتغيّرت حالة الطلب بعدها، تفضل بتظهر تاني لأن التصغير
+// مربوط بحالة الطلب نفسها (id + status) مش بالطلب بشكل مطلق.
+let _pillOrder = null
+
+function getDismissedPillOrders() {
+  try { return JSON.parse(localStorage.getItem('dismissed_pill_orders') || '[]') } catch(e) { return [] }
+}
+function isPillDismissed(order) {
+  return getDismissedPillOrders().includes(order.id + ':' + order.status)
+}
+function setPillDismissed(order, dismissed) {
+  const key  = order.id + ':' + order.status
+  const list = getDismissedPillOrders().filter(k => k !== key)
+  if (dismissed) list.push(key)
+  try { localStorage.setItem('dismissed_pill_orders', JSON.stringify(list)) } catch(e) {}
+}
+
+function updateGlobalOrderPill(order) {
+  const pill = document.getElementById('global-order-pill')
+  if (!pill) return
+  _pillOrder = order || null
+
+  const modalOpen = !document.getElementById('order-success-modal')?.classList.contains('hidden')
+  const onOrdersPage = typeof _currentPage !== 'undefined' && _currentPage === 'orders'
+  if (!order || modalOpen || onOrdersPage || isPillDismissed(order)) {
+    pill.classList.add('hidden')
+    return
+  }
+
+  const st = ORDER_STATUS[order.status] || ORDER_STATUS.pending
+  document.getElementById('gop-icon').textContent  = st.icon
+  document.getElementById('gop-title').textContent = `${st.label} — ${order.order_number || ''}`
+  pill.classList.remove('hidden')
+}
+
+function dismissGlobalOrderPill() {
+  if (_pillOrder) setPillDismissed(_pillOrder, true)
+  document.getElementById('global-order-pill')?.classList.add('hidden')
+}
+
+// يجيب أحدث طلب نشط للعميل (لو موجود) ويحدّث البطاقة العائمة بيه — يُستخدم عند فتح التطبيق
+// عشان التتبع يفضل شغال حتى لو العميل عمل ريفرش أو دخل من صفحة تانية غير "طلباتي"
+async function refreshActiveOrderPill() {
+  if (!S.customer) { updateGlobalOrderPill(null); return }
+  try {
+    const { data: orders } = await db.from('orders')
+      .select('*')
+      .eq('customer_id', S.customer.id)
+      .not('status', 'in', '(delivered,cancelled)')
+      .order('created_at', { ascending: false })
+      .limit(1)
+    const active = orders && orders[0]
+    updateGlobalOrderPill(active || null)
+    if (active) trackOrderStatus(active.id)
+  } catch(e) { /* البطاقة العائمة ثانوية — أي خطأ هنا ميوقفش باقي التطبيق */ }
 }
 
 // ── VIEW DETAILS WHILE TRACKING ─────────────────────────────────────────
@@ -534,7 +605,7 @@ function showOrderSuccess(orderNumber, orderId, total, deliveryFee) {
   setSuccessModalVisual('pending')
   document.getElementById('order-success-modal').classList.remove('hidden')
   document.documentElement.style.overflow = 'hidden'
-  pushModal('success', closeSuccessModal)
+  pushModal('success', minimizeSuccessModal)
 }
 function updateSuccessModalState(state, cancelReason, order) {
   // لو المستخدم قفل المودال بالفعل، نفتحه تاني عشان يشوف نتيجة طلبه أكيد

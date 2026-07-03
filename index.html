@@ -767,6 +767,24 @@
 <!-- ══════════════════════════════════════════
      ORDER SUCCESS MODAL
 ══════════════════════════════════════════ -->
+<!-- ══════════════════════════════════════════
+     GLOBAL: بطاقة تتبع الطلب النشط — عنصر مستقل خارج أي صفحة (state-app/page-*)
+     عشان يفضل ظاهر فوق أي صفحة المستخدم فيها، مش بس صفحة "طلباتي".
+     يظهر تلقائي لما فيه طلب نشط ومودال التتبع الكامل مقفول، وله ✕ يقفله بنفسه.
+══════════════════════════════════════════ -->
+<div id="global-order-pill" class="hidden global-order-pill" onclick="reopenOrderTracking(_pillOrder && _pillOrder.id)"
+     style="background:#fff;border-radius:16px;padding:10px 12px;box-shadow:0 -4px 24px rgba(0,0,0,0.12);
+            border:1.5px solid #ffd4a8;display:flex;align-items:center;gap:10px;cursor:pointer">
+  <div id="gop-icon" style="font-size:22px;line-height:1">⏳</div>
+  <div style="flex:1;min-width:0">
+    <p id="gop-title" style="font-size:12.5px;font-weight:900;color:#1a1a1a;white-space:nowrap;overflow:hidden;text-overflow:ellipsis"></p>
+    <p id="gop-sub" style="font-size:11px;color:#888;font-weight:600;margin-top:1px">اضغط لمتابعة طلبك</p>
+  </div>
+  <button onclick="event.stopPropagation();dismissGlobalOrderPill()"
+          style="flex-shrink:0;width:26px;height:26px;border-radius:50%;background:#f5f5f5;border:none;color:#999;
+                 font-size:14px;font-weight:700;cursor:pointer;display:flex;align-items:center;justify-content:center">✕</button>
+</div>
+
 <div id="order-success-modal" class="hidden fixed inset-0 z-[65] flex items-center justify-center" style="background:rgba(0,0,0,0.6);backdrop-filter:blur(6px)">
   <div class="bg-white rounded-3xl shadow-2xl mx-4 w-full max-w-sm p-8 text-center fade-up">
     <div class="success-icon text-6xl mb-4">⏳</div>
@@ -798,7 +816,7 @@
       ❌ إلغاء الطلب
     </button>
     <p id="cancel-order-countdown" class="hidden" style="font-size:11px;color:#bbb;margin-bottom:8px"></p>
-    <button onclick="closeSuccessModal()"
+    <button onclick="minimizeSuccessModal()"
             style="width:100%;background:var(--brand);color:#fff;font-size:15px;font-weight:900;border-radius:16px;padding:14px;margin-top:8px">
       تمام 👍
     </button>

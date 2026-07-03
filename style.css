@@ -454,6 +454,21 @@
     body.has-bottom-nav .cart-bar {
       padding-bottom: 14px;
     }
+    /* ── بطاقة تتبع الطلب العائمة (global-order-pill) ──
+       نفس منطق cart-bar: ملتصقة بأسفل الشاشة، وترتفع فوق bottom-nav لما يكون ظاهر */
+    .global-order-pill {
+      position: fixed;
+      bottom: calc(12px + env(safe-area-inset-bottom, 0px));
+      left: 50%;
+      transform: translateX(-50%);
+      width: calc(100% - 24px);
+      max-width: 456px;
+      z-index: 55;
+      transition: bottom 0.2s ease;
+    }
+    body.has-bottom-nav .global-order-pill {
+      bottom: calc(var(--nav-h) + 12px + env(safe-area-inset-bottom, 0px));
+    }
     .cart-bar-btn {
       background: var(--brand); color: #fff;
       border-radius: 100px; padding: 0 6px 0 20px; height: 58px;

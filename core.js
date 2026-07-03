@@ -133,6 +133,7 @@ async function boot() {
     showBottomNav(!!S.customer)
     updateWalletBadge()
     if (S.customer) loadNotifications().catch(() => {})
+    if (S.customer) refreshActiveOrderPill().catch(() => {})
     window._bootDone = true
     // استعادة الصفحة بعد refresh أو Google redirect
     const savedPage = sessionStorage.getItem('mnio_page')
@@ -594,6 +595,7 @@ function _switchPageCore(page) {
   if (page === 'orders')  loadOrdersPage()
   if (page === 'wallet')  loadWalletPage()
   if (page === 'account') renderAccountPage()
+  if (typeof updateGlobalOrderPill === 'function' && typeof _pillOrder !== 'undefined') updateGlobalOrderPill(_pillOrder)
   window.scrollTo({ top: 0, behavior: 'smooth' })
 }
 
