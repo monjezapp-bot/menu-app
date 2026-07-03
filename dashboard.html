@@ -572,6 +572,7 @@
           <div id="add-group-menu" class="hidden absolute left-0 top-full mt-1 bg-white border border-gray-200 rounded-xl shadow-lg z-10 w-44 overflow-hidden">
             <button type="button" onclick="addOptionGroup('size')"   class="w-full text-right px-4 py-2.5 text-sm hover:bg-gray-50 border-b border-gray-100">📏 حجم</button>
             <button type="button" onclick="addOptionGroup('measure')" class="w-full text-right px-4 py-2.5 text-sm hover:bg-gray-50 border-b border-gray-100">📐 مقاس</button>
+            <button type="button" onclick="addOptionGroup('color')"  class="w-full text-right px-4 py-2.5 text-sm hover:bg-gray-50 border-b border-gray-100">🎨 اللون</button>
             <button type="button" onclick="addOptionGroup('count')"  class="w-full text-right px-4 py-2.5 text-sm hover:bg-gray-50 border-b border-gray-100">🔢 عدد</button>
             <button type="button" onclick="addOptionGroup('addons')" class="w-full text-right px-4 py-2.5 text-sm hover:bg-gray-50 border-b border-gray-100">➕ إضافات</button>
             <button type="button" onclick="addOptionGroup('custom')" class="w-full text-right px-4 py-2.5 text-sm hover:bg-gray-50">⚙️ مجموعة مخصصة</button>
@@ -579,7 +580,7 @@
         </div>
       </div>
       <div id="pm-options-list" class="space-y-3"></div>
-      <p class="text-xs text-gray-400 mt-1">💡 لمجموعات الحجم/المقاس/العدد: إذا كان أحد الخيارات يطابق المنتج الأساسي تماماً، اجعل سعره 0</p>
+      <p class="text-xs text-gray-400 mt-1">💡 لمجموعات الحجم/المقاس/اللون/العدد: إذا كان أحد الخيارات يطابق المنتج الأساسي تماماً، اجعل سعره 0</p>
     </div>
     <!-- Also With -->
     <div>
@@ -2191,8 +2192,8 @@ function updateDiscountPreview() {
 
 // ── OPTIONS UI ────────────────────────────────────────────────────────
 // ── PRODUCT OPTIONS (groups: size/measure/count/custom/addons) ─────────
-const GROUP_TYPE_LABELS = { size: '📏 حجم', measure: '📐 مقاس', count: '🔢 عدد', addons: '➕ إضافات', custom: '⚙️ مخصصة' }
-const FIXED_SINGLE_TYPES = ['size', 'measure', 'count'] // اختيار واحد فقط، ثابت لا يتغير
+const GROUP_TYPE_LABELS = { size: '📏 حجم', measure: '📐 مقاس', color: '🎨 اللون', count: '🔢 عدد', addons: '➕ إضافات', custom: '⚙️ مخصصة' }
+const FIXED_SINGLE_TYPES = ['size', 'measure', 'color', 'count'] // اختيار واحد فقط، ثابت لا يتغير
 
 function toggleAddGroupMenu() {
   document.getElementById('add-group-menu').classList.toggle('hidden')
@@ -2611,7 +2612,7 @@ function renderOrders() {
         <span class="text-xs font-bold px-3 py-1 rounded-full ${statusColor[o.status]}">${statusLabel[o.status]}</span>
       </div>
       <div class="space-y-1 border-t border-gray-50 pt-3">
-        ${o.items.map(i => `<div class="flex justify-between text-sm"><span class="text-gray-600">${i.name} × ${i.qty}</span><span class="font-bold text-gray-800">${Number(i.subtotal).toFixed(2)} ج.م</span></div>`).join('')}
+        ${o.items.map(i => `<div class="flex justify-between text-sm"><span class="text-gray-600">${i.name} × ${i.unit && i.unit !== 'قطعة' ? `${i.qty} ${i.unit}` : i.qty}</span><span class="font-bold text-gray-800">${Number(i.subtotal).toFixed(2)} ج.م</span></div>`).join('')}
         ${o.delivery_fee ? `<div class="flex justify-between text-sm"><span class="text-gray-500">🛵 رسوم التوصيل</span><span class="font-bold text-gray-700">${Number(o.delivery_fee).toFixed(2)} ج.م</span></div>` : ''}
         <div class="flex justify-between text-sm font-extrabold pt-2 border-t border-gray-100"><span>الإجمالي</span><span class="text-orange-500">${Number(o.total).toFixed(2)} ج.م</span></div>
       </div>
@@ -2661,7 +2662,7 @@ function openOrderDetailModal(orderId) {
   // المنتجات
   document.getElementById('od-items').innerHTML = (order.items || []).map(i => `
     <div class="flex justify-between text-sm">
-      <span class="text-gray-600">${i.name} × ${i.qty}${i.options?.length ? `<br><span class="text-xs text-gray-400">${i.options.map(op => op.label || op).join('، ')}</span>` : ''}</span>
+      <span class="text-gray-600">${i.name} × ${i.unit && i.unit !== 'قطعة' ? `${i.qty} ${i.unit}` : i.qty}${i.options?.length ? `<br><span class="text-xs text-gray-400">${Array.isArray(i.options) ? i.options.map(op => op.label || op).join('، ') : i.options}</span>` : ''}</span>
       <span class="font-bold text-gray-800 whitespace-nowrap">${Number(i.subtotal || 0).toFixed(2)} ج.م</span>
     </div>`).join('')
 
@@ -3011,7 +3012,7 @@ function handleOrderUpdatedElsewhere(order) {
 }
 function showNewOrderPopup(order) {
   document.getElementById('nop-order-num').textContent = order.order_number
-  document.getElementById('nop-items').innerHTML = (order.items||[]).map(i => `<div class="flex justify-between text-sm"><span class="text-gray-600 font-bold">${i.name} × ${i.qty}</span><span class="font-extrabold text-gray-800">${Number(i.subtotal).toFixed(2)} ج.م</span></div>`).join('')
+  document.getElementById('nop-items').innerHTML = (order.items||[]).map(i => `<div class="flex justify-between text-sm"><span class="text-gray-600 font-bold">${i.name} × ${i.unit && i.unit !== 'قطعة' ? `${i.qty} ${i.unit}` : i.qty}</span><span class="font-extrabold text-gray-800">${Number(i.subtotal).toFixed(2)} ج.م</span></div>`).join('')
   + (order.delivery_fee ? `<div class="flex justify-between text-sm border-t border-gray-100 pt-1.5 mt-1"><span class="text-gray-500 font-bold">🛵 رسوم التوصيل</span><span class="font-extrabold text-gray-700">${Number(order.delivery_fee).toFixed(2)} ج.م</span></div>` : '')
   document.getElementById('nop-total').textContent = Number(order.total).toFixed(2) + ' ج.م'
   const meta = []
