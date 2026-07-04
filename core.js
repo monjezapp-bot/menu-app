@@ -148,6 +148,15 @@ async function boot() {
     loadCart()
     renderAllSections()
     updateCartUI()
+
+    // ── استعادة الصفحة المحفوظة قبل أول ظهور، مش بعده ──────────────────
+    // mnio_page مبتتسجّلش غير وإحنا عارفين إن فيه عميل مسجّل دخول (شوف الشرط تحت)،
+    // فلو لقينا قيمة غير 'home' هنا، الأرجح إن السيشن لسه شغالة، فنعرض الصفحة دي
+    // فوراً بدل ما نعرض الرئيسية الأول ونلاقيها بترجع تختفي بعد شرطة عين (الفلاش)
+    const savedPage = sessionStorage.getItem('mnio_page')
+    const restoringPage = savedPage && savedPage !== 'home'
+    if (restoringPage) { _currentPage = savedPage; _switchPageCore(savedPage) }
+
     showState('app')
     openSharedLinkIfAny()
     initScrollBehavior()
@@ -163,9 +172,12 @@ async function boot() {
     updateWalletBadge()
     if (S.customer) loadNotifications().catch(() => {})
     window._bootDone = true
-    // استعادة الصفحة بعد refresh أو Google redirect
-    const savedPage = sessionStorage.getItem('mnio_page')
-    if (savedPage && savedPage !== 'home' && S.customer) {
+
+    if (restoringPage && !S.customer) {
+      // السيشن كانت منتهية فعلاً (حالة نادرة) — ارجع للرئيسية بدل ما تفضل صفحة محتاجة تسجيل دخول ظاهرة فاضية
+      switchPage('home')
+    } else if (restoringPage && S.customer) {
+      // أكّد تحميل بيانات الصفحة اللي اتعرضت مبدئياً (كانت اتعرضت بدري من غير بيانات العميل لسه)
       switchPage(savedPage)
     } else if (S.customer && new URLSearchParams(location.search).get('ref')) {
       switchPage('account')
@@ -342,32 +354,24 @@ async function initCustomerSession(forceCreate, extraData) {
 }
 
 // يفحص لو النهاردة عيد ميلاد العميل ولم يُمنح الهدية هذا العام، يمنحها فوراً
+// ملاحظة: الفحص والمنح بيحصلوا في معاملة واحدة ذرية على السيرفر (claim_birthday_gift RPC)
+// عشان لو المستخدم عمل ريفريش أو فاتح أكتر من تاب، الهدية تتاخد مرة واحدة بس مضمونة
 async function checkAndAwardBirthdayGift() {
   const r = S.restaurant, c = S.customer
   if (!(r?.birthday_gift_enabled) || !r.birthday_coins || !c?.birthdate) return
 
-  const today = new Date()
-  const bday  = new Date(c.birthdate)
-  const isBirthdayToday = today.getMonth() === bday.getMonth() && today.getDate() === bday.getDate()
-  if (!isBirthdayToday) return
-
-  const thisYear = today.getFullYear()
-  if (c.birthday_gift_claimed_year === thisYear) return // اتمنحت السنة دي خلاص
+  const thisYear = new Date().getFullYear()
+  if (c.birthday_gift_claimed_year === thisYear) return // اتمنحت السنة دي خلاص (فحص أولي بس، تخفيف حمل)
 
   try {
-    await incrementCustomerCoins(c.id, r.birthday_coins)
-    await db.from('menu_customers').update({ birthday_gift_claimed_year: thisYear }).eq('id', c.id)
-    S.customer.birthday_gift_claimed_year = thisYear
-    S.customer.coins_balance = (S.customer.coins_balance || 0) + r.birthday_coins
-    await db.from('coin_transactions').insert({
-      customer_id:   c.id,
-      restaurant_id: r.id,
-      type:   'birthday',
-      amount: r.birthday_coins,
-      note:   '🎂 هدية عيد ميلادك السعيد!'
-    }).catch(() => {})
-    showToast(`🎂 عيد ميلاد سعيد! حصلت على ${numFmt(r.birthday_coins)} كوين هدية 🎉`)
+    const { data, error } = await db.rpc('claim_birthday_gift', { p_restaurant_id: r.id })
+    if (error) return // مش عيد ميلاده، أو اتاخدت خلاص، أو مش مفعّلة — من غير ما نعرض أي حاجة للمستخدم
+
+    S.customer.birthday_gift_claimed_year = data.claimed_year
+    S.customer.coins_balance = data.new_balance
+    showToast(`🎂 عيد ميلاد سعيد! حصلت على ${numFmt(data.coins_granted)} كوين هدية 🎉`)
     playSuccessSound()
+    updateWalletBadge()
   } catch(e) {}
 }
 
