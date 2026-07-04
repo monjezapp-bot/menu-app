@@ -408,8 +408,8 @@
     ══════════════════════════════════════════ */
     .products-scroll-compact { display: flex; flex-direction: column; gap: var(--sp-3); padding-bottom: var(--sp-2); }
     .scroll-compact-block {
-      display: grid; grid-template-rows: repeat(2, auto); grid-auto-flow: column;
-      column-gap: var(--sp-3); row-gap: var(--sp-3);
+      display: grid; grid-template-rows: repeat(2, auto); grid-auto-flow: column; grid-auto-columns: 104px;
+      column-gap: var(--sp-3); row-gap: var(--sp-3); width: max-content; max-width: 100%;
       overflow-x: auto; padding: 0 var(--sp-4); scroll-snap-type: x proximity;
       -webkit-overflow-scrolling: touch;
     }
