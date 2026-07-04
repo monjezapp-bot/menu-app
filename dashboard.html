@@ -337,12 +337,6 @@
 
         <hr class="border-gray-100" />
 
-        <div><label class="text-xs font-bold text-gray-500 mb-1 block">نبذة عن المتجر</label>
-          <textarea id="set-about" maxlength="300" rows="3" placeholder="اكتب وصف قصير عن مطعمك يظهر للعملاء في المنيو..." class="w-full border border-gray-200 rounded-xl px-4 py-3 text-sm focus:outline-none focus:ring-2 focus:ring-orange-400 resize-none"></textarea>
-          <p class="text-[11px] text-gray-400 mt-1">هيظهر للعميل أعلى المنيو تحت اسم المطعم — حد أقصى 300 حرف</p></div>
-
-        <hr class="border-gray-100" />
-
         <div><label class="text-xs font-bold text-gray-500 mb-1 block">رقم تواصل المتجر (للعملاء)</label>
           <input id="set-whatsapp" type="text" placeholder="01012345678 أو 201012345678" class="w-full border border-gray-200 rounded-xl px-4 py-3 text-sm focus:outline-none focus:ring-2 focus:ring-orange-400" />
           <p class="text-[11px] text-gray-400 mt-1">هيظهر للعميل كرقم اتصال مباشر بالمطعم — اكتبه بأي صيغة وسيتم ضبطه تلقائياً</p></div>
@@ -572,7 +566,6 @@
           <div id="add-group-menu" class="hidden absolute left-0 top-full mt-1 bg-white border border-gray-200 rounded-xl shadow-lg z-10 w-44 overflow-hidden">
             <button type="button" onclick="addOptionGroup('size')"   class="w-full text-right px-4 py-2.5 text-sm hover:bg-gray-50 border-b border-gray-100">📏 حجم</button>
             <button type="button" onclick="addOptionGroup('measure')" class="w-full text-right px-4 py-2.5 text-sm hover:bg-gray-50 border-b border-gray-100">📐 مقاس</button>
-            <button type="button" onclick="addOptionGroup('color')"  class="w-full text-right px-4 py-2.5 text-sm hover:bg-gray-50 border-b border-gray-100">🎨 اللون</button>
             <button type="button" onclick="addOptionGroup('count')"  class="w-full text-right px-4 py-2.5 text-sm hover:bg-gray-50 border-b border-gray-100">🔢 عدد</button>
             <button type="button" onclick="addOptionGroup('addons')" class="w-full text-right px-4 py-2.5 text-sm hover:bg-gray-50 border-b border-gray-100">➕ إضافات</button>
             <button type="button" onclick="addOptionGroup('custom')" class="w-full text-right px-4 py-2.5 text-sm hover:bg-gray-50">⚙️ مجموعة مخصصة</button>
@@ -580,7 +573,7 @@
         </div>
       </div>
       <div id="pm-options-list" class="space-y-3"></div>
-      <p class="text-xs text-gray-400 mt-1">💡 لمجموعات الحجم/المقاس/اللون/العدد: إذا كان أحد الخيارات يطابق المنتج الأساسي تماماً، اجعل سعره 0</p>
+      <p class="text-xs text-gray-400 mt-1">💡 لمجموعات الحجم/المقاس/العدد: إذا كان أحد الخيارات يطابق المنتج الأساسي تماماً، اجعل سعره 0</p>
     </div>
     <!-- Also With -->
     <div>
@@ -611,15 +604,18 @@
     <div>
       <label class="text-xs font-bold text-gray-500 mb-1 block">طريقة عرض المنتجات</label>
       <input type="hidden" id="cm-style" value="grid" />
-      <div class="grid grid-cols-3 gap-2">
-        <button type="button" onclick="setCatStyle('grid')" id="cm-style-grid" class="cat-style-btn border-2 border-gray-200 text-gray-500 rounded-xl py-3 px-2 text-center transition-colors">
-          <div class="text-lg mb-1">▦</div><div class="text-[11px] font-bold">شبكة</div>
+      <div class="grid grid-cols-4 gap-2">
+        <button type="button" onclick="setCatStyle('grid')" id="cm-style-grid" class="cat-style-btn border-2 border-gray-200 text-gray-500 rounded-xl py-3 px-1 text-center transition-colors">
+          <div class="text-lg mb-1">▦</div><div class="text-[10px] font-bold">شبكة</div>
         </button>
-        <button type="button" onclick="setCatStyle('list')" id="cm-style-list" class="cat-style-btn border-2 border-gray-200 text-gray-500 rounded-xl py-3 px-2 text-center transition-colors">
-          <div class="text-lg mb-1">☰</div><div class="text-[11px] font-bold">قائمة</div>
+        <button type="button" onclick="setCatStyle('list')" id="cm-style-list" class="cat-style-btn border-2 border-gray-200 text-gray-500 rounded-xl py-3 px-1 text-center transition-colors">
+          <div class="text-lg mb-1">☰</div><div class="text-[10px] font-bold">قائمة</div>
         </button>
-        <button type="button" onclick="setCatStyle('scroll')" id="cm-style-scroll" class="cat-style-btn border-2 border-gray-200 text-gray-500 rounded-xl py-3 px-2 text-center transition-colors">
-          <div class="text-lg mb-1">⇄</div><div class="text-[11px] font-bold">سحب أفقي</div>
+        <button type="button" onclick="setCatStyle('scroll')" id="cm-style-scroll" class="cat-style-btn border-2 border-gray-200 text-gray-500 rounded-xl py-3 px-1 text-center transition-colors">
+          <div class="text-lg mb-1">⇄</div><div class="text-[10px] font-bold">سحب أفقي</div>
+        </button>
+        <button type="button" onclick="setCatStyle('scroll_compact')" id="cm-style-scroll_compact" class="cat-style-btn border-2 border-gray-200 text-gray-500 rounded-xl py-3 px-1 text-center transition-colors">
+          <div class="text-lg mb-1">⊞⇄</div><div class="text-[10px] font-bold">سحب مصغر</div>
         </button>
       </div>
     </div>
@@ -1321,7 +1317,6 @@ async function loadDashboard(r, branches) {
 
   // Populate settings
   document.getElementById('set-name').value     = r.name
-  document.getElementById('set-about').value    = r.about_text || ''
   document.getElementById('set-whatsapp').value = r.whatsapp
   document.getElementById('set-logo').value     = r.logo_url  || ''
   document.getElementById('set-cover').value    = r.cover_url || ''
@@ -1803,7 +1798,7 @@ async function loadCategories() {
 function renderCategories() {
   const el = document.getElementById('categories-list')
   if (!state.categories.length) { el.innerHTML = `<p class="text-center text-gray-400 text-sm py-8">لا توجد تصنيفات بعد</p>`; return }
-  const styleLbl = { grid: '▦ شبكة', list: '☰ قائمة', scroll: '⇄ سحب أفقي' }
+  const styleLbl = { grid: '▦ شبكة', list: '☰ قائمة', scroll: '⇄ سحب أفقي', scroll_compact: '⊞⇄ سحب مصغر' }
   el.innerHTML = state.categories.map((c, i) => `
     <div class="bg-white rounded-2xl p-4 shadow-sm flex items-center justify-between">
       <div class="flex items-center gap-2">
@@ -1828,7 +1823,7 @@ function updateCategorySelect() {
 }
 function setCatStyle(style) {
   document.getElementById('cm-style').value = style
-  ;['grid','list','scroll'].forEach(s => {
+  ;['grid','list','scroll','scroll_compact'].forEach(s => {
     const btn = document.getElementById('cm-style-' + s)
     btn.classList.toggle('border-orange-500', s === style)
     btn.classList.toggle('text-orange-600', s === style)
@@ -2192,8 +2187,8 @@ function updateDiscountPreview() {
 
 // ── OPTIONS UI ────────────────────────────────────────────────────────
 // ── PRODUCT OPTIONS (groups: size/measure/count/custom/addons) ─────────
-const GROUP_TYPE_LABELS = { size: '📏 حجم', measure: '📐 مقاس', color: '🎨 اللون', count: '🔢 عدد', addons: '➕ إضافات', custom: '⚙️ مخصصة' }
-const FIXED_SINGLE_TYPES = ['size', 'measure', 'color', 'count'] // اختيار واحد فقط، ثابت لا يتغير
+const GROUP_TYPE_LABELS = { size: '📏 حجم', measure: '📐 مقاس', count: '🔢 عدد', addons: '➕ إضافات', custom: '⚙️ مخصصة' }
+const FIXED_SINGLE_TYPES = ['size', 'measure', 'count'] // اختيار واحد فقط، ثابت لا يتغير
 
 function toggleAddGroupMenu() {
   document.getElementById('add-group-menu').classList.toggle('hidden')
@@ -2612,7 +2607,7 @@ function renderOrders() {
         <span class="text-xs font-bold px-3 py-1 rounded-full ${statusColor[o.status]}">${statusLabel[o.status]}</span>
       </div>
       <div class="space-y-1 border-t border-gray-50 pt-3">
-        ${o.items.map(i => `<div class="flex justify-between text-sm"><span class="text-gray-600">${i.name} × ${i.unit && i.unit !== 'قطعة' ? `${i.qty} ${i.unit}` : i.qty}</span><span class="font-bold text-gray-800">${Number(i.subtotal).toFixed(2)} ج.م</span></div>`).join('')}
+        ${o.items.map(i => `<div class="flex justify-between text-sm"><span class="text-gray-600">${i.name} × ${i.qty}</span><span class="font-bold text-gray-800">${Number(i.subtotal).toFixed(2)} ج.م</span></div>`).join('')}
         ${o.delivery_fee ? `<div class="flex justify-between text-sm"><span class="text-gray-500">🛵 رسوم التوصيل</span><span class="font-bold text-gray-700">${Number(o.delivery_fee).toFixed(2)} ج.م</span></div>` : ''}
         <div class="flex justify-between text-sm font-extrabold pt-2 border-t border-gray-100"><span>الإجمالي</span><span class="text-orange-500">${Number(o.total).toFixed(2)} ج.م</span></div>
       </div>
@@ -2662,7 +2657,7 @@ function openOrderDetailModal(orderId) {
   // المنتجات
   document.getElementById('od-items').innerHTML = (order.items || []).map(i => `
     <div class="flex justify-between text-sm">
-      <span class="text-gray-600">${i.name} × ${i.unit && i.unit !== 'قطعة' ? `${i.qty} ${i.unit}` : i.qty}${i.options?.length ? `<br><span class="text-xs text-gray-400">${Array.isArray(i.options) ? i.options.map(op => op.label || op).join('، ') : i.options}</span>` : ''}</span>
+      <span class="text-gray-600">${i.name} × ${i.qty}${i.options?.length ? `<br><span class="text-xs text-gray-400">${i.options.map(op => op.label || op).join('، ')}</span>` : ''}</span>
       <span class="font-bold text-gray-800 whitespace-nowrap">${Number(i.subtotal || 0).toFixed(2)} ج.م</span>
     </div>`).join('')
 
@@ -2897,7 +2892,6 @@ function normalizePhone(raw) {
 }
 async function saveSettings() {
   const name        = document.getElementById('set-name').value.trim()
-  const about_text  = document.getElementById('set-about').value.trim() || null
   const whatsappRaw  = document.getElementById('set-whatsapp').value.trim()
   const logo_url = document.getElementById('set-logo').value.trim()  || null
   const cover_url= document.getElementById('set-cover').value.trim() || null
@@ -2914,9 +2908,9 @@ async function saveSettings() {
   const whatsapp = ph.value
   document.getElementById('set-whatsapp').value = whatsapp
 
-  settingsSnapshot = { name, about_text, whatsapp, logo_url, primary }
+  settingsSnapshot = { name, whatsapp, logo_url, primary }
 
-  const updatePayload = { name, about_text, whatsapp, logo_url, cover_url, theme: { primary, secondary:'#1A1A1A' }, price_per_km: price_per_km ?? null, lat: restLat, lng: restLng }
+  const updatePayload = { name, whatsapp, logo_url, cover_url, theme: { primary, secondary:'#1A1A1A' }, price_per_km: price_per_km ?? null, lat: restLat, lng: restLng }
   // كلمة سر الأدمن — تُحفظ فقط لو القسم ظاهر (يعني الدخول الحالي أدمن)
   const apEl = document.getElementById('set-admin-passcode')
   const apSectionVisible = apEl && !document.getElementById('admin-passcode-section').classList.contains('hidden')
@@ -2925,7 +2919,7 @@ async function saveSettings() {
   const { error } = await db.from('restaurants').update(updatePayload).eq('id', state.restaurant.id)
   if (error) { msgEl.textContent='حدث خطأ أثناء الحفظ'; msgEl.className='text-center text-sm text-red-500' }
   else {
-    state.restaurant.name=name; state.restaurant.about_text=about_text; state.restaurant.price_per_km=price_per_km; state.restaurant.lat=restLat; state.restaurant.lng=restLng
+    state.restaurant.name=name; state.restaurant.price_per_km=price_per_km; state.restaurant.lat=restLat; state.restaurant.lng=restLng
     if (apSectionVisible) state.restaurant.admin_passcode = updatePayload.admin_passcode
     document.getElementById('dash-restaurant-name').textContent=name; document.getElementById('undo-settings-btn').classList.remove('hidden'); msgEl.textContent='تم الحفظ بنجاح ✅'; msgEl.className='text-center text-sm text-green-500'; showToast('تم حفظ الإعدادات ✅')
   }
@@ -2935,7 +2929,6 @@ async function saveSettings() {
 function undoSettings() {
   if (!settingsSnapshot) return
   document.getElementById('set-name').value     = settingsSnapshot.name
-  document.getElementById('set-about').value    = settingsSnapshot.about_text || ''
   document.getElementById('set-whatsapp').value = settingsSnapshot.whatsapp
   document.getElementById('set-logo').value     = settingsSnapshot.logo_url || ''
   document.getElementById('set-color').value     = settingsSnapshot.primary
@@ -3012,7 +3005,7 @@ function handleOrderUpdatedElsewhere(order) {
 }
 function showNewOrderPopup(order) {
   document.getElementById('nop-order-num').textContent = order.order_number
-  document.getElementById('nop-items').innerHTML = (order.items||[]).map(i => `<div class="flex justify-between text-sm"><span class="text-gray-600 font-bold">${i.name} × ${i.unit && i.unit !== 'قطعة' ? `${i.qty} ${i.unit}` : i.qty}</span><span class="font-extrabold text-gray-800">${Number(i.subtotal).toFixed(2)} ج.م</span></div>`).join('')
+  document.getElementById('nop-items').innerHTML = (order.items||[]).map(i => `<div class="flex justify-between text-sm"><span class="text-gray-600 font-bold">${i.name} × ${i.qty}</span><span class="font-extrabold text-gray-800">${Number(i.subtotal).toFixed(2)} ج.م</span></div>`).join('')
   + (order.delivery_fee ? `<div class="flex justify-between text-sm border-t border-gray-100 pt-1.5 mt-1"><span class="text-gray-500 font-bold">🛵 رسوم التوصيل</span><span class="font-extrabold text-gray-700">${Number(order.delivery_fee).toFixed(2)} ج.م</span></div>` : '')
   document.getElementById('nop-total').textContent = Number(order.total).toFixed(2) + ' ج.م'
   const meta = []

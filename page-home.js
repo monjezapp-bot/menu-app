@@ -23,11 +23,11 @@ function renderHeader() {
     taglineEl.textContent = S.categories.slice(0, 5).map(c => c.name).join('، ')
   }
 
-  // نبذة عن المتجر (لو التاجر كتبها)
-  const aboutEl = document.getElementById('hero-card-about')
-  if (aboutEl) {
-    if (S.restaurant.about_text) { aboutEl.textContent = S.restaurant.about_text; aboutEl.classList.remove('hidden') }
-    else aboutEl.classList.add('hidden')
+  // رقم التواصل
+  const phone = normalizeWhatsAppNumber(S.restaurant.whatsapp)
+  if (phone) {
+    const callBtn = document.getElementById('call-restaurant-btn')
+    if (callBtn) { callBtn.href = `tel:+${phone}`; callBtn.style.display = 'inline-flex' }
   }
 }
 
@@ -261,6 +261,8 @@ function renderAllSections(filtered) {
   }
   noRes.classList.add('hidden')
 
+  const chunk = (arr, size) => { const out = []; for (let i = 0; i < arr.length; i += size) out.push(arr.slice(i, i + size)); return out }
+
   const prodsHTML = S.categories.map(cat => {
     const items = prods.filter(p => p.category_id === cat.id)
     if (!items.length) return ''
@@ -269,7 +271,9 @@ function renderAllSections(filtered) {
       ? `<div class="products-list">${items.map(p => prodCardListHTML(p)).join('')}</div>`
       : style === 'scroll'
         ? `<div class="products-scroll">${items.map(p => prodCardHTML(p)).join('')}</div>`
-        : `<div class="products-grid">${items.map(p => prodCardHTML(p)).join('')}</div>`
+        : style === 'scroll_compact'
+          ? `<div class="products-scroll-compact">${chunk(items, 10).map(group => `<div class="scroll-compact-block">${group.map(p => prodTileHTML(p)).join('')}</div>`).join('')}</div>`
+          : `<div class="products-grid">${items.map(p => prodCardHTML(p)).join('')}</div>`
     return `<div id="sec-${cat.id}" class="fade-up" style="margin-top:4px">
       <p class="section-title">${cat.name}</p>
       ${body}
@@ -378,6 +382,39 @@ function prodCardListHTML(p) {
       ${discPct >= 5 && !p.offer_badge ? `<div class="disc-pct">-${discPct}%</div>` : ''}
       ${unavailable ? `<div class="unavail-overlay"></div>` : ''}
     </div>
+  </div>`
+}
+
+// ── PRODUCT COMPACT TILE HTML (small square, wrapping scroll) ─────────
+function prodTileHTML(p) {
+  const ci          = S.cart.find(c => c.id === p.id && c.type === 'product')
+  const hasDiscount = isDiscountActive(p)
+  const unavailable = p.availability === 'unavailable' || p.status === 'unavailable'
+  const discPct     = hasDiscount ? Math.round((1 - Number(p.discount_price) / Number(p.price)) * 100) : 0
+
+  const priceHTML = hasDiscount
+    ? `<div class="price-row"><span class="price-new">${fmt(p.discount_price)}</span></div>`
+    : `<span class="price-normal">${fmt(p.price)}</span>`
+
+  return `<div class="prod-tile${unavailable ? ' opacity-60' : ''}"
+       onclick="${unavailable ? '' : `openModal('${p.id}')`}"
+       style="${unavailable ? 'cursor:default' : ''}">
+    <div class="thumb">
+      ${p.image_url ? `<img src="${p.image_url}" alt="${p.name}" loading="lazy" onload="this.classList.add('loaded'); this.parentElement.classList.add('img-ready')" onerror="this.parentElement.classList.add('img-ready')" />` : `<div class="no-img">🍽️</div>`}
+      ${p.offer_badge ? `<div class="offer-badge sm">${p.offer_badge}</div>` : ''}
+      ${discPct >= 5 && !p.offer_badge ? `<div class="disc-pct sm">-${discPct}%</div>` : ''}
+      ${unavailable ? `<div class="unavail-overlay"></div>` : ''}
+      ${!ci && !unavailable ? `<button class="add-btn sm" onclick="event.stopPropagation(); quickAdd('${p.id}')">+</button>` : ''}
+      ${ci ? `<div class="tile-qty" onclick="event.stopPropagation()">
+               <div class="qty-btn sm" onclick="cQty('${p.id}','product',-1)">−</div>
+               <span style="font-size:11px;font-weight:900;min-width:14px;text-align:center">${ci.qty}</span>
+               <div class="qty-btn sm" onclick="cQty('${p.id}','product',1)">+</div>
+             </div>` : ''}
+    </div>
+    <h3>${p.name}</h3>
+    ${unavailable
+      ? `<span style="font-size:9px;background:#f0f0f0;color:#999;font-weight:700;padding:3px 6px;border-radius:6px;display:inline-block">غير متوفر</span>`
+      : priceHTML}
   </div>`
 }
 
