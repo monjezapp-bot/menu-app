@@ -604,7 +604,7 @@
     ══════════════════════════════════════════ */
     .prod-page      { max-width: 480px; margin: 0 auto; padding-bottom: calc(96px + env(safe-area-inset-bottom)); animation: pageIn 0.25s ease both; }
     .prod-hero      { position: relative; height: 190px; background: #f0f0f0; overflow: hidden; }
-    .prod-hero img  { width: 100%; height: 100%; object-fit: cover; }
+    .prod-hero img  { width: 100%; height: 100%; object-fit: cover; object-position: center; }
     .prod-hero-placeholder { width: 100%; height: 100%; display: flex; align-items: center; justify-content: center; font-size: 80px; background: linear-gradient(135deg, #f5f5f5, #eee); }
     .prod-hero-overlay     { position: absolute; inset: 0; background: linear-gradient(to top, rgba(0,0,0,0.72) 0%, rgba(0,0,0,0.15) 45%, transparent 65%); }
     .prod-back-btn  { position: absolute; top: 14px; right: 14px; width: 36px; height: 36px; border-radius: 50%; background: rgba(0,0,0,0.35); backdrop-filter: blur(8px); border: none; color: #fff; font-size: 20px; display: flex; align-items: center; justify-content: center; cursor: pointer; font-family: 'Rubik', sans-serif; z-index: 2; }
@@ -639,7 +639,7 @@
     .also-scroll  { display: flex; gap: 10px; overflow-x: auto; margin: 0 -18px; padding: 0 18px 4px; }
     .also-scroll::-webkit-scrollbar { display: none; }
     .also-card    { flex-shrink: 0; width: 100px; border-radius: 14px; overflow: hidden; border: 1.5px solid #f0f0f0; background: #fff; cursor: pointer; position: relative; transition: border-color 0.15s; }
-    .also-card img      { width: 100%; height: 58px; object-fit: cover; }
+    .also-card img      { width: 100%; height: 58px; object-fit: cover; object-position: center; }
     .also-card .also-no-img { width: 100%; height: 58px; background: #f8f8f8; display: flex; align-items: center; justify-content: center; font-size: 24px; }
     .also-card .also-info   { padding: 5px 7px 6px; }
     .also-card .also-name   { font-size: 11px; font-weight: 700; color: #1a1a1a; line-height: 1.3; margin-bottom: 2px; }
