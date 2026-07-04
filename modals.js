@@ -53,6 +53,9 @@ function openModal(pid) {
         ${p.image_url ? `<img src="${p.image_url}" alt="${p.name}" />` : `<div class="prod-hero-placeholder">🍽️</div>`}
         <div class="prod-hero-overlay"></div>
         <button class="prod-back-btn" onclick="closeModal()">←</button>
+        <button class="prod-back-btn prod-share-btn" onclick="shareItem('product','${pid}')" aria-label="مشاركة المنتج">
+          <svg width="17" height="17" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.3" stroke-linecap="round" stroke-linejoin="round"><path d="M4 12v7a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2v-7"/><polyline points="16 6 12 2 8 6"/><line x1="12" y1="2" x2="12" y2="15"/></svg>
+        </button>
         ${p.offer_badge ? `<div class="prod-badge">${p.offer_badge}</div>` : ''}
       </div>
       <div class="prod-body">
@@ -201,6 +204,9 @@ function openBundleModal(bid) {
         ? `<img src="${b.image_url}" alt="${b.name}" style="width:100%;height:210px;object-fit:cover" />`
         : `<div style="width:100%;height:170px;background:linear-gradient(135deg,var(--brand2),var(--brand));display:flex;align-items:center;justify-content:center;font-size:72px">🎁</div>`}
       <button onclick="closeBundleModal()" style="position:absolute;top:12px;left:12px;width:36px;height:36px;border-radius:50%;background:rgba(0,0,0,0.45);backdrop-filter:blur(4px);color:#fff;font-size:20px;font-weight:700;display:flex;align-items:center;justify-content:center">&times;</button>
+      <button onclick="shareItem('bundle','${bid}')" aria-label="مشاركة العرض" style="position:absolute;top:12px;right:12px;width:36px;height:36px;border-radius:50%;background:rgba(0,0,0,0.45);backdrop-filter:blur(4px);color:#fff;display:flex;align-items:center;justify-content:center">
+        <svg width="17" height="17" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.3" stroke-linecap="round" stroke-linejoin="round"><path d="M4 12v7a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2v-7"/><polyline points="16 6 12 2 8 6"/><line x1="12" y1="2" x2="12" y2="15"/></svg>
+      </button>
     </div>
     <div style="padding:18px 16px 24px">
       <div style="display:flex;align-items:flex-start;justify-content:space-between;gap:10px;margin-bottom:8px">
@@ -225,6 +231,40 @@ function closeBundleModal(fromPopstate) {
   if (!fromPopstate) popModalSilently('bundle')
 }
 
+// ── SHARE (مشاركة منتج أو عرض برابط مباشر) ─────────────────────────────
+async function shareItem(type, id) {
+  const item = type === 'bundle'
+    ? S.bundles.find(x => String(x.id) === String(id))
+    : S.products.find(x => x.id === id)
+  if (!item) return
+
+  const params = new URLSearchParams(location.search)
+  params.delete('p'); params.delete('b')
+  params.set(type === 'bundle' ? 'b' : 'p', id)
+  const url = `${location.origin}${location.pathname}?${params.toString()}`
+
+  if (navigator.share) {
+    try { await navigator.share({ title: item.name, text: item.name, url }) }
+    catch (e) { /* المستخدم لغى نافذة المشاركة — تجاهل */ }
+  } else {
+    try {
+      await navigator.clipboard.writeText(url)
+      showToast('🔗 تم نسخ رابط ' + (type === 'bundle' ? 'العرض' : 'المنتج'))
+    } catch (e) {
+      showToast('تعذّر نسخ الرابط')
+    }
+  }
+}
+
+// لو العميل داخل من رابط مشاركة (?p=معرف المنتج أو ?b=معرف العرض) — افتح المودال تلقائياً
+function openSharedLinkIfAny() {
+  const params = new URLSearchParams(location.search)
+  const pid = params.get('p')
+  const bid = params.get('b')
+  if (pid && S.products.find(x => x.id === pid)) openModal(pid)
+  else if (bid && S.bundles.find(x => String(x.id) === String(bid))) openBundleModal(bid)
+}
+
 // ── CART ──────────────────────────────────────────────────────────────
 function quickAdd(pid) {
   const p = S.products.find(x => x.id === pid); if (!p) return
@@ -234,8 +274,6 @@ function quickAdd(pid) {
   const ci    = S.cart.find(c => c.id === pid && c.type === 'product')
   if (ci) { ci.qty += 1 } else { S.cart.push({ id: pid, type: 'product', name: p.name, price, image_url: p.image_url, qty: 1, unit: 'قطعة' }) }
   saveCart(); updateCartUI()
-  // إخفاء زرار "+" بدلاً من إعادة بناء الصفحة كاملة (كان يهدم كل الصور ويعيد تحميلها من الصفر)
-  document.querySelectorAll(`.prod-card .add-btn[onclick*="quickAdd('${pid}')"]`).forEach(btn => btn.style.display = 'none')
 }
 function addBundleToCart(bid) {
   const b  = S.bundles.find(x => String(x.id) === String(bid)); if (!b) return
@@ -250,10 +288,6 @@ function cQty(id, type, d) {
   if (removed) S.cart.splice(idx, 1)
   saveCart(); updateCartUI()
   if (!document.getElementById('cart-sheet').classList.contains('hidden')) renderCartItems()
-  // لو اتشال المنتج بالكامل من السلة، رجّع زرار "+" يظهر في كارته بالصفحة الرئيسية (بدون إعادة بناء باقي الصفحة)
-  if (removed && type === 'product') {
-    document.querySelectorAll(`.prod-card .add-btn[onclick*="quickAdd('${id}')"]`).forEach(btn => btn.style.display = '')
-  }
 }
 function cartTotal() { return S.cart.reduce((s, c) => s + c.price * c.qty, 0) }
 function updateCartUI() {

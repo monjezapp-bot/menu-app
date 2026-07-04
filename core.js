@@ -149,6 +149,7 @@ async function boot() {
     renderAllSections()
     updateCartUI()
     showState('app')
+    openSharedLinkIfAny()
     initScrollBehavior()
     initScrollSpy()
     initAuthListener()   // ← لازم تتسجل قبل أي قراءة session، عشان ما نفوّتش SIGNED_IN لو جايين من Google redirect
