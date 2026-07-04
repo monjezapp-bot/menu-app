@@ -49,6 +49,43 @@ const S = {
   coinTxs:       [],     // حركات المحفظة
 }
 
+// ── DYNAMIC PER-MERCHANT PWA MANIFEST / HOME-SCREEN ICON ──────────────
+function applyDynamicManifest(r) {
+  try {
+    const icon  = r.logo_url || './icon-512.png'
+    const name  = r.name || 'المنيو'
+    const brand = (r.theme && r.theme.brand_color) || '#FF6B00'
+
+    const manifest = {
+      name, short_name: name.length > 12 ? name.slice(0, 12) : name,
+      description: `منيو ${name} - اطلب أونلاين`,
+      start_url: `./index.html?r=${encodeURIComponent(r.slug)}`,
+      scope: './', display: 'standalone',
+      background_color: '#ffffff', theme_color: brand,
+      orientation: 'portrait', dir: 'rtl', lang: 'ar',
+      icons: [
+        { src: icon, sizes: '192x192', type: 'image/png', purpose: 'any maskable' },
+        { src: icon, sizes: '512x512', type: 'image/png', purpose: 'any maskable' }
+      ]
+    }
+    const url = URL.createObjectURL(new Blob([JSON.stringify(manifest)], { type: 'application/manifest+json' }))
+
+    let link = document.querySelector('link[rel="manifest"]')
+    if (!link) { link = document.createElement('link'); link.rel = 'manifest'; document.head.appendChild(link) }
+    link.setAttribute('href', url)
+
+    let appleIcon = document.querySelector('link[rel="apple-touch-icon"]')
+    if (!appleIcon) { appleIcon = document.createElement('link'); appleIcon.rel = 'apple-touch-icon'; document.head.appendChild(appleIcon) }
+    appleIcon.setAttribute('href', icon)
+
+    let appleTitle = document.querySelector('meta[name="apple-mobile-web-app-title"]')
+    if (!appleTitle) { appleTitle = document.createElement('meta'); appleTitle.setAttribute('name', 'apple-mobile-web-app-title'); document.head.appendChild(appleTitle) }
+    appleTitle.setAttribute('content', name)
+
+    document.title = name
+  } catch (e) { /* ignore — fallback to default manifest.json */ }
+}
+
 // ── CART PERSISTENCE ──────────────────────────────────────────────────
 function cartKey()  { return 'cart_' + (new URLSearchParams(location.search).get('r') || 'default') }
 function saveCart() { try { localStorage.setItem(cartKey(), JSON.stringify(S.cart)) } catch(e) {} }
@@ -186,6 +223,7 @@ async function loadData(slug) {
 
   if (rErr || !r) throw new Error('المطعم غير موجود أو غير نشط')
   S.restaurant = r
+  applyDynamicManifest(r)
 
   const [catRes, prodRes, bundleRes, bannerRes, branchRes] = await Promise.all([
     db.from('categories').select('id,name,sort_order,icon_url,display_style').eq('restaurant_id', r.id).order('sort_order'),
