@@ -1752,7 +1752,8 @@ function openBannerModal(id = null) {
   document.getElementById('bnm-error').classList.add('hidden')
   document.getElementById('bnm-image-preview-wrap').classList.add('hidden')
   document.getElementById('bnm-link-product').innerHTML  = state.products.map(p  => `<option value="${p.id}">${p.name}</option>`).join('')
-  document.getElementById('bnm-link-category').innerHTML = state.categories.map(c => `<option value="${c.id}">${c.name}</option>`).join('')
+  const bundlesOpt = state.bundles && state.bundles.length ? `<option value="bundles">🎁 كل العروض (صفحة العروض)</option>` : ''
+  document.getElementById('bnm-link-category').innerHTML = bundlesOpt + state.categories.map(c => `<option value="${c.id}">${c.name}</option>`).join('')
   if (id) {
     const b = state.banners.find(x => x.id === id)
     document.getElementById('bnm-image').value            = b.image_url || ''
