@@ -2552,7 +2552,12 @@ function openBundleModal(id = null) {
   }
 
   if (id) {
-    const b = state.bundles.find(x => x.id === id)
+    const b = state.bundles.find(x => String(x.id) === String(id))
+    if (!b) {
+      console.error('openBundleModal: bundle not found for id', id)
+      showToast('تعذر فتح العرض — جرب تضغط تعديل تاني')
+      return
+    }
     document.getElementById('bm-name').value     = b.name
     document.getElementById('bm-desc').value     = b.description || ''
     document.getElementById('bm-price').value    = b.price
@@ -2641,8 +2646,8 @@ async function saveBundle() {
 
   closeBundleModal(); await loadBundles(); showToast(id ? 'تم تعديل العرض ✅' : 'تم إضافة العرض ✅')
 }
-async function toggleBundle(id, current) { await db.from('bundles').update({ is_active: !current }).eq('id', id); await loadBundles(); showToast(!current ? 'تم تفعيل العرض' : 'تم إيقاف العرض') }
-async function deleteBundle(id) { const ok = await showConfirm('هل تريد حذف هذا العرض؟', 'حذف'); if (!ok) return; await db.from('bundles').delete().eq('id', id); await loadBundles(); showToast('تم حذف العرض') }
+async function toggleBundle(id, current) { const { error } = await db.from('bundles').update({ is_active: !current }).eq('id', id); if (error) { console.error('toggleBundle error:', error); showToast('فشل تحديث حالة العرض: ' + error.message); return } await loadBundles(); showToast(!current ? 'تم تفعيل العرض' : 'تم إيقاف العرض') }
+async function deleteBundle(id) { const ok = await showConfirm('هل تريد حذف هذا العرض؟', 'حذف'); if (!ok) return; const { error } = await db.from('bundles').delete().eq('id', id); if (error) { console.error('deleteBundle error:', error); showToast('فشل حذف العرض: ' + error.message); return } await loadBundles(); showToast('تم حذف العرض') }
 
 // ── CUSTOMERS TAB ─────────────────────────────────────────────────────
 let _allCustomers = []
