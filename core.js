@@ -50,30 +50,19 @@ const S = {
 }
 
 // ── DYNAMIC PER-MERCHANT PWA MANIFEST / HOME-SCREEN ICON ──────────────
-function applyDynamicManifest(r) {
+// المانيفست بيتقرا من Edge Function برابط ثابت (مش Blob) عشان أندرويد
+// يقدر يتأكد منه في أي وقت من غير ما يرجع للملف العام الموحّد.
+function setManifestLink(slug) {
   try {
-    const icon  = r.logo_url || './icon-512.png'
-    const name  = r.name || 'المنيو'
-    const brand = (r.theme && r.theme.brand_color) || '#FF6B00'
-
-    const manifest = {
-      id: `./index.html?r=${encodeURIComponent(r.slug)}`,
-      name, short_name: name.length > 12 ? name.slice(0, 12) : name,
-      description: `منيو ${name} - اطلب أونلاين`,
-      start_url: `./index.html?r=${encodeURIComponent(r.slug)}`,
-      scope: './', display: 'standalone',
-      background_color: '#ffffff', theme_color: brand,
-      orientation: 'portrait', dir: 'rtl', lang: 'ar',
-      icons: [
-        { src: icon, sizes: '192x192', type: 'image/png', purpose: 'any maskable' },
-        { src: icon, sizes: '512x512', type: 'image/png', purpose: 'any maskable' }
-      ]
-    }
-    const url = URL.createObjectURL(new Blob([JSON.stringify(manifest)], { type: 'application/manifest+json' }))
-
     let link = document.querySelector('link[rel="manifest"]')
     if (!link) { link = document.createElement('link'); link.rel = 'manifest'; document.head.appendChild(link) }
-    link.setAttribute('href', url)
+    link.setAttribute('href', `https://pcmyugeqveyjnappulng.supabase.co/functions/v1/manifest?r=${encodeURIComponent(slug)}`)
+  } catch (e) {}
+}
+function applyDynamicManifest(r) {
+  try {
+    const icon = r.logo_url || './icon-192.png'
+    const name = r.name || 'المنيو'
 
     let appleIcon = document.querySelector('link[rel="apple-touch-icon"]')
     if (!appleIcon) { appleIcon = document.createElement('link'); appleIcon.rel = 'apple-touch-icon'; document.head.appendChild(appleIcon) }
@@ -84,7 +73,7 @@ function applyDynamicManifest(r) {
     appleTitle.setAttribute('content', name)
 
     document.title = name
-  } catch (e) { /* ignore — fallback to default manifest.json */ }
+  } catch (e) {}
 }
 
 // ── CART PERSISTENCE ──────────────────────────────────────────────────
@@ -147,6 +136,7 @@ async function boot() {
 
   _lastSlug = slug
   if (!slug) return showError('لم يتم تحديد المطعم. تأكد من الرابط الذي تستخدمه.', false)
+  setManifestLink(slug)
 
   try {
     await loadData(slug)
