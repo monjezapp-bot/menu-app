@@ -57,6 +57,7 @@ function applyDynamicManifest(r) {
     const brand = (r.theme && r.theme.brand_color) || '#FF6B00'
 
     const manifest = {
+      id: `./index.html?r=${encodeURIComponent(r.slug)}`,
       name, short_name: name.length > 12 ? name.slice(0, 12) : name,
       description: `منيو ${name} - اطلب أونلاين`,
       start_url: `./index.html?r=${encodeURIComponent(r.slug)}`,
