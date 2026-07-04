@@ -333,7 +333,11 @@ function initBundleAutoScroll() {
   let idx = 0
   const advance = () => {
     idx = (idx + 1) % track.children.length
-    track.children[idx].scrollIntoView({ behavior: 'smooth', inline: 'start', block: 'nearest' })
+    const child     = track.children[idx]
+    const trackRect = track.getBoundingClientRect()
+    const childRect = child.getBoundingClientRect()
+    const delta     = childRect.left - trackRect.left
+    track.scrollBy({ left: delta, behavior: 'smooth' })
   }
   _bundleAutoTimer = setInterval(advance, 2800)
   const pauseThenResume = () => {
