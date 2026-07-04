@@ -2436,8 +2436,10 @@ async function saveProduct() {
     product_options: getOptionsData().length ? getOptionsData()             : null,
     also_with:       _alsoWith.length        ? [..._alsoWith]               : null
   }
-  if (id) await db.from('products').update(payload).eq('id', id)
-  else    await db.from('products').insert({ ...payload, restaurant_id: state.restaurant.id, sort_order: state.products.length })
+  const { error } = id
+    ? await db.from('products').update(payload).eq('id', id)
+    : await db.from('products').insert({ ...payload, restaurant_id: state.restaurant.id, sort_order: state.products.length })
+  if (error) { errEl.textContent = 'فشل الحفظ: ' + error.message; errEl.classList.remove('hidden'); console.error('saveProduct error:', error); return }
   closeProductModal(); await loadProducts(); showToast(id ? 'تم تعديل المنتج ✅' : 'تم إضافة المنتج ✅')
 }
 async function deleteProduct(id) {
@@ -2454,8 +2456,8 @@ async function restoreProduct() {
   productSnapshot = null
   await loadProducts(); showToast('تم استعادة المنتج ✅')
 }
-async function toggleDiscount(id, current)    { await db.from('products').update({ discount_active: !current }).eq('id', id); await loadProducts(); showToast(!current ? '🏷️ تم تفعيل الخصم' : 'تم إلغاء الخصم') }
-async function toggleAvailability(id, current){ await db.from('products').update({ is_available: !current }).eq('id', id); await loadProducts(); showToast(!current ? '✅ المنتج متاح' : '🚫 تم الإخفاء') }
+async function toggleDiscount(id, current)    { const { error } = await db.from('products').update({ discount_active: !current }).eq('id', id); if (error) { console.error('toggleDiscount error:', error); showToast('فشل تحديث الخصم: ' + error.message); return } await loadProducts(); showToast(!current ? '🏷️ تم تفعيل الخصم' : 'تم إلغاء الخصم') }
+async function toggleAvailability(id, current){ const { error } = await db.from('products').update({ is_available: !current }).eq('id', id); if (error) { console.error('toggleAvailability error:', error); showToast('فشل تحديث الحالة: ' + error.message); return } await loadProducts(); showToast(!current ? '✅ المنتج متاح' : '🚫 تم الإخفاء') }
 
 // ── BUNDLES ───────────────────────────────────────────────────────────
 async function loadBundles() {
