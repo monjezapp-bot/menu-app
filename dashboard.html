@@ -487,7 +487,7 @@
         <span>📍</span><span id="bm-map-pick-label">اضغط لتحديد الموقع</span>
       </button>
     </div>
-    <p id="bm-error" class="text-red-500 text-xs text-center hidden"></p>
+    <p id="brm-error" class="text-red-500 text-xs text-center hidden"></p>
     <button onclick="saveBranch()" class="w-full bg-orange-500 text-white font-bold rounded-xl py-3">حفظ الفرع</button>
   </div>
 </div>
@@ -1814,6 +1814,7 @@ async function saveBanner() {
   const linkType = document.getElementById('bnm-link-type').value
   const errEl    = document.getElementById('bnm-error')
   if (!image) { errEl.textContent = 'صورة البنر مطلوبة'; errEl.classList.remove('hidden'); return }
+  if (_uploadsInFlight > 0) { errEl.textContent = 'استنى ثانية… الصورة لسه بترفع'; errEl.classList.remove('hidden'); return }
   errEl.classList.add('hidden')
   let linkValue = null
   if (linkType === 'external') linkValue = document.getElementById('bnm-link-external').value.trim() || null
@@ -1822,12 +1823,14 @@ async function saveBanner() {
   const startsRaw = document.getElementById('bnm-starts').value
   const endsRaw   = document.getElementById('bnm-ends').value
   const payload   = { image_url: image, link_type: linkType === 'none' ? 'external' : linkType, link_value: linkValue, is_active: document.getElementById('bnm-active').checked, starts_at: startsRaw ? new Date(startsRaw).toISOString() : null, ends_at: endsRaw ? new Date(endsRaw).toISOString() : null, restaurant_id: state.restaurant.id, sort_order: id ? undefined : state.banners.length }
-  if (id) await db.from('banners').update(payload).eq('id', id)
-  else    await db.from('banners').insert(payload)
+  const { error } = id
+    ? await db.from('banners').update(payload).eq('id', id)
+    : await db.from('banners').insert(payload)
+  if (error) { errEl.textContent = 'خطأ: ' + error.message; errEl.classList.remove('hidden'); return }
   closeBannerModal(); await loadBanners(); showToast(id ? 'تم تعديل البنر ✅' : 'تم إضافة البنر ✅')
 }
-async function toggleBanner(id, current) { await db.from('banners').update({ is_active: !current }).eq('id', id); await loadBanners(); showToast(!current ? '🟢 البنر نشط' : 'تم إيقاف البنر') }
-async function deleteBanner(id) { const ok = await showConfirm('هل تريد حذف هذا البنر؟', 'حذف'); if (!ok) return; await db.from('banners').delete().eq('id', id); await loadBanners(); showToast('تم حذف البنر') }
+async function toggleBanner(id, current) { const { error } = await db.from('banners').update({ is_active: !current }).eq('id', id); if (error) { console.error('toggleBanner error:', error); showToast('فشل تحديث حالة البنر: ' + error.message); return } await loadBanners(); showToast(!current ? '🟢 البنر نشط' : 'تم إيقاف البنر') }
+async function deleteBanner(id) { const ok = await showConfirm('هل تريد حذف هذا البنر؟', 'حذف'); if (!ok) return; const { error } = await db.from('banners').delete().eq('id', id); if (error) { console.error('deleteBanner error:', error); showToast('فشل حذف البنر: ' + error.message); return } await loadBanners(); showToast('تم حذف البنر') }
 
 // ── CATEGORIES ────────────────────────────────────────────────────────
 async function loadCategories() {
@@ -2095,7 +2098,7 @@ function renderBranches() {
 let _branchPickedLat = null, _branchPickedLng = null
 function openBranchModal(id = null) {
   document.getElementById('bm-branch-id').value = id || ''
-  document.getElementById('bm-error').classList.add('hidden')
+  document.getElementById('brm-error').classList.add('hidden')
   _branchPickedLat = null; _branchPickedLng = null
   if (id) {
     const b = state.branches.find(x => x.id === id)
@@ -2123,7 +2126,7 @@ async function saveBranch() {
   const id       = document.getElementById('bm-branch-id').value
   const name     = document.getElementById('bm-branch-name').value.trim()
   const passcode = document.getElementById('bm-branch-passcode').value.trim()
-  const errEl    = document.getElementById('bm-error')
+  const errEl    = document.getElementById('brm-error')
   if (!name)                                    { errEl.textContent = 'اسم الفرع مطلوب';        errEl.classList.remove('hidden'); return }
   if (!passcode)                                { errEl.textContent = 'كلمة سر الفرع مطلوبة';    errEl.classList.remove('hidden'); return }
   if (_branchPickedLat === null)                { errEl.textContent = 'حدد موقع الفرع على الخريطة'; errEl.classList.remove('hidden'); return }
@@ -2439,6 +2442,7 @@ async function saveProduct() {
   if (isNaN(price))                              { errEl.textContent = 'السعر غير صحيح';   errEl.classList.remove('hidden'); return }
   if (!isNaN(discount) && discount >= price)     { errEl.textContent = 'سعر الخصم يجب أن يكون أقل من الأصلي'; errEl.classList.remove('hidden'); return }
   if (!category)                                 { errEl.textContent = 'يجب اختيار تصنيف للمنتج'; errEl.classList.remove('hidden'); document.getElementById('pm-category').focus(); return }
+  if (_uploadsInFlight > 0)                      { errEl.textContent = 'استنى ثانية… الصورة لسه بترفع'; errEl.classList.remove('hidden'); return }
   errEl.classList.add('hidden')
   const payload = {
     name,
@@ -2628,6 +2632,7 @@ async function saveBundle() {
     if (!name)                    { errEl.textContent = 'اسم العرض مطلوب';              errEl.classList.remove('hidden'); return }
     if (isNaN(price))             { errEl.textContent = 'السعر غير صحيح';              errEl.classList.remove('hidden'); return }
     if (!selectedProducts.length) { errEl.textContent = 'اختر منتجاً واحداً على الأقل'; errEl.classList.remove('hidden'); return }
+    if (_uploadsInFlight > 0)     { errEl.textContent = 'استنى ثانية… الصورة لسه بترفع';   errEl.classList.remove('hidden'); return }
 
     const items   = selectedProducts.map(pid => { const p = state.products.find(x => x.id === pid); return { product_id: pid, name: p?.name||'', price: p?.price||0, quantity: 1 } })
     const payload = { name, description: document.getElementById('bm-desc').value.trim() || null, price, items, image_url: document.getElementById('bm-image').value.trim() || null, is_active: document.getElementById('bm-active').checked, restaurant_id: state.restaurant.id }
@@ -3078,6 +3083,7 @@ async function saveSettings() {
   const restLng  = _restPickedLng !== null ? _restPickedLng : null
   const msgEl    = document.getElementById('settings-msg')
   if (!name||!whatsappRaw) { msgEl.textContent='الاسم ورقم التواصل مطلوبان'; msgEl.className='text-center text-sm text-red-500'; msgEl.classList.remove('hidden'); return }
+  if (_uploadsInFlight > 0) { msgEl.textContent='استنى ثانية… الصورة لسه بترفع'; msgEl.className='text-center text-sm text-red-500'; msgEl.classList.remove('hidden'); return }
 
   const ph = normalizePhone(whatsappRaw)
   if (!ph.ok) { msgEl.textContent = ph.reason; msgEl.className='text-center text-sm text-red-500'; msgEl.classList.remove('hidden'); return }
@@ -3361,8 +3367,10 @@ function playAlarm() {
 }
 
 // ── UPLOADS ───────────────────────────────────────────────────────────
+let _uploadsInFlight = 0
 async function _uploadImage(file, folder, previewId, wrapId, msgId) {
   const msgEl = document.getElementById(msgId); msgEl.textContent = 'جاري الرفع...'; msgEl.classList.remove('hidden')
+  _uploadsInFlight++
   try {
     const path = `${folder}/${state.restaurant.id}-${Date.now()}.${file.name.split('.').pop()}`
     const { error } = await db.storage.from('restaurant-images').upload(path, file, { upsert: true, contentType: file.type })
@@ -3372,6 +3380,7 @@ async function _uploadImage(file, folder, previewId, wrapId, msgId) {
     document.getElementById(previewId).src = url; document.getElementById(wrapId).classList.remove('hidden')
     msgEl.textContent = 'تم الرفع ✅'; return url
   } catch(e) { msgEl.textContent = 'فشل الرفع — جرب رابط URL' }
+  finally { _uploadsInFlight-- }
 }
 async function uploadLogoFile(input)    { const f = input.files[0]; if (!f) return; const u = await _uploadImage(f,'logos','logo-preview','logo-preview-wrap','logo-upload-msg'); if (u) document.getElementById('set-logo').value = u }
 async function uploadCoverFile(input)   { const f = input.files[0]; if (!f) return; const u = await _uploadImage(f,'covers','cover-preview','cover-preview-wrap','cover-upload-msg'); if (u) document.getElementById('set-cover').value = u }
