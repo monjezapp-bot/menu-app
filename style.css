@@ -419,7 +419,7 @@
     .prod-tile { width: 104px; scroll-snap-align: start; cursor: pointer; }
     .prod-tile:active { transform: scale(0.96); }
     .prod-tile .thumb {
-      position: relative; width: 104px; height: 104px; border-radius: 16px; overflow: hidden;
+      position: relative; width: 100%; padding-top: 100%; border-radius: 16px; overflow: hidden;
       background: linear-gradient(90deg, #e8e8e8 25%, #f4f4f4 50%, #e8e8e8 75%);
       background-size: 600px 100%; animation: shimmer 1.4s infinite linear; margin-bottom: 6px;
     }
