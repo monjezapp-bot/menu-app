@@ -2615,39 +2615,52 @@ function closeBundleModal(fromPopstate) {
   if (!fromPopstate) popModalSilently('bundle')
 }
 async function saveBundle() {
-  const id               = document.getElementById('bm-id').value
-  const name             = document.getElementById('bm-name').value.trim()
-  const price            = parseFloat(document.getElementById('bm-price').value)
-  const selectedProducts = [...document.querySelectorAll('.bundle-product-check:checked')].map(cb => cb.value)
-  const errEl            = document.getElementById('bm-error')
-  if (!name)                    { errEl.textContent = 'اسم العرض مطلوب';              errEl.classList.remove('hidden'); return }
-  if (isNaN(price))             { errEl.textContent = 'السعر غير صحيح';              errEl.classList.remove('hidden'); return }
-  if (!selectedProducts.length) { errEl.textContent = 'اختر منتجاً واحداً على الأقل'; errEl.classList.remove('hidden'); return }
+  const errEl = document.getElementById('bm-error')
+  const btn   = document.querySelector('#modal-bundle .flex.gap-3.pt-2 button.bg-orange-500')
+  const btnOriginalText = btn ? btn.textContent : ''
   errEl.classList.add('hidden')
-  const items   = selectedProducts.map(pid => { const p = state.products.find(x => x.id === pid); return { product_id: pid, name: p?.name||'', price: p?.price||0, quantity: 1 } })
-  const payload = { name, description: document.getElementById('bm-desc').value.trim() || null, price, items, image_url: document.getElementById('bm-image').value.trim() || null, is_active: document.getElementById('bm-active').checked, restaurant_id: state.restaurant.id }
+  if (btn) { btn.disabled = true; btn.textContent = '⏳ جاري الحفظ...' }
+  try {
+    const id               = document.getElementById('bm-id').value
+    const name             = document.getElementById('bm-name').value.trim()
+    const price            = parseFloat(document.getElementById('bm-price').value)
+    const selectedProducts = [...document.querySelectorAll('.bundle-product-check:checked')].map(cb => cb.value)
+    if (!name)                    { errEl.textContent = 'اسم العرض مطلوب';              errEl.classList.remove('hidden'); return }
+    if (isNaN(price))             { errEl.textContent = 'السعر غير صحيح';              errEl.classList.remove('hidden'); return }
+    if (!selectedProducts.length) { errEl.textContent = 'اختر منتجاً واحداً على الأقل'; errEl.classList.remove('hidden'); return }
 
-  let bundleId = id
-  if (id) {
-    const { error } = await db.from('bundles').update(payload).eq('id', id)
-    if (error) { errEl.textContent = 'خطأ: ' + error.message; errEl.classList.remove('hidden'); return }
-  } else {
-    const { data: nb, error } = await db.from('bundles').insert(payload).select('id').single()
-    if (error || !nb) { errEl.textContent = 'خطأ: ' + (error?.message || 'insert failed'); errEl.classList.remove('hidden'); return }
-    bundleId = nb.id
-  }
+    const items   = selectedProducts.map(pid => { const p = state.products.find(x => x.id === pid); return { product_id: pid, name: p?.name||'', price: p?.price||0, quantity: 1 } })
+    const payload = { name, description: document.getElementById('bm-desc').value.trim() || null, price, items, image_url: document.getElementById('bm-image').value.trim() || null, is_active: document.getElementById('bm-active').checked, restaurant_id: state.restaurant.id }
 
-  // حفظ ربط الفروع
-  if (state.branches.length > 1 && _role === 'admin') {
-    const selectedBranches = [...document.querySelectorAll('.bundle-branch-item:checked')].map(cb => cb.value)
-    await db.from('bundle_branches').delete().eq('bundle_id', bundleId)
-    // لو كل الفروع محددة = لا نحفظ أي قيد (يعني العرض لكل الفروع افتراضياً)
-    if (selectedBranches.length > 0 && selectedBranches.length < state.branches.length) {
-      await db.from('bundle_branches').insert(selectedBranches.map(bid => ({ bundle_id: bundleId, branch_id: bid })))
+    let bundleId = id
+    if (id) {
+      const { error } = await db.from('bundles').update(payload).eq('id', id)
+      if (error) { errEl.textContent = 'خطأ: ' + error.message; errEl.classList.remove('hidden'); return }
+    } else {
+      const { data: nb, error } = await db.from('bundles').insert(payload).select('id').single()
+      if (error || !nb) { errEl.textContent = 'خطأ: ' + (error?.message || 'insert failed'); errEl.classList.remove('hidden'); return }
+      bundleId = nb.id
     }
-  }
 
-  closeBundleModal(); await loadBundles(); showToast(id ? 'تم تعديل العرض ✅' : 'تم إضافة العرض ✅')
+    // حفظ ربط الفروع
+    if (state.branches.length > 1 && _role === 'admin') {
+      const selectedBranches = [...document.querySelectorAll('.bundle-branch-item:checked')].map(cb => cb.value)
+      const { error: delErr } = await db.from('bundle_branches').delete().eq('bundle_id', bundleId)
+      if (delErr) { errEl.textContent = 'خطأ في ربط الفروع: ' + delErr.message; errEl.classList.remove('hidden'); return }
+      if (selectedBranches.length > 0 && selectedBranches.length < state.branches.length) {
+        const { error: insErr } = await db.from('bundle_branches').insert(selectedBranches.map(bid => ({ bundle_id: bundleId, branch_id: bid })))
+        if (insErr) { errEl.textContent = 'خطأ في ربط الفروع: ' + insErr.message; errEl.classList.remove('hidden'); return }
+      }
+    }
+
+    closeBundleModal(); await loadBundles(); showToast(id ? 'تم تعديل العرض ✅' : 'تم إضافة العرض ✅')
+  } catch (e) {
+    errEl.textContent = 'خطأ غير متوقع: ' + (e?.message || e)
+    errEl.classList.remove('hidden')
+    console.error('saveBundle error:', e)
+  } finally {
+    if (btn) { btn.disabled = false; btn.textContent = btnOriginalText }
+  }
 }
 async function toggleBundle(id, current) { const { error } = await db.from('bundles').update({ is_active: !current }).eq('id', id); if (error) { console.error('toggleBundle error:', error); showToast('فشل تحديث حالة العرض: ' + error.message); return } await loadBundles(); showToast(!current ? 'تم تفعيل العرض' : 'تم إيقاف العرض') }
 async function deleteBundle(id) { const ok = await showConfirm('هل تريد حذف هذا العرض؟', 'حذف'); if (!ok) return; const { error } = await db.from('bundles').delete().eq('id', id); if (error) { console.error('deleteBundle error:', error); showToast('فشل حذف العرض: ' + error.message); return } await loadBundles(); showToast('تم حذف العرض') }
