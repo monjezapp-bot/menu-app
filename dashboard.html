@@ -640,9 +640,12 @@
     <div>
       <label class="text-xs font-bold text-gray-500 mb-1 block">طريقة عرض المنتجات</label>
       <input type="hidden" id="cm-style" value="grid" />
-      <div class="grid grid-cols-4 gap-2">
+      <div class="grid grid-cols-5 gap-2">
         <button type="button" onclick="setCatStyle('grid')" id="cm-style-grid" class="cat-style-btn border-2 border-gray-200 text-gray-500 rounded-xl py-3 px-1 text-center transition-colors">
           <div class="text-lg mb-1">▦</div><div class="text-[10px] font-bold">شبكة</div>
+        </button>
+        <button type="button" onclick="setCatStyle('grid_3')" id="cm-style-grid_3" class="cat-style-btn border-2 border-gray-200 text-gray-500 rounded-xl py-3 px-1 text-center transition-colors">
+          <div class="text-lg mb-1">⊞⊞⊞</div><div class="text-[10px] font-bold">شبكة مصغرة</div>
         </button>
         <button type="button" onclick="setCatStyle('list')" id="cm-style-list" class="cat-style-btn border-2 border-gray-200 text-gray-500 rounded-xl py-3 px-1 text-center transition-colors">
           <div class="text-lg mb-1">☰</div><div class="text-[10px] font-bold">قائمة</div>
@@ -1835,7 +1838,7 @@ async function loadCategories() {
 function renderCategories() {
   const el = document.getElementById('categories-list')
   if (!state.categories.length) { el.innerHTML = `<p class="text-center text-gray-400 text-sm py-8">لا توجد تصنيفات بعد</p>`; return }
-  const styleLbl = { grid: '▦ شبكة', list: '☰ قائمة', scroll: '⇄ سحب أفقي', scroll_compact: '⊞⇄ سحب مصغر' }
+  const styleLbl = { grid: '▦ شبكة', grid_3: '⊞⊞⊞ شبكة مصغرة', list: '☰ قائمة', scroll: '⇄ سحب أفقي', scroll_compact: '⊞⇄ سحب مصغر' }
   el.innerHTML = state.categories.map((c, i) => `
     <div class="bg-white rounded-2xl p-4 shadow-sm flex items-center justify-between">
       <div class="flex items-center gap-2">
@@ -1860,7 +1863,7 @@ function updateCategorySelect() {
 }
 function setCatStyle(style) {
   document.getElementById('cm-style').value = style
-  ;['grid','list','scroll','scroll_compact'].forEach(s => {
+  ;['grid','grid_3','list','scroll','scroll_compact'].forEach(s => {
     const btn = document.getElementById('cm-style-' + s)
     btn.classList.toggle('border-orange-500', s === style)
     btn.classList.toggle('text-orange-600', s === style)

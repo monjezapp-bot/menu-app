@@ -274,7 +274,9 @@ function renderAllSections(filtered) {
         ? `<div class="products-scroll">${items.map(p => prodCardHTML(p)).join('')}</div>`
         : style === 'scroll_compact'
           ? `<div class="products-scroll-compact">${chunk(items, 10).map(group => `<div class="scroll-compact-block">${group.map(p => prodTileHTML(p)).join('')}</div>`).join('')}</div>`
-          : `<div class="products-grid">${items.map(p => prodCardHTML(p)).join('')}</div>`
+          : style === 'grid_3'
+            ? `<div class="products-grid-3">${items.map(p => prodTileHTML(p)).join('')}</div>`
+            : `<div class="products-grid">${items.map(p => prodCardHTML(p)).join('')}</div>`
     return `<div id="sec-${cat.id}" class="fade-up" style="margin-top:4px">
       <p class="section-title">${cat.name}</p>
       ${body}
