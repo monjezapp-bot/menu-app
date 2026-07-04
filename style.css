@@ -494,16 +494,60 @@
     /* ══════════════════════════════════════════
        BUNDLE CARD
     ══════════════════════════════════════════ */
+    /* ══════════════════════════════════════════
+       BUNDLES / OFFERS — FEATURED STYLE
+    ══════════════════════════════════════════ */
     .bundle-card         { background: #fff; border-radius: 18px; overflow: hidden; margin: 0 16px 10px; cursor: pointer; border: 1.5px solid #efefef; transition: transform 0.15s; }
     .bundle-card:active  { transform: scale(0.98); }
-    .bundle-card img     { width: 100%; height: 155px; object-fit: cover; }
-    .bundle-card .no-img { width: 100%; height: 155px; background: linear-gradient(135deg, #fff5ee, #ffeee0); display: flex; align-items: center; justify-content: center; font-size: 52px; }
+    .bundle-media         { position: relative; width: 100%; height: 165px; }
+    .bundle-media img     { width: 100%; height: 100%; object-fit: cover; display: block; }
+    .bundle-media .no-img { width: 100%; height: 100%; background: linear-gradient(135deg, #fff5ee, #ffeee0); display: flex; align-items: center; justify-content: center; font-size: 52px; }
+    .bundle-gradient      { position: absolute; inset: 0; background: linear-gradient(180deg, rgba(0,0,0,0) 55%, rgba(0,0,0,0.45) 100%); pointer-events: none; }
+    .bundle-badge         { position: absolute; top: 10px; right: 10px; background: linear-gradient(135deg, #FF6B00, #FF3D57); color: #fff; font-size: 11px; font-weight: 900; padding: 5px 11px; border-radius: 20px; box-shadow: 0 2px 8px rgba(255,61,87,0.35); }
+    .bundle-badge.sm      { top: 6px; right: 6px; font-size: 9px; padding: 3px 8px; }
     .bundle-card .b-info { padding: 12px 14px 14px; }
     .bundle-card h3      { font-size: 15px; font-weight: 900; color: #1a1a1a; margin-bottom: 4px; }
     .bundle-card p       { font-size: 12px; color: #aaa; line-height: 1.6; margin-bottom: 10px; }
     .bundle-card .b-footer { display: flex; align-items: center; justify-content: space-between; }
     .bundle-card .b-price  { font-size: 17px; font-weight: 900; color: var(--brand); }
     .bundle-add            { background: var(--brand); color: #fff; font-size: 13px; font-weight: 800; padding: 9px 18px; border-radius: 12px; }
+    .bundle-add.sm         { padding: 6px 12px; font-size: 11px; border-radius: 10px; }
+
+    /* ══════════════════════════════════════════
+       BUNDLES — SCROLL STYLE
+    ══════════════════════════════════════════ */
+    .bundle-scroll { display: flex; gap: var(--sp-3); overflow-x: auto; padding: 0 16px 10px; scroll-snap-type: x proximity; -webkit-overflow-scrolling: touch; }
+    .bundle-scroll::-webkit-scrollbar { display: none; }
+    .bundle-scroll .bundle-card-scroll { flex: 0 0 240px; margin: 0; scroll-snap-align: start; }
+
+    /* ══════════════════════════════════════════
+       BUNDLES — GRID STYLE
+    ══════════════════════════════════════════ */
+    .bundle-grid { display: grid; grid-template-columns: repeat(2, 1fr); gap: var(--sp-3); padding: 0 16px 10px; }
+    .bundle-tile { background: #fff; border-radius: 16px; overflow: hidden; cursor: pointer; border: 1.5px solid #efefef; transition: transform 0.15s; }
+    .bundle-tile:active { transform: scale(0.96); }
+    .bundle-tile-media  { position: relative; width: 100%; height: 100px; }
+    .bundle-tile-media img     { width: 100%; height: 100%; object-fit: cover; display: block; }
+    .bundle-tile-media .no-img { width: 100%; height: 100%; background: linear-gradient(135deg, #fff5ee, #ffeee0); display: flex; align-items: center; justify-content: center; font-size: 32px; }
+    .bundle-tile-info   { padding: 8px 10px 10px; }
+    .bundle-tile-info h3 { font-size: 12px; font-weight: 800; color: #1a1a1a; margin-bottom: 6px; display: -webkit-box; -webkit-line-clamp: 1; -webkit-box-orient: vertical; overflow: hidden; }
+    .bundle-tile-info .b-footer { display: flex; align-items: center; justify-content: space-between; }
+    .bundle-tile-info .b-price  { font-size: 13px; font-weight: 900; color: var(--brand); }
+
+    /* ══════════════════════════════════════════
+       BUNDLES — LIST STYLE
+    ══════════════════════════════════════════ */
+    .bundle-list { display: flex; flex-direction: column; gap: var(--sp-3); padding: 0 16px 10px; }
+    .bundle-card-list { display: flex; background: #fff; border-radius: 16px; overflow: hidden; cursor: pointer; border: 1.5px solid #efefef; transition: transform 0.15s; }
+    .bundle-card-list:active { transform: scale(0.98); }
+    .bundle-list-media { position: relative; flex: 0 0 92px; width: 92px; }
+    .bundle-list-media img     { width: 100%; height: 100%; object-fit: cover; display: block; }
+    .bundle-list-media .no-img { width: 100%; height: 100%; background: linear-gradient(135deg, #fff5ee, #ffeee0); display: flex; align-items: center; justify-content: center; font-size: 26px; }
+    .bundle-list-info  { flex: 1; padding: 10px 14px; min-width: 0; display: flex; flex-direction: column; justify-content: center; }
+    .bundle-list-info h3 { font-size: 13px; font-weight: 800; color: #1a1a1a; margin-bottom: 3px; }
+    .bundle-list-info p  { font-size: 11px; color: #999; line-height: 1.4; margin-bottom: 6px; display: -webkit-box; -webkit-line-clamp: 1; -webkit-box-orient: vertical; overflow: hidden; }
+    .bundle-list-info .b-footer { display: flex; align-items: center; justify-content: space-between; }
+    .bundle-list-info .b-price  { font-size: 14px; font-weight: 900; color: var(--brand); }
 
     /* ══════════════════════════════════════════
        CART BAR (floating bottom)

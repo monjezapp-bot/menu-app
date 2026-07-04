@@ -147,6 +147,23 @@
         <h2 class="font-extrabold text-gray-800">العروض المجمعة</h2>
         <button onclick="openBundleModal()" class="bg-orange-500 text-white text-sm font-bold px-4 py-2 rounded-xl">+ عرض جديد</button>
       </div>
+      <div class="bg-white rounded-2xl p-4 shadow-sm border border-gray-100 mb-4">
+        <label class="text-xs font-bold text-gray-500 mb-2 block">طريقة عرض العروض للعملاء</label>
+        <div class="grid grid-cols-4 gap-2">
+          <button type="button" onclick="setBundleDisplayStyle('featured')" id="bds-style-featured" class="cat-style-btn border-2 border-gray-200 text-gray-500 rounded-xl py-3 px-1 text-center transition-colors">
+            <div class="text-lg mb-1">⭐</div><div class="text-[10px] font-bold">مميز</div>
+          </button>
+          <button type="button" onclick="setBundleDisplayStyle('grid')" id="bds-style-grid" class="cat-style-btn border-2 border-gray-200 text-gray-500 rounded-xl py-3 px-1 text-center transition-colors">
+            <div class="text-lg mb-1">▦</div><div class="text-[10px] font-bold">شبكة</div>
+          </button>
+          <button type="button" onclick="setBundleDisplayStyle('list')" id="bds-style-list" class="cat-style-btn border-2 border-gray-200 text-gray-500 rounded-xl py-3 px-1 text-center transition-colors">
+            <div class="text-lg mb-1">☰</div><div class="text-[10px] font-bold">قائمة</div>
+          </button>
+          <button type="button" onclick="setBundleDisplayStyle('scroll')" id="bds-style-scroll" class="cat-style-btn border-2 border-gray-200 text-gray-500 rounded-xl py-3 px-1 text-center transition-colors">
+            <div class="text-lg mb-1">⇄</div><div class="text-[10px] font-bold">سحب أفقي</div>
+          </button>
+        </div>
+      </div>
       <div id="bundles-list" class="space-y-3"></div>
     </div>
 
@@ -2462,6 +2479,7 @@ async function toggleAvailability(id, current){ const { error } = await db.from(
 // ── BUNDLES ───────────────────────────────────────────────────────────
 async function loadBundles() {
   const { data: bundles } = await db.from('bundles').select('*').eq('restaurant_id', state.restaurant.id).order('created_at', { ascending: false })
+  syncBundleStylePicker()
   if (!bundles) { state.bundles = []; renderBundles(); return }
   // جلب الفروع المرتبطة بكل bundle
   const { data: bb } = await db.from('bundle_branches').select('bundle_id,branch_id')
@@ -2470,6 +2488,24 @@ async function loadBundles() {
   ;(bb || []).forEach(r => { if (!bbMap[r.bundle_id]) bbMap[r.bundle_id] = []; bbMap[r.bundle_id].push(r.branch_id) })
   state.bundles = bundles.map(b => ({ ...b, branch_ids: bbMap[b.id] || [] }))
   renderBundles()
+}
+function syncBundleStylePicker() {
+  const current = state.restaurant.bundles_display_style || 'featured'
+  ;['featured','grid','list','scroll'].forEach(s => {
+    const btn = document.getElementById('bds-style-' + s)
+    if (!btn) return
+    btn.classList.toggle('border-orange-500', s === current)
+    btn.classList.toggle('text-orange-600', s === current)
+    btn.classList.toggle('border-gray-200', s !== current)
+    btn.classList.toggle('text-gray-500', s !== current)
+  })
+}
+async function setBundleDisplayStyle(style) {
+  state.restaurant.bundles_display_style = style
+  syncBundleStylePicker()
+  const { error } = await db.from('restaurants').update({ bundles_display_style: style }).eq('id', state.restaurant.id)
+  if (error) { console.error('setBundleDisplayStyle error:', error); showToast('فشل حفظ طريقة العرض: ' + error.message); return }
+  showToast('تم حفظ طريقة عرض العروض ✅')
 }
 function renderBundles() {
   const el = document.getElementById('bundles-list')

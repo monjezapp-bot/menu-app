@@ -257,11 +257,12 @@ function renderAllSections(filtered) {
   const prods = filtered !== undefined ? filtered : S.products
 
   if (filtered !== undefined && filtered.length === 0) {
-    wrap.innerHTML = ''; noRes.classList.remove('hidden'); return
+    wrap.innerHTML = ''; noRes.classList.remove('hidden'); stopBundleAutoScroll(); return
   }
   noRes.classList.add('hidden')
 
   const chunk = (arr, size) => { const out = []; for (let i = 0; i < arr.length; i += size) out.push(arr.slice(i, i + size)); return out }
+  _bundleAutoScrollWanted = false
 
   const prodsHTML = S.categories.map(cat => {
     const items = prods.filter(p => p.category_id === cat.id)
@@ -295,9 +296,18 @@ function renderAllSections(filtered) {
       return b.branch_ids.includes(nearestBranchId)
     })
     if (!visibleBundles.length) return ''
+    const style = S.restaurant.bundles_display_style || 'featured'
+    const body  = style === 'grid'
+      ? `<div class="bundle-grid">${visibleBundles.map(b => bundleTileHTML(b)).join('')}</div>`
+      : style === 'list'
+        ? `<div class="bundle-list">${visibleBundles.map(b => bundleCardListHTML(b)).join('')}</div>`
+        : style === 'scroll'
+          ? `<div class="bundle-scroll" id="bundle-scroll-track">${visibleBundles.map(b => bundleCardHTML(b, true)).join('')}</div>`
+          : `${visibleBundles.map(b => bundleCardHTML(b)).join('')}`
+    _bundleAutoScrollWanted = style === 'scroll' && visibleBundles.length > 1
     return `<div id="sec-bundles" class="fade-up" style="margin-top:4px">
       <p class="section-title">🎁 العروض والباقات</p>
-      ${visibleBundles.map(b => bundleCardHTML(b)).join('')}
+      ${body}
     </div>`
   })() : ''
 
@@ -309,6 +319,39 @@ function renderAllSections(filtered) {
     </div>` : ''
 
   wrap.innerHTML = prodsHTML + bundlesHTML + uncatHTML
+  if (_bundleAutoScrollWanted) initBundleAutoScroll(); else stopBundleAutoScroll()
+}
+
+// ── BUNDLES AUTO-SCROLL (جذب انتباه العميل) ────────────────────────────
+let _bundleAutoScrollWanted = false
+let _bundleAutoTimer  = null
+let _bundleResumeTimer = null
+function initBundleAutoScroll() {
+  stopBundleAutoScroll()
+  const track = document.getElementById('bundle-scroll-track')
+  if (!track || track.children.length <= 1) return
+  let idx = 0
+  const advance = () => {
+    idx = (idx + 1) % track.children.length
+    track.children[idx].scrollIntoView({ behavior: 'smooth', inline: 'start', block: 'nearest' })
+  }
+  _bundleAutoTimer = setInterval(advance, 2800)
+  const pauseThenResume = () => {
+    clearInterval(_bundleAutoTimer); _bundleAutoTimer = null
+    clearTimeout(_bundleResumeTimer)
+    _bundleResumeTimer = setTimeout(() => {
+      if (document.getElementById('bundle-scroll-track') === track) {
+        _bundleAutoTimer = setInterval(advance, 2800)
+      }
+    }, 1000)
+  }
+  track.addEventListener('touchstart', pauseThenResume, { passive: true })
+  track.addEventListener('mousedown',  pauseThenResume)
+  track.addEventListener('wheel',      pauseThenResume, { passive: true })
+}
+function stopBundleAutoScroll() {
+  clearInterval(_bundleAutoTimer);  _bundleAutoTimer  = null
+  clearTimeout(_bundleResumeTimer); _bundleResumeTimer = null
 }
 
 // ── PRODUCT CARD HTML ─────────────────────────────────────────────────
@@ -418,16 +461,54 @@ function prodTileHTML(p) {
   </div>`
 }
 
-// ── BUNDLE CARD HTML ──────────────────────────────────────────────────
-function bundleCardHTML(b) {
-  return `<div class="bundle-card" onclick="openBundleModal('${b.id}')">
-    ${b.image_url ? `<img src="${b.image_url}" alt="${b.name}" loading="lazy" />` : `<div class="no-img">🎁</div>`}
+// ── BUNDLE CARD HTML (Featured / Scroll) ───────────────────────────────
+function bundleCardHTML(b, forScroll = false) {
+  return `<div class="bundle-card${forScroll ? ' bundle-card-scroll' : ''}" onclick="openBundleModal('${b.id}')">
+    <div class="bundle-media">
+      ${b.image_url ? `<img src="${b.image_url}" alt="${b.name}" loading="lazy" />` : `<div class="no-img">🎁</div>`}
+      <div class="bundle-badge">🔥 عرض خاص</div>
+      <div class="bundle-gradient"></div>
+    </div>
     <div class="b-info">
       <h3>${b.name}</h3>
       ${b.description ? `<p>${b.description}</p>` : ''}
       <div class="b-footer">
         <span class="b-price">${fmt(b.price)}</span>
         <div class="bundle-add" onclick="event.stopPropagation(); addBundleToCart('${b.id}')">أضف للسلة +</div>
+      </div>
+    </div>
+  </div>`
+}
+
+// ── BUNDLE TILE HTML (Grid) ─────────────────────────────────────────────
+function bundleTileHTML(b) {
+  return `<div class="bundle-tile" onclick="openBundleModal('${b.id}')">
+    <div class="bundle-tile-media">
+      ${b.image_url ? `<img src="${b.image_url}" alt="${b.name}" loading="lazy" />` : `<div class="no-img">🎁</div>`}
+      <div class="bundle-badge sm">عرض</div>
+    </div>
+    <div class="bundle-tile-info">
+      <h3>${b.name}</h3>
+      <div class="b-footer">
+        <span class="b-price">${fmt(b.price)}</span>
+        <div class="bundle-add sm" onclick="event.stopPropagation(); addBundleToCart('${b.id}')">+</div>
+      </div>
+    </div>
+  </div>`
+}
+
+// ── BUNDLE LIST HTML (Compact horizontal) ───────────────────────────────
+function bundleCardListHTML(b) {
+  return `<div class="bundle-card-list" onclick="openBundleModal('${b.id}')">
+    <div class="bundle-list-media">
+      ${b.image_url ? `<img src="${b.image_url}" alt="${b.name}" loading="lazy" />` : `<div class="no-img">🎁</div>`}
+    </div>
+    <div class="bundle-list-info">
+      <h3>${b.name}</h3>
+      ${b.description ? `<p>${b.description}</p>` : ''}
+      <div class="b-footer">
+        <span class="b-price">${fmt(b.price)}</span>
+        <div class="bundle-add sm" onclick="event.stopPropagation(); addBundleToCart('${b.id}')">أضف +</div>
       </div>
     </div>
   </div>`
