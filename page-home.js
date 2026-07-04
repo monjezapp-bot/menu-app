@@ -17,10 +17,15 @@ function renderHeader() {
     if (coverImg) coverImg.src = S.restaurant.cover_url
   }
 
-  // تصنيفات المطعم كوصف مختصر تحت الاسم
+  // وصف المطعم الذي كتبه التاجر بنفسه (يظهر تحت الاسم فقط إن وُجد)
   const taglineEl = document.getElementById('hero-card-tagline')
-  if (taglineEl && Array.isArray(S.categories) && S.categories.length) {
-    taglineEl.textContent = S.categories.slice(0, 5).map(c => c.name).join('، ')
+  if (taglineEl) {
+    if (S.restaurant.about_text) {
+      taglineEl.textContent = S.restaurant.about_text
+      taglineEl.classList.remove('hidden')
+    } else {
+      taglineEl.classList.add('hidden')
+    }
   }
 
   // رقم التواصل

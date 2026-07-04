@@ -811,9 +811,9 @@ function renderInfoStrip() {
   // تقييم
   const rating = S.restaurant.rating ?? 5.0
   document.getElementById('strip-rating').textContent = Number(rating).toFixed(1)
-  // وقت التوصيل
+  // وقت التوصيل — نطاق زمني واضح، مش رقم أو نص عادي
   const mins = S.restaurant.avg_prep_minutes ?? S.restaurant.delivery_time_minutes ?? null
-  document.getElementById('strip-time').textContent = mins ? `${mins} د` : '-- د'
+  document.getElementById('strip-time').textContent = mins ? `${mins}-${mins + 15} دقيقة` : '20-30 دقيقة'
 }
 
 // ── NOTIFICATIONS ─────────────────────────────────────────────────────
