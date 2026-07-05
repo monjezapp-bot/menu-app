@@ -162,6 +162,7 @@ async function boot() {
     showBottomNav(!!S.customer)
     updateWalletBadge()
     if (S.customer) loadNotifications().catch(() => {})
+    if (S.customer) maybeShowReturningPushAsk()
     window._bootDone = true
     // استعادة الصفحة بعد refresh أو Google redirect
     const savedPage = sessionStorage.getItem('mnio_page')

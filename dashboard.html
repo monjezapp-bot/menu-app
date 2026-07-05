@@ -76,13 +76,18 @@
     <button onclick="document.getElementById('ios-install-banner').classList.add('hidden')" class="text-blue-400 font-extrabold flex-shrink-0">✕</button>
   </div>
 
+  <!-- بانر بارز لتفعيل تنبيهات الطلبات — في مصلحة التاجر مباشرة عشان توصله الطلبات فورًا حتى لو التطبيق مقفول -->
+  <div id="enable-push-banner" class="hidden bg-orange-50 border-b border-orange-100 px-4 py-3 text-xs text-orange-700 font-bold flex items-center justify-between gap-3">
+    <span>🔔 فعّل تنبيهات الطلبات عشان توصلك أول بأول حتى لو التطبيق مقفول — متفوتش أي أوردر</span>
+    <button id="enable-push-btn" onclick="enablePushNotifications()" class="bg-orange-500 text-white px-3 py-1.5 rounded-lg flex-shrink-0">تفعيل الآن</button>
+  </div>
+
   <header class="bg-white border-b border-gray-100 px-4 py-4 flex items-center justify-between sticky top-0 z-30">
     <div>
       <p class="text-xs text-gray-400">إدارة مطعم</p>
       <h1 id="dash-restaurant-name" class="text-lg font-extrabold text-gray-800"></h1>
     </div>
     <div class="flex items-center gap-3">
-      <button id="enable-push-btn" onclick="enablePushNotifications()" class="hidden text-xs bg-blue-50 text-blue-600 font-bold px-3 py-2 rounded-xl">🔔 تفعيل التنبيهات</button>
       <a id="preview-link" href="#" target="_blank" class="text-xs bg-orange-50 text-orange-500 font-bold px-3 py-2 rounded-xl">👁️ معاينة</a>
       <a id="support-link" href="#" target="_blank" onclick="openSupportChat(event)" class="text-xs bg-green-50 text-green-600 font-bold px-3 py-2 rounded-xl">💬 الدعم الفني</a>
       <button onclick="doLogout()" class="text-xs text-gray-400 hover:text-red-500 font-bold px-3 py-2 rounded-xl border border-gray-200 transition-colors">خروج</button>
@@ -3527,11 +3532,11 @@ async function initPushUI() {
       return
     }
     if (Notification.permission === 'denied') return
-    document.getElementById('enable-push-btn').classList.remove('hidden')
+    document.getElementById('enable-push-banner').classList.remove('hidden')
   } catch (e) { console.warn('Push init error:', e) }
 }
 async function enablePushNotifications() {
-  const btn = document.getElementById('enable-push-btn')
+  const banner = document.getElementById('enable-push-banner')
   try {
     const reg = await navigator.serviceWorker.register('./sw.js')
     const permission = await Notification.requestPermission()
@@ -3542,7 +3547,7 @@ async function enablePushNotifications() {
       applicationServerKey: urlBase64ToUint8Array(VAPID_PUBLIC_KEY)
     })
     await savePushSubscription(sub)
-    btn.classList.add('hidden')
+    banner.classList.add('hidden')
     showToast('🔔 تم تفعيل تنبيهات الطلبات بنجاح')
   } catch (e) {
     console.error('Push subscribe error:', e)
