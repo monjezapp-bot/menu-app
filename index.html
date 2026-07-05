@@ -656,7 +656,7 @@
                   onkeydown="focusNextField(event, null, sendOrder)"
                   style="width:100%;border:1.5px solid #eee;border-radius:14px;padding:12px 14px;font-size:13px;color:#444;outline:none;font-family:'Rubik',sans-serif;resize:none;margin-bottom:10px"></textarea>
 
-        <!-- كود الخصم + الكوينز -->
+        <!-- كود الخصم + رصيد المحفظة -->
         <div id="cart-coins-section" style="margin-bottom:10px">
           <!-- كود خصم -->
           <div style="display:flex;gap:8px;margin-bottom:8px">
@@ -664,20 +664,8 @@
             <button onclick="applyDiscountCode()" style="background:var(--brand);color:#fff;font-size:13px;font-weight:800;border-radius:12px;padding:10px 16px;white-space:nowrap">تطبيق</button>
           </div>
           <p id="cart-discount-msg" style="font-size:11px;margin-bottom:6px;display:none"></p>
-          <!-- استخدام الكوينز — يظهر فقط للمسجّلين وعندهم رصيد كافي -->
-          <div id="cart-coins-row" style="display:none;background:#fff8f0;border:1.5px solid #ffe0c0;border-radius:14px;padding:12px 14px">
-            <div style="display:flex;justify-content:space-between;align-items:center;margin-bottom:8px">
-              <span style="font-size:13px;font-weight:800;color:#cc4a00">🪙 استخدم كوينزك</span>
-              <span id="cart-coins-available" style="font-size:12px;color:#888"></span>
-            </div>
-            <div style="display:flex;gap:8px;align-items:center">
-              <input id="cart-coins-input" type="number" min="0" placeholder="كم كوين تستخدم؟"
-                     oninput="updateCoinsDiscount()"
-                     style="flex:1;border:1.5px solid #eee;border-radius:10px;padding:9px 12px;font-size:13px;outline:none;font-family:'Rubik',sans-serif" />
-              <button onclick="useMaxCoins()" style="background:#ff6b00;color:#fff;font-size:12px;font-weight:800;border-radius:10px;padding:9px 12px;white-space:nowrap">الكل</button>
-            </div>
-            <p id="cart-coins-discount-preview" style="font-size:12px;color:#cc4a00;font-weight:700;margin-top:6px;display:none"></p>
-          </div>
+          <!-- ملحوظة: الكوينز مش قابلة للصرف المباشر في الطلبات — بيتحوّلوا لرصيد نقدي في صفحة المحفظة
+               أول ما يوصلوا الحد الأدنى (min_redeem_coins)، وبعدين يُستخدموا هنا كرصيد محفظة عادي. -->
 
           <!-- استخدام رصيد المحفظة النقدي — يظهر فقط للمسجّلين وعندهم رصيد -->
           <div id="cart-wallet-row" style="display:none;margin-top:8px;background:#f0fdf4;border:1.5px solid #bbf7d0;border-radius:14px;padding:12px 14px">
@@ -704,10 +692,6 @@
         <div id="cart-discount-row" style="display:none;align-items:center;justify-content:space-between;margin-bottom:4px;padding:0 2px">
           <span style="font-size:13px;font-weight:700;color:#22c55e">🏷️ خصم</span>
           <span id="cart-discount-val" style="font-size:14px;font-weight:800;color:#22c55e"></span>
-        </div>
-        <div id="cart-coins-disc-row" style="display:none;align-items:center;justify-content:space-between;margin-bottom:4px;padding:0 2px">
-          <span style="font-size:13px;font-weight:700;color:#f97316">🪙 خصم الكوينز</span>
-          <span id="cart-coins-disc-val" style="font-size:14px;font-weight:800;color:#f97316"></span>
         </div>
         <div id="cart-wallet-disc-row" style="display:none;align-items:center;justify-content:space-between;margin-bottom:4px;padding:0 2px">
           <span style="font-size:13px;font-weight:700;color:#16a34a">💳 من المحفظة</span>

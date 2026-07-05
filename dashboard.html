@@ -2920,7 +2920,10 @@ async function refundOrderPayment(order) {
   if (!order?.customer_id) return null
   const walletAmt = Number(order.wallet_amount_used || 0)
   const coinsAmt  = Number(order.coins_redeemed || 0)
-  if (walletAmt <= 0 && coinsAmt <= 0) return null
+  // كوينز الولاء تُمنح فقط لحظة تأكيد العميل استلام الطلب (بعد delivering)، وطلب في مرحلة
+  // قابلة للإلغاء من التاجر أصلاً ما يكونش وصل للمرحلة دي — ده مجرد احتياط إضافي (طبقة حماية ثانية)
+  const loyaltyAmt = Number(order.loyalty_coins_earned || 0)
+  if (walletAmt <= 0 && coinsAmt <= 0 && loyaltyAmt <= 0) return null
 
   const { data: cust } = await db.from('menu_customers')
     .select('wallet_balance, coins_balance').eq('id', order.customer_id).single()
@@ -2928,7 +2931,7 @@ async function refundOrderPayment(order) {
 
   const updates = {}
   if (walletAmt > 0) updates.wallet_balance = Number(cust.wallet_balance || 0) + walletAmt
-  if (coinsAmt  > 0) updates.coins_balance  = (cust.coins_balance || 0) + coinsAmt
+  if (coinsAmt > 0 || loyaltyAmt > 0) updates.coins_balance = Math.max(0, (cust.coins_balance || 0) + coinsAmt - loyaltyAmt)
   await db.from('menu_customers').update(updates).eq('id', order.customer_id)
 
   const txs = []
@@ -2942,9 +2945,15 @@ async function refundOrderPayment(order) {
     type: 'refund', amount: coinsAmt, order_id: order.id,
     note: 'استرجاع كوينز بعد إلغاء الطلب'
   })
+  if (loyaltyAmt > 0) txs.push({
+    customer_id: order.customer_id, restaurant_id: order.restaurant_id,
+    type: 'loyalty_reversed', amount: -loyaltyAmt, order_id: order.id,
+    note: 'سحب كوينز هدية الشراء بعد إلغاء الطلب'
+  })
   if (txs.length) await db.from('coin_transactions').insert(txs)
+  if (loyaltyAmt > 0) await db.from('orders').update({ loyalty_coins_earned: 0 }).eq('id', order.id)
 
-  return { walletAmt, coinsAmt }
+  return { walletAmt, coinsAmt, loyaltyAmt }
 }
 function refundNoticeText(refund) {
   if (!refund) return ''

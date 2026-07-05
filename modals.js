@@ -387,14 +387,8 @@ function renderCartItems() {
     discRow.style.display = 'flex'; discVal.textContent = '- ' + fmt(_appliedDiscount)
   } else { discRow.style.display = 'none' }
 
-  // خصم الكوينز
-  const coinsDiscRow = document.getElementById('cart-coins-disc-row')
-  const coinsDiscVal  = document.getElementById('cart-coins-disc-val')
-  const coinsPerEgp  = S.restaurant?.coins_per_egp ?? 1000
-  const coinsDiscount = _coinsToRedeem > 0 ? _coinsToRedeem / coinsPerEgp : 0
-  if (coinsDiscount > 0) {
-    coinsDiscRow.style.display = 'flex'; coinsDiscVal.textContent = '- ' + fmt(coinsDiscount)
-  } else { coinsDiscRow.style.display = 'none' }
+  // ملحوظة: الكوينز مبقتش قابلة للصرف المباشر كخصم في السلة — بيتحوّلوا لرصيد نقدي في
+  // صفحة المحفظة الأول، وبعدين يُستخدموا هنا زي أي رصيد محفظة عادي (الصف اللي تحت ده).
 
   // استخدام رصيد المحفظة النقدي — يظهر فقط للمسجّلين وعندهم رصيد
   const walletRow = document.getElementById('cart-wallet-row')
@@ -418,7 +412,7 @@ function renderCartItems() {
   // يظهر دايماً لما فيه توصيل أو أي خصم، عشان العميل يشوف رقم واحد واضح قبل التأكيد
   const finalRow = document.getElementById('cart-final-row')
   const finalTot  = document.getElementById('cart-final-total')
-  const totalDiscount = _appliedDiscount + coinsDiscount + _walletToUse
+  const totalDiscount = _appliedDiscount + _walletToUse
   if (currentDeliveryFee > 0 || totalDiscount > 0) {
     const beforeDiscount = cartTotal() + currentDeliveryFee
     const final = Math.max(0, Math.round((beforeDiscount - totalDiscount) * 100) / 100)

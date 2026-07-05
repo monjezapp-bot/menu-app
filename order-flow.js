@@ -203,8 +203,9 @@ async function sendOrder() {
       if (codeRow) await db.from('discount_codes').update({ used_count: (codeRow.used_count || 0) + 1 }).eq('id', _appliedCode)
     }
 
-    // منح كوينز الولاء بعد الطلب
-    await awardLoyaltyAndWelcome(orderId, items, S.customer?.id, finalTotal)
+    // ملحوظة مهمة: كوينز هدية الشراء (الولاء) ما بتتمنحش هنا وقت إرسال الطلب —
+    // بتتمنح فقط لما الطلب يوصل فعلاً ويتأكد استلامه (راجع confirmOrderReceipt / startAutoConfirmTimer أسفل).
+    // ده بيمنع استفادة العميل بالكوينز لو لغى الطلب أو المطعم لغاه بعد القبول.
   } catch(e) {
     btn.style.opacity = '1'
     btn.innerHTML = `<span>⚠️ ${e.message || 'خطأ غير معروف'}</span>`
@@ -404,7 +405,7 @@ async function doCancelOrder(orderId) {
     .update({ status: 'cancelled', cancel_reason: 'تم الإلغاء بواسطة العميل', refunded_at: new Date().toISOString() })
     .eq('id', orderId)
     .in('status', ['pending', 'confirmed']) // حماية إضافية: منع الإلغاء لو الحالة تخطّت confirmed فعليًا على السيرفر
-    .select('id, customer_id, restaurant_id, wallet_amount_used, coins_redeemed')
+    .select('id, customer_id, restaurant_id, wallet_amount_used, coins_redeemed, loyalty_coins_earned')
     .maybeSingle()
   if (btn) { btn.disabled = false; btn.textContent = '❌ إلغاء الطلب' }
   if (error || !cancelled) { showToast('تعذّر إلغاء الطلب، حاول تاني'); return }
@@ -424,7 +425,10 @@ async function refundOrderPayment(order) {
   if (!order?.customer_id) return null
   const walletAmt = Number(order.wallet_amount_used || 0)
   const coinsAmt  = Number(order.coins_redeemed || 0)
-  if (walletAmt <= 0 && coinsAmt <= 0) return null
+  // كوينز الولاء تتمنح فقط لحظة تأكيد الاستلام (بعد delivering)، وطلب زي ده أصلاً مايبقاش قابل للإلغاء
+  // في المرحلة دي — لكن ده احتياط إضافي (طبقة حماية ثانية) لو حصل ظرف استثنائي وكانت اتمنحت فعلاً
+  const loyaltyAmt = Number(order.loyalty_coins_earned || 0)
+  if (walletAmt <= 0 && coinsAmt <= 0 && loyaltyAmt <= 0) return null
 
   const { data: cust } = await db.from('menu_customers')
     .select('wallet_balance, coins_balance').eq('id', order.customer_id).single()
@@ -432,7 +436,7 @@ async function refundOrderPayment(order) {
 
   const updates = {}
   if (walletAmt > 0) updates.wallet_balance = Number(cust.wallet_balance || 0) + walletAmt
-  if (coinsAmt  > 0) updates.coins_balance  = (cust.coins_balance || 0) + coinsAmt
+  if (coinsAmt > 0 || loyaltyAmt > 0) updates.coins_balance = Math.max(0, (cust.coins_balance || 0) + coinsAmt - loyaltyAmt)
   await db.from('menu_customers').update(updates).eq('id', order.customer_id)
 
   const txs = []
@@ -446,16 +450,23 @@ async function refundOrderPayment(order) {
     type: 'refund', amount: coinsAmt, order_id: order.id,
     note: 'استرجاع كوينز بعد إلغاء الطلب'
   })
+  if (loyaltyAmt > 0) txs.push({
+    customer_id: order.customer_id, restaurant_id: order.restaurant_id,
+    type: 'loyalty_reversed', amount: -loyaltyAmt, order_id: order.id,
+    note: 'سحب كوينز هدية الشراء بعد إلغاء الطلب'
+  })
   if (txs.length) await db.from('coin_transactions').insert(txs)
+  // نصفّر loyalty_coins_earned في الطلب نفسه عشان لو الدالة اتنادت تاني بالغلط ما يتسحبش مرتين
+  if (loyaltyAmt > 0) await db.from('orders').update({ loyalty_coins_earned: 0 }).eq('id', order.id)
 
   // لو ده حساب العميل الحالي، حدّث الحالة محليًا عشان يشوف رصيده الجديد فورًا
   if (S.customer && S.customer.id === order.customer_id) {
     if (walletAmt > 0) S.customer.wallet_balance = updates.wallet_balance
-    if (coinsAmt  > 0) S.customer.coins_balance  = updates.coins_balance
+    if (coinsAmt > 0 || loyaltyAmt > 0) S.customer.coins_balance = updates.coins_balance
     updateWalletBadge()
   }
 
-  return { walletAmt, coinsAmt }
+  return { walletAmt, coinsAmt, loyaltyAmt }
 }
 
 // رسالة قصيرة تتعرض للعميل بعد الإلغاء توضّح إن المبلغ رجع لمحفظته
@@ -511,7 +522,7 @@ async function performLateCancel(orderId) {
     .update({ status: 'cancelled', cancel_reason: 'تم الإلغاء بواسطة العميل بسبب تأخر الطلب عن الوقت المتوقع', refunded_at: new Date().toISOString() })
     .eq('id', orderId)
     .in('status', ['confirmed', 'ready', 'delivering'])
-    .select('id, customer_id, restaurant_id, wallet_amount_used, coins_redeemed')
+    .select('id, customer_id, restaurant_id, wallet_amount_used, coins_redeemed, loyalty_coins_earned')
     .maybeSingle()
   if (error || !cancelled) { showToast('تعذّر إلغاء الطلب، حاول تاني'); return false }
   const refund = await refundOrderPayment(cancelled)
@@ -617,12 +628,26 @@ function setSuccessModalVisual(state, cancelReason, order) {
   if (['confirmed', 'ready', 'delivering'].includes(state)) startLateCancelWatch(order)
   else clearInterval(_lateCancelInterval)
 }
+// ── تحويل الطلب لحالة "تم التسليم" + منح كوينز هدية الشراء لحظة الاستلام فقط ──
+// الشرط .eq('status', 'delivering') بيضمن إن التحديث والمنح يحصلوا مرة واحدة بالظبط
+// حتى لو العميل ضغط الزر يدوياً في نفس لحظة تشغيل التايمر التلقائي (حماية من الـ double-award)
+async function markOrderDeliveredAndAward(orderId) {
+  if (!orderId) return
+  const { data: order, error } = await db.from('orders')
+    .update({ status: 'delivered', delivered_at: new Date().toISOString() })
+    .eq('id', orderId)
+    .eq('status', 'delivering')
+    .select('id, items, total, customer_id')
+    .maybeSingle()
+  if (error || !order) return // اتحدّثت قبل كده (double-fire) أو الطلب مش في حالة delivering فعلاً
+  await awardLoyaltyAndWelcome(order.id, order.items, order.customer_id, order.total)
+}
 // تأكيد استلام يدوي من العميل (زر "تم استلام طلبي")
 async function confirmOrderReceipt() {
   const orderId = document.getElementById('order-success-modal').dataset.orderId
   if (!orderId) return
-  await db.from('orders').update({ status: 'delivered', delivered_at: new Date().toISOString() }).eq('id', orderId)
   document.getElementById('confirm-receipt-btn').classList.add('hidden')
+  await markOrderDeliveredAndAward(orderId)
 }
 // تأكيد استلام تلقائي لو العميل لم يضغط الزر بنفسه بعد مدة معقولة من بدء التوصيل
 let _autoConfirmTimeout = null
@@ -630,9 +655,7 @@ const AUTO_CONFIRM_MINUTES_AFTER_DELIVERING = 30
 function startAutoConfirmTimer(orderId) {
   clearTimeout(_autoConfirmTimeout)
   if (!orderId) return
-  _autoConfirmTimeout = setTimeout(async () => {
-    await db.from('orders').update({ status: 'delivered', delivered_at: new Date().toISOString() }).eq('id', orderId)
-  }, AUTO_CONFIRM_MINUTES_AFTER_DELIVERING * 60 * 1000)
+  _autoConfirmTimeout = setTimeout(() => { markOrderDeliveredAndAward(orderId) }, AUTO_CONFIRM_MINUTES_AFTER_DELIVERING * 60 * 1000)
 }
 // يعرض شريط مراحل بصري (4 نقاط متصلة) يوضّح موقع الطلب الحالي ضمن رحلة التجهيز والتوصيل
 function renderTrackingSteps(currentState) {
@@ -698,47 +721,20 @@ async function applyDiscountCode() {
 }
 
 // ── COINS IN CART ──────────────────────────────────────────────────────
+// قرار عمل: الكوينز مش قابلة للصرف المباشر كخصم في الطلبات إطلاقًا.
+// الطريقة الوحيدة لصرف الكوينز هي تحويلها لرصيد نقدي في صفحة "محفظتي" (convertCoinsToBalance
+// في page-wallet.js) بعد الوصول للحد الأدنى، وبعدها تُستخدم كرصيد محفظة عادي هنا في السلة.
+// الدوال دي بقت stubs فاضية (بدل الحذف الكامل) عشان أي استدعاء قديم متبقي في أي مكان
+// ما يعملش خطأ، ولضمان إن _coinsToRedeem تفضل صفر دايمًا مهما حصل.
 function updateCoinsRowInCart() {
   const row = document.getElementById('cart-coins-row')
-  if (!row) return
-  const minRedeem = S.restaurant?.min_redeem_coins ?? 100000
-  if (S.customer && S.customer.coins_balance >= minRedeem && (S.restaurant?.loyalty_enabled)) {
-    const coinsPerEgp = S.restaurant.coins_per_egp ?? 1000
-    document.getElementById('cart-coins-available').innerHTML =
-      `رصيدك: <span class="ltr-num">${S.customer.coins_balance.toLocaleString('en-US')}</span> 🪙 = <span class="ltr-num">${(S.customer.coins_balance / coinsPerEgp).toFixed(2)}</span> ج.م`
-    row.style.display = 'block'
-  } else {
-    row.style.display = 'none'
-  }
+  if (row) row.style.display = 'none'
+  _coinsToRedeem = 0
 }
 
-function updateCoinsDiscount() {
-  const input = document.getElementById('cart-coins-input')
-  const preview = document.getElementById('cart-coins-discount-preview')
-  const val = parseInt(input.value) || 0
-  const coinsPerEgp = S.restaurant?.coins_per_egp ?? 1000
-  const maxCoins = Math.min(S.customer?.coins_balance || 0, val)
-  _coinsToRedeem = Math.max(0, Math.min(maxCoins, S.customer?.coins_balance || 0))
-  const disc = _coinsToRedeem / coinsPerEgp
-  if (_coinsToRedeem > 0) {
-    preview.innerHTML = `خصم <span class="ltr-num">${disc.toFixed(2)}</span> ج.م مقابل <span class="ltr-num">${_coinsToRedeem.toLocaleString('en-US')}</span> كوين`
-    preview.style.display = 'block'
-  } else {
-    preview.style.display = 'none'
-  }
-  renderCartItems()
-}
+function updateCoinsDiscount() { _coinsToRedeem = 0 }
 
-function useMaxCoins() {
-  const bal = S.customer?.coins_balance || 0
-  const coinsPerEgp = S.restaurant?.coins_per_egp ?? 1000
-  const cartVal = cartTotal()
-  // لا تتجاوز قيمة الطلب
-  const maxByCart = Math.floor(cartVal * coinsPerEgp)
-  _coinsToRedeem = Math.min(bal, maxByCart)
-  document.getElementById('cart-coins-input').value = _coinsToRedeem
-  updateCoinsDiscount()
-}
+function useMaxCoins() { _coinsToRedeem = 0 }
 
 // ── WALLET BALANCE IN CART (رصيد نقدي) ──────────────────────────────────
 // المتاح فعلياً لاستخدام رصيد المحفظة = أقل قيمة بين (رصيد المحفظة) و (المتبقي المطلوب دفعه بعد خصم الكود والكوينز)
@@ -820,14 +816,15 @@ function clearPendingRef() {
 // ── AWARD LOYALTY COINS AFTER ORDER ────────────────────────────────────
 async function awardLoyaltyAndWelcome(orderId, orderItems, customerId, orderTotal) {
   if (!S.restaurant?.loyalty_enabled) return
-  const coinsPerEgp = S.restaurant.coins_per_egp ?? 1000
+  if (!customerId) return // طلب زائر بدون حساب — لا يوجد محفظة تُمنح لها كوينز
+
   let totalLoyalty = 0
 
   // هدية الشراء: التاجر يختار وضع واحد فقط — لكل منتج، أو لكل 100 ج.م من الفاتورة
   if (S.restaurant.purchase_reward_enabled) {
     const mode = S.restaurant.purchase_reward_mode || 'per_product'
     if (mode === 'per_product') {
-      for (const item of orderItems) {
+      for (const item of (orderItems || [])) {
         if (item.type === 'bundle') continue
         const prod = S.products.find(p => p.id === item.id)
         if (prod?.loyalty_coins > 0) totalLoyalty += prod.loyalty_coins * item.qty
@@ -838,8 +835,11 @@ async function awardLoyaltyAndWelcome(orderId, orderItems, customerId, orderTota
     }
   }
 
-  const cust = S.customer
-  if (!cust) return
+  // نجيب بيانات العميل مباشرة من الداتابيز (مش من S.customer في الذاكرة) —
+  // الدالة دي ممكن تتنفذ بعد 30 دقيقة من التايمر التلقائي، وقتها الجلسة المحلية ممكن تكون اتقفلت أو اتغيرت
+  const { data: cust, error: custErr } = await db.from('menu_customers')
+    .select('id, coins_balance, welcome_coins_claimed').eq('id', customerId).single()
+  if (custErr || !cust) { console.error('awardLoyaltyAndWelcome: تعذر جلب بيانات العميل', custErr); return }
 
   let balanceDelta = 0
   const txs = []
@@ -848,7 +848,7 @@ async function awardLoyaltyAndWelcome(orderId, orderItems, customerId, orderTota
   // هنا فقط نُعلّم أن العميل استخدم/استلم بونص الترحيب رسمياً عند أول طلب فعلي (لغرض العرض فقط، بلا منح مكرر)
   if (!cust.welcome_coins_claimed) {
     await db.from('menu_customers').update({ welcome_coins_claimed: true }).eq('id', cust.id)
-    S.customer.welcome_coins_claimed = true
+    if (S.customer?.id === cust.id) S.customer.welcome_coins_claimed = true
   }
 
   // كوينز هدية الشراء
@@ -867,20 +867,34 @@ async function awardLoyaltyAndWelcome(orderId, orderItems, customerId, orderTota
     }
   }
 
-  if (txs.length) await db.from('coin_transactions').insert(txs)
-  if (balanceDelta > 0) {
-    const newBalance = (cust.coins_balance || 0) + balanceDelta
-    await db.from('menu_customers').update({ coins_balance: newBalance }).eq('id', cust.id)
-    S.customer.coins_balance = newBalance
-    await db.from('notifications').insert({
-      customer_id: cust.id, restaurant_id: S.restaurant.id, order_id: orderId, type: 'coins',
-      title: '🪙 كسبت كوينز جديدة!',
-      body: `حصلت على ${balanceDelta.toLocaleString('ar-EG')} كوين من طلبك — شوفها في محفظتك`
-    }).catch(() => {})
-  }
+  if (!txs.length) { updateWalletBadge(); return }
 
-  // تحديث loyalty_coins_earned في الطلب
+  // نسجّل المعاملة في سجل المحفظة الأول — لو فشل التسجيل هنا نوقف تمامًا
+  // ولا نلمس رصيد العميل خالص (بدل ما كان بيحصل قبل كده: تحديث الرصيد حتى لو سجل المعاملة فشل بصمت)
+  const { error: txErr } = await db.from('coin_transactions').insert(txs)
+  if (txErr) { console.error('awardLoyaltyAndWelcome: فشل تسجيل معاملة الكوينز في السجل', txErr); return }
+
+  const newBalance = (cust.coins_balance || 0) + balanceDelta
+  const { error: balErr } = await db.from('menu_customers').update({ coins_balance: newBalance }).eq('id', cust.id)
+  if (balErr) { console.error('awardLoyaltyAndWelcome: فشل تحديث رصيد الكوينز', balErr); return }
+  if (S.customer?.id === cust.id) S.customer.coins_balance = newBalance
+
+  const { error: notifErr } = await db.from('notifications').insert({
+    customer_id: cust.id, restaurant_id: S.restaurant.id, order_id: orderId, type: 'coins',
+    title: '🪙 كسبت كوينز جديدة!',
+    body: `تم إرسال ${balanceDelta.toLocaleString('ar-EG')} كوين هدية على طلبك — شوفها في سجل محفظتك`
+  })
+  if (notifErr) console.error('awardLoyaltyAndWelcome: فشل إرسال الإشعار', notifErr)
+  if (S.customer?.id === cust.id) loadNotifications().catch(() => {})
+
+  // تحديث loyalty_coins_earned في الطلب (يُستخدم لاسترجاع الكوينز لو الطلب اتلغى بطريقة استثنائية)
   if (totalLoyalty > 0) await db.from('orders').update({ loyalty_coins_earned: totalLoyalty }).eq('id', orderId)
+
+  // احتفال بصري + صوت — بس لو العميل لسه فاتح نفس جلسة الطلب على شاشته دلوقتي
+  if (S.customer?.id === cust.id && typeof showCelebration === 'function') {
+    showCelebration(balanceDelta)
+    playSuccessSound()
+  }
   updateWalletBadge()
 }
 

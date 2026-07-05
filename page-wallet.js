@@ -131,6 +131,8 @@ async function loadWalletPage() {
       referral_reward:  { icon:'🔗', label:'إحالة صديق',      color:'#3b82f6' },
       loyalty:          { icon:'⭐', label:'كوينز ولاء',       color:'#f59e0b' },
       redeem:           { icon:'🛒', label:'استخدام في طلب',  color:'#ef4444' },
+      loyalty_reversed: { icon:'↩️', label:'سحب كوينز (إلغاء طلب)', color:'#ef4444' },
+      compensation:     { icon:'🎁', label:'تعويض عن إلغاء',  color:'#f97316' },
       gift:             { icon:'🎀', label:'هدية من المتجر',   color:'#8b5cf6' },
       discount_code:    { icon:'🏷️', label:'كود خصم',         color:'#06b6d4' },
       profile_complete: { icon:'👤', label:'إكمال الملف',      color:'#10b981' },
