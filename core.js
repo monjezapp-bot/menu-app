@@ -148,6 +148,7 @@ async function boot() {
     loadCart()
     renderAllSections()
     updateCartUI()
+    showState('app')
     openSharedLinkIfAny()
     initScrollBehavior()
     initScrollSpy()
@@ -162,17 +163,13 @@ async function boot() {
     updateWalletBadge()
     if (S.customer) loadNotifications().catch(() => {})
     window._bootDone = true
-
-    // نحدد الصفحة الهدف (الرئيسية أو صفحة محفوظة قبل الريفريش/Google redirect) قبل ما نُظهر أي حالة،
-    // وبعدين نُظهرها دفعة واحدة (showState ثم switchPage فوراً من غير أي await بينهم) —
-    // عشان المتصفح ميرسمش الصفحة الرئيسية كخطوة وسيطة قبل ما يرجع لصفحتك الأصلية (طلبات/محفظة/حسابك)
+    // استعادة الصفحة بعد refresh أو Google redirect
     const savedPage = sessionStorage.getItem('mnio_page')
-    let targetPage  = 'home'
-    if (savedPage && savedPage !== 'home' && S.customer) targetPage = savedPage
-    else if (S.customer && new URLSearchParams(location.search).get('ref')) targetPage = 'account'
-
-    showState('app')
-    if (targetPage !== 'home') switchPage(targetPage)
+    if (savedPage && savedPage !== 'home' && S.customer) {
+      switchPage(savedPage)
+    } else if (S.customer && new URLSearchParams(location.search).get('ref')) {
+      switchPage('account')
+    }
 
   } catch(e) {
     // أخطاء "المطعم غير موجود" نهائية (لا تحتاج إعادة محاولة)، وأي خطأ آخر (شبكة/تقني) مؤقت وقابل لإعادة المحاولة
@@ -201,7 +198,10 @@ function checkOAuthErrorInUrl() {
   const search = new URLSearchParams(window.location.search)
   const err = hash.get('error') || search.get('error')
   const errDesc = hash.get('error_description') || search.get('error_description')
-  if (err) showAuthDebug(`Google/Supabase رجّع خطأ: ${err} — ${errDesc || ''}`)
+  if (err) {
+    sessionStorage.removeItem('mnio_oauth_pending')
+    showAuthDebug(`Google/Supabase رجّع خطأ: ${err} — ${errDesc || ''}`)
+  }
 }
 
 function retryLoad() {
@@ -331,6 +331,7 @@ let _appliedDiscount = 0      // خصم الكود بالجنيه
 let _appliedCode     = null   // الكود المطبّق
 let _coinsToRedeem   = 0      // كوينز سيتم استخدامها في الطلب
 let _walletToUse     = 0      // رصيد المحفظة النقدي (ج.م) سيُستخدم في الطلب
+let _justCreatedNewCustomer = false // true فقط لو اتعمل INSERT فعلي لصف عميل جديد في آخر استدعاء لـ loadCustomerProfile (يُستخدم لإطلاق احتفال الترحيب بدقة، بدل الاعتماد على فحص الـ URL غير الموثوق)
 
 async function initCustomerSession(forceCreate, extraData) {
   const { data: { session } } = await db.auth.getSession()
@@ -388,6 +389,7 @@ async function loadCustomerProfile(forceCreate, extraData) {
 }
 
 async function _loadCustomerProfileInner(forceCreate, extraData) {
+  _justCreatedNewCustomer = false
   const { data: { user } } = await db.auth.getUser()
   if (!user || !S.restaurant) return
 
@@ -444,6 +446,7 @@ async function _loadCustomerProfileInner(forceCreate, extraData) {
 
       if (newCust) {
         S.customer = newCust
+        _justCreatedNewCustomer = true // إنشاء حقيقي جديد — هذا هو التوقيت الصحيح لإطلاق احتفال الترحيب
         clearPendingRef() // امسح الكود بعد الاستخدام
         // سجّل معاملة الترحيب (لو الميزة مفعّلة)
         if (welcomeEnabled) {
@@ -496,15 +499,15 @@ function initAuthListener() {
         showBottomNav(true)
         updateWalletBadge()
         loadNotifications().catch(() => {})
-        // لو جاي من Google redirect (مش refresh عادي)
-        const isOAuthCallback = window.location.hash.includes('access_token') ||
-                                 window.location.search.includes('code=')
+        // لو جاي من Google redirect فعلاً (مش refresh عادي لسيشن محفوظة) —
+        // بنعتمد على علم اتسجّل قبل الـ redirect مباشرة (mnio_oauth_pending) بدل فحص الـ URL،
+        // لأن Supabase أحياناً بينضّف الـ code/access_token من الـ URL قبل ما نوصل هنا، فيفشل الفحص القديم بصمت
+        const isOAuthCallback = sessionStorage.getItem('mnio_oauth_pending') === '1'
         if (isOAuthCallback) {
-          switchPage('account')
-          // احتفال لو أول تسجيل
-          const isNew = !sessionStorage.getItem('was_customer_' + S.restaurant.id)
-          if (isNew && S.customer && (S.restaurant.welcome_bonus_enabled ?? true)) {
-            sessionStorage.setItem('was_customer_' + S.restaurant.id, '1')
+          sessionStorage.removeItem('mnio_oauth_pending')
+          switchPage('home') // الصفحة الرئيسية دايماً بعد الدخول/التسجيل — مش صفحة الحساب
+          // احتفال حقيقي بس لو اتعمل إنشاء صف عميل جديد فعلاً في هذا الاستدعاء (مش أول مرة في التاب فقط)
+          if (_justCreatedNewCustomer && S.customer && (S.restaurant.welcome_bonus_enabled ?? true)) {
             showCelebration(S.restaurant.welcome_coins ?? 10000)
             playSuccessSound()
           }

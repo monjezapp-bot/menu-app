@@ -165,6 +165,9 @@ async function signInWithGoogle(btn) {
   try {
     // احفظ الـ slug قبل الـ redirect
     if (_lastSlug) localStorage.setItem('mnio_last_slug', _lastSlug)
+    // علم يثبت إننا فعلاً بادئين رحلة Google OAuth — بيتقرا بعد الرجوع في initAuthListener()
+    // بدل الاعتماد على فحص الـ URL (code=/access_token) لأن Supabase أحياناً بينضّفه قبل ما نوصل هناك
+    sessionStorage.setItem('mnio_oauth_pending', '1')
     const redirectTo = window.location.origin + window.location.pathname +
                        (_lastSlug ? '?r=' + _lastSlug : '')
     const { error } = await db.auth.signInWithOAuth({
@@ -174,6 +177,7 @@ async function signInWithGoogle(btn) {
     if (error) throw error
     // لو وصلنا هنا يبقى في طريقنا لـ Google، الصفحة هتعمل redirect فعلياً
   } catch(e) {
+    sessionStorage.removeItem('mnio_oauth_pending') // فشل بدء الطلب أصلاً — لا يوجد redirect حقيقي، امسح العلم
     _googleSignInInFlight = false
     if (btn) {
       btn.disabled = false
