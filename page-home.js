@@ -283,7 +283,7 @@ function renderAllSections(filtered) {
             ? `<div class="products-grid-3">${items.map(p => prodTileHTML(p)).join('')}</div>`
             : `<div class="products-grid">${items.map(p => prodCardHTML(p)).join('')}</div>`
     return `<div id="sec-${cat.id}" class="fade-up" style="margin-top:4px">
-      <p class="section-title">${cat.name}</p>
+      <p class="section-title"><span class="section-title-text">${cat.name}</span></p>
       ${body}
     </div>`
   }).join('')
@@ -313,7 +313,7 @@ function renderAllSections(filtered) {
           : `${visibleBundles.map(b => bundleCardHTML(b)).join('')}`
     _bundleAutoScrollWanted = style === 'scroll' && visibleBundles.length > 1
     return `<div id="sec-bundles" class="fade-up" style="margin-top:4px">
-      <p class="section-title">🎁 العروض والباقات</p>
+      <p class="section-title"><span class="section-title-text">🎁 العروض والباقات</span></p>
       ${body}
     </div>`
   })() : ''
@@ -321,7 +321,7 @@ function renderAllSections(filtered) {
   const uncatItems = prods.filter(p => !p.category_id)
   const uncatHTML  = uncatItems.length ? `
     <div class="fade-up" style="margin-top:4px">
-      <p class="section-title">منتجات أخرى</p>
+      <p class="section-title"><span class="section-title-text">منتجات أخرى</span></p>
       <div class="products-grid">${uncatItems.map(p => prodCardHTML(p)).join('')}</div>
     </div>` : ''
 

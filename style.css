@@ -363,6 +363,33 @@
        SECTION TITLE + PRODUCTS GRID
     ══════════════════════════════════════════ */
     .section-title  { font-size: 18px; font-weight: 900; color: #1a1a1a; padding: var(--sp-5) var(--sp-4) var(--sp-3); letter-spacing: -0.3px; }
+
+    /* ── Hand-drawn underline تحت عنوان التصنيف (Brush stroke style) ── */
+    .section-title-text { position: relative; display: inline-block; }
+    .section-title-text::after,
+    .section-title-text::before {
+      content: '';
+      position: absolute;
+      left: -4px; right: -6px;
+      height: 12px;
+      background-repeat: no-repeat;
+      background-size: 100% 100%;
+      pointer-events: none;
+    }
+    /* الخط الرئيسي — تعرجات واضحة بسمك متغيّر يحاكي فرشاة حقيقية */
+    .section-title-text::after {
+      bottom: -6px;
+      background-image: url("data:image/svg+xml;utf8,<svg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 220 16'><path d='M4,10 C22,4 34,14 50,9 C66,4 78,13 96,8 C114,3 126,12 144,7 C162,2 174,11 192,6 C204,3 210,7 216,5' fill='none' stroke='currentColor' stroke-width='4' stroke-linecap='round' stroke-linejoin='round'/></svg>");
+      color: var(--brand);
+      opacity: 0.9;
+    }
+    /* طبقة ثانية أخف وأرفع شوية تدّي إحساس نسيج الفرشاة (double-stroke) */
+    .section-title-text::before {
+      bottom: -8px;
+      background-image: url("data:image/svg+xml;utf8,<svg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 220 16'><path d='M6,9 C24,13 36,5 52,10 C68,15 80,6 98,11 C116,16 128,7 146,12 C164,17 176,8 194,13 C206,16 210,10 216,12' fill='none' stroke='currentColor' stroke-width='2.5' stroke-linecap='round'/></svg>");
+      color: var(--brand);
+      opacity: 0.35;
+    }
     .products-grid  { display: grid; grid-template-columns: 1fr 1fr; gap: var(--sp-3); padding: 0 var(--sp-4); }
 
     /* ══════════════════════════════════════════
