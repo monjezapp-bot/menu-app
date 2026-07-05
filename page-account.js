@@ -254,7 +254,6 @@ function renderAccountPage() {
   // تحديث الإعدادات (بيانات الحساب — تترندر فعلياً لما صفحة "بياناتي" تتفتح)
   updateSettingsDisplay()
   renderProfileQuestCard()
-  refreshCustomerPushButtonState()
 }
 
 // ── PROFILE QUEST CARD (خانة واحدة تظهر الحقل الناقص التالي فقط) ──────
@@ -598,7 +597,6 @@ function closeCelebration() {
   document.getElementById('celebration-overlay').classList.add('hidden')
   document.documentElement.style.overflow = ''
   stopConfetti()
-  maybeShowPushAsk()
 }
 
 let _confettiAnim = null
@@ -630,132 +628,5 @@ function stopConfetti() {
   if (_confettiAnim) { cancelAnimationFrame(_confettiAnim); _confettiAnim = null }
   const canvas = document.getElementById('confetti-canvas')
   if (canvas) canvas.getContext('2d').clearRect(0, 0, canvas.width, canvas.height)
-}
-
-// ── PUSH NOTIFICATIONS للعميل ────────────────────────────────────────
-// نفس مفتاح VAPID المستخدم في الداشبورد (نفس المشروع، نفس زوج المفاتيح)
-const CUSTOMER_VAPID_PUBLIC_KEY = 'BHpeyTZ57ZxBaWldVJ2qNWqrwWZMUSsLFIzOGvtl0suELxgRqoiZ8oLXNQNQEoTIv_4dYzelHMGG3llLWV_FMaE'
-
-function customerUrlBase64ToUint8Array(base64String) {
-  const padding = '='.repeat((4 - base64String.length % 4) % 4)
-  const base64 = (base64String + padding).replace(/-/g, '+').replace(/_/g, '/')
-  const rawData = window.atob(base64)
-  return Uint8Array.from([...rawData].map(c => c.charCodeAt(0)))
-}
-
-// تحديث شكل الزرار حسب حالة الاشتراك الحالية (تُستدعى عند فتح صفحة الحساب)
-async function refreshCustomerPushButtonState() {
-  const label = document.getElementById('acc-enable-push-label')
-  if (!label) return
-  if (!('serviceWorker' in navigator) || !('PushManager' in window)) { label.textContent = 'التنبيهات غير مدعومة على متصفحك'; return }
-  try {
-    const reg = await navigator.serviceWorker.register('./sw.js')
-    const existing = await reg.pushManager.getSubscription()
-    if (existing && Notification.permission === 'granted') {
-      label.textContent = 'التنبيهات مفعّلة ✅'
-    } else if (Notification.permission === 'denied') {
-      label.textContent = 'التنبيهات محظورة من إعدادات المتصفح'
-    } else {
-      label.textContent = 'فعّل التنبيهات'
-    }
-  } catch (e) { /* تجاهل بصمت */ }
-}
-
-async function enableCustomerPush() {
-  if (!S.customer) { showToast('سجّل دخولك الأول عشان تقدر تفعّل التنبيهات'); return }
-  const label = document.getElementById('acc-enable-push-label')
-  if (!('serviceWorker' in navigator) || !('PushManager' in window)) { showToast('متصفحك لا يدعم التنبيهات'); return }
-  try {
-    const reg = await navigator.serviceWorker.register('./sw.js')
-    const permission = await Notification.requestPermission()
-    if (permission !== 'granted') { showToast('لازم توافق على الإذن عشان توصلك التنبيهات'); return }
-
-    let sub = await reg.pushManager.getSubscription()
-    if (!sub) {
-      sub = await reg.pushManager.subscribe({
-        userVisibleOnly: true,
-        applicationServerKey: customerUrlBase64ToUint8Array(CUSTOMER_VAPID_PUBLIC_KEY)
-      })
-    }
-    const json = sub.toJSON()
-    await db.from('customer_push_subscriptions').upsert({
-      customer_id: S.customer.id,
-      endpoint:    json.endpoint,
-      p256dh:      json.keys?.p256dh,
-      auth:        json.keys?.auth
-    }, { onConflict: 'endpoint' })
-
-    if (label) label.textContent = 'التنبيهات مفعّلة ✅'
-    showToast('🔔 تم تفعيل التنبيهات بنجاح')
-  } catch (e) {
-    console.error('Customer push subscribe error:', e)
-    showToast('حدث خطأ أثناء تفعيل التنبيهات')
-  }
-}
-
-// ── كارت طلب الإذن اللي بيظهر أول ما العميل يسجّل معانا (بعد شاشة الاحتفال مباشرة) ──
-// "soft-ask" مصمم بنفسنا قبل نافذة إذن المتصفح الرسمية، عشان العميل يفهم الفايدة
-// (هدايا وعروض وخصومات) قبل ما يوافق فعلياً — ده بيرفع نسبة الموافقة بكتير
-// مقارنة إننا نطلق نافذة المتصفح على طول من غير مقدمة.
-//
-// أساليب متنوعة بندوّر عليها في كل مرة يدخل فيها العميل من غير ما يكون فعّل
-// الإشعارات لسه — عشان الرسالة تفضل جذابة ومش بتتكرر بنفس الشكل كل مرة.
-const PUSH_ASK_VARIANTS = [
-  {
-    emoji: '🔔',
-    title: 'خليك أول من يعرف!',
-    body: 'فعّل الإشعارات عشان توصلك الهدايا والعروض والخصومات أول بأول 🎁'
-  },
-  {
-    emoji: '🎁',
-    title: 'فعّلها واكسب حتى 500 جنيه!',
-    body: 'في هدايا وكوبونات مفاجئة بتوصل بس للعملاء المفعّلين للإشعارات... متفوتش الفرصة'
-  },
-  {
-    emoji: '🚀',
-    title: 'عمرك ما تفوت عرض تاني!',
-    body: 'فعّل الإشعارات دلوقتي وهتبقى أول واحد يعرف بالخصومات والأصناف الجديدة أول بأول'
-  }
-]
-
-function showPushAskOverlay(variant) {
-  document.getElementById('push-ask-emoji').textContent = variant.emoji
-  document.getElementById('push-ask-title').textContent = variant.title
-  document.getElementById('push-ask-body').textContent  = variant.body
-  document.getElementById('push-ask-overlay')?.classList.remove('hidden')
-}
-
-function canShowPushAsk() {
-  if (!('serviceWorker' in navigator) || !('PushManager' in window)) return false // متصفح غير مدعوم
-  if (typeof Notification === 'undefined') return false
-  if (Notification.permission !== 'default') return false // العميل سبق ورد (وافق أو رفض) — ما تزعجهوش تاني
-  return true
-}
-
-// المرة الأولى (بعد التسجيل مباشرة) — دايمًا نفس الأسلوب الأساسي
-function maybeShowPushAsk() {
-  if (!_justCreatedNewCustomer) return // بس أول تسجيل فعلي، مش كل مرة — الحالة دي بتتغطى بمنطق العميل العائد بعد كده
-  if (!canShowPushAsk()) return
-  setTimeout(() => showPushAskOverlay(PUSH_ASK_VARIANTS[0]), 400) // تأخير بسيط عشان الانتقال من شاشة الاحتفال يبقى سلس
-}
-
-// كل مرة عميل عائد (مش أول تسجيل) يفتح التطبيق وهو لسه ما فعّلش — بندوّر بين الأساليب
-function maybeShowReturningPushAsk() {
-  if (_justCreatedNewCustomer) return // ده بيتغطى بـ maybeShowPushAsk فوق، منعًا لظهور كارتين مرة واحدة
-  if (!S.customer) return
-  if (!canShowPushAsk()) return
-  const key = 'mnio_push_ask_rotation'
-  const idx = parseInt(localStorage.getItem(key) || '0', 10) % PUSH_ASK_VARIANTS.length
-  localStorage.setItem(key, String(idx + 1))
-  setTimeout(() => showPushAskOverlay(PUSH_ASK_VARIANTS[idx]), 1200) // تأخير أطول شوية عشان الصفحة تخلص تحميلها الأول
-}
-
-function dismissPushAsk() {
-  document.getElementById('push-ask-overlay')?.classList.add('hidden')
-}
-
-async function acceptPushAsk() {
-  dismissPushAsk()
-  await enableCustomerPush()
 }
 

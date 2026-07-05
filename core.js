@@ -162,7 +162,6 @@ async function boot() {
     showBottomNav(!!S.customer)
     updateWalletBadge()
     if (S.customer) loadNotifications().catch(() => {})
-    if (S.customer) maybeShowReturningPushAsk()
     window._bootDone = true
     // استعادة الصفحة بعد refresh أو Google redirect
     const savedPage = sessionStorage.getItem('mnio_page')
@@ -364,15 +363,13 @@ async function checkAndAwardBirthdayGift() {
     await db.from('menu_customers').update({ birthday_gift_claimed_year: thisYear }).eq('id', c.id)
     S.customer.birthday_gift_claimed_year = thisYear
     S.customer.coins_balance = (S.customer.coins_balance || 0) + r.birthday_coins
-    try {
-      await db.from('coin_transactions').insert({
-        customer_id:   c.id,
-        restaurant_id: r.id,
-        type:   'birthday',
-        amount: r.birthday_coins,
-        note:   '🎂 هدية عيد ميلادك السعيد!'
-      })
-    } catch (e) { /* تجاهل بصمت — التاجر مش لازم يتوقف عنده */ }
+    await db.from('coin_transactions').insert({
+      customer_id:   c.id,
+      restaurant_id: r.id,
+      type:   'birthday',
+      amount: r.birthday_coins,
+      note:   '🎂 هدية عيد ميلادك السعيد!'
+    }).catch(() => {})
     showToast(`🎂 عيد ميلاد سعيد! حصلت على ${numFmt(r.birthday_coins)} كوين هدية 🎉`)
     playSuccessSound()
   } catch(e) {}
@@ -453,15 +450,13 @@ async function _loadCustomerProfileInner(forceCreate, extraData) {
         clearPendingRef() // امسح الكود بعد الاستخدام
         // سجّل معاملة الترحيب (لو الميزة مفعّلة)
         if (welcomeEnabled) {
-          try {
-            await db.from('coin_transactions').insert({
-              customer_id:   newCust.id,
-              restaurant_id: S.restaurant.id,
-              type:   'welcome',
-              amount: welcomeCoins,
-              note:   'بونص الترحيب — تحوّل فوراً لرصيد المحفظة النقدي'
-            })
-          } catch (e) { /* تجاهل بصمت */ }
+          await db.from('coin_transactions').insert({
+            customer_id:   newCust.id,
+            restaurant_id: S.restaurant.id,
+            type:   'welcome',
+            amount: welcomeCoins,
+            note:   'بونص الترحيب — تحوّل فوراً لرصيد المحفظة النقدي'
+          }).catch(() => {})
         }
         // كوينز الإحالة للمُحيل (لو الميزة مفعّلة) — تتحول فلوس فوراً في wallet_balance أيضاً
         // ملاحظة: كان بيُستخدم incrementCustomerWallet(referredBy,...) وده كان بيفشل بصمت
@@ -469,7 +464,7 @@ async function _loadCustomerProfileInner(forceCreate, extraData) {
         // وبتسجّل معاملة coin_transactions بنفسها داخلياً، فمفيش داعي لإدراج يدوي هنا تاني
         const referralEnabled = S.restaurant.referral_enabled ?? true
         if (referredBy && referralEnabled && S.restaurant.referral_coins) {
-          try { await db.rpc('credit_referral_reward', { p_new_customer_id: newCust.id }) } catch (e) { /* تجاهل بصمت */ }
+          await db.rpc('credit_referral_reward', { p_new_customer_id: newCust.id }).catch(() => {})
         }
       }
     } catch(e) {

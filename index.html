@@ -432,9 +432,6 @@
         <button onclick="switchPage('orders')" style="width:100%;display:flex;align-items:center;gap:12px;padding:16px;border:none;border-bottom:1px solid #f5f5f5;background:#fff;cursor:pointer;font-family:'Rubik',sans-serif">
           <span style="font-size:20px">📋</span><span style="font-size:14px;font-weight:700;color:#1a1a1a;flex:1;text-align:right">طلباتي</span>
         </button>
-        <button id="acc-enable-push-btn" onclick="enableCustomerPush()" style="width:100%;display:flex;align-items:center;gap:12px;padding:16px;border:none;border-bottom:1px solid #f5f5f5;background:#fff;cursor:pointer;font-family:'Rubik',sans-serif">
-          <span style="font-size:20px">🔔</span><span id="acc-enable-push-label" style="font-size:14px;font-weight:700;color:#1a1a1a;flex:1;text-align:right">فعّل التنبيهات</span>
-        </button>
         <button onclick="openSupportContact()" style="width:100%;display:flex;align-items:center;gap:12px;padding:16px;border:none;background:#fff;cursor:pointer;font-family:'Rubik',sans-serif">
           <span style="font-size:20px">🎧</span><span style="font-size:14px;font-weight:700;color:#1a1a1a;flex:1;text-align:right">تواصل مع الدعم</span>
         </button>
@@ -880,17 +877,6 @@
       <p style="font-size:12px;opacity:0.8">كوين في انتظارك عند أول شراء</p>
     </div>
     <button onclick="closeCelebration()" style="width:100%;background:var(--brand);color:#fff;font-size:15px;font-weight:900;border-radius:16px;padding:14px">يلا نطلب! 🛒</button>
-  </div>
-</div>
-
-<!-- ══ PUSH PERMISSION SOFT-ASK OVERLAY ══ -->
-<div id="push-ask-overlay" class="hidden fixed inset-0 z-[85] flex flex-col items-center justify-center" style="background:rgba(0,0,0,0.75);backdrop-filter:blur(4px)">
-  <div style="position:relative;text-align:center;padding:32px 28px;background:#fff;border-radius:28px;max-width:320px;width:90%;animation:successPop 0.5s cubic-bezier(0.34,1.5,0.64,1) both">
-    <div id="push-ask-emoji" style="font-size:56px;margin-bottom:8px">🔔</div>
-    <h2 id="push-ask-title" style="font-size:20px;font-weight:900;color:#1a1a1a;margin-bottom:6px">خليك أول من يعرف!</h2>
-    <p id="push-ask-body" style="font-size:13.5px;color:#666;line-height:1.6;margin-bottom:20px">فعّل الإشعارات عشان توصلك الهدايا والعروض والخصومات أول بأول 🎁</p>
-    <button onclick="acceptPushAsk()" style="width:100%;background:var(--brand);color:#fff;font-size:15px;font-weight:900;border-radius:16px;padding:14px;margin-bottom:10px">فعّل الإشعارات 🔔</button>
-    <button onclick="dismissPushAsk()" style="width:100%;background:transparent;color:#999;font-size:13px;font-weight:700;padding:6px">مش دلوقتي</button>
   </div>
 </div>
 

@@ -872,13 +872,11 @@ async function awardLoyaltyAndWelcome(orderId, orderItems, customerId, orderTota
     const newBalance = (cust.coins_balance || 0) + balanceDelta
     await db.from('menu_customers').update({ coins_balance: newBalance }).eq('id', cust.id)
     S.customer.coins_balance = newBalance
-    try {
-      await db.from('notifications').insert({
-        customer_id: cust.id, restaurant_id: S.restaurant.id, order_id: orderId, type: 'coins',
-        title: '🪙 كسبت كوينز جديدة!',
-        body: `حصلت على ${balanceDelta.toLocaleString('ar-EG')} كوين من طلبك — شوفها في محفظتك`
-      })
-    } catch (e) { /* تجاهل بصمت — ما ينفعش يوقف إتمام الطلب */ }
+    await db.from('notifications').insert({
+      customer_id: cust.id, restaurant_id: S.restaurant.id, order_id: orderId, type: 'coins',
+      title: '🪙 كسبت كوينز جديدة!',
+      body: `حصلت على ${balanceDelta.toLocaleString('ar-EG')} كوين من طلبك — شوفها في محفظتك`
+    }).catch(() => {})
   }
 
   // تحديث loyalty_coins_earned في الطلب
