@@ -1714,7 +1714,9 @@ async function notifyDiscountCodeCreated(payload, codeId) {
   const rows = recipientIds.map(cid => ({
     customer_id: cid, restaurant_id: state.restaurant.id, type: 'promo', title, body
   }))
-  await db.from('notifications').insert(rows).catch(() => {})
+  try {
+    await db.from('notifications').insert(rows)
+  } catch (e) { console.error('notifyDiscountCodeCreated failed:', e) }
 }
 
 async function deleteDiscountCode(id) {
