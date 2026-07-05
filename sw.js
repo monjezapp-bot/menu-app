@@ -37,3 +37,44 @@ self.addEventListener('fetch', (event) => {
     caches.match(event.request).then((cached) => cached || fetch(event.request))
   );
 });
+
+// ── PUSH NOTIFICATIONS ───────────────────────────────────────────────
+// استقبال إشعار Push فعلي من السيرفر وعرضه للمستخدم — كان ناقص بالكامل
+// وده سبب أساسي إن الإشعارات ما كانتش بتظهر حتى لو السيرفر بعتها فعلاً.
+self.addEventListener('push', (event) => {
+  let data = {};
+  try {
+    data = event.data ? event.data.json() : {};
+  } catch (e) {
+    data = { title: 'إشعار جديد', body: event.data ? event.data.text() : '' };
+  }
+
+  const title = data.title || 'إشعار جديد';
+  const options = {
+    body: data.body || '',
+    icon: data.icon || './dash-icon-192.png',
+    badge: data.icon || './dash-icon-192.png',
+    dir: 'rtl',
+    lang: 'ar',
+    vibrate: [200, 100, 200],
+    tag: data.tag || undefined,
+    renotify: !!data.tag,
+    data: { url: data.url || './dashboard.html' }
+  };
+
+  event.waitUntil(self.registration.showNotification(title, options));
+});
+
+// الضغط على الإشعار: يفتح نفس نافذة التطبيق لو مفتوحة، وإلا يفتح نافذة جديدة
+self.addEventListener('notificationclick', (event) => {
+  event.notification.close();
+  const targetPath = event.notification.data?.url || './dashboard.html';
+
+  event.waitUntil(
+    self.clients.matchAll({ type: 'window', includeUncontrolled: true }).then((clientsArr) => {
+      const existing = clientsArr.find((c) => c.url.includes(targetPath.replace('./', '')));
+      if (existing) return existing.focus();
+      return self.clients.openWindow(targetPath);
+    })
+  );
+});
