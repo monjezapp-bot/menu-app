@@ -569,7 +569,7 @@ function setSuccessModalVisual(state, cancelReason, order) {
     msgEl.textContent = 'المندوب في الطريق الآن'
     msgEl.style.color = '#6366f1'
     document.getElementById('confirm-receipt-btn').classList.remove('hidden')
-    startAutoConfirmTimer(order?.id)
+    startAutoConfirmTimer(order?.id, order?.delivering_at)
   } else if (state === 'delivered') {
     iconEl.textContent = '🎉'
     titleEl.textContent = 'تم التسليم!'
@@ -600,18 +600,24 @@ function setSuccessModalVisual(state, cancelReason, order) {
 async function confirmOrderReceipt() {
   const orderId = document.getElementById('order-success-modal').dataset.orderId
   if (!orderId) return
-  await db.from('orders').update({ status: 'delivered', delivered_at: new Date().toISOString() }).eq('id', orderId)
+  await db.from('orders').update({ status: 'delivered', delivered_at: new Date().toISOString() }).eq('id', orderId).eq('status', 'delivering')
   document.getElementById('confirm-receipt-btn').classList.add('hidden')
+  clearTimeout(_autoConfirmTimeout)
 }
-// تأكيد استلام تلقائي لو العميل لم يضغط الزر بنفسه بعد مدة معقولة من بدء التوصيل
+// تأكيد استلام تلقائي لو العميل لم يضغط الزر بنفسه بعد 30 دقيقة من تسليم الطلب للمندوب.
+// مهم: بنحسب الوقت المتبقي من "delivering_at" الحقيقي (وقت تسليم التاجر الطلب للمندوب)
+// مش من لحظة فتح المودال — عشان لو العميل قفل التطبيق وفتحه تاني بعد 20 دقيقة مثلاً،
+// التايمر يكمل من حيث ما وصل (10 دقايق متبقية) بدل ما يرجع لـ 30 دقيقة كاملة من جديد.
 let _autoConfirmTimeout = null
 const AUTO_CONFIRM_MINUTES_AFTER_DELIVERING = 30
-function startAutoConfirmTimer(orderId) {
+function startAutoConfirmTimer(orderId, deliveringAt) {
   clearTimeout(_autoConfirmTimeout)
   if (!orderId) return
+  const elapsedMs   = deliveringAt ? (Date.now() - new Date(deliveringAt).getTime()) : 0
+  const remainingMs = Math.max(0, AUTO_CONFIRM_MINUTES_AFTER_DELIVERING * 60 * 1000 - elapsedMs)
   _autoConfirmTimeout = setTimeout(async () => {
-    await db.from('orders').update({ status: 'delivered', delivered_at: new Date().toISOString() }).eq('id', orderId)
-  }, AUTO_CONFIRM_MINUTES_AFTER_DELIVERING * 60 * 1000)
+    await db.from('orders').update({ status: 'delivered', delivered_at: new Date().toISOString() }).eq('id', orderId).eq('status', 'delivering')
+  }, remainingMs)
 }
 // يعرض شريط مراحل بصري (4 نقاط متصلة) يوضّح موقع الطلب الحالي ضمن رحلة التجهيز والتوصيل
 function renderTrackingSteps(currentState) {

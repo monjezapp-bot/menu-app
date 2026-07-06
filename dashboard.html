@@ -901,26 +901,41 @@
 <!-- ══ ORDER DETAIL MODAL ══ -->
 <div id="modal-order-detail" class="hidden fixed inset-0 z-50 flex items-end justify-center">
   <div class="absolute inset-0 bg-black/50" onclick="closeOrderDetailModal()"></div>
-  <div class="relative bg-white rounded-t-3xl w-full max-w-lg p-6 space-y-4 max-h-[90vh] overflow-y-auto">
-    <div class="flex items-center justify-between">
-      <div>
-        <h3 id="od-num" class="text-lg font-extrabold text-gray-800"></h3>
+  <div class="relative bg-white rounded-t-3xl w-full max-w-lg max-h-[92vh] flex flex-col overflow-hidden" style="animation:slideUp .3s cubic-bezier(0.34,1,0.64,1) both">
+    <!-- مقبض السحب -->
+    <div class="pt-2.5 pb-1 flex justify-center flex-shrink-0"><div class="w-10 h-1.5 bg-gray-200 rounded-full"></div></div>
+
+    <!-- هيدر ثابت -->
+    <div class="flex items-center justify-between px-5 pb-3 border-b border-gray-100 flex-shrink-0">
+      <div class="min-w-0">
+        <h3 id="od-num" class="text-lg font-extrabold text-gray-800 truncate"></h3>
         <p id="od-time" class="text-xs text-gray-400 mt-0.5"></p>
       </div>
-      <div class="flex items-center gap-2">
-        <span id="od-status-badge" class="text-xs font-bold px-3 py-1 rounded-full"></span>
-        <button onclick="closeOrderDetailModal()" class="w-8 h-8 rounded-full bg-gray-100 text-gray-500 text-sm">✕</button>
+      <div class="flex items-center gap-2 flex-shrink-0">
+        <span id="od-status-badge" class="text-xs font-bold px-3 py-1.5 rounded-full whitespace-nowrap"></span>
+        <button onclick="closeOrderDetailModal()" class="w-9 h-9 rounded-full bg-gray-100 text-gray-500 text-sm active:bg-gray-200">✕</button>
       </div>
     </div>
 
-    <div id="od-customer-block" class="hidden bg-gray-50 rounded-2xl p-3 space-y-1.5"></div>
+    <!-- محتوى قابل للتمرير -->
+    <div class="overflow-y-auto px-5 py-4 space-y-3 flex-1 min-h-0">
+      <div id="od-customer-block" class="hidden bg-gray-50 rounded-2xl p-3.5 space-y-2.5"></div>
 
-    <div id="od-items" class="space-y-1.5 border-t border-gray-100 pt-3"></div>
-    <div id="od-totals" class="space-y-1.5 border-t border-gray-100 pt-3"></div>
+      <div class="bg-white border border-gray-100 rounded-2xl p-3.5">
+        <p class="text-[11px] font-extrabold text-gray-400 mb-2 tracking-wide">🧾 المنتجات</p>
+        <div id="od-items" class="space-y-2"></div>
+      </div>
 
-    <p id="od-cancel-reason" class="hidden text-xs text-red-500 bg-red-50 rounded-xl px-3 py-2 font-bold"></p>
+      <div class="bg-gray-50 rounded-2xl p-3.5">
+        <div id="od-totals" class="space-y-1.5"></div>
+      </div>
 
-    <div id="od-actions" class="grid gap-2 pt-1"></div>
+      <p id="od-cancel-reason" class="hidden text-xs text-red-500 bg-red-50 rounded-xl px-3 py-2.5 font-bold leading-relaxed break-words"></p>
+      <div id="od-waiting-note" class="hidden text-xs font-bold text-indigo-600 bg-indigo-50 rounded-xl px-3 py-2.5 text-center"></div>
+    </div>
+
+    <!-- أزرار ثابتة أسفل الشاشة -->
+    <div id="od-actions" class="grid gap-2 px-5 py-4 border-t border-gray-100 flex-shrink-0"></div>
   </div>
 </div>
 
@@ -2808,10 +2823,12 @@ function renderOrders() {
                    <button onclick="acceptOrderDirect('{ID}')" class="flex-1 text-xs font-bold bg-green-500 text-white px-3 py-1.5 rounded-xl">✅ قبول الطلب</button>
                    <button onclick="rejectOrderDirect('{ID}')" class="flex-1 text-xs font-bold bg-red-50 text-red-600 border border-red-200 px-3 py-1.5 rounded-xl">❌ رفض</button>
                  </div>`,
-    confirmed:  `<button onclick="updateOrderStatus('{ID}','ready')" class="text-xs font-bold bg-purple-500 text-white px-3 py-1.5 rounded-xl">📦 تم التجهيز</button>`,
-    ready:      `<button onclick="updateOrderStatus('{ID}','delivering')" class="text-xs font-bold bg-indigo-500 text-white px-3 py-1.5 rounded-xl">🛵 جاري التوصيل</button>`,
-    delivering: `<button onclick="updateOrderStatus('{ID}','delivered')" class="text-xs font-bold bg-green-500 text-white px-3 py-1.5 rounded-xl">✅ تم التسليم</button>`
+    confirmed:  `<button onclick="confirmAndUpdateOrderStatus('{ID}','ready')" class="text-xs font-bold bg-purple-500 text-white px-3 py-1.5 rounded-xl">📦 تم التجهيز</button>`,
+    ready:      `<button onclick="confirmAndUpdateOrderStatus('{ID}','delivering')" class="text-xs font-bold bg-indigo-500 text-white px-3 py-1.5 rounded-xl">🛵 جاري التوصيل</button>`
   }
+  // ملاحظة: مفيش زر "تم التسليم" للتاجر — بعد "جاري التوصيل"، العميل هو اللي يأكد الاستلام
+  // من تطبيقه (فيه زر تأكيد استلام + تأكيد تلقائي بعد فترة)، مش التاجر
+  const waitingNote = { delivering: '🕐 بانتظار تأكيد العميل بالاستلام' }
   el.innerHTML = filtered.map(o => `
     <div class="bg-white rounded-2xl p-4 shadow-sm cursor-pointer active:bg-gray-50 transition-colors" onclick="openOrderDetailModal('${o.id}')">
       <div class="flex items-center justify-between mb-3">
@@ -2825,6 +2842,7 @@ function renderOrders() {
       </div>
       ${o.status === 'cancelled' && o.cancel_reason ? `<p class="text-xs text-red-500 bg-red-50 rounded-xl px-3 py-2 mt-2 font-bold">${o.cancel_reason.includes('بواسطة العميل') ? 'ألغاه العميل' : 'سبب الرفض'}: ${o.cancel_reason}</p>` : ''}
       ${nextActionBtn[o.status] ? `<div class="mt-3">${nextActionBtn[o.status].replace(/\{ID\}/g, o.id).replace(/onclick="/g, 'onclick="event.stopPropagation();')}</div>` : ''}
+      ${waitingNote[o.status] ? `<p class="text-xs font-bold text-indigo-500 bg-indigo-50 rounded-xl px-3 py-2 mt-3 text-center">${waitingNote[o.status]}</p>` : ''}
       <div class="flex items-center justify-between mt-2">
         <p class="text-xs text-gray-300">${new Date(o.created_at).toLocaleString('ar-EG')}</p>
         <p class="text-xs text-gray-400 font-bold">التفاصيل ‹</p>
@@ -2835,9 +2853,20 @@ function renderOrders() {
 // ── ORDER DETAIL MODAL (تفاصيل كاملة للطلب) ─────────────────────────────
 // يعرض كل ما يحتاجه التاجر: بيانات العميل الكاملة (هاتف/عنوان/موقع)، الطاولة/الفرع،
 // ملاحظة العميل، تفصيل الأسعار الكامل، وأزرار تحديث الحالة — دون الاعتماد على بطاقة الطلب الجديد المنبثقة فقط
+//
+// _odCurrentOrder: مرجع للطلب المفتوح حالياً في المودال، تستخدمه أزرار "نسخ" بدل ما نحط
+// نص العميل الخام جوه onclick="" (لأنه ممكن يحتوي على علامات اقتباس أو رموز بتكسر الـ HTML)
+let _odCurrentOrder = null
+function _odCopyRow(icon, label, value, field) {
+  return `<div class="flex items-start justify-between gap-2">
+    <p class="text-sm text-gray-700 leading-relaxed break-words min-w-0 flex-1">${icon} <b>${label}:</b> ${value}</p>
+    <button onclick="event.stopPropagation();copyText(_odCurrentOrder && _odCurrentOrder.${field}, '${label}')" class="flex-shrink-0 text-[11px] font-bold text-orange-600 bg-orange-50 px-2.5 py-1.5 rounded-lg active:bg-orange-100 whitespace-nowrap">📋 نسخ</button>
+  </div>`
+}
 function openOrderDetailModal(orderId) {
   const order = state.orders.find(o => o.id === orderId)
   if (!order) return
+  _odCurrentOrder = order
   const statusLabel = { pending:'جديد', confirmed:'جاري التجهيز', ready:'جاهز', delivering:'جاري التوصيل', delivered:'تم التسليم', cancelled:'ملغي' }
   const statusColor = { pending:'bg-yellow-50 text-yellow-600', confirmed:'bg-blue-50 text-blue-600', ready:'bg-purple-50 text-purple-600', delivering:'bg-indigo-50 text-indigo-600', delivered:'bg-green-50 text-green-600', cancelled:'bg-red-50 text-red-500' }
 
@@ -2845,32 +2874,38 @@ function openOrderDetailModal(orderId) {
   document.getElementById('od-time').textContent = new Date(order.created_at).toLocaleString('ar-EG')
   const badge = document.getElementById('od-status-badge')
   badge.textContent = statusLabel[order.status] || order.status
-  badge.className   = 'text-xs font-bold px-3 py-1 rounded-full ' + (statusColor[order.status] || 'bg-gray-100 text-gray-500')
+  badge.className   = 'text-xs font-bold px-3 py-1.5 rounded-full whitespace-nowrap ' + (statusColor[order.status] || 'bg-gray-100 text-gray-500')
 
   // بيانات العميل والتوصيل — أهم جزء لو التاجر احتاج يكلم العميل أو يتأكد من عنوانه
   const rows = []
-  if (order.table_number) rows.push(`🪑 <b>طاولة:</b> ${order.table_number}`)
+  if (order.table_number) rows.push(`<p class="text-sm text-gray-700">🪑 <b>طاولة:</b> ${order.table_number}</p>`)
   const branchName = order.branch_id ? state.branches.find(b => b.id === order.branch_id)?.name : null
-  if (branchName)          rows.push(`🏬 <b>الفرع:</b> ${branchName}`)
-  if (order.customer_name) rows.push(`👤 <b>الاسم:</b> ${order.customer_name}`)
+  if (branchName)          rows.push(`<p class="text-sm text-gray-700">🏬 <b>الفرع:</b> ${branchName}</p>`)
+  if (order.customer_name) rows.push(`<p class="text-sm text-gray-700 break-words">👤 <b>الاسم:</b> ${order.customer_name}</p>`)
   if (order.customer_phone) {
     const ph = normalizePhone(order.customer_phone)
-    rows.push(`📞 <b>الهاتف:</b> <a href="tel:${order.customer_phone}" class="text-blue-600 underline" onclick="event.stopPropagation()">${order.customer_phone}</a>`
-      + (ph.ok ? ` — <a href="https://wa.me/${ph.value}" target="_blank" class="text-green-600 underline" onclick="event.stopPropagation()">واتساب</a>` : ''))
+    rows.push(`<div class="flex items-center justify-between gap-2">
+      <p class="text-sm text-gray-700 break-all min-w-0 flex-1">📞 <b>الهاتف:</b> ${order.customer_phone}</p>
+      <div class="flex items-center gap-1.5 flex-shrink-0">
+        <a href="tel:${order.customer_phone}" onclick="event.stopPropagation()" class="w-8 h-8 flex items-center justify-center rounded-lg bg-blue-50 text-blue-600">📞</a>
+        ${ph.ok ? `<a href="https://wa.me/${ph.value}" target="_blank" onclick="event.stopPropagation()" class="w-8 h-8 flex items-center justify-center rounded-lg bg-green-50 text-green-600">💬</a>` : ''}
+        <button onclick="event.stopPropagation();copyText(_odCurrentOrder && _odCurrentOrder.customer_phone, 'الهاتف')" class="w-8 h-8 flex items-center justify-center rounded-lg bg-gray-100 text-gray-500 text-xs">📋</button>
+      </div>
+    </div>`)
   }
-  if (order.customer_address)  rows.push(`🏠 <b>العنوان:</b> ${order.customer_address}`)
-  if (order.customer_location) rows.push(`📍 <b>تفاصيل الموقع:</b> ${order.customer_location}`)
-  if (order.customer_lat && order.customer_lng) rows.push(`🗺️ <a href="https://www.google.com/maps?q=${order.customer_lat},${order.customer_lng}" target="_blank" class="text-blue-600 underline" onclick="event.stopPropagation()">فتح الموقع على الخريطة</a>`)
-  if (order.note) rows.push(`📝 <b>ملاحظة العميل:</b> ${order.note}`)
+  if (order.customer_address)  rows.push(_odCopyRow('🏠', 'العنوان', order.customer_address, 'customer_address'))
+  if (order.customer_location) rows.push(_odCopyRow('📍', 'تفاصيل الموقع', order.customer_location, 'customer_location'))
+  if (order.customer_lat && order.customer_lng) rows.push(`<a href="https://www.google.com/maps?q=${order.customer_lat},${order.customer_lng}" target="_blank" onclick="event.stopPropagation()" class="flex items-center justify-center gap-1.5 text-sm font-bold text-white bg-blue-500 rounded-xl py-2.5 active:bg-blue-600">🗺️ فتح الموقع على الخريطة</a>`)
+  if (order.note) rows.push(`<p class="text-sm text-gray-700 break-words">📝 <b>ملاحظة العميل:</b> ${order.note}</p>`)
   const custBlock = document.getElementById('od-customer-block')
-  if (rows.length) { custBlock.innerHTML = rows.map(r => `<p class="text-sm text-gray-700">${r}</p>`).join(''); custBlock.classList.remove('hidden') }
+  if (rows.length) { custBlock.innerHTML = rows.join(''); custBlock.classList.remove('hidden') }
   else             { custBlock.innerHTML = ''; custBlock.classList.add('hidden') }
 
   // المنتجات
   document.getElementById('od-items').innerHTML = (order.items || []).map(i => `
-    <div class="flex justify-between text-sm">
-      <span class="text-gray-600">${i.name} × ${i.qty}${i.options?.length ? `<br><span class="text-xs text-gray-400">${i.options.map(op => op.label || op).join('، ')}</span>` : ''}</span>
-      <span class="font-bold text-gray-800 whitespace-nowrap">${Number(i.subtotal || 0).toFixed(2)} ج.م</span>
+    <div class="flex justify-between gap-2 text-sm">
+      <span class="text-gray-600 break-words min-w-0">${i.name} × ${i.qty}${i.options?.length ? `<br><span class="text-xs text-gray-400">${i.options.map(op => op.label || op).join('، ')}</span>` : ''}</span>
+      <span class="font-bold text-gray-800 whitespace-nowrap flex-shrink-0">${Number(i.subtotal || 0).toFixed(2)} ج.م</span>
     </div>`).join('')
 
   // تفصيل السعر الكامل
@@ -2880,7 +2915,7 @@ function openOrderDetailModal(orderId) {
   if (order.coins_discount)       totals.push(`<div class="flex justify-between text-sm"><span class="text-orange-500">خصم الكوينز 🪙</span><span class="font-bold text-orange-500">-${Number(order.coins_discount).toFixed(2)} ج.م</span></div>`)
   if (order.discount_code_amount) totals.push(`<div class="flex justify-between text-sm"><span class="text-green-600">كود خصم</span><span class="font-bold text-green-600">-${Number(order.discount_code_amount).toFixed(2)} ج.م</span></div>`)
   if (order.wallet_amount_used)   totals.push(`<div class="flex justify-between text-sm"><span class="text-emerald-600">💳 من رصيد المحفظة</span><span class="font-bold text-emerald-600">-${Number(order.wallet_amount_used).toFixed(2)} ج.م</span></div>`)
-  totals.push(`<div class="flex justify-between text-sm font-extrabold pt-2 border-t border-gray-100"><span>الإجمالي</span><span class="text-orange-500">${Number(order.total).toFixed(2)} ج.م</span></div>`)
+  totals.push(`<div class="flex justify-between text-sm font-extrabold pt-2 border-t border-gray-200"><span>الإجمالي</span><span class="text-orange-500">${Number(order.total).toFixed(2)} ج.م</span></div>`)
   document.getElementById('od-totals').innerHTML = totals.join('')
 
   // سبب الرفض / الإلغاء
@@ -2888,19 +2923,25 @@ function openOrderDetailModal(orderId) {
   if (order.status === 'cancelled' && order.cancel_reason) { reasonEl.textContent = `${order.cancel_reason.includes('بواسطة العميل') ? 'ألغاه العميل' : 'سبب الرفض'}: ${order.cancel_reason}`; reasonEl.classList.remove('hidden') }
   else reasonEl.classList.add('hidden')
 
-  // زر الانتقال للحالة التالية (نفس منطق البطاقة)
+  // ملاحظة الانتظار (حالة "جاري التوصيل" فقط) — التاجر مالوش زرار ينهي بيه الطلب بنفسه هنا؛
+  // التأكيد النهائي إما من العميل بضغطة زر، أو تلقائياً بعد 30 دقيقة من تسليم الطلب للمندوب
+  const waitEl = document.getElementById('od-waiting-note')
+  if (order.status === 'delivering') { waitEl.textContent = '🕐 بانتظار تأكيد العميل بالاستلام (أو تأكيد تلقائي بعد 30 دقيقة)'; waitEl.classList.remove('hidden') }
+  else waitEl.classList.add('hidden')
+
+  // زر الانتقال للحالة التالية (نفس منطق البطاقة) — بيوقف عند "جاري التوصيل"،
+  // لأن تأكيد الاستلام النهائي مسؤولية العميل (يدوياً أو تلقائياً) مش التاجر
   const nextAction = {
     confirmed:  { label: '📦 تم التجهيز',   next: 'ready',      cls: 'bg-purple-500' },
-    ready:      { label: '🛵 جاري التوصيل', next: 'delivering', cls: 'bg-indigo-500' },
-    delivering: { label: '✅ تم التسليم',    next: 'delivered',  cls: 'bg-green-500' }
+    ready:      { label: '🛵 جاري التوصيل', next: 'delivering', cls: 'bg-indigo-500' }
   }[order.status]
   document.getElementById('od-actions').innerHTML =
     (order.status === 'pending' ? `
-      <button onclick="acceptOrderDirect('${order.id}');closeOrderDetailModal()" class="w-full bg-green-500 text-white font-extrabold rounded-xl py-3 text-sm">✅ قبول الطلب</button>
-      <button onclick="rejectOrderDirect('${order.id}')" class="w-full bg-red-50 text-red-600 font-extrabold rounded-xl py-3 text-sm border border-red-200 mt-2">❌ رفض الطلب</button>
+      <button onclick="acceptOrderDirect('${order.id}');closeOrderDetailModal()" class="w-full bg-green-500 text-white font-extrabold rounded-xl py-3.5 text-sm">✅ قبول الطلب</button>
+      <button onclick="rejectOrderDirect('${order.id}')" class="w-full bg-red-50 text-red-600 font-extrabold rounded-xl py-3.5 text-sm border border-red-200">❌ رفض الطلب</button>
     ` : '')
-    + (nextAction ? `<button onclick="updateOrderStatus('${order.id}','${nextAction.next}');closeOrderDetailModal()" class="w-full ${nextAction.cls} text-white font-extrabold rounded-xl py-3 text-sm">${nextAction.label}</button>` : '')
-    + (order.status === 'confirmed' ? `<button onclick="openCancelConfirmedModal('${order.id}')" class="w-full bg-red-50 text-red-600 font-extrabold rounded-xl py-3 text-sm border border-red-200">❌ إلغاء الطلب (بعد القبول)</button>` : '')
+    + (nextAction ? `<button onclick="confirmAndUpdateOrderStatus('${order.id}','${nextAction.next}', true)" class="w-full ${nextAction.cls} text-white font-extrabold rounded-xl py-3.5 text-sm">${nextAction.label}</button>` : '')
+    + (order.status === 'confirmed' ? `<button onclick="openCancelConfirmedModal('${order.id}')" class="w-full bg-red-50 text-red-600 font-extrabold rounded-xl py-3.5 text-sm border border-red-200">❌ إلغاء الطلب (بعد القبول)</button>` : '')
 
   document.getElementById('modal-order-detail').classList.remove('hidden')
   pushModal('order-detail', closeOrderDetailModal)
@@ -3019,6 +3060,18 @@ async function cancelConfirmedOrder(orderId, reason) {
   showToast('❌ تم إلغاء الطلب' + (refundText ? ` — تم استرجاع ${refundText} للعميل` : '') + compensationMsg)
   await loadOrders()
 }
+// تأكيد قبل تغيير حالة الطلب لمرحلة حساسة — عشان ضغطة غلط بالغلط ميوصلش للعميل
+// إشعار "طلبك جاهز" أو "المندوب في الطريق" وهو لسه مش فعلاً كده
+const ORDER_STATUS_CONFIRM = {
+  ready:      { msg: 'هل أنت متأكد إن الطلب جاهز بالكامل؟',       label: '✅ نعم، جاهز',            color: '#a855f7' },
+  delivering: { msg: 'هل تأكدت إن المندوب استلم الطلب فعلاً؟',    label: '✅ نعم، استلمه المندوب',   color: '#6366f1' }
+}
+async function confirmAndUpdateOrderStatus(id, status, closeDetailAfter) {
+  const c = ORDER_STATUS_CONFIRM[status]
+  if (c) { const ok = await showConfirm(c.msg, c.label, c.color); if (!ok) return }
+  await updateOrderStatus(id, status)
+  if (closeDetailAfter) closeOrderDetailModal()
+}
 async function updateOrderStatus(id, status) {
   const timestampField = { ready: 'ready_at', delivering: 'delivering_at', delivered: 'delivered_at' }[status]
   const payload = { status }
@@ -3084,6 +3137,19 @@ function openSupportChat(e) {
   e.preventDefault()
   const msg = encodeURIComponent(`السلام عليكم، أنا تاجر "${state.restaurant?.name || ''}" وعندي استفسار بخصوص لوحة التحكم.`)
   window.open(`https://wa.me/${SUPPORT_WHATSAPP}?text=${msg}`, '_blank')
+}
+// نسخ نص عام (تستخدمه أزرار "نسخ" في تفاصيل الطلب: الهاتف/العنوان/الموقع) — نفس منطق copyShareLink بالضبط
+function copyText(text, label) {
+  if (!text) { showToast('لا يوجد نص لنسخه'); return }
+  navigator.clipboard?.writeText(text).then(() => showToast(`✅ تم نسخ ${label || 'النص'}`)).catch(() => {
+    const ta = document.createElement('textarea')
+    ta.value = text
+    ta.style.position = 'fixed'; ta.style.opacity = '0'
+    document.body.appendChild(ta); ta.select()
+    document.execCommand('copy')
+    document.body.removeChild(ta)
+    showToast(`✅ تم نسخ ${label || 'النص'}`)
+  })
 }
 function copyShareLink() {
   const input = document.getElementById('share-menu-link')
@@ -3502,12 +3568,14 @@ function showToastWithUndo(msg, cb) {
 }
 
 let _confirmResolve = null
-function showConfirm(msg, btnLabel='حذف') {
+function showConfirm(msg, btnLabel='حذف', color='#ef4444') {
   return new Promise(resolve => {
     _confirmResolve = resolve
     document.getElementById('confirm-msg').textContent       = msg
-    document.getElementById('confirm-yes-btn').textContent   = btnLabel
-    document.getElementById('confirm-yes-btn').onclick = () => { closeConfirm(); resolve(true) }
+    const yesBtn = document.getElementById('confirm-yes-btn')
+    yesBtn.textContent      = btnLabel
+    yesBtn.style.background = color
+    yesBtn.onclick = () => { closeConfirm(); resolve(true) }
     document.getElementById('confirm-dialog').classList.remove('hidden')
     _lockBodyScroll()
   })
