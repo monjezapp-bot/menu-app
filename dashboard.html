@@ -3081,7 +3081,7 @@ async function updateOrderStatus(id, status) {
   const payload = { status }
   if (timestampField) payload[timestampField] = new Date().toISOString()
   const { error } = await db.from('orders').update(payload).eq('id', id)
-  if (error) { showToast('❌ فشل تحديث حالة الطلب: ' + error.message); console.error('updateOrderStatus error:', error); return }
+  if (error) { showToast('❌ فشل تحديث حالة الطلب: ' + error.message, true); console.error('updateOrderStatus error:', error); return }
   await notifyCustomerOrderStatus(id, status)
   await loadOrders()
   showToast('تم تحديث حالة الطلب')
@@ -3337,7 +3337,7 @@ async function acceptOrderDirect(id) {
   const { error } = await db.from('orders')
     .update({ status: 'confirmed', confirmed_at: new Date().toISOString() })
     .eq('id', id).eq('status', 'pending')
-  if (error) { showToast('تعذّر قبول الطلب'); return }
+  if (error) { showToast('تعذّر قبول الطلب: ' + error.message, true); return }
   showToast('✅ تم قبول الطلب')
   // لو الطلب ده كان معروض في طابور البوب-أب بالفعل، نشيله من الطابور ونحدّث العرض بدل ما يفضل معروض تاني بالغلط
   const idx = _pendingOrdersQueue.findIndex(o => o.id === id)
@@ -3565,7 +3565,13 @@ function showTab(name) {
   if (name === 'branches')  loadBranches()
 }
 
-function showToast(msg) { const t=document.getElementById('toast'); t.textContent=msg; t.classList.remove('hidden'); setTimeout(()=>t.classList.add('hidden'),2500) }
+function showToast(msg, isError) {
+  const t = document.getElementById('toast')
+  t.textContent = msg
+  t.style.background = isError ? '#ef4444' : ''
+  t.classList.remove('hidden')
+  setTimeout(() => { t.classList.add('hidden'); t.style.background = '' }, isError ? 7000 : 2500)
+}
 function showToastWithUndo(msg, cb) {
   const t = document.getElementById('toast')
   t.innerHTML = `${msg} — <button onclick="(${cb.toString()})();document.getElementById('toast').classList.add('hidden')" style="text-decoration:underline;font-weight:900;background:none;border:none;color:#FF6B00;cursor:pointer;font-family:'Rubik',sans-serif;">تراجع</button>`
