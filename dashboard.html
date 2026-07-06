@@ -3071,6 +3071,7 @@ const ORDER_STATUS_CONFIRM = {
   delivering: { msg: 'هل تأكدت إن المندوب استلم الطلب فعلاً؟',    label: '✅ نعم، استلمه المندوب',   color: '#6366f1' }
 }
 async function confirmAndUpdateOrderStatus(id, status, closeDetailAfter) {
+  alert('🔧 تشخيص: الزرار اشتغل، الحالة المطلوبة: ' + status)
   const c = ORDER_STATUS_CONFIRM[status]
   if (c) { const ok = await showConfirm(c.msg, c.label, c.color); if (!ok) return }
   await updateOrderStatus(id, status)
