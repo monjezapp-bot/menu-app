@@ -656,7 +656,7 @@
                   onkeydown="focusNextField(event, null, sendOrder)"
                   style="width:100%;border:1.5px solid #eee;border-radius:14px;padding:12px 14px;font-size:13px;color:#444;outline:none;font-family:'Rubik',sans-serif;resize:none;margin-bottom:10px"></textarea>
 
-        <!-- كود الخصم + رصيد المحفظة -->
+        <!-- كود الخصم + الكوينز -->
         <div id="cart-coins-section" style="margin-bottom:10px">
           <!-- كود خصم -->
           <div style="display:flex;gap:8px;margin-bottom:8px">
@@ -664,8 +664,7 @@
             <button onclick="applyDiscountCode()" style="background:var(--brand);color:#fff;font-size:13px;font-weight:800;border-radius:12px;padding:10px 16px;white-space:nowrap">تطبيق</button>
           </div>
           <p id="cart-discount-msg" style="font-size:11px;margin-bottom:6px;display:none"></p>
-          <!-- ملحوظة: الكوينز مش قابلة للصرف المباشر في الطلبات — بيتحوّلوا لرصيد نقدي في صفحة المحفظة
-               أول ما يوصلوا الحد الأدنى (min_redeem_coins)، وبعدين يُستخدموا هنا كرصيد محفظة عادي. -->
+          <!-- استخدام الكوينز في الخصم اتلغى: الخصم في الطلب بقى من رصيد المحفظة النقدي بس -->
 
           <!-- استخدام رصيد المحفظة النقدي — يظهر فقط للمسجّلين وعندهم رصيد -->
           <div id="cart-wallet-row" style="display:none;margin-top:8px;background:#f0fdf4;border:1.5px solid #bbf7d0;border-radius:14px;padding:12px 14px">

@@ -387,9 +387,6 @@ function renderCartItems() {
     discRow.style.display = 'flex'; discVal.textContent = '- ' + fmt(_appliedDiscount)
   } else { discRow.style.display = 'none' }
 
-  // ملحوظة: الكوينز مبقتش قابلة للصرف المباشر كخصم في السلة — بيتحوّلوا لرصيد نقدي في
-  // صفحة المحفظة الأول، وبعدين يُستخدموا هنا زي أي رصيد محفظة عادي (الصف اللي تحت ده).
-
   // استخدام رصيد المحفظة النقدي — يظهر فقط للمسجّلين وعندهم رصيد
   const walletRow = document.getElementById('cart-wallet-row')
   if (walletRow) {

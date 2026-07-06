@@ -101,11 +101,9 @@ async function sendOrder() {
   }
   const grandTotal = Math.round((cartTotal() + deliveryFee) * 100) / 100
 
-  // الخصومات
-  const coinsPerEgp      = S.restaurant?.coins_per_egp ?? 1000
-  const coinsDiscountEgp = _coinsToRedeem > 0 ? Math.round(_coinsToRedeem / coinsPerEgp * 100) / 100 : 0
+  // الخصومات — الكوينز اتلغى استخدامها كخصم في الطلب، الخصم بقى من كود الخصم + رصيد المحفظة النقدي بس
   const walletAmountUsed = (_walletToUse > 0 && S.customer) ? _walletToUse : 0
-  let finalTotal = Math.max(0, Math.round((grandTotal - _appliedDiscount - coinsDiscountEgp - walletAmountUsed) * 100) / 100)
+  let finalTotal = Math.max(0, Math.round((grandTotal - _appliedDiscount - walletAmountUsed) * 100) / 100)
 
   // Save order to DB — the merchant receives it live in the dashboard (no WhatsApp)
   let orderId, orderNumber
@@ -130,8 +128,6 @@ async function sendOrder() {
         branch_id:        nearestBranchId,
         delivery_fee:     deliveryFee > 0 ? deliveryFee : null,
         customer_id:      S.customer?.id || null,
-        coins_redeemed:   _coinsToRedeem > 0 ? _coinsToRedeem : null,
-        coins_discount:   coinsDiscountEgp > 0 ? coinsDiscountEgp : null,
         discount_code:    _appliedCode ? document.getElementById('cart-discount-code').value.trim().toUpperCase() : null,
         discount_code_amount: _appliedDiscount > 0 ? _appliedDiscount : null,
         wallet_amount_used: walletAmountUsed > 0 ? walletAmountUsed : null
@@ -142,7 +138,7 @@ async function sendOrder() {
     if (ie?.message?.includes('orders_customer_id_fkey')) {
       console.warn('customer_id غير صالح، إعادة المحاولة كـ زائر:', S.customer?.id)
       S.customer = null
-      // خصم الكوينز ورصيد المحفظة يتطلبان حساب عميل صالح — بما إننا رجعنا "زائر" لازم نعيد حساب الإجمالي بدونهم
+      // خصم رصيد المحفظة يتطلب حساب عميل صالح — بما إننا رجعنا "زائر" لازم نعيد حساب الإجمالي بدونه
       finalTotal = Math.max(0, Math.round((grandTotal - _appliedDiscount) * 100) / 100)
       const retry = await db.from('orders')
         .insert({
@@ -178,21 +174,33 @@ async function sendOrder() {
     // القديم لـ coins_balance/wallet_balance من هنا كان بيترفض من الـ trigger
     // (protect_customer_financial_columns) لأنه مش عن طريق دالة آمنة، فكان بيفشل
     // بصمت — الاستبدال ده يخليها تشتغل صح ويمنع أي تلاعب بالرصيد من الكلاينت.
-    if ((_coinsToRedeem > 0 || walletAmountUsed > 0 || _appliedCode) && S.customer) {
+    if ((walletAmountUsed > 0 || _appliedCode) && S.customer) {
       const { data: settled, error: settleErr } = await db.rpc('settle_order_payment', {
         p_order_id: orderId,
-        p_coins_to_redeem: _coinsToRedeem || 0,
+        p_coins_to_redeem: 0,
         p_wallet_to_use: walletAmountUsed || 0,
         p_discount_code: _appliedCode ? document.getElementById('cart-discount-code').value.trim().toUpperCase() : null
       })
       if (settleErr) throw new Error(settleErr.message)
-      if (_coinsToRedeem > 0) S.customer.coins_balance = Math.max(0, (S.customer.coins_balance || 0) - _coinsToRedeem)
       if (walletAmountUsed > 0) S.customer.wallet_balance = Math.max(0, Number(S.customer.wallet_balance || 0) - walletAmountUsed)
     }
 
     // منح كوينز الولاء بعد الطلب
     await awardLoyaltyAndWelcome(orderId, items, S.customer?.id, finalTotal)
   } catch(e) {
+    // أمان: لو فشلت تسوية الدفع (settle_order_payment) بعد ما الطلب اتسجّل فعلاً في orders،
+    // يبقى فيه صف طلب بقيمة (total) متخصومة من رصيد محفظة لم يُخصم فعليًا على السيرفر —
+    // ده بيحصل لو حد لعب في القيم من الكونسول (مثلاً غيّر _walletToUse لرقم أكبر من رصيده الحقيقي)،
+    // فالطلب لازم يتلغي فورًا عشان ميوصلش للتاجر كطلب "مجاني" أو مخصوم بدون دفع حقيقي.
+    // ملاحظة: ده مستقل تمامًا عن أي كود قديم — بيتفعّل بس في حالة الفشل، ومفيش أي رصيد اتخصم فعلاً
+    // (settle_order_payment فشلت قبل أي UPDATE على رصيد العميل)، فمفيش داعي لاسترجاع.
+    if (orderId) {
+      try {
+        await db.from('orders')
+          .update({ status: 'cancelled', cancel_reason: 'فشل تسوية الدفع تلقائيًا: ' + (e.message || 'خطأ غير معروف') })
+          .eq('id', orderId)
+      } catch(_) {}
+    }
     btn.style.opacity = '1'
     btn.innerHTML = `<span>⚠️ ${e.message || 'خطأ غير معروف'}</span>`
     setTimeout(resetBtn, 5000)
@@ -204,11 +212,10 @@ async function sendOrder() {
     .forEach(id => { const el = document.getElementById(id); if (el) el.value = '' })
   document.getElementById('order-location-lat').value = ''
   document.getElementById('order-location-lng').value = ''
-  const coinsInput = document.getElementById('cart-coins-input'); if (coinsInput) coinsInput.value = ''
   const walletInput = document.getElementById('cart-wallet-input'); if (walletInput) walletInput.value = ''
   const walletPreview = document.getElementById('cart-wallet-preview'); if (walletPreview) walletPreview.style.display = 'none'
   document.getElementById('cart-discount-msg').style.display = 'none'
-  _appliedDiscount = 0; _appliedCode = null; _coinsToRedeem = 0; _walletToUse = 0
+  _appliedDiscount = 0; _appliedCode = null; _walletToUse = 0
   resetBtn()
   showOrderSuccess(orderNumber, orderId, finalTotal, deliveryFee)
   trackOrderStatus(orderId)
@@ -404,45 +411,30 @@ async function doCancelOrder(orderId) {
 }
 
 // ── استرجاع رصيد المحفظة والكوينز المستخدمة في الطلب عند إلغائه ────────
-// بيتنفّذ من أي مسار إلغاء (العميل نفسه، أو رفض/إلغاء التاجر من الداشبورد).
-// الحماية من الاسترجاع المزدوج بتيجي من إن تحديث status لـ 'cancelled' نفسه
-// بيبقى مسموح مرة واحدة بس (بعد كده الطلب مش هيقع في شرط .in('status', [...]) تاني).
+// بيتنفّذ من مسار إلغاء العميل نفسه (زر الإلغاء في مودال التتبع). ملاحظة أمان:
+// الكتابة المباشرة القديمة هنا على menu_customers/coin_transactions كانت بتترفض بصمت
+// من الـ RLS/trigger لأنهم مسموحين لصاحب المطعم بس مش للعميل — فكان الاسترجاع
+// شكليًا في الواجهة بس من غير ما يتسجل فعليًا في قاعدة البيانات. الاستبدال ده
+// بيمر عن طريق دالة آمنة (refund_order_payment_customer) بتتحقق إن الطلب فعلاً
+// بتاع العميل ده ومُلغى، وتمنع الاسترجاع المزدوج على السيرفر.
+// (مسار التاجر من الداشبورد منفصل تمامًا وميتأثرش بالتغيير ده)
 async function refundOrderPayment(order) {
-  if (!order?.customer_id) return null
-  const walletAmt = Number(order.wallet_amount_used || 0)
-  const coinsAmt  = Number(order.coins_redeemed || 0)
-  if (walletAmt <= 0 && coinsAmt <= 0) return null
+  if (!order?.customer_id || !order?.id) return null
+  try {
+    const { data, error } = await db.rpc('refund_order_payment_customer', { p_order_id: order.id })
+    if (error || !data || data.already_refunded) return null
+    const walletAmt = Number(data.wallet_amt || 0)
+    const coinsAmt  = Number(data.coins_amt || 0)
+    if (walletAmt <= 0 && coinsAmt <= 0) return null
 
-  const { data: cust } = await db.from('menu_customers')
-    .select('wallet_balance, coins_balance').eq('id', order.customer_id).single()
-  if (!cust) return null
-
-  const updates = {}
-  if (walletAmt > 0) updates.wallet_balance = Number(cust.wallet_balance || 0) + walletAmt
-  if (coinsAmt  > 0) updates.coins_balance  = (cust.coins_balance || 0) + coinsAmt
-  await db.from('menu_customers').update(updates).eq('id', order.customer_id)
-
-  const txs = []
-  if (walletAmt > 0) txs.push({
-    customer_id: order.customer_id, restaurant_id: order.restaurant_id,
-    type: 'wallet_refund', amount: Math.round(walletAmt), order_id: order.id,
-    note: 'استرجاع رصيد المحفظة بعد إلغاء الطلب'
-  })
-  if (coinsAmt > 0) txs.push({
-    customer_id: order.customer_id, restaurant_id: order.restaurant_id,
-    type: 'refund', amount: coinsAmt, order_id: order.id,
-    note: 'استرجاع كوينز بعد إلغاء الطلب'
-  })
-  if (txs.length) await db.from('coin_transactions').insert(txs)
-
-  // لو ده حساب العميل الحالي، حدّث الحالة محليًا عشان يشوف رصيده الجديد فورًا
-  if (S.customer && S.customer.id === order.customer_id) {
-    if (walletAmt > 0) S.customer.wallet_balance = updates.wallet_balance
-    if (coinsAmt  > 0) S.customer.coins_balance  = updates.coins_balance
-    updateWalletBadge()
-  }
-
-  return { walletAmt, coinsAmt }
+    // لو ده حساب العميل الحالي، حدّث الحالة محليًا عشان يشوف رصيده الجديد فورًا
+    if (S.customer && S.customer.id === order.customer_id) {
+      if (walletAmt > 0) S.customer.wallet_balance = Number(S.customer.wallet_balance || 0) + walletAmt
+      if (coinsAmt  > 0) S.customer.coins_balance  = (S.customer.coins_balance || 0) + coinsAmt
+      updateWalletBadge()
+    }
+    return { walletAmt, coinsAmt }
+  } catch(e) { return null }
 }
 
 // رسالة قصيرة تتعرض للعميل بعد الإلغاء توضّح إن المبلغ رجع لمحفظته
@@ -684,54 +676,10 @@ async function applyDiscountCode() {
   renderCartItems()
 }
 
-// ── COINS IN CART ──────────────────────────────────────────────────────
-function updateCoinsRowInCart() {
-  const row = document.getElementById('cart-coins-row')
-  if (!row) return
-  const minRedeem = S.restaurant?.min_redeem_coins ?? 100000
-  if (S.customer && S.customer.coins_balance >= minRedeem && (S.restaurant?.loyalty_enabled)) {
-    const coinsPerEgp = S.restaurant.coins_per_egp ?? 1000
-    document.getElementById('cart-coins-available').innerHTML =
-      `رصيدك: <span class="ltr-num">${S.customer.coins_balance.toLocaleString('en-US')}</span> 🪙 = <span class="ltr-num">${(S.customer.coins_balance / coinsPerEgp).toFixed(2)}</span> ج.م`
-    row.style.display = 'block'
-  } else {
-    row.style.display = 'none'
-  }
-}
-
-function updateCoinsDiscount() {
-  const input = document.getElementById('cart-coins-input')
-  const preview = document.getElementById('cart-coins-discount-preview')
-  const val = parseInt(input.value) || 0
-  const coinsPerEgp = S.restaurant?.coins_per_egp ?? 1000
-  const maxCoins = Math.min(S.customer?.coins_balance || 0, val)
-  _coinsToRedeem = Math.max(0, Math.min(maxCoins, S.customer?.coins_balance || 0))
-  const disc = _coinsToRedeem / coinsPerEgp
-  if (_coinsToRedeem > 0) {
-    preview.innerHTML = `خصم <span class="ltr-num">${disc.toFixed(2)}</span> ج.م مقابل <span class="ltr-num">${_coinsToRedeem.toLocaleString('en-US')}</span> كوين`
-    preview.style.display = 'block'
-  } else {
-    preview.style.display = 'none'
-  }
-  renderCartItems()
-}
-
-function useMaxCoins() {
-  const bal = S.customer?.coins_balance || 0
-  const coinsPerEgp = S.restaurant?.coins_per_egp ?? 1000
-  const cartVal = cartTotal()
-  // لا تتجاوز قيمة الطلب
-  const maxByCart = Math.floor(cartVal * coinsPerEgp)
-  _coinsToRedeem = Math.min(bal, maxByCart)
-  document.getElementById('cart-coins-input').value = _coinsToRedeem
-  updateCoinsDiscount()
-}
-
 // ── WALLET BALANCE IN CART (رصيد نقدي) ──────────────────────────────────
-// المتاح فعلياً لاستخدام رصيد المحفظة = أقل قيمة بين (رصيد المحفظة) و (المتبقي المطلوب دفعه بعد خصم الكود والكوينز)
+// الكوينز اتلغى استخدامها كخصم وقت إتمام الطلب — الخصم المتاح للعميل بقى من رصيد المحفظة النقدي بس
+// المتاح فعلياً لاستخدام رصيد المحفظة = أقل قيمة بين (رصيد المحفظة) و (المتبقي المطلوب دفعه بعد خصم الكود)
 function _walletRemainingPayable() {
-  const coinsPerEgp = S.restaurant?.coins_per_egp ?? 1000
-  const coinsDiscount = _coinsToRedeem > 0 ? _coinsToRedeem / coinsPerEgp : 0
   const custLat = document.getElementById('order-location-lat')?.value
   const custLng = document.getElementById('order-location-lng')?.value
   const pricePerKm = parseFloat(S.restaurant?.price_per_km) || 0
@@ -747,7 +695,7 @@ function _walletRemainingPayable() {
       }
     }
   }
-  return Math.max(0, Math.round((cartTotal() + deliveryFee - _appliedDiscount - coinsDiscount) * 100) / 100)
+  return Math.max(0, Math.round((cartTotal() + deliveryFee - _appliedDiscount) * 100) / 100)
 }
 // العميل بيكتب المبلغ اللي يحب يستخدمه بنفسه؛ لو أكبر من رصيده المتاح، نسأله يوافق على استخدام كل المتاح أو نلغي
 function updateWalletUse() {

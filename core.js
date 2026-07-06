@@ -329,8 +329,7 @@ function showError(msg, showRetry = false) {
 let _custAuthMode  = 'login'  // 'login' | 'signup'
 let _appliedDiscount = 0      // خصم الكود بالجنيه
 let _appliedCode     = null   // الكود المطبّق
-let _coinsToRedeem   = 0      // كوينز سيتم استخدامها في الطلب
-let _walletToUse     = 0      // رصيد المحفظة النقدي (ج.م) سيُستخدم في الطلب
+let _walletToUse     = 0      // رصيد المحفظة النقدي (ج.م) سيُستخدم في الطلب — الخصم الوحيد المتاح في الطلب غير كود الخصم
 let _justCreatedNewCustomer = false // true فقط لو اتعمل INSERT فعلي لصف عميل جديد في آخر استدعاء لـ loadCustomerProfile (يُستخدم لإطلاق احتفال الترحيب بدقة، بدل الاعتماد على فحص الـ URL غير الموثوق)
 
 async function initCustomerSession(forceCreate, extraData) {
@@ -477,7 +476,6 @@ async function _loadCustomerProfileInner(forceCreate, extraData) {
   }
 
   updateWalletBadge()
-  updateCoinsRowInCart()
 }
 
 // ── مراقبة تغيير الـ Auth State (Google redirect) ─────────────────────
@@ -576,11 +574,9 @@ async function genUniqueReferralCode() {
 async function custLogout() {
   await db.auth.signOut()
   S.customer = null
-  _coinsToRedeem = 0
   _appliedDiscount = 0
   _appliedCode = null
   updateWalletBadge()
-  updateCoinsRowInCart()
   closeWalletModal()
   renderCartItems()
   showBottomNav(false)
