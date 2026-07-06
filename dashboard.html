@@ -842,8 +842,8 @@
 </nav>
 
 <!-- ══ CONFIRM DIALOG ══ -->
-<div id="confirm-dialog" class="hidden">
-  <div id="confirm-dialog-inner">
+<div id="confirm-dialog" class="hidden fixed inset-0 z-[95] flex items-center justify-center p-4" style="background:rgba(0,0,0,0.7);backdrop-filter:blur(6px)">
+  <div id="confirm-dialog-inner" class="bg-white rounded-3xl w-full max-w-sm shadow-2xl p-5" style="animation:popIn .35s cubic-bezier(0.34,1.2,0.64,1) both">
     <div style="width:40px;height:4px;background:#e8e8e8;border-radius:4px;margin:0 auto 20px"></div>
     <p id="confirm-msg" style="font-size:15px;font-weight:700;color:#1a1a1a;text-align:center;margin-bottom:24px;line-height:1.6"></p>
     <div class="flex gap-3">
@@ -3071,21 +3071,16 @@ const ORDER_STATUS_CONFIRM = {
   delivering: { msg: 'هل تأكدت إن المندوب استلم الطلب فعلاً؟',    label: '✅ نعم، استلمه المندوب',   color: '#6366f1' }
 }
 async function confirmAndUpdateOrderStatus(id, status, closeDetailAfter) {
-  try {
-    const c = ORDER_STATUS_CONFIRM[status]
-    if (c) { const ok = await showConfirm(c.msg, c.label, c.color); if (!ok) return }
-    await updateOrderStatus(id, status)
-    if (closeDetailAfter) closeOrderDetailModal()
-  } catch (e) {
-    alert('🔧 تشخيص - حصل خطأ: ' + (e && e.message ? e.message : e))
-  }
+  const c = ORDER_STATUS_CONFIRM[status]
+  if (c) { const ok = await showConfirm(c.msg, c.label, c.color); if (!ok) return }
+  await updateOrderStatus(id, status)
+  if (closeDetailAfter) closeOrderDetailModal()
 }
 async function updateOrderStatus(id, status) {
   const timestampField = { ready: 'ready_at', delivering: 'delivering_at', delivered: 'delivered_at' }[status]
   const payload = { status }
   if (timestampField) payload[timestampField] = new Date().toISOString()
-  const { error } = await db.from('orders').update(payload).eq('id', id)
-  if (error) { showToast('❌ فشل تحديث حالة الطلب: ' + error.message, true); console.error('updateOrderStatus error:', error); return }
+  await db.from('orders').update(payload).eq('id', id)
   await notifyCustomerOrderStatus(id, status)
   await loadOrders()
   showToast('تم تحديث حالة الطلب')
@@ -3341,7 +3336,7 @@ async function acceptOrderDirect(id) {
   const { error } = await db.from('orders')
     .update({ status: 'confirmed', confirmed_at: new Date().toISOString() })
     .eq('id', id).eq('status', 'pending')
-  if (error) { showToast('تعذّر قبول الطلب: ' + error.message, true); return }
+  if (error) { showToast('تعذّر قبول الطلب'); return }
   showToast('✅ تم قبول الطلب')
   // لو الطلب ده كان معروض في طابور البوب-أب بالفعل، نشيله من الطابور ونحدّث العرض بدل ما يفضل معروض تاني بالغلط
   const idx = _pendingOrdersQueue.findIndex(o => o.id === id)
@@ -3569,13 +3564,7 @@ function showTab(name) {
   if (name === 'branches')  loadBranches()
 }
 
-function showToast(msg, isError) {
-  const t = document.getElementById('toast')
-  t.textContent = msg
-  t.style.background = isError ? '#ef4444' : ''
-  t.classList.remove('hidden')
-  setTimeout(() => { t.classList.add('hidden'); t.style.background = '' }, isError ? 7000 : 2500)
-}
+function showToast(msg) { const t=document.getElementById('toast'); t.textContent=msg; t.classList.remove('hidden'); setTimeout(()=>t.classList.add('hidden'),2500) }
 function showToastWithUndo(msg, cb) {
   const t = document.getElementById('toast')
   t.innerHTML = `${msg} — <button onclick="(${cb.toString()})();document.getElementById('toast').classList.add('hidden')" style="text-decoration:underline;font-weight:900;background:none;border:none;color:#FF6B00;cursor:pointer;font-family:'Rubik',sans-serif;">تراجع</button>`
