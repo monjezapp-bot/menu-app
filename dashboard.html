@@ -1147,13 +1147,28 @@ function resetLoginButton(msg) {
 }
 
 // بعد التحقق من الجلسة — نقرر هل نذهب لشاشة الـ passcode أم مباشرة للداشبورد
+// أمان: admin_passcode و passcode الفروع بقوا محميين على مستوى القاعدة (مش
+// مسموح بقراءتهم مباشرة من الجدول لأي حد، حتى صاحب المطعم بالـ select العادي)
+// عشان محدش يقدر ياخدهم عن طريق مفتاح anon العام. بنجيبهم فقط عن طريق
+// get_owner_secrets RPC اللي بتتأكد إن صاحب الطلب هو فعلاً owner المطعم.
+async function _hydrateSecrets(r, branches) {
+  try {
+    const { data } = await db.rpc('get_owner_secrets', { p_restaurant_id: r.id })
+    if (data) {
+      r.admin_passcode = data.admin_passcode
+      ;(branches || []).forEach(b => { b.passcode = data.branch_passcodes?.[b.id] })
+    }
+  } catch (e) {}
+}
+
 async function afterLogin() {
   const { data: { user } } = await db.auth.getUser()
   const { data: r, error: rErr } = await db.from('restaurants').select('*').eq('owner_id', user.id).single()
   if (!r) { resetLoginButton('لم يتم العثور على مطعم — ' + (rErr?.message || 'خطأ غير معروف')); return }
 
   // اقرأ الفروع أولاً لتحديد إذا كان فيه أكثر من فرع
-  const { data: branches } = await db.from('branches').select('id,name,passcode').eq('restaurant_id', r.id).order('created_at')
+  const { data: branches } = await db.from('branches').select('id,name').eq('restaurant_id', r.id).order('created_at')
+  await _hydrateSecrets(r, branches)
   const multiplesBranches  = branches && branches.length > 1
 
   // تحقق من localStorage
@@ -1251,18 +1266,24 @@ async function submitPasscode() {
   const errEl   = document.getElementById('pc-error')
   errEl.classList.add('hidden')
 
-  if (_pcSelected === 'admin') {
-    const adminPass = _pcRestaurant.admin_passcode || ''
-    if (adminPass && entered !== adminPass) { errEl.classList.remove('hidden'); return }
-    _role = 'admin'; _activeBranchId = null
-    localStorage.setItem(LS_ROLE_KEY + '_' + _pcRestaurant.id, 'admin')
+  // أمان: التحقق بيتم على السيرفر (verify_dashboard_passcode) بدل مقارنة القيم
+  // في المتصفح — كده الجهاز المشترك بين موظفي الفروع ميعرفش كل كلمات السر الفعلية.
+  try {
+    const { data, error } = await db.rpc('verify_dashboard_passcode', {
+      p_restaurant_id: _pcRestaurant.id, p_target: _pcSelected, p_entered: entered
+    })
+    if (error || !data) { errEl.classList.remove('hidden'); return }
+
+    if (data.mode === 'admin') {
+      _role = 'admin'; _activeBranchId = null
+      localStorage.setItem(LS_ROLE_KEY + '_' + _pcRestaurant.id, 'admin')
+    } else {
+      _role = 'branch'; _activeBranchId = data.branch_id
+      localStorage.setItem(LS_ROLE_KEY + '_' + _pcRestaurant.id, 'branch:' + data.branch_id)
+    }
     await loadDashboard(_pcRestaurant, _pcBranches)
-  } else {
-    const branch = _pcBranches.find(b => b.id === _pcSelected)
-    if (!branch || entered !== branch.passcode) { errEl.classList.remove('hidden'); return }
-    _role = 'branch'; _activeBranchId = branch.id
-    localStorage.setItem(LS_ROLE_KEY + '_' + _pcRestaurant.id, 'branch:' + branch.id)
-    await loadDashboard(_pcRestaurant, _pcBranches)
+  } catch (e) {
+    errEl.classList.remove('hidden')
   }
 }
 
@@ -1345,8 +1366,9 @@ async function loadDashboard(r, branches) {
     const res = await db.from('restaurants').select('*').eq('owner_id', user.id).single()
     r = res.data
     if (!r) { showToast('لم يتم العثور على مطعم مرتبط بهذا الحساب'); return }
-    const br = await db.from('branches').select('id,name,passcode').eq('restaurant_id', r.id).order('created_at')
+    const br = await db.from('branches').select('id,name').eq('restaurant_id', r.id).order('created_at')
     branches = br.data || []
+    await _hydrateSecrets(r, branches)
   }
 
   state.restaurant = r
@@ -2083,6 +2105,10 @@ function setUnitField(unit) {
 async function loadBranches() {
   const { data } = await db.from('branches').select('*').eq('restaurant_id', state.restaurant.id).order('created_at')
   state.branches = data || []
+  // أمان: passcode الفرع مش موجود في select('*') بعد الحماية الجديدة — نجيبه من نفس
+  // الدالة الآمنة المستخدمة في تسجيل الدخول (owner-only)
+  const { data: secrets } = await db.rpc('get_owner_secrets', { p_restaurant_id: state.restaurant.id }).catch(() => ({ data: null }))
+  if (secrets) state.branches.forEach(b => { b.passcode = secrets.branch_passcodes?.[b.id] })
   renderBranches()
 }
 function renderBranches() {
@@ -2920,10 +2946,7 @@ async function refundOrderPayment(order) {
   if (!order?.customer_id) return null
   const walletAmt = Number(order.wallet_amount_used || 0)
   const coinsAmt  = Number(order.coins_redeemed || 0)
-  // كوينز الولاء تُمنح فقط لحظة تأكيد العميل استلام الطلب (بعد delivering)، وطلب في مرحلة
-  // قابلة للإلغاء من التاجر أصلاً ما يكونش وصل للمرحلة دي — ده مجرد احتياط إضافي (طبقة حماية ثانية)
-  const loyaltyAmt = Number(order.loyalty_coins_earned || 0)
-  if (walletAmt <= 0 && coinsAmt <= 0 && loyaltyAmt <= 0) return null
+  if (walletAmt <= 0 && coinsAmt <= 0) return null
 
   const { data: cust } = await db.from('menu_customers')
     .select('wallet_balance, coins_balance').eq('id', order.customer_id).single()
@@ -2931,7 +2954,7 @@ async function refundOrderPayment(order) {
 
   const updates = {}
   if (walletAmt > 0) updates.wallet_balance = Number(cust.wallet_balance || 0) + walletAmt
-  if (coinsAmt > 0 || loyaltyAmt > 0) updates.coins_balance = Math.max(0, (cust.coins_balance || 0) + coinsAmt - loyaltyAmt)
+  if (coinsAmt  > 0) updates.coins_balance  = (cust.coins_balance || 0) + coinsAmt
   await db.from('menu_customers').update(updates).eq('id', order.customer_id)
 
   const txs = []
@@ -2945,15 +2968,9 @@ async function refundOrderPayment(order) {
     type: 'refund', amount: coinsAmt, order_id: order.id,
     note: 'استرجاع كوينز بعد إلغاء الطلب'
   })
-  if (loyaltyAmt > 0) txs.push({
-    customer_id: order.customer_id, restaurant_id: order.restaurant_id,
-    type: 'loyalty_reversed', amount: -loyaltyAmt, order_id: order.id,
-    note: 'سحب كوينز هدية الشراء بعد إلغاء الطلب'
-  })
   if (txs.length) await db.from('coin_transactions').insert(txs)
-  if (loyaltyAmt > 0) await db.from('orders').update({ loyalty_coins_earned: 0 }).eq('id', order.id)
 
-  return { walletAmt, coinsAmt, loyaltyAmt }
+  return { walletAmt, coinsAmt }
 }
 function refundNoticeText(refund) {
   if (!refund) return ''

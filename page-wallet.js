@@ -131,8 +131,6 @@ async function loadWalletPage() {
       referral_reward:  { icon:'🔗', label:'إحالة صديق',      color:'#3b82f6' },
       loyalty:          { icon:'⭐', label:'كوينز ولاء',       color:'#f59e0b' },
       redeem:           { icon:'🛒', label:'استخدام في طلب',  color:'#ef4444' },
-      loyalty_reversed: { icon:'↩️', label:'سحب كوينز (إلغاء طلب)', color:'#ef4444' },
-      compensation:     { icon:'🎁', label:'تعويض عن إلغاء',  color:'#f97316' },
       gift:             { icon:'🎀', label:'هدية من المتجر',   color:'#8b5cf6' },
       discount_code:    { icon:'🏷️', label:'كود خصم',         color:'#06b6d4' },
       profile_complete: { icon:'👤', label:'إكمال الملف',      color:'#10b981' },
@@ -174,11 +172,21 @@ async function loadWalletPage() {
 }
 
 // ── CONVERT COINS TO BALANCE ──────────────────────────────────────────
+// أمان: التحويل بيتم بالكامل عن طريق convert_coins_to_wallet RPC (تحسب المبلغ
+// وتصفر الكوينز وتزود رصيد المحفظة ذريًا على السيرفر). التحديث المباشر القديم
+// من هنا كان بيترفض من الـ trigger الحالي لأنه بيغير عمودين ماليين مع بعض من
+// غير دالة آمنة.
 async function convertCoinsToBalance() {
   if (!S.customer || !S.restaurant) return
-  const cpE    = S.restaurant.coins_per_egp ?? 1000
-  const coins  = S.customer.coins_balance || 0
-  const amount = coins / cpE
+  const cpE      = S.restaurant.coins_per_egp ?? 1000
+  const coins    = S.customer.coins_balance || 0
+  const minCoins = S.restaurant.min_redeem_coins ?? 100000
+  const amount   = coins / cpE
+
+  if (coins < minCoins) {
+    showToast(`لازم توصل لـ ${numFmt(minCoins)} 🪙 كوين على الأقل عشان تقدر تحول رصيدك`)
+    return
+  }
 
   showConfirmSheet(
     'تحويل الكوينز لرصيد 💳',
@@ -191,16 +199,12 @@ async function convertCoinsToBalance() {
     </div>`,
     async () => {
       try {
-        const newBalance = Number(S.customer.wallet_balance || 0) + amount
-        await db.from('menu_customers').update({ coins_balance: 0, wallet_balance: newBalance }).eq('id', S.customer.id)
-        await db.from('coin_transactions').insert({
-          customer_id: S.customer.id, restaurant_id: S.restaurant.id,
-          type: 'convert', amount: -coins, note: `تحويل ${numFmt(coins)} كوين = ${amount.toFixed(2)} ج.م`
-        })
+        const { data, error } = await db.rpc('convert_coins_to_wallet', { p_restaurant_id: S.restaurant.id })
+        if (error) throw error
         S.customer.coins_balance = 0
-        S.customer.wallet_balance = newBalance
+        S.customer.wallet_balance = data.new_wallet_balance
         playSuccessSound()
-        showToast(`✅ تم تحويل ${amount.toFixed(2)} ج.م لمحفظتك!`)
+        showToast(`✅ تم تحويل ${Number(data.converted_amount).toFixed(2)} ج.م لمحفظتك!`)
         loadWalletPage()
         updateWalletBadge()
       } catch(e) {

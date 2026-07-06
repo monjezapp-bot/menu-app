@@ -346,6 +346,11 @@ async function initCustomerSession(forceCreate, extraData) {
 }
 
 // يفحص لو النهاردة عيد ميلاد العميل ولم يُمنح الهدية هذا العام، يمنحها فوراً
+// أمان: كل الفحص والمنح بيحصل على السيرفر جوه RPC claim_birthday_gift (SECURITY DEFINER)،
+// مش هنا في الكلاينت — عشان القراءة+الكتابة المباشرة (incrementCustomerCoins) كانت
+// بتسمح بمنح الهدية أكتر من مرة عن طريق تعديل الطلبات مباشرة من المتصفح (race condition +
+// عدم وجود قفل ذري). الشرط المحلي هنا (isBirthdayToday) بس تحسين لتجربة الاستخدام
+// (يمنع نداء RPC غير ضروري)، مش خط الدفاع الحقيقي.
 async function checkAndAwardBirthdayGift() {
   const r = S.restaurant, c = S.customer
   if (!(r?.birthday_gift_enabled) || !r.birthday_coins || !c?.birthdate) return
@@ -356,21 +361,16 @@ async function checkAndAwardBirthdayGift() {
   if (!isBirthdayToday) return
 
   const thisYear = today.getFullYear()
-  if (c.birthday_gift_claimed_year === thisYear) return // اتمنحت السنة دي خلاص
+  if (c.birthday_gift_claimed_year === thisYear) return // اتمنحت السنة دي خلاص (تحسين أداء فقط)
 
   try {
-    await incrementCustomerCoins(c.id, r.birthday_coins)
-    await db.from('menu_customers').update({ birthday_gift_claimed_year: thisYear }).eq('id', c.id)
+    const { data, error } = await db.rpc('claim_birthday_gift', { p_restaurant_id: r.id })
+    if (error) return // السيرفر رفض المنح (اتمنحت بالفعل / مش عيد ميلاده فعلاً / إلخ) — تجاهل بصمت
+    if (!data?.granted) return
+
     S.customer.birthday_gift_claimed_year = thisYear
-    S.customer.coins_balance = (S.customer.coins_balance || 0) + r.birthday_coins
-    await db.from('coin_transactions').insert({
-      customer_id:   c.id,
-      restaurant_id: r.id,
-      type:   'birthday',
-      amount: r.birthday_coins,
-      note:   '🎂 هدية عيد ميلادك السعيد!'
-    }).catch(() => {})
-    showToast(`🎂 عيد ميلاد سعيد! حصلت على ${numFmt(r.birthday_coins)} كوين هدية 🎉`)
+    S.customer.coins_balance = data.new_balance
+    showToast(`🎂 عيد ميلاد سعيد! حصلت على ${numFmt(data.coins_granted)} كوين هدية 🎉`)
     playSuccessSound()
   } catch(e) {}
 }
@@ -923,16 +923,10 @@ async function markAllNotifsRead() {
   } catch(e) {}
 }
 
-// ── INCREMENT FUNCTION FOR REFERRAL ────────────────────────────────────
-// Supabase لا يدعم atomic increment بدون stored procedure — نستخدم RLS + select+update
-async function incrementCustomerCoins(customerId, amount) {
-  const { data } = await db.from('menu_customers').select('coins_balance').eq('id', customerId).single()
-  if (data) await db.from('menu_customers').update({ coins_balance: (data.coins_balance || 0) + amount }).eq('id', customerId)
-}
+// ملاحظة: الدالتين incrementCustomerCoins/incrementCustomerWallet اتشالوا نهائيًا —
+// كانوا بيعدلوا coins_balance/wallet_balance مباشرة من المتصفح بدون أي تحقق سيرفر،
+// وأي استدعاء ليهم كان هيترفض أصلاً من trigger الحماية (protect_customer_financial_columns).
+// كل حالات منح/خصم الكوينز والرصيد بقت بتمر حصريًا عبر RPC آمنة:
+// claim_profile_field / claim_birthday_gift / credit_referral_reward /
+// award_order_rewards / settle_order_payment / convert_coins_to_wallet.
 
-// نفس المبدأ، لكن للرصيد النقدي (wallet_balance) — يُستخدم لبونص الترحيب وبونص الإحالة
-// اللي بيتحولوا فلوس فوراً بدلاً من المرور بمحفظة الكوينز العادية
-async function incrementCustomerWallet(customerId, amountEgp) {
-  const { data } = await db.from('menu_customers').select('wallet_balance').eq('id', customerId).single()
-  if (data) await db.from('menu_customers').update({ wallet_balance: Number(data.wallet_balance || 0) + amountEgp }).eq('id', customerId)
-}

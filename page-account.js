@@ -14,9 +14,19 @@ function confirmLogout() {
 }
 
 // ── OPEN EDIT PROFILE ─────────────────────────────────────────────────
+// ملاحظة أمان: تاريخ الميلاد بيتقفل (readonly) بعد أول مرة يتحدد فيها.
+// ده عشان يمنع أي محاولة لتغييره بشكل متكرر لأخذ كوينز أو هدايا عيد ميلاد بشكل مفتعل.
+// أي تعديل حقيقي لتاريخ ميلاد (خطأ إدخال) لازم يتم عن طريق الدعم الفني.
+function _maxBirthdateFor18() {
+  const d = new Date()
+  d.setFullYear(d.getFullYear() - 18)
+  return d.toISOString().slice(0, 10)
+}
+
 function openEditProfile() {
   if (!S.customer) return
   const c = S.customer
+  const birthdateLocked = !!c.birthdate
   showConfirmSheet('تعديل بياناتي', `
     <div style="display:flex;flex-direction:column;gap:12px">
       <div>
@@ -32,10 +42,12 @@ function openEditProfile() {
                onfocus="this.style.borderColor='var(--brand)'" onblur="this.style.borderColor='#eee'" />
       </div>
       <div>
-        <label style="font-size:11px;font-weight:800;color:#888;display:block;margin-bottom:5px">تاريخ الميلاد 🎂</label>
-        <input id="ep-birthdate" type="date" value="${c.birthdate || ''}"
-               style="width:100%;background:#f5f5f5;border:1.5px solid #eee;border-radius:12px;padding:12px 14px;font-size:14px;font-family:'Rubik',sans-serif;outline:none;box-sizing:border-box"
+        <label style="font-size:11px;font-weight:800;color:#888;display:block;margin-bottom:5px">تاريخ الميلاد 🎂${birthdateLocked ? ' (مقفول)' : ''}</label>
+        <input id="ep-birthdate" type="date" value="${c.birthdate || ''}" max="${_maxBirthdateFor18()}"
+               ${birthdateLocked ? 'disabled' : ''}
+               style="width:100%;background:${birthdateLocked ? '#eee' : '#f5f5f5'};border:1.5px solid #eee;border-radius:12px;padding:12px 14px;font-size:14px;font-family:'Rubik',sans-serif;outline:none;box-sizing:border-box;color:${birthdateLocked ? '#999' : '#333'}"
                onfocus="this.style.borderColor='var(--brand)'" onblur="this.style.borderColor='#eee'" />
+        ${birthdateLocked ? `<p style="font-size:11px;color:#999;margin-top:4px">تاريخ الميلاد ما بيتغيرش بعد أول مرة. لو فيه خطأ، تواصل مع الدعم.</p>` : `<p style="font-size:11px;color:#999;margin-top:4px">لازم يكون عمرك 18 سنة أو أكتر.</p>`}
       </div>
       <div>
         <label style="font-size:11px;font-weight:800;color:#888;display:block;margin-bottom:5px">منطقتك 📍</label>
@@ -59,46 +71,53 @@ function openEditProfile() {
   )
 }
 
+// النظام القديم كان بيحدّث الجدول مباشرة من المتصفح ويمنح الكوينز بنفسه بدون
+// أي تحقق من السيرفر — ده كان بيسمح بتكرار أخذ الكوينز بمسح الحقل وإعادة تعبئته
+// بشكل متكرر. دلوقتي كل حقل بيمنح كوينز بيمر عبر نفس الـ RPC الآمن
+// claim_profile_field (اللي بيتحقق على السيرفر إن الحقل فاضي فعلاً قبل ما يمنح حاجة،
+// وبيرفض تاريخ ميلاد لعمر أقل من 18 سنة). الاسم لوحده مش له كوينز فبيتحدث مباشرة.
 async function saveEditProfile() {
   const name      = document.getElementById('ep-name')?.value.trim()
   const phone     = document.getElementById('ep-phone')?.value.trim()
-  const birthdate = document.getElementById('ep-birthdate')?.value || null
+  const birthdateInput = document.getElementById('ep-birthdate')
+  const birthdate = (!birthdateInput || birthdateInput.disabled) ? null : (birthdateInput.value || null)
   const area      = document.getElementById('ep-area')?.value.trim() || null
   const gender    = document.getElementById('ep-gender')?.value || null
 
+  const errEl = document.getElementById('ep-error')
+  const showErr = msg => { if (errEl) { errEl.textContent = msg; errEl.style.display = 'block' } }
+
   try {
-    const updates = { name: name||null, phone: phone||null, birthdate, area, gender }
-    const wasEmpty = field => !S.customer[field]
-
-    const { error } = await db.from('menu_customers').update(updates).eq('id', S.customer.id)
-    if (error) throw error
-
-    // منح كوينز للحقول الجديدة
-    const coinsMap = { phone:1500, birthdate:1500, gender:1000, area:1000 }
-    let bonusCoins = 0
-    for (const [f, coins] of Object.entries(coinsMap)) {
-      if (wasEmpty(f) && updates[f]) {
-        bonusCoins += coins
-        await db.from('coin_transactions').insert({
-          customer_id: S.customer.id, restaurant_id: S.restaurant.id,
-          type: 'profile_complete', amount: coins, note: `إكمال: ${f}`
-        })
-      }
+    // الاسم فقط: تحديث مباشر، مفيش كوينز مرتبطة بيه
+    if (name && name !== S.customer.name) {
+      const { error } = await db.from('menu_customers').update({ name }).eq('id', S.customer.id)
+      if (error) throw error
+      S.customer.name = name
     }
-    if (bonusCoins > 0) {
-      const newBal = (S.customer.coins_balance || 0) + bonusCoins
-      await db.from('menu_customers').update({ coins_balance: newBal }).eq('id', S.customer.id)
-      S.customer.coins_balance = newBal
-      showToast(`+${numFmt(bonusCoins)} 🪙 كوينز على إكمال ملفك!`)
+
+    // الحقول اللي ليها كوينز: كل واحد بيمر بالـ RPC الآمن، وبس لو اتغير فعلاً
+    const gamifiedFields = { phone, birthdate, area, gender }
+    let anyCoinsGranted = 0
+    for (const [field, value] of Object.entries(gamifiedFields)) {
+      if (!value || value === S.customer[field]) continue
+      const { data, error } = await db.rpc('claim_profile_field', {
+        p_field: field, p_value: value, p_restaurant_id: S.restaurant.id
+      })
+      if (error) { showErr(`تعذر حفظ "${field}": ${error.message}`); continue }
+      S.customer[field] = value
+      if (data?.new_balance != null) S.customer.coins_balance = data.new_balance
+      if (data?.coins_granted) anyCoinsGranted += data.coins_granted
+    }
+
+    if (anyCoinsGranted > 0) {
+      showToast(`+${numFmt(anyCoinsGranted)} 🪙 كوينز على إكمال ملفك!`)
       playSuccessSound()
     }
-    Object.assign(S.customer, updates)
     closeConfirmSheet()
     renderAccountPage()
     updateWalletBadge()
   } catch(e) {
-    const errEl = document.getElementById('ep-error')
-    if (errEl) { errEl.textContent = 'خطأ: ' + e.message; errEl.style.display = 'block' }
+    showErr('خطأ: ' + e.message)
   }
 }
 
