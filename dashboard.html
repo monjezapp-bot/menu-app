@@ -3080,7 +3080,8 @@ async function updateOrderStatus(id, status) {
   const timestampField = { ready: 'ready_at', delivering: 'delivering_at', delivered: 'delivered_at' }[status]
   const payload = { status }
   if (timestampField) payload[timestampField] = new Date().toISOString()
-  await db.from('orders').update(payload).eq('id', id)
+  const { error } = await db.from('orders').update(payload).eq('id', id)
+  if (error) { showToast('❌ فشل تحديث حالة الطلب: ' + error.message); console.error('updateOrderStatus error:', error); return }
   await notifyCustomerOrderStatus(id, status)
   await loadOrders()
   showToast('تم تحديث حالة الطلب')
