@@ -56,13 +56,24 @@ self.addEventListener('push', (event) => {
     badge: data.icon || './dash-icon-192.png',
     dir: 'rtl',
     lang: 'ar',
-    vibrate: [200, 100, 200],
+    vibrate: [300, 150, 300, 150, 300, 150, 300],
+    requireInteraction: true, // يفضل ظاهر لحد ما التاجر يتفاعل معاه، مش بيختفي لوحده بسرعة
     tag: data.tag || undefined,
     renotify: !!data.tag,
-    data: { url: data.url || './dashboard.html' }
+    data: { url: data.url || './dashboard.html', kind: data.kind || 'general' }
   };
 
-  event.waitUntil(self.registration.showNotification(title, options));
+  event.waitUntil(
+    Promise.all([
+      self.registration.showNotification(title, options),
+      // لو التطبيق شغال فعلاً في الخلفية (مش مقفول تماماً)، نبعتله رسالة يشغّل
+      // صوت التنبيه العالي (WebAudio) اللي جوه الصفحة، لأن نظام أندرويد نفسه
+      // مش بيسمح بصوت مخصص للإشعار من برّه — ده أقرب حل ممكن لصوت عالي فعلي.
+      self.clients.matchAll({ type: 'window', includeUncontrolled: true }).then((clientsArr) => {
+        clientsArr.forEach((c) => c.postMessage({ type: 'PLAY_LOUD_ALERT', kind: data.kind || 'general' }));
+      })
+    ])
+  );
 });
 
 // الضغط على الإشعار: يفتح نفس نافذة التطبيق لو مفتوحة، وإلا يفتح نافذة جديدة

@@ -3579,7 +3579,13 @@ function showConfirm(msg, btnLabel='حذف', color='#ef4444') {
     const yesBtn = document.getElementById('confirm-yes-btn')
     yesBtn.textContent      = btnLabel
     yesBtn.style.background = color
-    yesBtn.onclick = () => { closeConfirm(); resolve(true) }
+    yesBtn.onclick = () => {
+      const resolveFn = _confirmResolve
+      _confirmResolve = null
+      document.getElementById('confirm-dialog').classList.add('hidden')
+      _unlockBodyScroll()
+      if (resolveFn) resolveFn(true)
+    }
     document.getElementById('confirm-dialog').classList.remove('hidden')
     _lockBodyScroll()
   })
@@ -3610,6 +3616,14 @@ function urlBase64ToUint8Array(base64String) {
   return Uint8Array.from([...rawData].map(c => c.charCodeAt(0)))
 }
 async function initPushUI() {
+  // لو السيرفس وركر بعت رسالة إن فيه إشعار جديد وصل (حتى لو التطبيق في الخلفية
+  // ومش على الشاشة)، نشغّل نفس صوت التنبيه العالي اللي بيشتغل وقت الطلب الجديد
+  // — لأن نظام أندرويد نفسه مش بيسمح بصوت مخصص للإشعار من برّه.
+  if ('serviceWorker' in navigator) {
+    navigator.serviceWorker.addEventListener('message', (event) => {
+      if (event.data?.type === 'PLAY_LOUD_ALERT') playAlarm()
+    })
+  }
   // آيفون: لازم يكون مثبّت كـ PWA على الشاشة الرئيسية، وإلا الإشعارات مستحيل تشتغل
   if (isIOS() && !isStandalonePWA()) {
     document.getElementById('ios-install-banner').classList.remove('hidden')
