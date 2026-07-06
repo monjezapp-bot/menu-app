@@ -600,7 +600,9 @@ function setSuccessModalVisual(state, cancelReason, order) {
 async function confirmOrderReceipt() {
   const orderId = document.getElementById('order-success-modal').dataset.orderId
   if (!orderId) return
-  await db.from('orders').update({ status: 'delivered', delivered_at: new Date().toISOString() }).eq('id', orderId).eq('status', 'delivering')
+  const { data, error } = await db.rpc('confirm_order_receipt', { p_order_id: orderId })
+  if (error) { console.error('confirm_order_receipt failed:', error); return }
+  if (!data?.updated) return // الحالة اتغيرت من تحت العميل (مش delivering)، متعملش هيد الزر
   document.getElementById('confirm-receipt-btn').classList.add('hidden')
   clearTimeout(_autoConfirmTimeout)
 }
@@ -616,7 +618,7 @@ function startAutoConfirmTimer(orderId, deliveringAt) {
   const elapsedMs   = deliveringAt ? (Date.now() - new Date(deliveringAt).getTime()) : 0
   const remainingMs = Math.max(0, AUTO_CONFIRM_MINUTES_AFTER_DELIVERING * 60 * 1000 - elapsedMs)
   _autoConfirmTimeout = setTimeout(async () => {
-    await db.from('orders').update({ status: 'delivered', delivered_at: new Date().toISOString() }).eq('id', orderId).eq('status', 'delivering')
+    await db.rpc('confirm_order_receipt', { p_order_id: orderId })
   }, remainingMs)
 }
 // يعرض شريط مراحل بصري (4 نقاط متصلة) يوضّح موقع الطلب الحالي ضمن رحلة التجهيز والتوصيل
