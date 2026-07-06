@@ -463,7 +463,7 @@ async function _loadCustomerProfileInner(forceCreate, extraData) {
         // وبتسجّل معاملة coin_transactions بنفسها داخلياً، فمفيش داعي لإدراج يدوي هنا تاني
         const referralEnabled = S.restaurant.referral_enabled ?? true
         if (referredBy && referralEnabled && S.restaurant.referral_coins) {
-          await db.rpc('credit_referral_reward', { p_new_customer_id: newCust.id }).catch(() => {})
+          try { await db.rpc('credit_referral_reward', { p_new_customer_id: newCust.id }) } catch (e) {}
         }
       }
     } catch(e) {

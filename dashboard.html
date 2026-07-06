@@ -1746,7 +1746,7 @@ async function notifyDiscountCodeCreated(payload, codeId) {
   const rows = recipientIds.map(cid => ({
     customer_id: cid, restaurant_id: state.restaurant.id, type: 'promo', title, body
   }))
-  await db.from('notifications').insert(rows).catch(() => {})
+  try { await db.from('notifications').insert(rows) } catch (e) {}
 }
 
 async function deleteDiscountCode(id) {
@@ -2122,7 +2122,11 @@ async function loadBranches() {
   state.branches = data || []
   // أمان: passcode الفرع مش موجود في select('*') بعد الحماية الجديدة — نجيبه من نفس
   // الدالة الآمنة المستخدمة في تسجيل الدخول (owner-only)
-  const { data: secrets } = await db.rpc('get_owner_secrets', { p_restaurant_id: state.restaurant.id }).catch(() => ({ data: null }))
+  let secrets = null
+  try {
+    const res = await db.rpc('get_owner_secrets', { p_restaurant_id: state.restaurant.id })
+    secrets = res.data
+  } catch (e) { secrets = null }
   if (secrets) state.branches.forEach(b => { b.passcode = secrets.branch_passcodes?.[b.id] })
   renderBranches()
 }
