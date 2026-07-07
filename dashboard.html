@@ -842,8 +842,11 @@
 </nav>
 
 <!-- ══ CONFIRM DIALOG ══ -->
-<div id="confirm-dialog" class="hidden">
-  <div id="confirm-dialog-inner">
+<!-- ملحوظة: كان الديف ده من غير fixed/z-index خالص، فكان بيترسم جوه تدفق الصفحة العادي بدل ما يظهر
+     فوق مودال تفاصيل الطلب (z-50) — يعني التاجر مكانش بيشوفه أو يقدر يضغط "تأكيد"، والـ Promise بتاعة
+     showConfirm() كانت بتفضل معلّقة للأبد، فزرار "تم التجهيز"/"جاري التوصيل" كان بيبان وكأنه مش شغال -->
+<div id="confirm-dialog" class="hidden fixed inset-0 z-[95] flex items-center justify-center p-4" style="background:rgba(0,0,0,0.7);backdrop-filter:blur(6px)">
+  <div id="confirm-dialog-inner" class="bg-white rounded-3xl w-full max-w-sm shadow-2xl p-5">
     <div style="width:40px;height:4px;background:#e8e8e8;border-radius:4px;margin:0 auto 20px"></div>
     <p id="confirm-msg" style="font-size:15px;font-weight:700;color:#1a1a1a;text-align:center;margin-bottom:24px;line-height:1.6"></p>
     <div class="flex gap-3">
