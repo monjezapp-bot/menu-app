@@ -381,7 +381,7 @@ function renderCartItems() {
   const pricePerKm = parseFloat(S.restaurant?.price_per_km) || 0
   let currentDeliveryFee = 0
   if (deliveryRow) {
-    // استخدم الفروع أو موقع المطعم كـ fallback
+    // استخدم الفروع أو موقع المتجر كـ fallback
     const restLat = parseFloat(S.restaurant?.lat)
     const restLng = parseFloat(S.restaurant?.lng)
     const hasOrigin = S.branches.length > 0 || (!isNaN(restLat) && !isNaN(restLng))

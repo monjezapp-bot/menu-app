@@ -174,7 +174,7 @@ async function openOrderDetail(orderId) {
         ${o.loyalty_coins_earned ? `<div style="margin-top:10px;background:#fff8f3;border-radius:10px;padding:8px 12px;text-align:center"><span style="font-size:12px;font-weight:800;color:var(--brand)">+<span class="ltr-num">${numFmt(o.loyalty_coins_earned)}</span> 🪙 كوينز كسبتها من هذا الطلب</span></div>` : ''}
       </div>
       ${(() => {
-        // بيانات التسليم/التواصل كما وصلت للمطعم — تساعد العميل يتأكد إن مفيش خطأ في بياناته
+        // بيانات التسليم/التواصل كما وصلت للمتجر — تساعد العميل يتأكد إن مفيش خطأ في بياناته
         const rows = []
         if (o.table_number)      rows.push(`🪑 طاولة رقم ${o.table_number}`)
         if (o.customer_address)  rows.push(`🏠 ${o.customer_address}`)
@@ -192,7 +192,7 @@ async function openOrderDetail(orderId) {
         ${!['delivered','cancelled'].includes(o.status)
           ? `<button onclick="closeOrderDetail();reopenOrderTracking('${o.id}')" style="flex:1;min-width:0;background:linear-gradient(135deg,var(--brand),#ff8c38);color:#fff;font-size:13.5px;font-weight:900;border-radius:14px;padding:14px 8px;border:none;cursor:pointer;font-family:'Rubik',sans-serif">🔎 تابع الطلب</button>`
           : `<button onclick="closeOrderDetail();switchPage('home')" style="flex:1;min-width:0;background:linear-gradient(135deg,var(--brand),#ff8c38);color:#fff;font-size:13.5px;font-weight:900;border-radius:14px;padding:14px 8px;border:none;cursor:pointer;font-family:'Rubik',sans-serif">🔄 اطلب مرة تانية</button>`}
-        <button onclick="contactRestaurantAboutOrder('${(o.order_number || '').replace(/'/g, "\\'")}')" style="flex:1;min-width:0;background:#e8f8ee;color:#16a34a;font-size:13.5px;font-weight:800;border-radius:14px;padding:14px 8px;border:none;cursor:pointer;font-family:'Rubik',sans-serif">💬 تواصل مع المطعم</button>
+        <button onclick="contactRestaurantAboutOrder('${(o.order_number || '').replace(/'/g, "\\'")}')" style="flex:1;min-width:0;background:#e8f8ee;color:#16a34a;font-size:13.5px;font-weight:800;border-radius:14px;padding:14px 8px;border:none;cursor:pointer;font-family:'Rubik',sans-serif">💬 تواصل مع المتجر</button>
       </div>`
   } catch(e) {
     body.innerHTML = `<p style="text-align:center;color:#ef4444;padding:20px">خطأ: ${e.message}</p>`

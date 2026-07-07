@@ -135,7 +135,7 @@ async function boot() {
   }
 
   _lastSlug = slug
-  if (!slug) return showError('لم يتم تحديد المطعم. تأكد من الرابط الذي تستخدمه.', false)
+  if (!slug) return showError('لم يتم تحديد المتجر. تأكد من الرابط الذي تستخدمه.', false)
   setManifestLink(slug)
 
   try {
@@ -172,8 +172,8 @@ async function boot() {
     }
 
   } catch(e) {
-    // أخطاء "المطعم غير موجود" نهائية (لا تحتاج إعادة محاولة)، وأي خطأ آخر (شبكة/تقني) مؤقت وقابل لإعادة المحاولة
-    const isNotFound = e.message === 'المطعم غير موجود أو غير نشط'
+    // أخطاء "المتجر غير موجود" نهائية (لا تحتاج إعادة محاولة)، وأي خطأ آخر (شبكة/تقني) مؤقت وقابل لإعادة المحاولة
+    const isNotFound = e.message === 'المتجر غير موجود أو غير نشط'
     showError(isNotFound ? e.message : ('خطأ: ' + (e.message || e)), !isNotFound)
   }
 }
@@ -216,7 +216,7 @@ async function loadData(slug) {
     .select('*')
     .eq('slug', slug).eq('is_active', true).single()
 
-  if (rErr || !r) throw new Error('المطعم غير موجود أو غير نشط')
+  if (rErr || !r) throw new Error('المتجر غير موجود أو غير نشط')
   S.restaurant = r
   applyDynamicManifest(r)
 
@@ -238,7 +238,7 @@ async function loadData(slug) {
   S.branches   = branchRes.data ?? []
   S.banners    = bannerRes.data ?? []
 
-  // جلب bundle_branches مفلترة بالـ ids بتاعة bundles هذا المطعم
+  // جلب bundle_branches مفلترة بالـ ids بتاعة bundles هذا المتجر
   const bundleIds = (bundleRes.data ?? []).map(b => b.id)
   const bbMap = {}
   if (bundleIds.length) {
@@ -303,7 +303,7 @@ function findNearestBranch(custLat, custLng, excludeIds = []) {
   })
   return nearest ? { branch: nearest, distanceKm: minDist } : null
 }
-// تنضيف رقم تواصل المطعم لصيغة دولية موحدة قبل استخدامه في رابط tel:
+// تنضيف رقم تواصل المتجر لصيغة دولية موحدة قبل استخدامه في رابط tel:
 // (يغطي صيغ مختلفة: 0 محلي / + / مسافات / بدون كود دولة)
 function normalizeWhatsAppNumber(raw) {
   let n = String(raw || '').replace(/[^\d]/g, '')
@@ -321,7 +321,7 @@ function showError(msg, showRetry = false) {
   document.getElementById('error-msg').textContent = msg
   document.getElementById('retry-btn').classList.toggle('hidden', !showRetry)
   document.getElementById('error-icon').textContent  = showRetry ? '📡' : '🍽️'
-  document.getElementById('error-title').textContent = showRetry ? 'حدثت مشكلة في الاتصال' : 'لم نجد هذا المطعم'
+  document.getElementById('error-title').textContent = showRetry ? 'حدثت مشكلة في الاتصال' : 'لم نجد هذا المتجر'
   showState('error')
 }
 
@@ -488,7 +488,7 @@ function initAuthListener() {
         await new Promise(r => setTimeout(r, 200))
         tries++
       }
-      if (!S.restaurant) { showAuthDebug('S.restaurant لسه null بعد 4 ثواني انتظار — العميل اتعرّف لكن المطعم متأخر/فشل في التحميل'); return }
+      if (!S.restaurant) { showAuthDebug('S.restaurant لسه null بعد 4 ثواني انتظار — العميل اتعرّف لكن المتجر متأخر/فشل في التحميل'); return }
 
       if (!S.customer) {
         await loadCustomerProfile(true)

@@ -17,7 +17,7 @@ function renderHeader() {
     if (coverImg) coverImg.src = S.restaurant.cover_url
   }
 
-  // وصف المطعم الذي كتبه التاجر بنفسه (يظهر تحت الاسم فقط إن وُجد)
+  // وصف المتجر الذي كتبه التاجر بنفسه (يظهر تحت الاسم فقط إن وُجد)
   const taglineEl = document.getElementById('hero-card-tagline')
   if (taglineEl) {
     if (S.restaurant.about_text) {

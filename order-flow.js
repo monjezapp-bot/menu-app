@@ -90,7 +90,7 @@ async function sendOrder() {
         if (pricePerKm > 0) deliveryFee = Math.round(result.distanceKm * pricePerKm * 100) / 100
       }
     } else {
-      // fallback: موقع المطعم مباشرة
+      // fallback: موقع المتجر مباشرة
       const restLat = parseFloat(S.restaurant.lat)
       const restLng = parseFloat(S.restaurant.lng)
       if (!isNaN(restLat) && !isNaN(restLng) && pricePerKm > 0) {
@@ -232,7 +232,7 @@ async function sendOrder() {
 // ── ORDER STATUS TRACKING (live) ────────────────────────────────────────
 let _orderTrackChannel = null
 let _orderDelayTimeout  = null
-const ORDER_DELAY_WARNING_SECONDS = 300 // 5 دقائق بدون استجابة من المطعم = تنبيه للعميل
+const ORDER_DELAY_WARNING_SECONDS = 300 // 5 دقائق بدون استجابة من المتجر = تنبيه للعميل
 
 function trackOrderStatus(orderId) {
   if (_orderTrackChannel) { db.removeChannel(_orderTrackChannel); _orderTrackChannel = null }
@@ -244,7 +244,7 @@ function trackOrderStatus(orderId) {
   clearTimeout(_orderDelayTimeout)
   _orderDelayTimeout = setTimeout(() => showOrderDelayWarning(), ORDER_DELAY_WARNING_SECONDS * 1000)
 }
-// تنبيه العميل لو الطلب فضل بدون استجابة من المطعم لفترة غير طبيعية —
+// تنبيه العميل لو الطلب فضل بدون استجابة من المتجر لفترة غير طبيعية —
 // لا يعني هذا فقدان الطلب، فقط تنبيه بوجود تأخير مع تأكيد أن الطلب لم يُفقد
 function showOrderDelayWarning() {
   const msgEl = document.getElementById('success-sub-msg')
@@ -313,18 +313,18 @@ function viewTrackedOrderDetail() {
 let _reopenTrackingAfterDetail = null
 
 // ── CONTACT RESTAURANT ABOUT AN ORDER ──────────────────────────────────
-// يفتح واتساب المطعم مباشرة برسالة جاهزة تتضمن رقم الطلب — يُستخدم من مودال التتبع
-// (خصوصاً وقت تأخير المطعم في الرد) ومن شيت تفاصيل الطلب في صفحة "طلباتي"
+// يفتح واتساب المتجر مباشرة برسالة جاهزة تتضمن رقم الطلب — يُستخدم من مودال التتبع
+// (خصوصاً وقت تأخير المتجر في الرد) ومن شيت تفاصيل الطلب في صفحة "طلباتي"
 function contactRestaurantAboutOrder(orderNumber) {
   const num = orderNumber || document.getElementById('success-order-num').textContent.replace('رقم الطلب:', '').trim()
   const phone = normalizeWhatsAppNumber(S.restaurant?.whatsapp)
-  if (!phone) { showToast('رقم تواصل المطعم غير متوفر حالياً'); return }
+  if (!phone) { showToast('رقم تواصل المتجر غير متوفر حالياً'); return }
   const msg = encodeURIComponent(`السلام عليكم، بخصوص طلبي${num ? ' (' + num + ')' : ''} — `)
   window.open(`https://wa.me/${phone}?text=${msg}`, '_blank')
 }
 
 // ── CANCEL ORDER BY CUSTOMER ─────────────────────────────────────────
-// قاعدة: قبل قبول التاجر (pending) الإلغاء ممنوع أول 10 دقايق (فرصة عادلة للمطعم يقبل الطلب)،
+// قاعدة: قبل قبول التاجر (pending) الإلغاء ممنوع أول 10 دقايق (فرصة عادلة للمتجر يقبل الطلب)،
 // وبعد 10 دقايق من غير قبول، يتاح الإلغاء للعميل تلقائيًا.
 // بعد القبول (confirmed) فيه مهلة دقيقتين بالظبط من وقت القبول، وبعدها يُمنع الإلغاء نهائيًا.
 const CANCEL_GRACE_SECONDS = 120
@@ -345,7 +345,7 @@ function showCancelButton(visible, lateMode) {
   if ((!visible || lateMode) && countdownEl) countdownEl.classList.add('hidden')
 }
 
-// يمنع الإلغاء أول 10 دقايق من وقت إنشاء الطلب، ثم يتيحه تلقائيًا لو المطعم لسه مقبلش
+// يمنع الإلغاء أول 10 دقايق من وقت إنشاء الطلب، ثم يتيحه تلقائيًا لو المتجر لسه مقبلش
 function startPendingCancelWatch(createdAt) {
   clearTimeout(_pendingCancelTimeout)
   const startMs   = createdAt ? new Date(createdAt).getTime() : Date.now()
@@ -421,7 +421,7 @@ async function doCancelOrder(orderId) {
 // ── استرجاع رصيد المحفظة والكوينز المستخدمة في الطلب عند إلغائه ────────
 // بيتنفّذ من مسار إلغاء العميل نفسه (زر الإلغاء في مودال التتبع). ملاحظة أمان:
 // الكتابة المباشرة القديمة هنا على menu_customers/coin_transactions كانت بتترفض بصمت
-// من الـ RLS/trigger لأنهم مسموحين لصاحب المطعم بس مش للعميل — فكان الاسترجاع
+// من الـ RLS/trigger لأنهم مسموحين لصاحب المتجر بس مش للعميل — فكان الاسترجاع
 // شكليًا في الواجهة بس من غير ما يتسجل فعليًا في قاعدة البيانات. الاستبدال ده
 // بيمر عن طريق دالة آمنة (refund_order_payment_customer) بتتحقق إن الطلب فعلاً
 // بتاع العميل ده ومُلغى، وتمنع الاسترجاع المزدوج على السيرفر.
@@ -457,7 +457,7 @@ function refundToastMessage(refund) {
 // ── LATE CANCELLATION (تأخر الطلب عن وقت التحضير المقدر + ساعة) ─────────
 // حتى لو انتهت مهلة الإلغاء العادية (دقيقتين بعد القبول)، لو الطلب فضل عالق
 // (وقت التحضير المقدر + ساعة كاملة من وقت قبول التاجر) العميل يرجع له حق الإلغاء تاني —
-// حماية له من انتظار بلا نهاية لو المطعم اتأخر جداً أو نسي الطلب.
+// حماية له من انتظار بلا نهاية لو المتجر اتأخر جداً أو نسي الطلب.
 const LATE_CANCEL_EXTRA_MINUTES = 60
 
 function lateCancelDeadline(order) {
@@ -556,14 +556,14 @@ function setSuccessModalVisual(state, cancelReason, order) {
   if (state === 'pending') {
     iconEl.textContent = '⏳'
     titleEl.textContent = 'تم استلام طلبك!'
-    msgEl.textContent = '🔔 في انتظار تأكيد المطعم... (تقدر تلغي الطلب لو لم يستجيب المطعم خلال 10 دقايق)'
+    msgEl.textContent = '🔔 في انتظار تأكيد المتجر... (تقدر تلغي الطلب لو لم يستجيب المتجر خلال 10 دقايق)'
     msgEl.style.color = '#aaa'
     startPendingCancelWatch(order?.created_at)
   } else if (state === 'confirmed') {
     iconEl.textContent = '👨‍🍳'
     titleEl.textContent = 'تم تأكيد طلبك!'
     const prepMin = order?.estimated_prep_minutes
-    msgEl.textContent = prepMin ? `جاري التجهيز — تقريباً ${prepMin} دقيقة 🎉` : 'المطعم بيجهز طلبك دلوقتي 🎉'
+    msgEl.textContent = prepMin ? `جاري التجهيز — تقريباً ${prepMin} دقيقة 🎉` : 'المتجر بيجهز طلبك دلوقتي 🎉'
     msgEl.style.color = '#22c55e'
     startCancelGracePeriod(order?.confirmed_at) // بعد القبول: مهلة دقيقتين فقط للإلغاء
   } else if (state === 'ready') {
@@ -589,7 +589,7 @@ function setSuccessModalVisual(state, cancelReason, order) {
     const cancelledByCustomer = !!(cancelReason && cancelReason.includes('بواسطة العميل'))
     iconEl.textContent = cancelledByCustomer ? '↩️' : '❌'
     titleEl.textContent = cancelledByCustomer ? 'تم إلغاء طلبك' : 'تعذّر قبول الطلب'
-    msgEl.textContent   = cancelledByCustomer ? 'تم إلغاء الطلب بنجاح بناءً على طلبك' : 'للأسف المطعم لم يستطع تنفيذ طلبك'
+    msgEl.textContent   = cancelledByCustomer ? 'تم إلغاء الطلب بنجاح بناءً على طلبك' : 'للأسف المتجر لم يستطع تنفيذ طلبك'
     msgEl.style.color = '#ef4444'
     if (cancelReason) {
       reasonEl.textContent = `السبب: ${cancelReason}`

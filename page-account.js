@@ -240,7 +240,7 @@ function renderAccountPage() {
   if (!S.customer) {
     guest.style.display  = 'block'
     logged.style.display = 'none'
-    // لوجو المطعم في hero
+    // لوجو المتجر في hero
     const logoEl = document.getElementById('auth-hero-logo')
     if (logoEl && S.restaurant?.logo_url) {
       logoEl.innerHTML = `<img src="${S.restaurant.logo_url}" style="width:60px;height:60px;border-radius:50%;object-fit:cover">`
