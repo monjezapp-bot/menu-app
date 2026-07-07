@@ -152,6 +152,7 @@ function hideSuggestions() {
 // ── SEARCH OVERLAY (mini mode) ────────────────────────────────────────
 function openSearchOverlay() {
   document.getElementById('search-overlay').classList.remove('hidden')
+  _lockBodyScroll()
   setTimeout(() => document.getElementById('search-overlay-input').focus(), 100)
   pushModal('search', closeSearchOverlay)
 }
@@ -160,6 +161,7 @@ function closeSearchOverlay(e) {
   document.getElementById('search-overlay').classList.add('hidden')
   document.getElementById('search-overlay-input').value = ''
   document.getElementById('overlay-suggestions').classList.add('hidden')
+  _unlockBodyScroll()
   if (e !== true) popModalSilently('search') // e === true يعني تم الاستدعاء من popstate
 }
 function handleOverlaySearch() {
