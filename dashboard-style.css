@@ -1,5 +1,9 @@
     * { font-family: 'Rubik', sans-serif; box-sizing: border-box; }
     html, body { overflow-x: hidden; width: 100%; max-width: 100vw; }
+
+    /* أساسية وحرجة للتشغيل: أي عنصر عليه class="hidden" لازم يختفي فعليًا،
+       وإلا شاشات الداشبورد المختلفة (مودالز، لودينج، إلخ) هتظهر كلها فوق بعض. */
+    .hidden { display: none !important; }
     button, .btn, input, select, textarea, img, svg { max-width: 100%; }
     input, select, textarea { min-width: 0; }
     input[type="text"], input[type="email"], input[type="password"],

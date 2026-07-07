@@ -16,6 +16,11 @@
     .no-scroll::-webkit-scrollbar { display: none; }
     .no-scroll { -ms-overflow-style: none; scrollbar-width: none; }
 
+    /* أساسية جدًا وحرجة للتشغيل: أي عنصر عليه class="hidden" لازم يختفي فعليًا.
+       بدونها: شاشة اللودينج + شاشة الخطأ + التطبيق نفسه بيظهروا كلهم فوق بعض
+       من أول ما الصفحة تفتح، ويبان التطبيق وكأنه واقف/متهنّج. */
+    .hidden { display: none !important; }
+
     /* أرقام إنجليزية (فلوس/كوينز) داخل صفحة RTL — يمنع تشوّه الفواصل وعلامات التنسيق */
     .ltr-num { direction: ltr; unicode-bidi: isolate; display: inline-block; }
 
