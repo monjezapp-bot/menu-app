@@ -63,7 +63,7 @@ async function sendOrder() {
 
   const items = S.cart.map(c => ({
     id: c.id, type: c.type, name: c.name, price: c.price, qty: c.qty,
-    unit: c.unit || 'قطعة', options: c.options || null,
+    unit: c.unit || 'قطعة', options: c.options || null, opt_idx: c.opt_idx || null,
     subtotal: Number((c.price * c.qty).toFixed(2))
   }))
   const total = cartTotal()
@@ -106,7 +106,7 @@ async function sendOrder() {
   let finalTotal = Math.max(0, Math.round((grandTotal - _appliedDiscount - walletAmountUsed) * 100) / 100)
 
   // Save order to DB — the merchant receives it live in the dashboard (no WhatsApp)
-  let orderId, orderNumber
+  let orderId, orderNumber, verifiedTotal = finalTotal
   try {
     const { data: rpc, error: re } = await db.rpc('generate_order_number')
     if (re || !rpc) throw new Error(re?.message || 'generate_order_number failed')
@@ -185,8 +185,16 @@ async function sendOrder() {
       if (walletAmountUsed > 0) S.customer.wallet_balance = Math.max(0, Number(S.customer.wallet_balance || 0) - walletAmountUsed)
     }
 
+    // تحقق نهائي من السيرفر: يعيد حساب سعر كل عنصر وإجمالي الطلب من مصدر الحقيقة (جدولي
+    // products/bundles) مش من القيم اللي بعتها الشاشة — يقفل ثغرة التلاعب بالسعر، وبيتنفذ
+    // مرة واحدة بس لكل طلب فمينفعش يتأثر بتغيير سعر منتج بعد كده
+    try {
+      const { data: verified, error: verifyErr } = await db.rpc('recalc_order_pricing', { p_order_id: orderId })
+      if (!verifyErr && verified?.total !== undefined) verifiedTotal = Number(verified.total)
+    } catch(_) {}
+
     // منح كوينز الولاء بعد الطلب
-    await awardLoyaltyAndWelcome(orderId, items, S.customer?.id, finalTotal)
+    await awardLoyaltyAndWelcome(orderId, items, S.customer?.id, verifiedTotal)
   } catch(e) {
     // أمان: لو فشلت تسوية الدفع (settle_order_payment) بعد ما الطلب اتسجّل فعلاً في orders،
     // يبقى فيه صف طلب بقيمة (total) متخصومة من رصيد محفظة لم يُخصم فعليًا على السيرفر —
@@ -217,7 +225,7 @@ async function sendOrder() {
   document.getElementById('cart-discount-msg').style.display = 'none'
   _appliedDiscount = 0; _appliedCode = null; _walletToUse = 0
   resetBtn()
-  showOrderSuccess(orderNumber, orderId, finalTotal, deliveryFee)
+  showOrderSuccess(orderNumber, orderId, verifiedTotal, deliveryFee)
   trackOrderStatus(orderId)
 }
 
@@ -606,12 +614,12 @@ async function confirmOrderReceipt() {
   document.getElementById('confirm-receipt-btn').classList.add('hidden')
   clearTimeout(_autoConfirmTimeout)
 }
-// تأكيد استلام تلقائي لو العميل لم يضغط الزر بنفسه بعد 30 دقيقة من تسليم الطلب للمندوب.
+// تأكيد استلام تلقائي لو العميل لم يضغط الزر بنفسه بعد 60 دقيقة من تسليم الطلب للمندوب.
 // مهم: بنحسب الوقت المتبقي من "delivering_at" الحقيقي (وقت تسليم التاجر الطلب للمندوب)
 // مش من لحظة فتح المودال — عشان لو العميل قفل التطبيق وفتحه تاني بعد 20 دقيقة مثلاً،
-// التايمر يكمل من حيث ما وصل (10 دقايق متبقية) بدل ما يرجع لـ 30 دقيقة كاملة من جديد.
+// التايمر يكمل من حيث ما وصل (40 دقيقة متبقية) بدل ما يرجع لـ 60 دقيقة كاملة من جديد.
 let _autoConfirmTimeout = null
-const AUTO_CONFIRM_MINUTES_AFTER_DELIVERING = 30
+const AUTO_CONFIRM_MINUTES_AFTER_DELIVERING = 60
 function startAutoConfirmTimer(orderId, deliveringAt) {
   clearTimeout(_autoConfirmTimeout)
   if (!orderId) return

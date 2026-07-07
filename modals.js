@@ -30,7 +30,8 @@ function openModal(pid) {
 
   // "Also with" section
   const alsoIds      = Array.isArray(p.also_with) ? p.also_with : []
-  const alsoProducts = alsoIds.map(id => S.products.find(x => x.id === id)).filter(x => x && x.is_available !== false && x.availability !== 'hidden')
+  const alsoProducts = alsoIds.map(id => S.products.find(x => x.id === id))
+    .filter(x => x && x.is_available !== false && x.availability !== 'hidden' && !(x.product_options || []).some(g => g.required))
   const alsoHTML = alsoProducts.length ? `
     <div class="prod-divider"></div>
     <p class="also-title">تطلب معها أيضاً 🤩</p>
@@ -90,6 +91,22 @@ function openModal(pid) {
   pushModal('product', closeModal)
 }
 
+// يحسب سعر المنتج النهائي حسب الخيارات المختارة:
+// - أي مجموعة "إجبارية" (زي الحجم) → سعرها بديل للسعر الأساسي، مش زيادة عليه
+//   (لو فيه أكتر من مجموعة إجبارية، بنجمع أسعارهم كلهم بدل السعر الأساسي)
+// - أي مجموعة اختيارية (زي الإضافات) → سعرها بيتجمع فوق الأساس
+function computeItemPrice(p, base, selectedOptIds) {
+  const opts = p?.product_options || []
+  let sum = 0
+  ;(selectedOptIds || []).forEach(key => {
+    const [gi, oi] = key.split('-').map(Number)
+    const opt = opts[gi]?.options?.[oi]
+    if (opt) sum += opt.price || 0
+  })
+  const anyRequiredGroup = opts.some(g => g.required)
+  const effectiveBase = anyRequiredGroup ? 0 : base
+  return effectiveBase + sum
+}
 function selectChip(gi, oi) {
   const btn = document.getElementById(`chip-${gi}-${oi}`)
   const wasSelected = btn?.classList.contains('selected')
@@ -125,17 +142,16 @@ function recalcModalTotal() {
   const pid   = modal.dataset.pid
   const p     = S.products.find(x => x.id === pid)
 
-  let optsExtra = 0
+  const selectedOptIds = []
   document.querySelectorAll('.chip-btn.selected').forEach(btn => {
     const m = btn.id.match(/^chip-(\d+)-(\d+)$/)
-    if (!m) return
-    const opt = p?.product_options?.[parseInt(m[1])]?.options?.[parseInt(m[2])]
-    if (opt) optsExtra += opt.price || 0
+    if (m) selectedOptIds.push(`${m[1]}-${m[2]}`)
   })
 
+  const finalUnit = computeItemPrice(p, base, selectedOptIds)
   const alsoExtra = S.cart.filter(c => c._also).reduce((s, c) => s + c.price, 0)
   const totalEl   = document.getElementById('m-total')
-  if (totalEl) totalEl.textContent = fmt((base + optsExtra) * qty + alsoExtra)
+  if (totalEl) totalEl.textContent = fmt(finalUnit * qty + alsoExtra)
 }
 function mQty(d) {
   const modal = document.getElementById('product-modal')
@@ -151,24 +167,28 @@ function addFromModal(pid) {
   const p     = S.products.find(x => x.id === pid); if (!p) return
   const opts  = p.product_options || []
 
-  let optsExtra = 0
-  const selectedOptIds = [] // معرف فريد لكل خيار محدد (gi-oi)، يستخدم للمطابقة الدقيقة في السلة
+  const selectedOptIds = [] // معرف فريد لكل خيار محدد (gi-oi)، يستخدم للمطابقة الدقيقة في السلة وللتحقق من السيرفر لاحقًا
   const selectedOptNames = []
   opts.forEach((g, gi) => {
     document.querySelectorAll(`[id^="chip-${gi}-"].selected`).forEach(sel => {
       const oi  = parseInt(sel.id.split('-')[2])
       const opt = g.options[oi]
-      if (opt) { optsExtra += opt.price || 0; selectedOptNames.push(opt.name); selectedOptIds.push(`${gi}-${oi}`) }
+      if (opt) { selectedOptNames.push(opt.name); selectedOptIds.push(`${gi}-${oi}`) }
     })
   })
 
-  const finalPrice  = base + optsExtra
+  // تحقق: أي مجموعة إجبارية (زي الحجم) لازم يكون فيها اختيار واحد على الأقل قبل الإضافة —
+  // لأن الحجم بديل للسعر الأساسي مش زيادة عليه، فلو محدش اتختار السعر يبقى صفر بالغلط
+  const missingRequired = opts.some((g, gi) => g.required && !selectedOptIds.some(k => k.startsWith(`${gi}-`)))
+  if (missingRequired) { showToast('من فضلك اختر الحجم قبل الإضافة للسلة'); return }
+
+  const finalPrice  = computeItemPrice(p, base, selectedOptIds)
   const unit        = p.unit || 'قطعة'
   const optionsKey  = selectedOptIds.sort().join(',') // توقيع فريد للتركيبة المختارة (مرتب لتجاهل ترتيب الضغط)
   // المطابقة في السلة تتم على (نفس المنتج + نفس تركيبة الخيارات بالضبط)، لا على المنتج فقط
   // هذا يمنع استبدال أي تركيبة سابقة مختلفة (مثل "بيتزا كبيرة" تستبدل "بيتزا صغيرة" بالخطأ)
   const ci   = S.cart.find(c => c.id === pid && c.type === 'product' && !c._also && (c._optionsKey || '') === optionsKey)
-  const item = { id: pid, type: 'product', name: p.name, price: finalPrice, image_url: p.image_url, qty, unit, options: selectedOptNames.join('، ') || null, _optionsKey: optionsKey }
+  const item = { id: pid, type: 'product', name: p.name, price: finalPrice, image_url: p.image_url, qty, unit, options: selectedOptNames.join('، ') || null, opt_idx: selectedOptIds, _optionsKey: optionsKey }
 
   if (ci) { ci.qty += qty } else S.cart.push(item) // لو نفس التركيبة موجودة، نزود الكمية بدل الاستبدال؛ غير ذلك سطر جديد مستقل
 
@@ -270,8 +290,9 @@ function openSharedLinkIfAny() {
 // ── CART ──────────────────────────────────────────────────────────────
 function quickAdd(pid) {
   const p = S.products.find(x => x.id === pid); if (!p) return
-  // If unit is not "قطعة", open the full product page instead
-  if ((p.unit || 'قطعة') !== 'قطعة') { openModal(pid); return }
+  // لو المنتج مش وحدة "قطعة"، أو عنده خيارات لازم اختيارها (حجم/إضافات)، افتح صفحة المنتج الكاملة بدل الإضافة السريعة —
+  // بدون ده، منتج عنده حجم إجباري كان بيتضاف بالسعر الأساسي غلط من غير ما حد يختار حجمه
+  if ((p.unit || 'قطعة') !== 'قطعة' || (p.product_options && p.product_options.length > 0)) { openModal(pid); return }
   const price = isDiscountActive(p) ? Number(p.discount_price) : Number(p.price)
   const ci    = S.cart.find(c => c.id === pid && c.type === 'product')
   if (ci) { ci.qty += 1 } else { S.cart.push({ id: pid, type: 'product', name: p.name, price, image_url: p.image_url, qty: 1, unit: 'قطعة' }) }
