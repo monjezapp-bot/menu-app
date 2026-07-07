@@ -124,19 +124,22 @@
 
     <!-- Quick Price Update Tab (تحديث سريع لأسعار كل المنتجات دفعة واحدة) -->
     <div id="tab-content-quickprices" class="hidden fade-up">
-      <div class="flex items-center justify-between mb-2">
-        <h2 class="font-extrabold text-gray-800">⚡ تحديث سريع للأسعار</h2>
-        <button onclick="saveQuickPrices()" id="qp-save-btn" class="bg-orange-500 text-white text-sm font-bold px-4 py-2 rounded-xl">💾 حفظ التعديلات</button>
+      <div class="qp-header">
+        <div class="qp-header-text">
+          <h2 class="qp-title">⚡ تحديث سريع للأسعار</h2>
+          <p class="qp-subtitle">غيّر السعر أو الوحدة، واضغط "حفظ" مرة واحدة في الآخر</p>
+        </div>
+        <button onclick="saveQuickPrices()" id="qp-save-btn" class="qp-save-btn">💾 حفظ التعديلات</button>
       </div>
-      <p class="text-xs text-gray-400 mb-4">غيّر السعر أو الوحدة لأي صنف زي ما تحب، وفي الآخر اضغط "حفظ التعديلات" مرة واحدة — مش محتاج تفتح كل منتج لوحده.</p>
-      <div id="qp-search-wrap" class="mb-3">
-        <input id="qp-search" type="text" placeholder="🔍 دوّر على صنف..." oninput="renderQuickPrices()" class="w-full border border-gray-200 rounded-xl px-4 py-2.5 text-sm focus:outline-none focus:ring-2 focus:ring-orange-400" />
+      <div id="qp-search-wrap" class="qp-search-wrap">
+        <span class="qp-search-ico">🔍</span>
+        <input id="qp-search" type="text" placeholder="دوّر على صنف..." oninput="renderQuickPrices()" class="qp-search-input" />
       </div>
-      <div id="qp-list" class="space-y-4 pb-24"><div class="spinner mx-auto mt-8"></div></div>
+      <div id="qp-list" class="qp-list pb-24"><div class="spinner mx-auto mt-8"></div></div>
     </div>
 
     <!-- شريط تعويم يظهر بس لما يكون فيه تعديلات لسه متحفظتش -->
-    <div id="qp-float-save" class="hidden fixed bottom-20 md:bottom-6 left-1/2 -translate-x-1/2 z-40 bg-gray-800 text-white text-sm font-bold pl-3 pr-1.5 py-1.5 rounded-full shadow-xl flex items-center gap-2">
+    <div id="qp-float-save" class="hidden fixed bottom-20 md:bottom-6 left-1/2 -translate-x-1/2 z-40 bg-gray-900 text-white text-sm font-bold pl-3 pr-1.5 py-1.5 rounded-full shadow-xl flex items-center gap-2">
       <span>✏️ <span id="qp-float-count">0</span> تعديل لسه محفوظش</span>
       <button onclick="saveQuickPrices()" class="bg-orange-500 text-white font-bold px-3 py-1.5 rounded-full text-xs">حفظ الآن</button>
     </div>
@@ -2038,6 +2041,8 @@ async function loadQuickPrices() {
   renderQuickPrices()
 }
 
+const QP_UNITS = ['قطعة', 'كيلو', 'جرام', 'لتر', 'متر', 'علبة']
+
 function renderQuickPrices() {
   const el = document.getElementById('qp-list')
   if (!el) return
@@ -2056,24 +2061,26 @@ function renderQuickPrices() {
   })
 
   el.innerHTML = Object.entries(groups).map(([catName, prods]) => `
-    <div>
-      <p class="text-xs font-extrabold text-orange-500 mb-2 px-1">${catName}</p>
-      <div class="bg-white rounded-2xl shadow-sm border border-gray-100 divide-y divide-gray-100 overflow-hidden">
-        ${prods.map(p => `
-          <div class="flex items-center gap-2 px-3 py-2.5">
-            <p class="flex-1 min-w-0 text-sm font-bold text-gray-700 truncate">${p.name}</p>
-            <div class="flex items-center gap-1 bg-gray-50 rounded-lg px-2 py-1">
+    <div class="qp-group">
+      <p class="qp-group-title">${catName} <span class="qp-group-count">${prods.length}</span></p>
+      <div class="qp-card">
+        ${prods.map(p => {
+          const unitOptions = QP_UNITS.includes(p.unit) ? QP_UNITS : [...QP_UNITS, p.unit || 'قطعة']
+          return `
+          <div class="qp-row" data-qp-row="${p.id}">
+            <span class="qp-dot" data-qp-dot="${p.id}"></span>
+            <p class="qp-row-name">${p.name}</p>
+            <div class="qp-price-field">
               <input type="number" step="0.01" min="0" inputmode="decimal" value="${Number(p.price)}"
                      data-qp-price="${p.id}"
-                     onchange="qpMarkChanged('${p.id}','price',this.value)"
-                     class="w-16 bg-transparent text-center text-sm font-extrabold text-gray-800 focus:outline-none" />
-              <span class="text-xs text-gray-400">ج.م</span>
+                     onchange="qpMarkChanged('${p.id}','price',this.value)" />
+              <span class="qp-currency">ج.م</span>
             </div>
-            <input type="text" value="${p.unit || 'قطعة'}"
-                   data-qp-unit="${p.id}"
-                   onchange="qpMarkChanged('${p.id}','unit',this.value)"
-                   class="w-16 text-center border border-gray-200 rounded-lg px-1 py-1.5 text-xs text-gray-500 focus:outline-none focus:ring-2 focus:ring-orange-400" />
-          </div>`).join('')}
+            <select data-qp-unit="${p.id}" onchange="qpMarkChanged('${p.id}','unit',this.value)" class="qp-unit-field">
+              ${unitOptions.map(u => `<option value="${u}" ${u === (p.unit || 'قطعة') ? 'selected' : ''}>${u}</option>`).join('')}
+            </select>
+          </div>`
+        }).join('')}
       </div>
     </div>`).join('')
 }
@@ -2081,6 +2088,7 @@ function renderQuickPrices() {
 function qpMarkChanged(id, field, value) {
   if (!_qpChanges[id]) _qpChanges[id] = {}
   _qpChanges[id][field] = field === 'price' ? Number(value) : value.trim()
+  document.querySelector(`[data-qp-dot="${id}"]`)?.classList.add('qp-dot-active')
   updateQpSaveBar()
 }
 
