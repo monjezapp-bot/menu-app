@@ -174,24 +174,31 @@ async function sendOrder() {
     // القديم لـ coins_balance/wallet_balance من هنا كان بيترفض من الـ trigger
     // (protect_customer_financial_columns) لأنه مش عن طريق دالة آمنة، فكان بيفشل
     // بصمت — الاستبدال ده يخليها تشتغل صح ويمنع أي تلاعب بالرصيد من الكلاينت.
-    if ((walletAmountUsed > 0 || _appliedCode) && S.customer) {
+    // ملاحظة أمان: كود الخصم لازم يتوثّق على السيرفر حتى لو الطلب من "زائر" (بدون تسجيل دخول) —
+    // قبل كده كان الشرط بيتطلب S.customer، فكود الخصم بتاع أي زائر كان بيتحسب في الشاشة بس
+    // من غير ما يتسجّل استخدامه فعليًا (used_count) ولا يتفحص من settle_order_payment، وده كان
+    // بيسمح بإعادة استخدام كود "مرة واحدة" بلا حدود من الزوار. رصيد المحفظة النقدي لسه بيتطلب عميل مسجّل
+    // (مفيش محفظة أصلاً للزائر)، لكن كود الخصم لازم يعدي على settle_order_payment دايمًا.
+    if ((walletAmountUsed > 0 && S.customer) || _appliedCode) {
       const { data: settled, error: settleErr } = await db.rpc('settle_order_payment', {
         p_order_id: orderId,
         p_coins_to_redeem: 0,
-        p_wallet_to_use: walletAmountUsed || 0,
+        p_wallet_to_use: (S.customer && walletAmountUsed > 0) ? walletAmountUsed : 0,
         p_discount_code: _appliedCode ? document.getElementById('cart-discount-code').value.trim().toUpperCase() : null
       })
       if (settleErr) throw new Error(settleErr.message)
-      if (walletAmountUsed > 0) S.customer.wallet_balance = Math.max(0, Number(S.customer.wallet_balance || 0) - walletAmountUsed)
+      if (S.customer && walletAmountUsed > 0) S.customer.wallet_balance = Math.max(0, Number(S.customer.wallet_balance || 0) - walletAmountUsed)
     }
 
     // تحقق نهائي من السيرفر: يعيد حساب سعر كل عنصر وإجمالي الطلب من مصدر الحقيقة (جدولي
     // products/bundles) مش من القيم اللي بعتها الشاشة — يقفل ثغرة التلاعب بالسعر، وبيتنفذ
     // مرة واحدة بس لكل طلب فمينفعش يتأثر بتغيير سعر منتج بعد كده
-    try {
-      const { data: verified, error: verifyErr } = await db.rpc('recalc_order_pricing', { p_order_id: orderId })
-      if (!verifyErr && verified?.total !== undefined) verifiedTotal = Number(verified.total)
-    } catch(_) {}
+    // أمان: فشل التحقق النهائي (مثلاً صنف بقى غير متاح، أو كمية غير منطقية) لازم يوقف الطلب
+    // فورًا مش يتجاهل بصمت — قبل كده كان أي خطأ هنا بيتبلع والطلب يفضل ماشي بالقيم الأصلية
+    // اللي بعتها الشاشة، وده كان بيسمح بمرور طلب فيه صنف "خلص من عندك" أو كمية مبالغ فيها.
+    const { data: verified, error: verifyErr } = await db.rpc('recalc_order_pricing', { p_order_id: orderId })
+    if (verifyErr) throw new Error(verifyErr.message)
+    if (verified?.total !== undefined) verifiedTotal = Number(verified.total)
 
     // منح كوينز الولاء بعد الطلب
     await awardLoyaltyAndWelcome(orderId, items, S.customer?.id, verifiedTotal)
@@ -209,8 +216,12 @@ async function sendOrder() {
           .eq('id', orderId)
       } catch(_) {}
     }
+    // ترجمة أسباب فشل recalc_order_pricing لرسالة مفهومة للعميل بدل عرض الكود الخام
+    let friendlyMsg = e.message || 'خطأ غير معروف'
+    if (friendlyMsg.startsWith('item_unavailable:')) friendlyMsg = `عذرًا، "${friendlyMsg.split(':')[1]}" بقى غير متاح — احذفه من السلة وأعد الإرسال`
+    else if (friendlyMsg.startsWith('quantity_too_high:')) friendlyMsg = `الكمية المطلوبة من "${friendlyMsg.split(':')[1]}" أكبر من المسموح`
     btn.style.opacity = '1'
-    btn.innerHTML = `<span>⚠️ ${e.message || 'خطأ غير معروف'}</span>`
+    btn.innerHTML = `<span>⚠️ ${friendlyMsg}</span>`
     setTimeout(resetBtn, 5000)
     return
   }

@@ -153,9 +153,11 @@ function recalcModalTotal() {
   const totalEl   = document.getElementById('m-total')
   if (totalEl) totalEl.textContent = fmt(finalUnit * qty + alsoExtra)
 }
+const MAX_ITEM_QTY = 30 // نفس الحد المفروض في recalc_order_pricing على السيرفر
 function mQty(d) {
   const modal = document.getElementById('product-modal')
-  const qty   = Math.max(1, parseInt(modal.dataset.qty) + d)
+  const qty   = Math.min(MAX_ITEM_QTY, Math.max(1, parseInt(modal.dataset.qty) + d))
+  if (d > 0 && parseInt(modal.dataset.qty) >= MAX_ITEM_QTY) showToast(`أقصى كمية للصنف الواحد ${MAX_ITEM_QTY}`)
   modal.dataset.qty = qty
   document.getElementById('m-qty').textContent = qty
   recalcModalTotal()
@@ -295,17 +297,24 @@ function quickAdd(pid) {
   if ((p.unit || 'قطعة') !== 'قطعة' || (p.product_options && p.product_options.length > 0)) { openModal(pid); return }
   const price = isDiscountActive(p) ? Number(p.discount_price) : Number(p.price)
   const ci    = S.cart.find(c => c.id === pid && c.type === 'product')
-  if (ci) { ci.qty += 1 } else { S.cart.push({ id: pid, type: 'product', name: p.name, price, image_url: p.image_url, qty: 1, unit: 'قطعة' }) }
+  if (ci) {
+    if (ci.qty >= MAX_ITEM_QTY) { showToast(`أقصى كمية للصنف الواحد ${MAX_ITEM_QTY}`); return }
+    ci.qty += 1
+  } else { S.cart.push({ id: pid, type: 'product', name: p.name, price, image_url: p.image_url, qty: 1, unit: 'قطعة' }) }
   saveCart(); updateCartUI()
 }
 function addBundleToCart(bid) {
   const b  = S.bundles.find(x => String(x.id) === String(bid)); if (!b) return
   const ci = S.cart.find(c => String(c.id) === String(bid) && c.type === 'bundle')
-  if (ci) { ci.qty += 1 } else { S.cart.push({ id: bid, type: 'bundle', name: b.name, price: Number(b.price), image_url: b.image_url, qty: 1 }) }
+  if (ci) {
+    if (ci.qty >= MAX_ITEM_QTY) { showToast(`أقصى كمية للصنف الواحد ${MAX_ITEM_QTY}`); return }
+    ci.qty += 1
+  } else { S.cart.push({ id: bid, type: 'bundle', name: b.name, price: Number(b.price), image_url: b.image_url, qty: 1 }) }
   saveCart(); updateCartUI()
 }
 function cQty(id, type, d) {
   const idx = S.cart.findIndex(c => c.id === id && c.type === type); if (idx === -1) return
+  if (d > 0 && S.cart[idx].qty >= MAX_ITEM_QTY) { showToast(`أقصى كمية للصنف الواحد ${MAX_ITEM_QTY}`); return }
   S.cart[idx].qty += d
   const removed = S.cart[idx].qty <= 0
   if (removed) S.cart.splice(idx, 1)
