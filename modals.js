@@ -29,29 +29,20 @@ function openModal(pid) {
     </div>`).join('')
 
   // "Also with" section
-  // ملحوظة: قبل كده كنا بنستبعد أي منتج مقترح عنده خيار "حجم" إجباري (زي منتجات الجملة)
-  // لأن toggleAlso بتضيفه للسلة بسعر ثابت من غير ما يختار حجمه. بدل ما نخفيه خالص،
-  // بنعرضه بسعر "من" (أقل حجم متاح)، وبنفتحله صفحته لما يدوس عليه عشان يختار الحجم بنفسه.
   const alsoIds      = Array.isArray(p.also_with) ? p.also_with : []
   const alsoProducts = alsoIds.map(id => S.products.find(x => x.id === id))
-    .filter(x => x && x.is_available !== false && x.availability !== 'hidden')
+    .filter(x => x && x.is_available !== false && x.availability !== 'hidden' && !(x.product_options || []).some(g => g.required))
   const alsoHTML = alsoProducts.length ? `
     <div class="prod-divider"></div>
     <p class="also-title">تطلب معها أيضاً 🤩</p>
     <div class="also-scroll">
       ${alsoProducts.map(s => {
-        const sOpts        = s.product_options || []
-        const sHasRequired = sOpts.some(g => g.required)
-        const sp = sHasRequired
-          ? sOpts.filter(g => g.required).reduce((sum, g) => sum + Math.min(...g.options.map(o => Number(o.price) || 0)), 0)
-          : (s.discount_price && Number(s.discount_price) < Number(s.price) ? Number(s.discount_price) : Number(s.price))
-        const priceLabel  = sHasRequired ? `من ${fmt(sp)}` : fmt(sp)
-        const clickAction = sHasRequired ? `openAlsoProduct('${s.id}')` : `toggleAlso('${s.id}',${sp},this)`
-        return `<div class="also-card" id="also-${s.id}" onclick="${clickAction}">
+        const sp = s.discount_price && Number(s.discount_price) < Number(s.price) ? Number(s.discount_price) : Number(s.price)
+        return `<div class="also-card" id="also-${s.id}" onclick="toggleAlso('${s.id}',${sp},this)">
           ${s.image_url ? `<img src="${s.image_url}" />` : `<div class="also-no-img">🍽️</div>`}
           <div class="also-info">
             <p class="also-name">${s.name}</p>
-            <span class="also-price">${priceLabel}</span>
+            <span class="also-price">${fmt(sp)}</span>
           </div>
         </div>`
       }).join('')}
@@ -126,13 +117,6 @@ function selectChip(gi, oi) {
 function toggleChip(gi, oi) {
   document.getElementById(`chip-${gi}-${oi}`)?.classList.toggle('selected')
   recalcModalTotal()
-}
-// منتج مقترح ("تطلب معها أيضاً") عنده حجم إجباري: مينفعش يتضاف بضغطة واحدة بسعر ثابت،
-// فبنقفل صفحة المنتج الحالية بنفس المسار المعتاد (closeModal بيظبط الـ history والسلة زي أي إغلاق عادي)
-// وبعدين بنفتح صفحة المنتج المقترح عشان العميل يختار الحجم ويضيفه بنفسه.
-function openAlsoProduct(sid) {
-  closeModal()
-  openModal(sid)
 }
 function toggleAlso(sid, price, el) {
   el.classList.toggle('also-selected')
