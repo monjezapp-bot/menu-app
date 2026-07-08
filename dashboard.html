@@ -994,6 +994,7 @@
     </div>
     <div class="overflow-y-auto px-5 py-4 space-y-4 flex-1 min-h-0">
       <p id="orm-reason" class="hidden text-xs text-gray-600 bg-gray-50 rounded-xl px-3 py-2.5 break-words"></p>
+      <div id="orm-delivery-info" class="text-xs text-gray-500 bg-amber-50 rounded-xl px-3 py-2.5 space-y-0.5"></div>
       <div>
         <p class="text-xs font-extrabold text-gray-400 mb-2">الأصناف المطلوب استرجاعها (تقدر تعدّل الكمية الموافق عليها)</p>
         <div id="orm-items" class="space-y-2"></div>
@@ -2873,7 +2874,7 @@ async function loadOrders() {
 // ── طلبات الاسترجاع المعلّقة (بانتظار موافقة/رفض التاجر) ────────────────
 async function loadReturns() {
   const { data } = await db.from('order_returns')
-    .select('*, orders(order_number, items, total, delivery_fee, customer_name, table_number)')
+    .select('*, orders(order_number, items, total, delivery_fee, customer_name, customer_phone, table_number, created_at, delivered_at)')
     .eq('restaurant_id', state.restaurant.id)
     .eq('status', 'pending')
     .order('created_at', { ascending: false })
@@ -2941,11 +2942,25 @@ function renderOrders() {
 }
 
 // ── طلبات الاسترجاع (تبويب "🔄 استرجاع") ────────────────────────────────
+// بيحوّل الفرق بين وقتين لنص مفهوم بالعربي (دقايق/ساعات/أيام) — يساعد التاجر
+// يقيّم طلب الاسترجاع وهو عارف الطلب فضل عند العميل قد إيه قبل ما يطلب يرجّعه
+function humanDuration(ms) {
+  if (ms == null || isNaN(ms) || ms < 0) return null
+  const mins = Math.floor(ms / 60000)
+  if (mins < 1)   return 'أقل من دقيقة'
+  if (mins < 60)  return `${mins} دقيقة`
+  const hours = Math.floor(mins / 60)
+  if (hours < 24) return `${hours} ساعة${mins % 60 ? ` و${mins % 60} دقيقة` : ''}`
+  const days = Math.floor(hours / 24)
+  return `${days} يوم${hours % 24 ? ` و${hours % 24} ساعة` : ''}`
+}
 function renderReturnsList(el) {
   if (!state.returns.length) { el.innerHTML = `<p class="text-center text-gray-400 text-sm py-8">لا توجد طلبات استرجاع معلّقة حالياً</p>`; return }
   el.innerHTML = state.returns.map(r => {
     const ord = r.orders || {}
     const items = r.requested_items || []
+    const deliveredAt = ord.delivered_at ? new Date(ord.delivered_at) : null
+    const withCustomerMs = deliveredAt ? (new Date(r.created_at) - deliveredAt) : null
     return `<div class="bg-white rounded-2xl p-4 shadow-sm cursor-pointer active:bg-gray-50 transition-colors" onclick="openReturnResolveModal('${r.id}')">
       <div class="flex items-center justify-between mb-3">
         <div><p class="font-extrabold text-gray-800">${ord.order_number || ''}</p>${ord.table_number ? `<p class="text-xs text-gray-400">طاولة ${ord.table_number}</p>` : ''}</div>
@@ -2954,6 +2969,7 @@ function renderReturnsList(el) {
       <div class="space-y-1 border-t border-gray-50 pt-3">
         ${items.map(i => `<div class="flex justify-between text-sm"><span class="text-gray-600">${i.name || ''} × ${i.qty}</span></div>`).join('')}
       </div>
+      ${deliveredAt ? `<p class="text-xs text-gray-500 mt-2">📦 اتسلم يوم ${deliveredAt.toLocaleString('ar-EG')}${withCustomerMs !== null ? ` — فضل عند العميل <b class="text-gray-700">${humanDuration(withCustomerMs)}</b> قبل ما يطلب الاسترجاع` : ''}</p>` : ''}
       ${r.reason ? `<p class="text-xs text-gray-500 bg-gray-50 rounded-xl px-3 py-2 mt-2 break-words">📝 ${r.reason}</p>` : ''}
       ${r.initiated_by === 'merchant' ? `<p class="text-xs text-indigo-500 font-bold mt-2">طلب مُنشأ من التاجر</p>` : ''}
       <div class="flex items-center justify-between mt-2">
@@ -2983,6 +2999,15 @@ function openReturnResolveModal(returnId) {
   document.getElementById('orm-order-num').textContent = ord.order_number || ''
   document.getElementById('orm-reason').textContent = r.reason ? `📝 ${r.reason}` : ''
   document.getElementById('orm-reason').classList.toggle('hidden', !r.reason)
+
+  const deliveredAt = ord.delivered_at ? new Date(ord.delivered_at) : null
+  const withCustomerMs = deliveredAt ? (new Date(r.created_at) - deliveredAt) : null
+  const infoRows = []
+  if (deliveredAt) infoRows.push(`📦 <b>اتسلم:</b> ${deliveredAt.toLocaleString('ar-EG')}`)
+  if (withCustomerMs !== null) infoRows.push(`⏱ <b>فضل عند العميل:</b> ${humanDuration(withCustomerMs)} قبل طلب الاسترجاع`)
+  if (ord.customer_name) infoRows.push(`👤 <b>العميل:</b> ${ord.customer_name}`)
+  if (ord.customer_phone) infoRows.push(`📞 <b>الهاتف:</b> ${ord.customer_phone}`)
+  document.getElementById('orm-delivery-info').innerHTML = infoRows.map(t => `<p>${t}</p>`).join('')
   document.getElementById('orm-delivery-fee').value = isFull ? Number(ord.delivery_fee || 0) : 0
   document.querySelector('input[name="orm-refund-method"][value="wallet"]').checked = true
   document.getElementById('orm-notes').value = ''
