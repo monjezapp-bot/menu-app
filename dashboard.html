@@ -194,11 +194,12 @@
       <h2 class="font-extrabold text-gray-800 mb-4">الطلبات</h2>
 
       <!-- بطاقة تلخيص الطلبات -->
-      <div class="bg-white rounded-2xl shadow-sm p-4 mb-3 grid grid-cols-4 gap-2">
+      <div class="bg-white rounded-2xl shadow-sm p-4 mb-3 grid grid-cols-5 gap-2">
         <div class="text-center"><p class="text-xl font-extrabold text-yellow-500" id="obucket-count-incoming">0</p><p class="text-[11px] text-gray-400 font-bold mt-0.5">واردة</p></div>
         <div class="text-center border-r border-gray-100"><p class="text-xl font-extrabold text-blue-500" id="obucket-count-inprogress">0</p><p class="text-[11px] text-gray-400 font-bold mt-0.5">قيد التجهيز</p></div>
         <div class="text-center border-r border-gray-100"><p class="text-xl font-extrabold text-green-500" id="obucket-count-success">0</p><p class="text-[11px] text-gray-400 font-bold mt-0.5">ناجحة</p></div>
         <div class="text-center border-r border-gray-100"><p class="text-xl font-extrabold text-red-500" id="obucket-count-cancelled">0</p><p class="text-[11px] text-gray-400 font-bold mt-0.5">ملغية</p></div>
+        <div class="text-center border-r border-gray-100"><p class="text-xl font-extrabold text-orange-500" id="obucket-count-returns">0</p><p class="text-[11px] text-gray-400 font-bold mt-0.5">استرجاع</p></div>
       </div>
 
       <!-- شريط تصنيفات الحالة -->
@@ -983,6 +984,48 @@
   </div>
 </div>
 
+<!-- ══ ORDER RETURN RESOLVE MODAL (مراجعة طلب استرجاع) ══ -->
+<div id="order-return-resolve-modal" class="hidden fixed inset-0 z-[95] flex items-end justify-center" style="background:rgba(0,0,0,0.6);backdrop-filter:blur(4px)">
+  <div class="bg-white rounded-t-3xl w-full max-w-lg max-h-[90vh] flex flex-col overflow-hidden" style="animation:slideUp .3s cubic-bezier(0.34,1,0.64,1) both">
+    <div class="pt-2.5 pb-1 flex justify-center flex-shrink-0"><div class="w-10 h-1.5 bg-gray-200 rounded-full"></div></div>
+    <div class="flex items-center justify-between px-5 pb-3 border-b border-gray-100 flex-shrink-0">
+      <p class="font-extrabold text-gray-800">🔄 مراجعة طلب استرجاع — <span id="orm-order-num" class="text-orange-500"></span></p>
+      <button onclick="closeReturnResolveModal()" class="w-9 h-9 rounded-full bg-gray-100 text-gray-500 text-sm">✕</button>
+    </div>
+    <div class="overflow-y-auto px-5 py-4 space-y-4 flex-1 min-h-0">
+      <p id="orm-reason" class="hidden text-xs text-gray-600 bg-gray-50 rounded-xl px-3 py-2.5 break-words"></p>
+      <div>
+        <p class="text-xs font-extrabold text-gray-400 mb-2">الأصناف المطلوب استرجاعها (تقدر تعدّل الكمية الموافق عليها)</p>
+        <div id="orm-items" class="space-y-2"></div>
+      </div>
+      <div>
+        <p class="text-xs font-extrabold text-gray-400 mb-2">طريقة الاسترداد</p>
+        <div class="flex gap-3">
+          <label class="flex-1 flex items-center gap-2 border border-gray-200 rounded-xl px-3 py-2.5 text-sm font-bold text-gray-700">
+            <input type="radio" name="orm-refund-method" value="wallet"> 💳 محفظة العميل
+          </label>
+          <label class="flex-1 flex items-center gap-2 border border-gray-200 rounded-xl px-3 py-2.5 text-sm font-bold text-gray-700">
+            <input type="radio" name="orm-refund-method" value="external"> 💵 كاش/تحويل خارجي
+          </label>
+        </div>
+        <p class="text-[11px] text-gray-400 mt-1.5">لو جزء من المبلغ كان مدفوع أصلاً من رصيد المحفظة، هيرجع للمحفظة إجباريًا في الحالتين.</p>
+      </div>
+      <div>
+        <label class="text-xs font-extrabold text-gray-400 mb-1.5 block">استرداد رسوم التوصيل (ج.م)</label>
+        <input id="orm-delivery-fee" type="number" min="0" step="0.5" class="w-full border border-gray-200 rounded-xl px-3 py-2 text-sm focus:outline-none focus:ring-2 focus:ring-orange-300">
+      </div>
+      <div>
+        <label class="text-xs font-extrabold text-gray-400 mb-1.5 block">ملاحظات (هتظهر للعميل لو رفضت الطلب)</label>
+        <textarea id="orm-notes" rows="2" placeholder="اكتب ملاحظتك هنا..." class="w-full border border-gray-200 rounded-xl px-3 py-2 text-sm focus:outline-none focus:ring-2 focus:ring-orange-300"></textarea>
+      </div>
+    </div>
+    <div class="grid grid-cols-2 gap-3 px-5 py-4 border-t border-gray-100 flex-shrink-0">
+      <button onclick="approveReturnRequest()" class="bg-green-500 text-white font-extrabold rounded-2xl py-3.5 text-sm">✅ موافقة واسترداد</button>
+      <button onclick="rejectReturnRequest()" class="bg-red-50 text-red-600 font-extrabold rounded-2xl py-3.5 text-sm border border-red-200">❌ رفض الطلب</button>
+    </div>
+  </div>
+</div>
+
 <script>
 // ── GLOBAL ERROR HANDLER (debug) ─────────────────────────────────────
 // قاعدة ثابتة: أي خطأ JS أو Promise مرفوضة لازم تظهر على الشاشة فعلياً
@@ -1049,6 +1092,7 @@ const state = {
   categories: [],
   products:   [],
   orders:     [],
+  returns:    [],
   banners:    [],
   bundles:    [],
   branches:   [],
@@ -1087,7 +1131,8 @@ const ORDER_BUCKETS = {
   incoming:   { label: 'واردة',       statuses: ['pending'] },
   inprogress: { label: 'قيد التجهيز', statuses: ['confirmed', 'ready', 'delivering'] },
   success:    { label: 'ناجحة',       statuses: ['delivered'] },
-  cancelled:  { label: 'ملغية',       statuses: ['cancelled'] }
+  cancelled:  { label: 'ملغية',       statuses: ['cancelled'] },
+  returns:    { label: '🔄 استرجاع',  statuses: [] }
 }
 let activeOrderBucket = 'incoming'
 
@@ -2822,12 +2867,24 @@ async function loadOrders() {
   if (_role === 'branch' && _activeBranchId) q = q.eq('branch_id', _activeBranchId)
   const { data } = await q
   state.orders = data || []
+  await loadReturns()
   renderOrders(); updateOrdersBadge(state.orders)
+}
+// ── طلبات الاسترجاع المعلّقة (بانتظار موافقة/رفض التاجر) ────────────────
+async function loadReturns() {
+  const { data } = await db.from('order_returns')
+    .select('*, orders(order_number, items, total, delivery_fee, customer_name, table_number)')
+    .eq('restaurant_id', state.restaurant.id)
+    .eq('status', 'pending')
+    .order('created_at', { ascending: false })
+  state.returns = data || []
+  const badge = document.getElementById('returns-count-badge')
+  if (badge) { badge.textContent = state.returns.length; badge.style.display = state.returns.length ? 'flex' : 'none' }
 }
 // يحدّث أرقام بطاقة التلخيص أعلى صفحة الطلبات (واردة/قيد التجهيز/ناجحة/ملغية)
 function updateOrdersSummaryCard() {
   Object.keys(ORDER_BUCKETS).forEach(key => {
-    const n = state.orders.filter(o => ORDER_BUCKETS[key].statuses.includes(o.status)).length
+    const n = key === 'returns' ? state.returns.length : state.orders.filter(o => ORDER_BUCKETS[key].statuses.includes(o.status)).length
     const el = document.getElementById('obucket-count-' + key)
     if (el) el.textContent = n
   })
@@ -2844,6 +2901,7 @@ function renderOrders() {
   updateOrdersSummaryCard()
   renderOrderBucketTabs()
   const el = document.getElementById('orders-list')
+  if (activeOrderBucket === 'returns') { renderReturnsList(el); return }
   const bucketStatuses = ORDER_BUCKETS[activeOrderBucket].statuses
   const filtered = state.orders.filter(o => bucketStatuses.includes(o.status))
   if (!filtered.length) { el.innerHTML = `<p class="text-center text-gray-400 text-sm py-8">لا توجد طلبات ${ORDER_BUCKETS[activeOrderBucket].label} حالياً</p>`; return }
@@ -2880,6 +2938,119 @@ function renderOrders() {
         <p class="text-xs text-gray-400 font-bold">التفاصيل ‹</p>
       </div>
     </div>`).join('')
+}
+
+// ── طلبات الاسترجاع (تبويب "🔄 استرجاع") ────────────────────────────────
+function renderReturnsList(el) {
+  if (!state.returns.length) { el.innerHTML = `<p class="text-center text-gray-400 text-sm py-8">لا توجد طلبات استرجاع معلّقة حالياً</p>`; return }
+  el.innerHTML = state.returns.map(r => {
+    const ord = r.orders || {}
+    const items = r.requested_items || []
+    return `<div class="bg-white rounded-2xl p-4 shadow-sm cursor-pointer active:bg-gray-50 transition-colors" onclick="openReturnResolveModal('${r.id}')">
+      <div class="flex items-center justify-between mb-3">
+        <div><p class="font-extrabold text-gray-800">${ord.order_number || ''}</p>${ord.table_number ? `<p class="text-xs text-gray-400">طاولة ${ord.table_number}</p>` : ''}</div>
+        <span class="text-xs font-bold px-3 py-1 rounded-full bg-orange-50 text-orange-600">🔄 بانتظار الرد</span>
+      </div>
+      <div class="space-y-1 border-t border-gray-50 pt-3">
+        ${items.map(i => `<div class="flex justify-between text-sm"><span class="text-gray-600">${i.name || ''} × ${i.qty}</span></div>`).join('')}
+      </div>
+      ${r.reason ? `<p class="text-xs text-gray-500 bg-gray-50 rounded-xl px-3 py-2 mt-2 break-words">📝 ${r.reason}</p>` : ''}
+      ${r.initiated_by === 'merchant' ? `<p class="text-xs text-indigo-500 font-bold mt-2">طلب مُنشأ من التاجر</p>` : ''}
+      <div class="flex items-center justify-between mt-2">
+        <p class="text-xs text-gray-300">${new Date(r.created_at).toLocaleString('ar-EG')}</p>
+        <p class="text-xs text-gray-400 font-bold">مراجعة ‹</p>
+      </div>
+    </div>`
+  }).join('')
+}
+
+let _returnResolveCtx = null
+
+function openReturnResolveModal(returnId) {
+  const r = state.returns.find(x => x.id === returnId)
+  if (!r) return
+  const ord = r.orders || {}
+  const items = r.requested_items || []
+  // نحسب هل ده استرجاع كامل (كل أصناف الطلب متضمنة بنفس الكمية) عشان نقترح استرداد رسوم التوصيل تلقائيًا
+  const orderItems = ord.items || []
+  const orderQtyTotal = orderItems.reduce((s, i) => s + Number(i.qty || 0), 0)
+  const reqQtyTotal = items.reduce((s, i) => s + Number(i.qty || 0), 0)
+  const isFull = orderQtyTotal > 0 && reqQtyTotal >= orderQtyTotal
+
+  _returnResolveCtx = { returnId, selected: {} }
+  items.forEach(i => { _returnResolveCtx.selected[i.id] = Number(i.qty || 0) })
+
+  document.getElementById('orm-order-num').textContent = ord.order_number || ''
+  document.getElementById('orm-reason').textContent = r.reason ? `📝 ${r.reason}` : ''
+  document.getElementById('orm-reason').classList.toggle('hidden', !r.reason)
+  document.getElementById('orm-delivery-fee').value = isFull ? Number(ord.delivery_fee || 0) : 0
+  document.querySelector('input[name="orm-refund-method"][value="wallet"]').checked = true
+  document.getElementById('orm-notes').value = ''
+  renderReturnResolveItems(items, orderItems)
+  document.getElementById('order-return-resolve-modal').classList.remove('hidden')
+}
+function renderReturnResolveItems(requestedItems, orderItems) {
+  const el = document.getElementById('orm-items')
+  el.innerHTML = requestedItems.map(ri => {
+    const oi = orderItems.find(x => x.id === ri.id) || {}
+    const maxQty = Number(ri.qty || 0)
+    const cur = _returnResolveCtx.selected[ri.id] ?? maxQty
+    return `<div class="flex items-center justify-between gap-2 bg-gray-50 rounded-xl px-3 py-2.5">
+      <div class="min-w-0 flex-1">
+        <p class="text-sm font-bold text-gray-700 break-words">${oi.name || ri.name || ''}</p>
+        <p class="text-xs text-gray-400">${Number(oi.price || 0).toFixed(2)} ج.م × طلب العميل: ${maxQty}</p>
+      </div>
+      <div class="flex items-center gap-2 flex-shrink-0">
+        <button onclick="changeResolveQty('${ri.id}',-1,${maxQty})" class="w-7 h-7 rounded-full bg-white border border-gray-200 font-bold text-gray-500">-</button>
+        <span class="text-sm font-extrabold min-w-[14px] text-center" id="orm-qty-${ri.id}">${cur}</span>
+        <button onclick="changeResolveQty('${ri.id}',1,${maxQty})" class="w-7 h-7 rounded-full bg-white border border-gray-200 font-bold text-gray-500">+</button>
+      </div>
+    </div>`
+  }).join('')
+}
+function changeResolveQty(itemId, delta, maxQty) {
+  const cur = _returnResolveCtx.selected[itemId] ?? maxQty
+  const next = Math.max(0, Math.min(maxQty, cur + delta))
+  _returnResolveCtx.selected[itemId] = next
+  const span = document.getElementById('orm-qty-' + itemId)
+  if (span) span.textContent = next
+}
+function closeReturnResolveModal() {
+  document.getElementById('order-return-resolve-modal').classList.add('hidden')
+  _returnResolveCtx = null
+}
+async function approveReturnRequest() {
+  if (!_returnResolveCtx) return
+  const approvedItems = Object.entries(_returnResolveCtx.selected).filter(([,qty]) => qty > 0).map(([id, qty]) => ({ id, qty }))
+  if (!approvedItems.length) { showToast('لازم توافق على صنف واحد على الأقل، أو استخدم زر الرفض'); return }
+  const refundMethod = document.querySelector('input[name="orm-refund-method"]:checked')?.value || 'wallet'
+  const deliveryFeeRefund = Number(document.getElementById('orm-delivery-fee').value || 0)
+  const notes = document.getElementById('orm-notes').value.trim() || null
+  try {
+    const { data, error } = await db.rpc('resolve_order_return', {
+      p_return_id: _returnResolveCtx.returnId, p_decision: 'approved',
+      p_refund_method: refundMethod, p_approved_items: approvedItems,
+      p_delivery_fee_refund: deliveryFeeRefund, p_notes: notes
+    })
+    if (error) throw error
+    showToast(`✅ تمت الموافقة — إجمالي المسترد ${Number(data.total_refund_amount || 0).toFixed(2)} ج.م`)
+    closeReturnResolveModal()
+    loadOrders()
+  } catch(e) { showToast(e.message || 'تعذر تنفيذ العملية') }
+}
+async function rejectReturnRequest() {
+  if (!_returnResolveCtx) return
+  const notes = document.getElementById('orm-notes').value.trim()
+  if (!notes) { showToast('اكتب سبب الرفض في خانة الملاحظات أولاً'); return }
+  try {
+    const { error } = await db.rpc('resolve_order_return', {
+      p_return_id: _returnResolveCtx.returnId, p_decision: 'rejected', p_notes: notes
+    })
+    if (error) throw error
+    showToast('تم رفض طلب الاسترجاع')
+    closeReturnResolveModal()
+    loadOrders()
+  } catch(e) { showToast(e.message || 'تعذر تنفيذ العملية') }
 }
 
 // ── ORDER DETAIL MODAL (تفاصيل كاملة للطلب) ─────────────────────────────
@@ -2974,6 +3145,7 @@ function openOrderDetailModal(orderId) {
     ` : '')
     + (nextAction ? `<button onclick="confirmAndUpdateOrderStatus('${order.id}','${nextAction.next}', true)" class="w-full ${nextAction.cls} text-white font-extrabold rounded-xl py-3.5 text-sm">${nextAction.label}</button>` : '')
     + (order.status === 'confirmed' ? `<button onclick="openCancelConfirmedModal('${order.id}')" class="w-full bg-red-50 text-red-600 font-extrabold rounded-xl py-3.5 text-sm border border-red-200">❌ إلغاء الطلب (بعد القبول)</button>` : '')
+    + (() => { const pendingReturn = state.returns.find(r => r.order_id === order.id); return pendingReturn ? `<button onclick="closeOrderDetailModal();openReturnResolveModal('${pendingReturn.id}')" class="w-full bg-orange-50 text-orange-600 font-extrabold rounded-xl py-3.5 text-sm border border-orange-200">🔄 مراجعة طلب الاسترجاع</button>` : '' })()
 
   document.getElementById('modal-order-detail').classList.remove('hidden')
   pushModal('order-detail', closeOrderDetailModal)

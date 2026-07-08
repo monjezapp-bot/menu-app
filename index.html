@@ -806,6 +806,25 @@
   </div>
 </div>
 
+<!-- ══════════════════════════════════════════
+     ORDER RETURN SHEET (طلب استرجاع صنف/طلب كامل — يفتح فوق شيت تفاصيل الطلب)
+══════════════════════════════════════════ -->
+<div id="order-return-sheet" style="display:none;position:fixed;inset:0;z-index:110;background:rgba(0,0,0,0.5);align-items:flex-end;justify-content:center">
+  <div style="background:#fff;border-radius:24px 24px 0 0;padding:24px 20px 40px;width:100%;max-width:480px;max-height:88vh;overflow-y:auto;overflow-x:hidden;box-sizing:border-box">
+    <div style="display:flex;justify-content:space-between;align-items:center;margin-bottom:6px">
+      <p style="font-size:16px;font-weight:900;color:#1a1a1a">🔄 طلب استرجاع</p>
+      <button onclick="closeReturnSheet()" style="width:32px;height:32px;border-radius:50%;background:#f5f5f5;border:none;cursor:pointer;font-size:16px">✕</button>
+    </div>
+    <p style="font-size:12px;color:#aaa;margin-bottom:16px;line-height:1.6">حدد الأصناف والكمية اللي عايز ترجعها، واكتب السبب. المتجر هيراجع طلبك ويرد عليك.</p>
+    <div id="ors-items" style="display:flex;flex-direction:column;gap:10px;margin-bottom:16px"></div>
+    <label style="font-size:12px;font-weight:800;color:#888;display:block;margin-bottom:6px">سبب الاسترجاع (اختياري)</label>
+    <textarea id="ors-reason" rows="3" placeholder="مثلاً: الصنف وصل ناقص أو فيه عيب..." style="width:100%;border:1.5px solid #eee;border-radius:14px;padding:10px 12px;font-size:13px;font-family:'Rubik',sans-serif;box-sizing:border-box;resize:vertical"></textarea>
+    <button id="ors-submit-btn" onclick="submitReturnRequest()" style="width:100%;margin-top:16px;background:linear-gradient(135deg,var(--brand),#ff8c38);color:#fff;font-size:14px;font-weight:900;border-radius:16px;padding:15px;border:none;cursor:pointer;font-family:'Rubik',sans-serif">
+      إرسال طلب الاسترجاع
+    </button>
+  </div>
+</div>
+
 
 <!-- ══ CUSTOMER AUTH MODAL ══ -->
 <!-- cust-auth-modal removed: Google OAuth only -->

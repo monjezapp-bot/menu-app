@@ -141,6 +141,8 @@ async function openOrderDetail(orderId) {
   try {
     const { data: o } = await db.from('orders').select('*').eq('id', orderId).single()
     if (!o) throw new Error('الطلب غير موجود')
+    const { data: returnRows } = await db.from('order_returns').select('*').eq('order_id', orderId).order('created_at', { ascending: false }).limit(1)
+    const latestReturn = returnRows && returnRows[0] || null
     document.getElementById('ods-num').textContent = o.order_number || '#' + o.id.slice(-6)
     const st    = ORDER_STATUS[o.status] || ORDER_STATUS.pending
     const items = typeof o.items === 'string' ? JSON.parse(o.items) : (o.items || [])
@@ -184,6 +186,10 @@ async function openOrderDetail(orderId) {
         return rows.length ? `<div style="margin-top:12px;background:#f9f9f9;border-radius:12px;padding:12px 14px">${rows.map(r => `<p style="font-size:12px;color:#888;font-weight:600;margin-bottom:4px;overflow-wrap:anywhere">${r}</p>`).join('')}</div>` : ''
       })()}
       ${o.status === 'cancelled' && o.cancel_reason ? `<div style="margin-top:12px;background:#fef2f2;border-radius:12px;padding:12px 14px"><p style="font-size:12px;color:#ef4444;font-weight:700;overflow-wrap:anywhere">${o.cancel_reason.includes('بواسطة العميل') ? 'تم الإلغاء' : 'سبب الرفض'}: ${o.cancel_reason}</p></div>` : ''}
+      ${renderReturnStatusBlock(latestReturn)}
+      ${o.status === 'delivered' && (!latestReturn || ['rejected','cancelled'].includes(latestReturn.status))
+        ? `<button onclick="openReturnSheet('${o.id}')" style="width:100%;margin-top:12px;background:#fff7ed;color:#c2410c;font-size:13px;font-weight:800;border-radius:14px;padding:13px;border:1.5px solid #fed7aa;cursor:pointer;font-family:'Rubik',sans-serif">🔄 طلب استرجاع</button>`
+        : ''}
       ${isOrderLateEnoughToCancel(o) ? `
       <button onclick="confirmLateCancelFromDetail('${o.id}')" style="width:100%;margin-top:12px;background:#fef2f2;color:#ef4444;font-size:13px;font-weight:800;border-radius:14px;padding:13px;border:1.5px solid #fecaca;cursor:pointer;font-family:'Rubik',sans-serif">
         ❌ الطلب تأخر عن الوقت المتوقع — إلغاء الطلب
@@ -197,6 +203,135 @@ async function openOrderDetail(orderId) {
   } catch(e) {
     body.innerHTML = `<p style="text-align:center;color:#ef4444;padding:20px">خطأ: ${e.message}</p>`
   }
+}
+
+// ── طلب استرجاع (كامل أو جزئي) لطلب مُسلَّم ─────────────────────────────
+// حالة order_returns تتنقل: pending → completed (موافقة) أو rejected (رفض)، أو cancelled (لو العميل سحب الطلب بنفسه)
+function renderReturnStatusBlock(r) {
+  if (!r) return ''
+  if (r.status === 'pending') {
+    return `<div style="margin-top:12px;background:#fffbeb;border-radius:12px;padding:12px 14px">
+      <p style="font-size:12px;color:#b45309;font-weight:800;margin-bottom:${r.reason ? '4px' : '8px'}">🔄 طلب الاسترجاع قيد المراجعة من المتجر</p>
+      ${r.reason ? `<p style="font-size:11px;color:#b45309;overflow-wrap:anywhere;margin-bottom:8px">السبب: ${r.reason}</p>` : ''}
+      <button onclick="cancelReturnRequest('${r.id}')" style="width:100%;background:#fff;color:#b45309;font-size:12px;font-weight:800;border-radius:10px;padding:9px;border:1.5px solid #fde68a;cursor:pointer;font-family:'Rubik',sans-serif">إلغاء طلب الاسترجاع</button>
+    </div>`
+  }
+  if (r.status === 'completed') {
+    return `<div style="margin-top:12px;background:#f0fdf4;border-radius:12px;padding:12px 14px">
+      <p style="font-size:12px;color:#15803d;font-weight:800">✅ تمت الموافقة على الاسترجاع — تم رد <span class="ltr-num">${Number(r.total_refund_amount||0).toFixed(2)}</span> ج.م${r.refund_method==='wallet' ? ' لرصيد محفظتك' : ''}</p>
+    </div>`
+  }
+  if (r.status === 'rejected') {
+    return `<div style="margin-top:12px;background:#fef2f2;border-radius:12px;padding:12px 14px">
+      <p style="font-size:12px;color:#ef4444;font-weight:800;overflow-wrap:anywhere">❌ تم رفض طلب الاسترجاع${r.merchant_notes ? ' — ' + r.merchant_notes : ''}</p>
+    </div>`
+  }
+  return ''
+}
+
+let _returnCtx = null
+
+async function openReturnSheet(orderId) {
+  try {
+    const { data: o } = await db.from('orders').select('id, items').eq('id', orderId).single()
+    if (!o) { showToast('تعذر تحميل الطلب'); return }
+    const items = typeof o.items === 'string' ? JSON.parse(o.items) : (o.items || [])
+
+    const { data: pastReturns } = await db.from('order_returns').select('status, requested_items, approved_items').eq('order_id', orderId).in('status', ['pending','approved','completed'])
+    const alreadyReturned = {}
+    ;(pastReturns || []).forEach(r => {
+      const list = r.approved_items || r.requested_items || []
+      list.forEach(ri => { alreadyReturned[ri.id] = (alreadyReturned[ri.id] || 0) + Number(ri.qty || 0) })
+    })
+
+    const returnable = items.map(it => ({
+      id: it.id, name: it.name, price: it.price,
+      max: Math.max(0, Number(it.qty || 0) - (alreadyReturned[it.id] || 0))
+    })).filter(it => it.max > 0)
+
+    if (!returnable.length) { showToast('كل أصناف الطلب ده اتطلب استرجاعها بالفعل'); return }
+
+    _returnCtx = { orderId, items: returnable, selected: {} }
+    document.getElementById('ors-reason').value = ''
+    renderReturnItemsList()
+    document.getElementById('order-return-sheet').style.display = 'flex'
+    _lockBodyScroll()
+  } catch(e) { showToast('تعذر فتح شيت الاسترجاع') }
+}
+
+function renderReturnItemsList() {
+  const el = document.getElementById('ors-items')
+  if (!el || !_returnCtx) return
+  el.innerHTML = _returnCtx.items.map(it => {
+    const qty = _returnCtx.selected[it.id] || 0
+    return `<div style="display:flex;align-items:center;justify-content:space-between;gap:10px;background:#f9f9f9;border-radius:14px;padding:10px 12px">
+      <div style="min-width:0;flex:1">
+        <p style="font-size:13px;font-weight:700;color:#1a1a1a;overflow-wrap:anywhere">${it.name}</p>
+        <p style="font-size:11px;color:#aaa">أقصى كمية للاسترجاع: ${it.max}</p>
+      </div>
+      <div style="display:flex;align-items:center;gap:10px;flex-shrink:0">
+        <button onclick="changeReturnQty('${it.id}',-1)" style="width:28px;height:28px;border-radius:50%;background:#fff;border:1.5px solid #eee;font-size:15px;font-weight:800;color:#888;cursor:pointer">-</button>
+        <span style="font-size:14px;font-weight:900;min-width:14px;text-align:center">${qty}</span>
+        <button onclick="changeReturnQty('${it.id}',1)" style="width:28px;height:28px;border-radius:50%;background:#fff;border:1.5px solid #eee;font-size:15px;font-weight:800;color:#888;cursor:pointer">+</button>
+      </div>
+    </div>`
+  }).join('')
+}
+
+function changeReturnQty(itemId, delta) {
+  if (!_returnCtx) return
+  const item = _returnCtx.items.find(i => i.id === itemId)
+  if (!item) return
+  const cur = _returnCtx.selected[itemId] || 0
+  const next = Math.max(0, Math.min(item.max, cur + delta))
+  if (next === 0) delete _returnCtx.selected[itemId]
+  else _returnCtx.selected[itemId] = next
+  renderReturnItemsList()
+}
+
+function closeReturnSheet() {
+  document.getElementById('order-return-sheet').style.display = 'none'
+  _returnCtx = null
+}
+
+async function submitReturnRequest() {
+  if (!_returnCtx) return
+  const items = Object.entries(_returnCtx.selected).map(([id, qty]) => ({ id, qty }))
+  if (!items.length) { showToast('اختار صنف واحد على الأقل عشان ترجعه'); return }
+  const reason = document.getElementById('ors-reason').value.trim()
+  const orderId = _returnCtx.orderId
+  const btn = document.getElementById('ors-submit-btn')
+  btn.disabled = true; btn.textContent = 'جاري الإرسال...'
+  try {
+    const { error } = await db.rpc('request_order_return', {
+      p_order_id: orderId, p_items: items, p_reason: reason || null
+    })
+    if (error) throw error
+    closeReturnSheet()
+    showToast('✅ تم إرسال طلب الاسترجاع، هيتراجع من المتجر قريب')
+    openOrderDetail(orderId)
+    loadOrdersPage()
+  } catch(e) {
+    showToast(e.message || 'تعذر إرسال طلب الاسترجاع')
+  } finally {
+    btn.disabled = false; btn.textContent = 'إرسال طلب الاسترجاع'
+  }
+}
+
+async function cancelReturnRequest(returnId) {
+  showConfirmSheet(
+    'إلغاء طلب الاسترجاع',
+    '<p style="font-size:13px;color:#888;line-height:1.6">هل أنت متأكد من إلغاء طلب الاسترجاع؟</p>',
+    async () => {
+      try {
+        const { error } = await db.rpc('cancel_order_return', { p_return_id: returnId })
+        if (error) throw error
+        showToast('تم إلغاء طلب الاسترجاع')
+        closeOrderDetail(); loadOrdersPage()
+      } catch(e) { showToast(e.message || 'تعذر إلغاء طلب الاسترجاع') }
+    },
+    'نعم، إلغاء'
+  )
 }
 
 // إلغاء الطلب من داخل شيت التفاصيل بسبب تأخره عن الوقت المتوقع للتحضير + ساعة
