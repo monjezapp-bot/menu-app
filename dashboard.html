@@ -357,53 +357,106 @@
 
     <!-- Profile Tab (ملف المتجر) -->
     <div id="tab-content-profile" class="hidden fade-up">
-      <h2 class="font-extrabold text-gray-800 mb-4">🏪 ملف المتجر</h2>
+      <h2 class="font-extrabold text-gray-800 mb-4 flex items-center gap-2">
+        <svg class="w-5 h-5 text-orange-500" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"><path d="M3 9l1.5-5h15L21 9"/><path d="M3 9a2 2 0 004 0 2 2 0 004 0 2 2 0 004 0 2 2 0 004 0"/><path d="M5 11v8a1 1 0 001 1h12a1 1 0 001-1v-8"/><path d="M9 20v-5a1 1 0 011-1h4a1 1 0 011 1v5"/></svg>
+        ملف المتجر
+      </h2>
 
       <!-- رابط المنيو لمشاركته مع العملاء -->
       <div class="bg-orange-50 rounded-2xl p-5 mb-4">
-        <p class="text-sm font-extrabold text-gray-800 mb-1">🔗 رابط المنيو لمشاركته مع عملائك</p>
+        <div class="flex items-center gap-1.5 mb-1">
+          <svg class="w-4 h-4 text-orange-500 flex-shrink-0" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"><path d="M9 12a4 4 0 004 4h2a4 4 0 000-8h-1"/><path d="M15 12a4 4 0 00-4-4H9a4 4 0 000 8h1"/></svg>
+          <p class="text-sm font-extrabold text-gray-800">رابط المنيو لمشاركته مع عملائك</p>
+        </div>
         <p class="text-xs text-gray-500 mb-3">انشر هذا الرابط على وسائل التواصل أو اطبعه على ملصق في المتجر — هذا هو الرابط الذي يشاهد عملاؤك المنيو من خلاله</p>
-        <div class="flex gap-2">
-          <input id="share-menu-link" type="text" readonly class="flex-1 min-w-0 border border-orange-200 rounded-xl px-3 py-2.5 text-xs text-gray-600 bg-white font-mono" />
-          <button onclick="copyShareLink()" class="bg-orange-500 text-white text-xs font-bold px-4 py-2.5 rounded-xl flex-shrink-0">📋 نسخ</button>
+        <div class="flex items-stretch bg-white border border-orange-200 rounded-xl overflow-hidden">
+          <input id="share-menu-link" type="text" readonly class="flex-1 min-w-0 px-3 py-2.5 text-xs text-gray-600 bg-transparent font-mono focus:outline-none" />
+          <button onclick="copyShareLink()" class="flex-shrink-0 flex items-center gap-1.5 bg-orange-500 text-white text-xs font-bold px-4">
+            <svg class="w-3.5 h-3.5" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><rect x="9" y="9" width="11" height="11" rx="2"/><path d="M5 15V5a2 2 0 012-2h10"/></svg>
+            نسخ
+          </button>
         </div>
       </div>
 
-      <!-- ── بيانات المتجر (اسم + موقع وتواصل + كلمة سر الأدمن) ── -->
-      <p class="text-xs font-extrabold text-gray-400 mb-2 mt-5">🏪 بيانات المتجر</p>
-      <div class="bg-white rounded-2xl p-5 shadow-sm space-y-4">
-        <div><label class="text-xs font-bold text-gray-500 mb-1 block">اسم المتجر</label>
-          <input id="set-name" type="text" class="w-full border border-gray-200 rounded-xl px-4 py-3 text-sm focus:outline-none focus:ring-2 focus:ring-orange-400" /></div>
+      <!-- أقسام قابلة للطي (Accordion) -->
+      <div class="acc-group space-y-3">
 
-        <div><label class="text-xs font-bold text-gray-500 mb-1 block">وصف المتجر (يظهر للعميل تحت اسم المتجر)</label>
-          <textarea id="set-about-text" rows="2" maxlength="200" placeholder="مثال: أشهى المأكولات الشرقية الطازجة يوميًا"
-                    class="w-full border border-gray-200 rounded-xl px-4 py-3 text-sm focus:outline-none focus:ring-2 focus:ring-orange-400 resize-none"></textarea></div>
-
-        <hr class="border-gray-100" />
-
-        <div><label class="text-xs font-bold text-gray-500 mb-1 block">رقم تواصل المتجر (للعملاء)</label>
-          <input id="set-whatsapp" type="text" placeholder="01012345678 أو 201012345678" class="w-full border border-gray-200 rounded-xl px-4 py-3 text-sm focus:outline-none focus:ring-2 focus:ring-orange-400" />
-          <p class="text-[11px] text-gray-400 mt-1">هيظهر للعميل كرقم اتصال مباشر بالمتجر — اكتبه بأي صيغة وسيتم ضبطه تلقائياً</p></div>
-
-        <div>
-          <label class="text-xs font-bold text-gray-500 mb-1 block">📍 موقع المتجر على الخريطة</label>
-          <button onclick="openRestaurantMapPicker()" id="set-location-btn" class="w-full border border-gray-200 rounded-xl px-4 py-3 text-sm text-gray-500 text-right flex items-center gap-2">
-            <span>📍</span><span id="set-location-label">اضغط لتحديد موقع المتجر</span>
+        <!-- بيانات المتجر الأساسية -->
+        <div id="acc-basic" class="acc-item open bg-white rounded-2xl shadow-sm overflow-hidden">
+          <button type="button" onclick="toggleAccordion('acc-basic')" class="acc-header w-full flex items-center justify-between px-5 py-4">
+            <div class="flex items-center gap-2.5">
+              <svg class="w-4 h-4 text-gray-400" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"><path d="M3 9l1.5-5h15L21 9"/><path d="M5 11v8a1 1 0 001 1h12a1 1 0 001-1v-8"/><path d="M9 20v-5a1 1 0 011-1h4a1 1 0 011 1v5"/></svg>
+              <span class="text-sm font-bold text-gray-700">بيانات المتجر الأساسية</span>
+            </div>
+            <svg class="acc-chevron w-4 h-4 text-gray-400" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round"><path d="M6 9l6 6 6-6"/></svg>
           </button>
-          <input type="hidden" id="set-restaurant-lat" />
-          <input type="hidden" id="set-restaurant-lng" />
-          <p class="text-[11px] text-gray-400 mt-1">يُستخدم كنقطة انطلاق لحساب مسافة التوصيل لو لم تُضف فروعاً منفصلة</p>
-        </div>
+          <div class="acc-body">
+            <div class="px-5 pb-5 space-y-4">
+              <div><label class="text-xs font-bold text-gray-500 mb-1 block">اسم المتجر</label>
+                <input id="set-name" type="text" class="w-full border border-gray-200 rounded-xl px-4 py-3 text-sm focus:outline-none focus:ring-2 focus:ring-orange-400" /></div>
 
-        <div id="admin-passcode-section" class="hidden space-y-4">
-          <hr class="border-gray-100" />
-          <p class="text-xs font-extrabold text-gray-500">🔐 كلمة سر الأدمن</p>
-          <div>
-            <label class="text-xs font-bold text-gray-500 mb-1 block">كلمة سر الأدمن (تمنح وصولاً كاملاً)</label>
-            <input id="set-admin-passcode" type="text" placeholder="اتركها فارغة إن لم تريد كلمة سر للأدمن"
-                   class="w-full border border-gray-200 rounded-xl px-4 py-3 text-sm focus:outline-none focus:ring-2 focus:ring-orange-400" />
+              <div><label class="text-xs font-bold text-gray-500 mb-1 block">وصف المتجر (يظهر للعميل تحت اسم المتجر)</label>
+                <textarea id="set-about-text" rows="2" maxlength="200" placeholder="مثال: أشهى المأكولات الشرقية الطازجة يوميًا"
+                          class="w-full border border-gray-200 rounded-xl px-4 py-3 text-sm focus:outline-none focus:ring-2 focus:ring-orange-400 resize-none"></textarea></div>
+            </div>
           </div>
         </div>
+
+        <!-- معلومات التواصل -->
+        <div id="acc-contact" class="acc-item bg-white rounded-2xl shadow-sm overflow-hidden">
+          <button type="button" onclick="toggleAccordion('acc-contact')" class="acc-header w-full flex items-center justify-between px-5 py-4">
+            <div class="flex items-center gap-2.5">
+              <svg class="w-4 h-4 text-gray-400" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"><path d="M6.5 4h3l1.5 4-2 2c1 2.5 3 4.5 5.5 5.5l2-2 4 1.5v3a2 2 0 01-2 2C10.5 20 4 13.5 4 6.5a2 2 0 012-2.5z"/></svg>
+              <span class="text-sm font-bold text-gray-700">معلومات التواصل</span>
+            </div>
+            <svg class="acc-chevron w-4 h-4 text-gray-400" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round"><path d="M6 9l6 6 6-6"/></svg>
+          </button>
+          <div class="acc-body">
+            <div class="px-5 pb-5">
+              <label class="text-xs font-bold text-gray-500 mb-1 block">رقم تواصل المتجر (للعملاء)</label>
+              <input id="set-whatsapp" type="text" placeholder="01012345678 أو 201012345678" class="w-full border border-gray-200 rounded-xl px-4 py-3 text-sm focus:outline-none focus:ring-2 focus:ring-orange-400" />
+              <p class="text-[11px] text-gray-400 mt-1">هيظهر للعميل كرقم اتصال مباشر بالمتجر — اكتبه بأي صيغة وسيتم ضبطه تلقائياً</p>
+            </div>
+          </div>
+        </div>
+
+        <!-- إعدادات متقدمة -->
+        <div id="acc-advanced" class="acc-item bg-white rounded-2xl shadow-sm overflow-hidden">
+          <button type="button" onclick="toggleAccordion('acc-advanced')" class="acc-header w-full flex items-center justify-between px-5 py-4">
+            <div class="flex items-center gap-2.5">
+              <svg class="w-4 h-4 text-gray-400" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"><path d="M10.325 4.317c.426-1.756 2.924-1.756 3.35 0a1.724 1.724 0 002.573 1.066c1.543-.94 3.31.826 2.37 2.37a1.724 1.724 0 001.065 2.572c1.756.426 1.756 2.924 0 3.35a1.724 1.724 0 00-1.066 2.573c.94 1.543-.826 3.31-2.37 2.37a1.724 1.724 0 00-2.572 1.065c-.426 1.756-2.924 1.756-3.35 0a1.724 1.724 0 00-2.573-1.066c-1.543.94-3.31-.826-2.37-2.37a1.724 1.724 0 00-1.065-2.572c-1.756-.426-1.756-2.924 0-3.35a1.724 1.724 0 001.066-2.573c-.94-1.543.826-3.31 2.37-2.37.996.608 2.296.07 2.572-1.065z"/><circle cx="12" cy="12" r="3"/></svg>
+              <span class="text-sm font-bold text-gray-700">إعدادات متقدمة</span>
+            </div>
+            <svg class="acc-chevron w-4 h-4 text-gray-400" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round"><path d="M6 9l6 6 6-6"/></svg>
+          </button>
+          <div class="acc-body">
+            <div class="px-5 pb-5 space-y-4">
+              <div>
+                <label class="text-xs font-bold text-gray-500 mb-1 flex items-center gap-1.5">
+                  <svg class="w-3.5 h-3.5 text-gray-400" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"><path d="M12 21s7-6.5 7-11a7 7 0 10-14 0c0 4.5 7 11 7 11z"/><circle cx="12" cy="10" r="2.3"/></svg>
+                  موقع المتجر على الخريطة
+                </label>
+                <button onclick="openRestaurantMapPicker()" id="set-location-btn" class="w-full border border-gray-200 rounded-xl px-4 py-3 text-sm text-gray-500 text-right flex items-center gap-2">
+                  <svg class="w-4 h-4 flex-shrink-0" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"><path d="M12 21s7-6.5 7-11a7 7 0 10-14 0c0 4.5 7 11 7 11z"/><circle cx="12" cy="10" r="2.3"/></svg>
+                  <span id="set-location-label">اضغط لتحديد موقع المتجر</span>
+                </button>
+                <input type="hidden" id="set-restaurant-lat" />
+                <input type="hidden" id="set-restaurant-lng" />
+                <p class="text-[11px] text-gray-400 mt-1">يُستخدم كنقطة انطلاق لحساب مسافة التوصيل لو لم تُضف فروعاً منفصلة</p>
+              </div>
+
+              <div id="admin-passcode-section" class="hidden space-y-2 pt-3 border-t border-gray-100">
+                <label class="text-xs font-bold text-gray-500 mb-1 flex items-center gap-1.5">
+                  <svg class="w-3.5 h-3.5 text-gray-400" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"><rect x="5" y="10" width="14" height="10" rx="2"/><path d="M8 10V7a4 4 0 018 0v3"/></svg>
+                  كلمة سر الأدمن (تمنح وصولاً كاملاً)
+                </label>
+                <input id="set-admin-passcode" type="text" placeholder="اتركها فارغة إن لم تريد كلمة سر للأدمن"
+                       class="w-full border border-gray-200 rounded-xl px-4 py-3 text-sm focus:outline-none focus:ring-2 focus:ring-orange-400" />
+              </div>
+            </div>
+          </div>
+        </div>
+
       </div>
 
       <div class="flex gap-3 mt-4">
@@ -420,7 +473,7 @@
 
     <!-- Appearance Tab (المظهر) -->
     <div id="tab-content-appearance" class="hidden fade-up">
-      <h2 class="font-extrabold text-gray-800 mb-4">🎨 المظهر</h2>
+      <h2 class="font-extrabold text-gray-800 mb-4 flex items-center gap-2"><svg class="w-5 h-5 text-orange-500" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"><path d="M12 3a9 9 0 100 18c1.1 0 2-.9 2-2 0-.5-.2-1-.5-1.3-.3-.4-.5-.8-.5-1.3 0-1.1.9-2 2-2h2.3c1.5 0 2.7-1.2 2.7-2.7C20 6.8 16.4 3 12 3z"/><circle cx="7.5" cy="10.5" r="1.1" fill="currentColor" stroke="none"/><circle cx="11" cy="7.5" r="1.1" fill="currentColor" stroke="none"/><circle cx="15" cy="8.5" r="1.1" fill="currentColor" stroke="none"/><circle cx="16.5" cy="12.5" r="1.1" fill="currentColor" stroke="none"/></svg>المظهر</h2>
       <div class="bg-white rounded-2xl p-5 shadow-sm space-y-4">
         <div>
           <label class="text-xs font-bold text-gray-500 mb-1 block">اللون الرئيسي</label>
@@ -455,7 +508,7 @@
 
     <!-- Delivery Pricing Tab (تسعير التوصيل) -->
     <div id="tab-content-delivery" class="hidden fade-up">
-      <h2 class="font-extrabold text-gray-800 mb-4">🚚 تسعير التوصيل</h2>
+      <h2 class="font-extrabold text-gray-800 mb-4 flex items-center gap-2"><svg class="w-5 h-5 text-orange-500" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"><path d="M3 7h11v9H3z"/><path d="M14 10h4l3 3v3h-7z"/><circle cx="7" cy="18" r="1.6"/><circle cx="17.5" cy="18" r="1.6"/></svg>تسعير التوصيل</h2>
       <div class="bg-white rounded-2xl p-5 shadow-sm space-y-4">
         <div><label class="text-xs font-bold text-gray-500 mb-1 block">سعر التوصيل لكل كيلومتر (ج.م)</label>
           <input id="set-price-per-km" type="number" step="0.5" min="0" placeholder="مثال: 5 — اتركه 0 أو فارغاً لعدم احتساب رسوم توصيل" class="w-full border border-gray-200 rounded-xl px-4 py-3 text-sm focus:outline-none focus:ring-2 focus:ring-orange-400" />
@@ -469,7 +522,7 @@
     <!-- Branches Tab -->
     <div id="tab-content-branches" class="hidden fade-up">
       <div class="flex items-center justify-between mb-4">
-        <h2 class="font-extrabold text-gray-800">🏬 الفروع</h2>
+        <h2 class="font-extrabold text-gray-800 flex items-center gap-2"><svg class="w-5 h-5 text-orange-500" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"><rect x="4" y="3" width="10" height="18" rx="1"/><path d="M14 8h6v13"/><path d="M7 7h1M10 7h1M7 11h1M10 11h1M7 15h1M10 15h1M16.5 11h1M16.5 15h1"/><path d="M8 21v-3h2v3"/></svg>الفروع</h2>
         <button onclick="openBranchModal()" class="bg-orange-500 text-white text-sm font-bold px-4 py-2 rounded-xl">+ فرع جديد</button>
       </div>
       <p class="text-xs text-gray-400 mb-4">حدد موقع كل فرع بدقة على الخريطة — هذا أساس حساب أقرب فرع للعميل وتكلفة التوصيل. كل فرع له كلمة سر خاصة تُستخدم لدخول موظفيه.</p>
@@ -478,7 +531,7 @@
 
     <!-- Account Tab -->
     <div id="tab-content-account" class="hidden fade-up">
-      <h2 class="font-extrabold text-gray-800 mb-4">🔐 الحساب</h2>
+      <h2 class="font-extrabold text-gray-800 mb-4 flex items-center gap-2"><svg class="w-5 h-5 text-orange-500" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"><rect x="5" y="10" width="14" height="10" rx="2"/><path d="M8 10V7a4 4 0 018 0v3"/><circle cx="12" cy="15" r="1.2" fill="currentColor" stroke="none"/></svg>الحساب</h2>
       <div class="bg-white rounded-2xl p-5 shadow-sm space-y-4">
         <p class="text-xs text-gray-400">غيّر كلمة سر دخولك للوحة التحكم (الإيميل وكلمة السر اللي بتدخل بيهم في شاشة تسجيل الدخول). هذه غير كلمة سر الفروع.</p>
         <div><label class="text-xs font-bold text-gray-500 mb-1 block">كلمة السر الحالية</label>
@@ -1123,7 +1176,15 @@ Object.entries(SECTION_TABS).forEach(([sec, tabs]) => tabs.forEach(t => TAB_TO_S
 const TAB_SUBLABEL = {
   products: 'المنتجات', categories: 'التصنيفات', quickprices: '⚡ تحديث سريع',
   bundles: '🎁 العروض', banners: '📢 البنرات', analytics: '📊 الإحصائيات', customers: '👥 العملاء', loyalty: '🎁 هدايا الولاء',
-  profile: '🏪 ملف المتجر', appearance: '🎨 المظهر', branches: '🏬 الفروع', delivery: '🚚 التوصيل', account: '🔐 الحساب'
+  profile: 'ملف المتجر', appearance: 'المظهر', branches: 'الفروع', delivery: 'التوصيل', account: 'الحساب'
+}
+// أيقونات SVG لقائمة قسم "المتجر" الجانبية (بديل الايموجيز القديمة، Heroicons-style)
+const STORE_TAB_ICON = {
+  profile:    '<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"><path d="M3 9l1.5-5h15L21 9"/><path d="M3 9a2 2 0 004 0 2 2 0 004 0 2 2 0 004 0 2 2 0 004 0"/><path d="M5 11v8a1 1 0 001 1h12a1 1 0 001-1v-8"/><path d="M9 20v-5a1 1 0 011-1h4a1 1 0 011 1v5"/></svg>',
+  appearance: '<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"><path d="M12 3a9 9 0 100 18c1.1 0 2-.9 2-2 0-.5-.2-1-.5-1.3-.3-.4-.5-.8-.5-1.3 0-1.1.9-2 2-2h2.3c1.5 0 2.7-1.2 2.7-2.7C20 6.8 16.4 3 12 3z"/><circle cx="7.5" cy="10.5" r="1.1" fill="currentColor" stroke="none"/><circle cx="11" cy="7.5" r="1.1" fill="currentColor" stroke="none"/><circle cx="15" cy="8.5" r="1.1" fill="currentColor" stroke="none"/><circle cx="16.5" cy="12.5" r="1.1" fill="currentColor" stroke="none"/></svg>',
+  branches:   '<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"><rect x="4" y="3" width="10" height="18" rx="1"/><path d="M14 8h6v13"/><path d="M7 7h1M10 7h1M7 11h1M10 11h1M7 15h1M10 15h1M16.5 11h1M16.5 15h1"/><path d="M8 21v-3h2v3"/></svg>',
+  delivery:   '<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"><path d="M3 7h11v9H3z"/><path d="M14 10h4l3 3v3h-7z"/><circle cx="7" cy="18" r="1.6"/><circle cx="17.5" cy="18" r="1.6"/></svg>',
+  account:    '<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"><rect x="5" y="10" width="14" height="10" rx="2"/><path d="M8 10V7a4 4 0 018 0v3"/><circle cx="12" cy="15" r="1.2" fill="currentColor" stroke="none"/></svg>'
 }
 let _lastTabInSection = { orders: 'orders', products: 'products', marketing: 'bundles', store: 'profile' }
 
@@ -1182,6 +1243,17 @@ function focusNextField(event, nextFieldId, submitFn) {
     event.target.blur()
     submitFn()
   }
+}
+
+// ── ACCORDION (صفحة ملف المتجر) ─────────────────────────────────────
+// فتح/غلق قسم واحد في كل مرة داخل نفس المجموعة (acc-group) عشان الصفحة تفضل نظيفة
+function toggleAccordion(id) {
+  const item = document.getElementById(id)
+  if (!item) return
+  const group  = item.closest('.acc-group')
+  const isOpen = item.classList.contains('open')
+  if (group) group.querySelectorAll('.acc-item').forEach(el => el.classList.remove('open'))
+  if (!isOpen) item.classList.add('open')
 }
 
 // ── BACK TO TOP ───────────────────────────────────────────────────────
@@ -3738,13 +3810,12 @@ function renderSubTabsBar(section) {
   if (section === 'store') {
     bar.className = 'block bg-transparent border-b-0 px-4 py-3'
     bar.innerHTML = `<div class="bg-white rounded-2xl shadow-sm divide-y divide-gray-100 overflow-hidden">${tabs.map(t => {
-      const parts = TAB_SUBLABEL[t].split(' ')
-      const icon  = parts[0]
-      const label = parts.slice(1).join(' ')
+      const label = TAB_SUBLABEL[t]
+      const icon  = STORE_TAB_ICON[t] || ''
       const isActive = t === activeTab
       return `<button data-admin-tab="${t}" onclick="showTab('${t}')" class="w-full flex items-center justify-between px-5 py-4 text-right transition-colors ${isActive ? 'bg-orange-50' : 'bg-white'}">
         <span class="text-sm font-bold ${isActive ? 'text-orange-500' : 'text-gray-800'}">${label}</span>
-        <span class="text-lg">${icon}</span>
+        <span class="w-5 h-5 flex-shrink-0 ${isActive ? 'text-orange-500' : 'text-gray-400'}">${icon}</span>
       </button>`
     }).join('')}</div>`
   } else {
