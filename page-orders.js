@@ -155,7 +155,7 @@ async function openOrderDetail(orderId) {
           <div style="display:flex;justify-content:space-between;align-items:center;gap:10px;padding:8px 0;border-bottom:1px solid #f0f0f0">
             <div style="flex:1;min-width:0">
               <p style="font-size:13px;font-weight:700;color:#1a1a1a;overflow-wrap:anywhere">${item.name || ''}</p>
-              ${item.options?.length ? `<p style="font-size:11px;color:#aaa;overflow-wrap:anywhere">${item.options.map(op=>op.label||op).join('، ')}</p>` : ''}
+            ${Array.isArray(item.options) && item.options.length ? `<p style="font-size:11px;color:#aaa;overflow-wrap:anywhere">${item.options.map(op=>op.label||op).join('، ')}</p>` : (typeof item.options === 'string' && item.options ? `<p style="font-size:11px;color:#aaa;overflow-wrap:anywhere">${item.options}</p>` : '')}
             </div>
             <div style="text-align:left;flex-shrink:0">
               <p style="font-size:12px;color:#888">×${item.qty||1}</p>
