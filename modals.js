@@ -477,6 +477,36 @@ function openMapPicker() {
   }
 
   setTimeout(() => _map.invalidateSize(), 150)
+
+  // لو العميل كتب عنوان ولسه ما أكدش موقع قبل كده، دوّر على العنوان ده على الخريطة تلقائيًا
+  const addressVal      = document.getElementById('order-address')?.value?.trim()
+  const alreadyConfirmed = !!document.getElementById('order-location-lat')?.value
+  if (addressVal && !alreadyConfirmed) geocodeAddressToPin(addressVal)
+}
+async function geocodeAddressToPin(query) {
+  const label = document.getElementById('map-coords-label')
+  if (label) label.textContent = '🔎 جاري البحث عن العنوان...'
+  try {
+    const restLat = parseFloat(S.restaurant?.lat), restLng = parseFloat(S.restaurant?.lng)
+    let url = `https://nominatim.openstreetmap.org/search?format=json&limit=1&countrycodes=eg&q=${encodeURIComponent(query)}`
+    if (!isNaN(restLat) && !isNaN(restLng)) {
+      const d = 0.5 // صندوق تحيّز حوالي 50 كم حول موقع المتجر عشان النتيجة تبقى أدق
+      url += `&viewbox=${restLng - d},${restLat + d},${restLng + d},${restLat - d}&bounded=0`
+    }
+    const res  = await fetch(url, { headers: { 'Accept-Language': 'ar' } })
+    const data = await res.json()
+    if (data && data.length > 0) {
+      const lat = parseFloat(data[0].lat), lng = parseFloat(data[0].lon)
+      _pickedLat = lat; _pickedLng = lng
+      _map.setView([lat, lng], 16)
+      _marker.setLatLng([lat, lng])
+      updateCoordsLabel()
+    } else if (label) {
+      label.textContent = 'لم يتم إيجاد العنوان — حدد موقعك يدويًا على الخريطة'
+    }
+  } catch (e) {
+    if (label) label.textContent = 'تعذّر البحث عن العنوان — حدد موقعك يدويًا على الخريطة'
+  }
 }
 function closeMapPicker(fromPopstate) {
   document.getElementById('map-modal').classList.add('hidden')
