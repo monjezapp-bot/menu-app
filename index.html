@@ -621,7 +621,7 @@
 
     <!-- Body -->
     <div style="flex:1;overflow-y:auto;display:flex;flex-direction:column">
-      <div id="cart-items-list" style="padding:14px 16px"></div>
+      <div id="cart-items-list" style="padding:12px 14px"></div>
 
       <!-- Footer: inputs + send button -->
       <div style="padding:14px 16px 8px;border-top:1px solid #f0f0f0;background:#fff;margin-top:auto">
@@ -629,23 +629,23 @@
         <input id="table-number-input" type="hidden" value="" />
 
         <!-- Delivery info -->
-        <div style="background:#f9f9f9;border-radius:16px;padding:12px 14px;margin-bottom:10px">
-          <p style="font-size:12px;font-weight:800;color:#888;margin-bottom:8px">بيانات التوصيل <span style="color:#bbb;font-weight:600">(مطلوبة لو الطلب توصيل)</span></p>
+        <div style="background:#f9f9f9;border-radius:16px;padding:10px 12px;margin-bottom:8px">
+          <p style="font-size:12px;font-weight:800;color:#888;margin-bottom:6px">بيانات التوصيل <span style="color:#bbb;font-weight:600">(مطلوبة لو الطلب توصيل)</span></p>
           <input id="order-name"    type="text" placeholder="اسمك (اختياري)" enterkeyhint="next"
                  onkeydown="focusNextField(event, 'order-phone')"
-                 style="width:100%;border:1.5px solid #eee;border-radius:12px;padding:10px 12px;font-size:13px;color:#444;outline:none;font-family:'Rubik',sans-serif;margin-bottom:7px;background:#fff" />
+                 style="width:100%;border:1.5px solid #eee;border-radius:12px;padding:9px 11px;font-size:13px;color:#444;outline:none;font-family:'Rubik',sans-serif;margin-bottom:5px;background:#fff" />
           <input id="order-phone"   type="tel"  placeholder="رقم التواصل" enterkeyhint="next"
                  onkeydown="focusNextField(event, 'order-address')"
-                 style="width:100%;border:1.5px solid #eee;border-radius:12px;padding:10px 12px;font-size:13px;color:#444;outline:none;font-family:'Rubik',sans-serif;margin-bottom:7px;background:#fff" />
+                 style="width:100%;border:1.5px solid #eee;border-radius:12px;padding:9px 11px;font-size:13px;color:#444;outline:none;font-family:'Rubik',sans-serif;margin-bottom:5px;background:#fff" />
           <input id="order-address" type="text" placeholder="العنوان" enterkeyhint="next"
                  onkeydown="focusNextField(event, 'order-note')"
-                 style="width:100%;border:1.5px solid #eee;border-radius:12px;padding:10px 12px;font-size:13px;color:#444;outline:none;font-family:'Rubik',sans-serif;margin-bottom:7px;background:#fff" />
+                 style="width:100%;border:1.5px solid #eee;border-radius:12px;padding:9px 11px;font-size:13px;color:#444;outline:none;font-family:'Rubik',sans-serif;margin-bottom:5px;background:#fff" />
           <!-- Hidden location value + map picker button -->
           <input type="hidden" id="order-location" />
           <input type="hidden" id="order-location-lat" />
           <input type="hidden" id="order-location-lng" />
           <button id="map-pick-btn" onclick="openMapPicker()"
-                  style="width:100%;border:1.5px solid #eee;border-radius:12px;padding:10px 12px;font-size:13px;color:#888;font-family:'Rubik',sans-serif;background:#fff;text-align:right;cursor:pointer;display:flex;align-items:center;gap:8px">
+                  style="width:100%;border:1.5px solid #eee;border-radius:12px;padding:9px 11px;font-size:13px;color:#888;font-family:'Rubik',sans-serif;background:#fff;text-align:right;cursor:pointer;display:flex;align-items:center;gap:8px">
             <span style="font-size:16px">📍</span>
             <span id="map-pick-label">تحديد موقع التوصيل (بدلاً من كتابة العنوان)</span>
           </button>
@@ -654,56 +654,56 @@
         <!-- Note -->
         <textarea id="order-note" rows="2" placeholder="ملاحظة على الطلب (اختياري)" enterkeyhint="send"
                   onkeydown="focusNextField(event, null, sendOrder)"
-                  style="width:100%;border:1.5px solid #eee;border-radius:14px;padding:12px 14px;font-size:13px;color:#444;outline:none;font-family:'Rubik',sans-serif;resize:none;margin-bottom:10px"></textarea>
+                  style="width:100%;border:1.5px solid #eee;border-radius:14px;padding:10px 12px;font-size:13px;color:#444;outline:none;font-family:'Rubik',sans-serif;resize:none;margin-bottom:8px"></textarea>
 
         <!-- كود الخصم + الكوينز -->
-        <div id="cart-coins-section" style="margin-bottom:10px">
+        <div id="cart-coins-section" style="margin-bottom:8px">
           <!-- كود خصم -->
-          <div style="display:flex;gap:8px;margin-bottom:8px">
-            <input id="cart-discount-code" type="text" placeholder="كود الخصم (اختياري)" style="text-transform:uppercase;flex:1;border:1.5px solid #eee;border-radius:12px;padding:10px 12px;font-size:13px;color:#333;outline:none;font-family:'Rubik',sans-serif" />
-            <button onclick="applyDiscountCode()" style="background:var(--brand);color:#fff;font-size:13px;font-weight:800;border-radius:12px;padding:10px 16px;white-space:nowrap">تطبيق</button>
+          <div style="display:flex;gap:8px;margin-bottom:6px">
+            <input id="cart-discount-code" type="text" placeholder="كود الخصم (اختياري)" style="text-transform:uppercase;flex:1;border:1.5px solid #eee;border-radius:12px;padding:9px 11px;font-size:13px;color:#333;outline:none;font-family:'Rubik',sans-serif" />
+            <button onclick="applyDiscountCode()" style="background:var(--brand);color:#fff;font-size:13px;font-weight:800;border-radius:12px;padding:9px 15px;white-space:nowrap">تطبيق</button>
           </div>
-          <p id="cart-discount-msg" style="font-size:11px;margin-bottom:6px;display:none"></p>
+          <p id="cart-discount-msg" style="font-size:11px;margin-bottom:5px;display:none"></p>
           <!-- استخدام الكوينز في الخصم اتلغى: الخصم في الطلب بقى من رصيد المحفظة النقدي بس -->
 
           <!-- استخدام رصيد المحفظة النقدي — يظهر فقط للمسجّلين وعندهم رصيد -->
-          <div id="cart-wallet-row" style="display:none;margin-top:8px;background:#f0fdf4;border:1.5px solid #bbf7d0;border-radius:14px;padding:12px 14px">
-            <div style="display:flex;justify-content:space-between;align-items:center;margin-bottom:8px">
+          <div id="cart-wallet-row" style="display:none;margin-top:6px;background:#f0fdf4;border:1.5px solid #bbf7d0;border-radius:14px;padding:10px 12px">
+            <div style="display:flex;justify-content:space-between;align-items:center;margin-bottom:6px">
               <span style="font-size:13px;font-weight:800;color:#16a34a">💳 استخدام رصيد من المحفظة</span>
               <span id="cart-wallet-available" style="font-size:12px;color:#888"></span>
             </div>
             <div style="display:flex;gap:8px;align-items:center">
               <input id="cart-wallet-input" type="number" min="0" step="0.01" placeholder="كم تحب تستخدم؟ (بالجنيه)"
                      onchange="updateWalletUse()"
-                     style="flex:1;border:1.5px solid #eee;border-radius:10px;padding:9px 12px;font-size:13px;outline:none;font-family:'Rubik',sans-serif" />
-              <button onclick="useMaxWallet()" style="background:#16a34a;color:#fff;font-size:12px;font-weight:800;border-radius:10px;padding:9px 12px;white-space:nowrap">الكل</button>
+                     style="flex:1;border:1.5px solid #eee;border-radius:10px;padding:8px 11px;font-size:13px;outline:none;font-family:'Rubik',sans-serif" />
+              <button onclick="useMaxWallet()" style="background:#16a34a;color:#fff;font-size:12px;font-weight:800;border-radius:10px;padding:8px 11px;white-space:nowrap">الكل</button>
             </div>
-            <p id="cart-wallet-preview" style="font-size:12px;color:#16a34a;font-weight:700;margin-top:6px;display:none"></p>
+            <p id="cart-wallet-preview" style="font-size:12px;color:#16a34a;font-weight:700;margin-top:5px;display:none"></p>
           </div>
         </div>
 
         <!-- Total -->
-        <div style="display:flex;align-items:center;justify-content:space-between;margin-bottom:4px;padding:0 2px">
+        <div style="display:flex;align-items:center;justify-content:space-between;margin-bottom:3px;padding:0 2px">
           <span style="font-size:14px;font-weight:600;color:#999">المنتجات</span>
           <span id="cart-grand-total" style="font-size:20px;font-weight:900;color:var(--brand)">0 ج.م</span>
         </div>
-        <div id="cart-delivery-row" style="display:none;align-items:center;justify-content:space-between;margin-bottom:6px;padding:0 2px"></div>
-        <div id="cart-discount-row" style="display:none;align-items:center;justify-content:space-between;margin-bottom:4px;padding:0 2px">
+        <div id="cart-delivery-row" style="display:none;align-items:center;justify-content:space-between;margin-bottom:4px;padding:0 2px"></div>
+        <div id="cart-discount-row" style="display:none;align-items:center;justify-content:space-between;margin-bottom:3px;padding:0 2px">
           <span style="font-size:13px;font-weight:700;color:#22c55e">🏷️ خصم</span>
           <span id="cart-discount-val" style="font-size:14px;font-weight:800;color:#22c55e"></span>
         </div>
-        <div id="cart-wallet-disc-row" style="display:none;align-items:center;justify-content:space-between;margin-bottom:4px;padding:0 2px">
+        <div id="cart-wallet-disc-row" style="display:none;align-items:center;justify-content:space-between;margin-bottom:3px;padding:0 2px">
           <span style="font-size:13px;font-weight:700;color:#16a34a">💳 من المحفظة</span>
           <span id="cart-wallet-disc-val" style="font-size:14px;font-weight:800;color:#16a34a"></span>
         </div>
-        <div id="cart-final-row" style="display:none;align-items:center;justify-content:space-between;margin-bottom:6px;padding:6px 4px 0;border-top:1.5px dashed #eee">
+        <div id="cart-final-row" style="display:none;align-items:center;justify-content:space-between;margin-bottom:4px;padding:5px 4px 0;border-top:1.5px dashed #eee">
           <span style="font-size:14px;font-weight:900;color:#1a1a1a">الإجمالي بعد الخصم</span>
           <span id="cart-final-total" style="font-size:20px;font-weight:900;color:#1a1a1a"></span>
         </div>
 
         <!-- Send button -->
         <button id="send-order-btn" onclick="sendOrder()"
-                style="width:100%;background:var(--brand);color:#fff;font-size:15px;font-weight:900;border-radius:18px;padding:16px;display:flex;align-items:center;justify-content:center;gap:10px;margin-bottom:calc(8px + env(safe-area-inset-bottom))">
+                style="width:100%;background:var(--brand);color:#fff;font-size:15px;font-weight:900;border-radius:18px;padding:14px;display:flex;align-items:center;justify-content:center;gap:10px;margin-bottom:calc(8px + env(safe-area-inset-bottom))">
           <span>إرسال الطلب</span><span style="font-size:20px">✅</span>
         </button>
       </div>

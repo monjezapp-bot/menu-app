@@ -363,7 +363,7 @@ function renderCartItems() {
   }
 
   el.innerHTML = S.cart.map(c => `
-    <div style="display:flex;align-items:center;gap:10px;background:#f9f9f9;border-radius:16px;padding:11px 12px;margin-bottom:8px">
+    <div style="display:flex;align-items:center;gap:10px;background:#f9f9f9;border-radius:16px;padding:9px 11px;margin-bottom:6px">
       ${c.image_url
         ? `<img src="${c.image_url}" style="width:54px;height:54px;border-radius:12px;object-fit:cover;flex-shrink:0" />`
         : `<div style="width:54px;height:54px;border-radius:12px;background:#eee;display:flex;align-items:center;justify-content:center;font-size:22px;flex-shrink:0">${c.type === 'bundle' ? '🎁' : '🍽️'}</div>`}
