@@ -357,118 +357,151 @@
 
     <!-- Profile Tab (ملف المتجر) -->
     <div id="tab-content-profile" class="hidden fade-up">
-      <h2 class="font-extrabold text-gray-800 mb-4 flex items-center gap-2">
-        <svg class="w-5 h-5 text-orange-500" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"><path d="M3 9l1.5-5h15L21 9"/><path d="M3 9a2 2 0 004 0 2 2 0 004 0 2 2 0 004 0 2 2 0 004 0"/><path d="M5 11v8a1 1 0 001 1h12a1 1 0 001-1v-8"/><path d="M9 20v-5a1 1 0 011-1h4a1 1 0 011 1v5"/></svg>
-        ملف المتجر
-      </h2>
 
-      <!-- رابط المنيو لمشاركته مع العملاء -->
-      <div class="bg-orange-50 rounded-2xl p-5 mb-4">
-        <div class="flex items-center gap-1.5 mb-1">
-          <svg class="w-4 h-4 text-orange-500 flex-shrink-0" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"><path d="M9 12a4 4 0 004 4h2a4 4 0 000-8h-1"/><path d="M15 12a4 4 0 00-4-4H9a4 4 0 000 8h1"/></svg>
-          <p class="text-sm font-extrabold text-gray-800">رابط المنيو لمشاركته مع عملائك</p>
+      <!-- ═══ الصفحة الرئيسية: قائمة أقسام ملف المتجر (زي طلبات) ═══ -->
+      <div id="profile-list-view">
+        <h2 class="font-extrabold text-gray-800 mb-4 flex items-center gap-2">
+          <svg class="w-5 h-5 text-orange-500" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"><path d="M3 9l1.5-5h15L21 9"/><path d="M3 9a2 2 0 004 0 2 2 0 004 0 2 2 0 004 0 2 2 0 004 0"/><path d="M5 11v8a1 1 0 001 1h12a1 1 0 001-1v-8"/><path d="M9 20v-5a1 1 0 011-1h4a1 1 0 011 1v5"/></svg>
+          ملف المتجر
+        </h2>
+
+        <!-- رابط المنيو لمشاركته مع العملاء -->
+        <div class="bg-orange-50 rounded-2xl p-5 mb-4">
+          <div class="flex items-center gap-1.5 mb-1">
+            <svg class="w-4 h-4 text-orange-500 flex-shrink-0" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"><path d="M9 12a4 4 0 004 4h2a4 4 0 000-8h-1"/><path d="M15 12a4 4 0 00-4-4H9a4 4 0 000 8h1"/></svg>
+            <p class="text-sm font-extrabold text-gray-800">رابط المنيو لمشاركته مع عملائك</p>
+          </div>
+          <p class="text-xs text-gray-500 mb-3">انشر هذا الرابط على وسائل التواصل أو اطبعه على ملصق في المتجر — هذا هو الرابط الذي يشاهد عملاؤك المنيو من خلاله</p>
+          <div class="flex items-stretch bg-white border border-orange-200 rounded-xl overflow-hidden">
+            <input id="share-menu-link" type="text" readonly class="flex-1 min-w-0 px-3 py-2.5 text-xs text-gray-600 bg-transparent font-mono focus:outline-none" />
+            <button onclick="copyShareLink()" class="flex-shrink-0 flex items-center gap-1.5 bg-orange-500 text-white text-xs font-bold px-4">
+              <svg class="w-3.5 h-3.5" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><rect x="9" y="9" width="11" height="11" rx="2"/><path d="M5 15V5a2 2 0 012-2h10"/></svg>
+              نسخ
+            </button>
+          </div>
         </div>
-        <p class="text-xs text-gray-500 mb-3">انشر هذا الرابط على وسائل التواصل أو اطبعه على ملصق في المتجر — هذا هو الرابط الذي يشاهد عملاؤك المنيو من خلاله</p>
-        <div class="flex items-stretch bg-white border border-orange-200 rounded-xl overflow-hidden">
-          <input id="share-menu-link" type="text" readonly class="flex-1 min-w-0 px-3 py-2.5 text-xs text-gray-600 bg-transparent font-mono focus:outline-none" />
-          <button onclick="copyShareLink()" class="flex-shrink-0 flex items-center gap-1.5 bg-orange-500 text-white text-xs font-bold px-4">
-            <svg class="w-3.5 h-3.5" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><rect x="9" y="9" width="11" height="11" rx="2"/><path d="M5 15V5a2 2 0 012-2h10"/></svg>
-            نسخ
-          </button>
-        </div>
-      </div>
 
-      <!-- أقسام قابلة للطي (Accordion) -->
-      <div class="acc-group space-y-3">
-
-        <!-- بيانات المتجر الأساسية -->
-        <div id="acc-basic" class="acc-item open bg-white rounded-2xl shadow-sm overflow-hidden">
-          <button type="button" onclick="toggleAccordion('acc-basic')" class="acc-header w-full flex items-center justify-between px-5 py-4">
+        <!-- قائمة الأقسام — كل صف بيفتح صفحة مستقلة -->
+        <div class="bg-white rounded-2xl shadow-sm divide-y divide-gray-100 overflow-hidden">
+          <button type="button" onclick="openProfileSubpage('basic')" class="plist-row w-full flex items-center justify-between px-5 py-4 text-right">
             <div class="flex items-center gap-2.5">
               <svg class="w-4 h-4 text-gray-400" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"><path d="M3 9l1.5-5h15L21 9"/><path d="M5 11v8a1 1 0 001 1h12a1 1 0 001-1v-8"/><path d="M9 20v-5a1 1 0 011-1h4a1 1 0 011 1v5"/></svg>
               <span class="text-sm font-bold text-gray-700">بيانات المتجر الأساسية</span>
             </div>
-            <svg class="acc-chevron w-4 h-4 text-gray-400" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round"><path d="M6 9l6 6 6-6"/></svg>
+            <span class="text-gray-300 text-lg leading-none">‹</span>
           </button>
-          <div class="acc-body">
-            <div class="px-5 pb-5 space-y-4">
-              <div><label class="text-xs font-bold text-gray-500 mb-1 block">اسم المتجر</label>
-                <input id="set-name" type="text" class="w-full border border-gray-200 rounded-xl px-4 py-3 text-sm focus:outline-none focus:ring-2 focus:ring-orange-400" /></div>
-
-              <div><label class="text-xs font-bold text-gray-500 mb-1 block">وصف المتجر (يظهر للعميل تحت اسم المتجر)</label>
-                <textarea id="set-about-text" rows="2" maxlength="200" placeholder="مثال: أشهى المأكولات الشرقية الطازجة يوميًا"
-                          class="w-full border border-gray-200 rounded-xl px-4 py-3 text-sm focus:outline-none focus:ring-2 focus:ring-orange-400 resize-none"></textarea></div>
-            </div>
-          </div>
-        </div>
-
-        <!-- معلومات التواصل -->
-        <div id="acc-contact" class="acc-item bg-white rounded-2xl shadow-sm overflow-hidden">
-          <button type="button" onclick="toggleAccordion('acc-contact')" class="acc-header w-full flex items-center justify-between px-5 py-4">
+          <button type="button" onclick="openProfileSubpage('contact')" class="plist-row w-full flex items-center justify-between px-5 py-4 text-right">
             <div class="flex items-center gap-2.5">
               <svg class="w-4 h-4 text-gray-400" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"><path d="M6.5 4h3l1.5 4-2 2c1 2.5 3 4.5 5.5 5.5l2-2 4 1.5v3a2 2 0 01-2 2C10.5 20 4 13.5 4 6.5a2 2 0 012-2.5z"/></svg>
               <span class="text-sm font-bold text-gray-700">معلومات التواصل</span>
             </div>
-            <svg class="acc-chevron w-4 h-4 text-gray-400" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round"><path d="M6 9l6 6 6-6"/></svg>
+            <span class="text-gray-300 text-lg leading-none">‹</span>
           </button>
-          <div class="acc-body">
-            <div class="px-5 pb-5">
-              <label class="text-xs font-bold text-gray-500 mb-1 block">رقم تواصل المتجر (للعملاء)</label>
-              <input id="set-whatsapp" type="text" placeholder="01012345678 أو 201012345678" class="w-full border border-gray-200 rounded-xl px-4 py-3 text-sm focus:outline-none focus:ring-2 focus:ring-orange-400" />
-              <p class="text-[11px] text-gray-400 mt-1">هيظهر للعميل كرقم اتصال مباشر بالمتجر — اكتبه بأي صيغة وسيتم ضبطه تلقائياً</p>
-            </div>
-          </div>
-        </div>
-
-        <!-- إعدادات متقدمة -->
-        <div id="acc-advanced" class="acc-item bg-white rounded-2xl shadow-sm overflow-hidden">
-          <button type="button" onclick="toggleAccordion('acc-advanced')" class="acc-header w-full flex items-center justify-between px-5 py-4">
+          <button type="button" onclick="openProfileSubpage('advanced')" class="plist-row w-full flex items-center justify-between px-5 py-4 text-right">
             <div class="flex items-center gap-2.5">
               <svg class="w-4 h-4 text-gray-400" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"><path d="M10.325 4.317c.426-1.756 2.924-1.756 3.35 0a1.724 1.724 0 002.573 1.066c1.543-.94 3.31.826 2.37 2.37a1.724 1.724 0 001.065 2.572c1.756.426 1.756 2.924 0 3.35a1.724 1.724 0 00-1.066 2.573c.94 1.543-.826 3.31-2.37 2.37a1.724 1.724 0 00-2.572 1.065c-.426 1.756-2.924 1.756-3.35 0a1.724 1.724 0 00-2.573-1.066c-1.543.94-3.31-.826-2.37-2.37a1.724 1.724 0 00-1.065-2.572c-1.756-.426-1.756-2.924 0-3.35a1.724 1.724 0 001.066-2.573c-.94-1.543.826-3.31 2.37-2.37.996.608 2.296.07 2.572-1.065z"/><circle cx="12" cy="12" r="3"/></svg>
               <span class="text-sm font-bold text-gray-700">إعدادات متقدمة</span>
             </div>
-            <svg class="acc-chevron w-4 h-4 text-gray-400" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round"><path d="M6 9l6 6 6-6"/></svg>
+            <span class="text-gray-300 text-lg leading-none">‹</span>
           </button>
-          <div class="acc-body">
-            <div class="px-5 pb-5 space-y-4">
-              <div>
-                <label class="text-xs font-bold text-gray-500 mb-1 flex items-center gap-1.5">
-                  <svg class="w-3.5 h-3.5 text-gray-400" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"><path d="M12 21s7-6.5 7-11a7 7 0 10-14 0c0 4.5 7 11 7 11z"/><circle cx="12" cy="10" r="2.3"/></svg>
-                  موقع المتجر على الخريطة
-                </label>
-                <button onclick="openRestaurantMapPicker()" id="set-location-btn" class="w-full border border-gray-200 rounded-xl px-4 py-3 text-sm text-gray-500 text-right flex items-center gap-2">
-                  <svg class="w-4 h-4 flex-shrink-0" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"><path d="M12 21s7-6.5 7-11a7 7 0 10-14 0c0 4.5 7 11 7 11z"/><circle cx="12" cy="10" r="2.3"/></svg>
-                  <span id="set-location-label">اضغط لتحديد موقع المتجر</span>
-                </button>
-                <input type="hidden" id="set-restaurant-lat" />
-                <input type="hidden" id="set-restaurant-lng" />
-                <p class="text-[11px] text-gray-400 mt-1">يُستخدم كنقطة انطلاق لحساب مسافة التوصيل لو لم تُضف فروعاً منفصلة</p>
-              </div>
-
-              <div id="admin-passcode-section" class="hidden space-y-2 pt-3 border-t border-gray-100">
-                <label class="text-xs font-bold text-gray-500 mb-1 flex items-center gap-1.5">
-                  <svg class="w-3.5 h-3.5 text-gray-400" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"><rect x="5" y="10" width="14" height="10" rx="2"/><path d="M8 10V7a4 4 0 018 0v3"/></svg>
-                  كلمة سر الأدمن (تمنح وصولاً كاملاً)
-                </label>
-                <input id="set-admin-passcode" type="text" placeholder="اتركها فارغة إن لم تريد كلمة سر للأدمن"
-                       class="w-full border border-gray-200 rounded-xl px-4 py-3 text-sm focus:outline-none focus:ring-2 focus:ring-orange-400" />
-              </div>
-            </div>
-          </div>
         </div>
 
+        <!-- تبديل وضع الدخول — للأدمن فقط -->
+        <div id="admin-switch-role-section" class="hidden bg-white rounded-2xl p-5 shadow-sm mt-4">
+          <button onclick="switchRole()" class="w-full bg-gray-100 text-gray-600 font-bold rounded-xl py-2.5 text-sm">🔄 تبديل وضع الدخول (دخول كفرع)</button>
+        </div>
+
+        <!-- عناصر مطلوبة عشان دالة saveSettings المشتركة (بتستخدمها تابات المظهر/التوصيل) تفضل شغالة —
+             مش ظاهرة هنا لأن ملف المتجر بقى يحفظ كل حقل لوحده أوتوماتيك -->
+        <div class="hidden">
+          <button id="undo-settings-btn" onclick="undoSettings()"></button>
+          <p id="settings-msg"></p>
+        </div>
       </div>
 
-      <div class="flex gap-3 mt-4">
-        <button onclick="saveSettings()" class="flex-1 bg-orange-500 text-white font-bold rounded-xl py-3">حفظ كل التعديلات أعلاه</button>
-        <button onclick="undoSettings()" id="undo-settings-btn" class="flex-1 bg-gray-100 text-gray-600 font-bold rounded-xl py-3 hidden">↩ تراجع</button>
+      <!-- ═══ صفحة فرعية: بيانات المتجر الأساسية ═══ -->
+      <div id="profile-subpage-basic" class="hidden">
+        <div class="flex items-center gap-3 mb-4">
+          <button onclick="closeProfileSubpage()" class="w-9 h-9 flex-shrink-0 flex items-center justify-center rounded-full bg-gray-100 text-gray-600">
+            <svg class="w-4 h-4" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round"><path d="M19 12H5M11 18l-6-6 6-6"/></svg>
+          </button>
+          <h3 class="font-extrabold text-gray-800 text-sm">بيانات المتجر الأساسية</h3>
+        </div>
+        <div class="bg-white rounded-2xl p-5 shadow-sm space-y-4">
+          <div class="af-field">
+            <label class="text-xs font-bold text-gray-500 mb-1 block">اسم المتجر</label>
+            <input id="set-name" type="text" enterkeyhint="next"
+                   onkeydown="autoSaveOnEnter(event,'set-name','name','set-about-text',{required:true})"
+                   class="w-full border border-gray-200 rounded-xl px-4 py-3 text-sm focus:outline-none focus:ring-2 focus:ring-orange-400" />
+            <p class="af-status hidden text-[11px] mt-1"></p>
+          </div>
+          <div class="af-field">
+            <label class="text-xs font-bold text-gray-500 mb-1 block">وصف المتجر (يظهر للعميل تحت اسم المتجر)</label>
+            <textarea id="set-about-text" rows="2" maxlength="200" placeholder="مثال: أشهى المأكولات الشرقية الطازجة يوميًا" enterkeyhint="done"
+                      onblur="autoSaveOnBlur(event,'set-about-text','about_text')"
+                      class="w-full border border-gray-200 rounded-xl px-4 py-3 text-sm focus:outline-none focus:ring-2 focus:ring-orange-400 resize-none"></textarea>
+            <p class="af-status hidden text-[11px] mt-1"></p>
+          </div>
+          <p class="text-[11px] text-gray-400">كل حقل بيتحفظ لوحده أوتوماتيك بمجرد ما تدوس "تم/Next" في الكيبورد أو تخرج من الحقل.</p>
+        </div>
       </div>
-      <p id="settings-msg" class="text-center text-sm hidden mt-2"></p>
 
-      <!-- تبديل وضع الدخول — للأدمن فقط -->
-      <div id="admin-switch-role-section" class="hidden bg-white rounded-2xl p-5 shadow-sm mt-4">
-        <button onclick="switchRole()" class="w-full bg-gray-100 text-gray-600 font-bold rounded-xl py-2.5 text-sm">🔄 تبديل وضع الدخول (دخول كفرع)</button>
+      <!-- ═══ صفحة فرعية: معلومات التواصل ═══ -->
+      <div id="profile-subpage-contact" class="hidden">
+        <div class="flex items-center gap-3 mb-4">
+          <button onclick="closeProfileSubpage()" class="w-9 h-9 flex-shrink-0 flex items-center justify-center rounded-full bg-gray-100 text-gray-600">
+            <svg class="w-4 h-4" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round"><path d="M19 12H5M11 18l-6-6 6-6"/></svg>
+          </button>
+          <h3 class="font-extrabold text-gray-800 text-sm">معلومات التواصل</h3>
+        </div>
+        <div class="bg-white rounded-2xl p-5 shadow-sm space-y-4">
+          <div class="af-field">
+            <label class="text-xs font-bold text-gray-500 mb-1 block">رقم تواصل المتجر (للعملاء)</label>
+            <input id="set-whatsapp" type="text" placeholder="01012345678 أو 201012345678" enterkeyhint="done"
+                   onkeydown="autoSaveOnEnter(event,'set-whatsapp','whatsapp',null,{phone:true,required:true})"
+                   class="w-full border border-gray-200 rounded-xl px-4 py-3 text-sm focus:outline-none focus:ring-2 focus:ring-orange-400" />
+            <p class="af-status hidden text-[11px] mt-1"></p>
+            <p class="text-[11px] text-gray-400 mt-1">هيظهر للعميل كرقم اتصال مباشر بالمتجر — اكتبه بأي صيغة وسيتم ضبطه تلقائياً، ويتحفظ فور ما تدوس "تم"</p>
+          </div>
+        </div>
       </div>
+
+      <!-- ═══ صفحة فرعية: إعدادات متقدمة ═══ -->
+      <div id="profile-subpage-advanced" class="hidden">
+        <div class="flex items-center gap-3 mb-4">
+          <button onclick="closeProfileSubpage()" class="w-9 h-9 flex-shrink-0 flex items-center justify-center rounded-full bg-gray-100 text-gray-600">
+            <svg class="w-4 h-4" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round"><path d="M19 12H5M11 18l-6-6 6-6"/></svg>
+          </button>
+          <h3 class="font-extrabold text-gray-800 text-sm">إعدادات متقدمة</h3>
+        </div>
+        <div class="bg-white rounded-2xl p-5 shadow-sm space-y-4">
+          <div>
+            <label class="text-xs font-bold text-gray-500 mb-1 flex items-center gap-1.5">
+              <svg class="w-3.5 h-3.5 text-gray-400" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"><path d="M12 21s7-6.5 7-11a7 7 0 10-14 0c0 4.5 7 11 7 11z"/><circle cx="12" cy="10" r="2.3"/></svg>
+              موقع المتجر على الخريطة
+            </label>
+            <button onclick="openRestaurantMapPicker()" id="set-location-btn" class="w-full border border-gray-200 rounded-xl px-4 py-3 text-sm text-gray-500 text-right flex items-center gap-2">
+              <svg class="w-4 h-4 flex-shrink-0" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"><path d="M12 21s7-6.5 7-11a7 7 0 10-14 0c0 4.5 7 11 7 11z"/><circle cx="12" cy="10" r="2.3"/></svg>
+              <span id="set-location-label">اضغط لتحديد موقع المتجر</span>
+            </button>
+            <input type="hidden" id="set-restaurant-lat" />
+            <input type="hidden" id="set-restaurant-lng" />
+            <p class="text-[11px] text-gray-400 mt-1">بيتحفظ فور تأكيد الموقع من الخريطة — يُستخدم كنقطة انطلاق لحساب مسافة التوصيل لو لم تُضف فروعاً منفصلة</p>
+          </div>
+
+          <div id="admin-passcode-section" class="af-field hidden pt-3 border-t border-gray-100">
+            <label class="text-xs font-bold text-gray-500 mb-1 flex items-center gap-1.5">
+              <svg class="w-3.5 h-3.5 text-gray-400" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"><rect x="5" y="10" width="14" height="10" rx="2"/><path d="M8 10V7a4 4 0 018 0v3"/></svg>
+              كلمة سر الأدمن (تمنح وصولاً كاملاً)
+            </label>
+            <input id="set-admin-passcode" type="text" placeholder="اتركها فارغة إن لم تريد كلمة سر للأدمن" enterkeyhint="done"
+                   onkeydown="autoSaveOnEnter(event,'set-admin-passcode','admin_passcode',null,{})"
+                   class="w-full border border-gray-200 rounded-xl px-4 py-3 text-sm focus:outline-none focus:ring-2 focus:ring-orange-400" />
+            <p class="af-status hidden text-[11px] mt-1"></p>
+          </div>
+        </div>
+      </div>
+
     </div>
 
     <!-- Appearance Tab (المظهر) -->
@@ -1245,15 +1278,65 @@ function focusNextField(event, nextFieldId, submitFn) {
   }
 }
 
-// ── ACCORDION (صفحة ملف المتجر) ─────────────────────────────────────
-// فتح/غلق قسم واحد في كل مرة داخل نفس المجموعة (acc-group) عشان الصفحة تفضل نظيفة
-function toggleAccordion(id) {
-  const item = document.getElementById(id)
-  if (!item) return
-  const group  = item.closest('.acc-group')
-  const isOpen = item.classList.contains('open')
-  if (group) group.querySelectorAll('.acc-item').forEach(el => el.classList.remove('open'))
-  if (!isOpen) item.classList.add('open')
+// ── صفحة "ملف المتجر" — تنقل بين القائمة والصفحات الفرعية (زي طلبات) ──
+const _profileSubpages = ['basic', 'contact', 'advanced']
+function openProfileSubpage(name) {
+  document.getElementById('profile-list-view').classList.add('hidden')
+  _profileSubpages.forEach(p => document.getElementById('profile-subpage-' + p).classList.add('hidden'))
+  document.getElementById('profile-subpage-' + name).classList.remove('hidden')
+}
+function closeProfileSubpage() {
+  _profileSubpages.forEach(p => document.getElementById('profile-subpage-' + p).classList.add('hidden'))
+  document.getElementById('profile-list-view').classList.remove('hidden')
+}
+
+// ── حفظ حقل واحد تلقائيًا في جدول restaurants (بدون داعي لزرار حفظ) ──
+function _afFeedback(inputId, ok, msg) {
+  const el = document.getElementById(inputId)
+  const wrap = el && el.closest('.af-field')
+  const tag = wrap ? wrap.querySelector('.af-status') : null
+  if (!tag) return
+  tag.textContent = ok ? '✓ تم الحفظ' : (msg || 'حصل خطأ أثناء الحفظ')
+  tag.className = 'af-status text-[11px] mt-1 ' + (ok ? 'text-green-500' : 'text-red-500')
+  clearTimeout(tag._afTimer)
+  tag._afTimer = setTimeout(() => tag.classList.add('hidden'), 2000)
+}
+async function autoSaveRestaurantField(inputId, column, opts = {}) {
+  const el = document.getElementById(inputId)
+  if (!el) return false
+  let value = el.value.trim()
+
+  if (opts.phone) {
+    const ph = normalizePhone(value)
+    if (!ph.ok) { _afFeedback(inputId, false, ph.reason); return false }
+    value = ph.value; el.value = value
+  }
+  if (opts.required && !value) { _afFeedback(inputId, false, 'الحقل ده مطلوب'); return false }
+
+  const payload = {}; payload[column] = value || null
+  const { error } = await db.from('restaurants').update(payload).eq('id', state.restaurant.id)
+  if (error) { _afFeedback(inputId, false, 'حصل خطأ أثناء الحفظ'); return false }
+
+  state.restaurant[column] = value || null
+  if (column === 'name') { document.getElementById('dash-restaurant-name').textContent = value }
+  _afFeedback(inputId, true)
+  return true
+}
+// الضغط على "تم/Next" في الكيبورد: حفظ الحقل تلقائياً ثم الانتقال للحقل اللي بعده
+async function autoSaveOnEnter(event, inputId, column, nextFieldId, opts) {
+  if (event.key !== 'Enter') return
+  event.preventDefault()
+  const ok = await autoSaveRestaurantField(inputId, column, opts)
+  if (ok && nextFieldId) {
+    const next = document.getElementById(nextFieldId)
+    if (next) { next.focus(); next.select?.() }
+  } else {
+    event.target.blur()
+  }
+}
+// الخروج من حقل نصي متعدد الأسطر (Textarea): حفظ تلقائي فور الخروج منه
+async function autoSaveOnBlur(event, inputId, column, opts) {
+  await autoSaveRestaurantField(inputId, column, opts)
 }
 
 // ── BACK TO TOP ───────────────────────────────────────────────────────
@@ -2454,12 +2537,17 @@ function useRestaurantMyLocation() {
     updateRestCoordsLabel()
   }, () => showToast('تعذّر تحديد موقعك — تأكد من إذن الموقع'))
 }
-function confirmRestaurantLocation() {
+async function confirmRestaurantLocation() {
   if (_restPickedLat === null) { showToast('حدد الموقع أولاً'); return }
   document.getElementById('set-restaurant-lat').value = _restPickedLat
   document.getElementById('set-restaurant-lng').value = _restPickedLng
   document.getElementById('set-location-label').textContent = `✅ تم تحديد الموقع (${_restPickedLat.toFixed(4)}, ${_restPickedLng.toFixed(4)})`
   closeRestaurantMapPicker()
+
+  const { error } = await db.from('restaurants').update({ lat: _restPickedLat, lng: _restPickedLng }).eq('id', state.restaurant.id)
+  if (error) { showToast('حصل خطأ أثناء حفظ الموقع'); return }
+  state.restaurant.lat = _restPickedLat; state.restaurant.lng = _restPickedLng
+  showToast('✅ تم حفظ الموقع')
 }
 
 // ── PRODUCT MODAL ─────────────────────────────────────────────────────
@@ -3852,6 +3940,7 @@ function showTab(name) {
   renderSubTabsBar(section)
 
   if (name === 'orders')       loadOrders()
+  if (name === 'profile')      closeProfileSubpage()
   if (name === 'quickprices')  loadQuickPrices()
   if (name === 'bundles')   loadBundles()
   if (name === 'analytics') loadAnalytics()
