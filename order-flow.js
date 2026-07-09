@@ -216,13 +216,16 @@ async function sendOrder() {
           .eq('id', orderId)
       } catch(_) {}
     }
-    // أي فشل هنا معناه طلب اتلغى تلقائيًا أو اتحسب غلط — لازم يتسجل فورًا (فلوس التاجر)
-    logPaymentFail({ message: e.message }, orderId ? 'create_order:settle_or_verify(order_id=' + orderId + ')' : 'create_order:before_insert')
+    // تسجيل فشل الدفع الفعلي لمركز المخاطر (admin_alerts عن طريق app_logs kind=payment_fail) —
+    // مستثنى منه الرفض المتعمد (صنف اتباع/كمية غير منطقية) لأنه مش "باج" فلوس، ده تحقق طبيعي بينجح غالبًا
+    const rawMsg = e.message || 'خطأ غير معروف'
+    if (!rawMsg.startsWith('item_unavailable:') && !rawMsg.startsWith('quantity_too_high:') && !rawMsg.startsWith('invalid_quantity:')) {
+      logClientError({ message: 'فشل تسوية دفع الطلب: ' + rawMsg, stack: e.stack || null, kind: 'payment_fail' })
+    }
     // ترجمة أسباب فشل recalc_order_pricing لرسالة مفهومة للعميل بدل عرض الكود الخام
     let friendlyMsg = e.message || 'خطأ غير معروف'
-    if (friendlyMsg.startsWith('item_unavailable:')) friendlyMsg = `عذرًا، "${escapeHTML(friendlyMsg.split(':')[1])}" بقى غير متاح — احذفه من السلة وأعد الإرسال`
-    else if (friendlyMsg.startsWith('quantity_too_high:')) friendlyMsg = `الكمية المطلوبة من "${escapeHTML(friendlyMsg.split(':')[1])}" أكبر من المسموح`
-    else friendlyMsg = escapeHTML(friendlyMsg)
+    if (friendlyMsg.startsWith('item_unavailable:')) friendlyMsg = `عذرًا، "${friendlyMsg.split(':')[1]}" بقى غير متاح — احذفه من السلة وأعد الإرسال`
+    else if (friendlyMsg.startsWith('quantity_too_high:')) friendlyMsg = `الكمية المطلوبة من "${friendlyMsg.split(':')[1]}" أكبر من المسموح`
     btn.style.opacity = '1'
     btn.innerHTML = `<span>⚠️ ${friendlyMsg}</span>`
     setTimeout(resetBtn, 5000)
@@ -283,7 +286,7 @@ function handleOrderStatusChange(order) {
 // طلب مُصغّر = العميل ضغط (−)؛ بطاقة التتبع متبقاش بتفرض نفسها تلقائي،
 // والرجوع ليها يبقى فقط من صفحة "طلباتي" (active-order-tracker أو تفاصيل الطلب)
 function getMinimizedOrders() {
-  try { return JSON.parse(localStorage.getItem('minimized_orders') || '[]') } catch(e) { logParseFail(e, 'getMinimizedOrders'); return [] }
+  try { return JSON.parse(localStorage.getItem('minimized_orders') || '[]') } catch(e) { return [] }
 }
 function isOrderMinimized(orderId) { return getMinimizedOrders().includes(orderId) }
 function setOrderMinimized(orderId, minimized) {
@@ -444,8 +447,7 @@ async function refundOrderPayment(order) {
   if (!order?.customer_id || !order?.id) return null
   try {
     const { data, error } = await db.rpc('refund_order_payment_customer', { p_order_id: order.id })
-    if (error) { logPaymentFail(error, 'refund_order_payment_customer(order_id=' + order.id + ')'); return null }
-    if (!data || data.already_refunded) return null
+    if (error || !data || data.already_refunded) return null
     const walletAmt = Number(data.wallet_amt || 0)
     const coinsAmt  = Number(data.coins_amt || 0)
     if (walletAmt <= 0 && coinsAmt <= 0) return null
@@ -457,7 +459,7 @@ async function refundOrderPayment(order) {
       updateWalletBadge()
     }
     return { walletAmt, coinsAmt }
-  } catch(e) { logPaymentFail({ message: e.message }, 'refund_order_payment_customer(order_id=' + order.id + ')'); return null }
+  } catch(e) { return null }
 }
 
 // رسالة قصيرة تتعرض للعميل بعد الإلغاء توضّح إن المبلغ رجع لمحفظته
@@ -624,7 +626,7 @@ async function confirmOrderReceipt() {
   const orderId = document.getElementById('order-success-modal').dataset.orderId
   if (!orderId) return
   const { data, error } = await db.rpc('confirm_order_receipt', { p_order_id: orderId })
-  if (error) { console.error('confirm_order_receipt failed:', error); logApiFail(error, 'confirm_order_receipt(manual)'); return }
+  if (error) { console.error('confirm_order_receipt failed:', error); return }
   if (!data?.updated) return // الحالة اتغيرت من تحت العميل (مش delivering)، متعملش هيد الزر
   document.getElementById('confirm-receipt-btn').classList.add('hidden')
   clearTimeout(_autoConfirmTimeout)
@@ -641,8 +643,7 @@ function startAutoConfirmTimer(orderId, deliveringAt) {
   const elapsedMs   = deliveringAt ? (Date.now() - new Date(deliveringAt).getTime()) : 0
   const remainingMs = Math.max(0, AUTO_CONFIRM_MINUTES_AFTER_DELIVERING * 60 * 1000 - elapsedMs)
   _autoConfirmTimeout = setTimeout(async () => {
-    const { error } = await db.rpc('confirm_order_receipt', { p_order_id: orderId })
-    if (error) logApiFail(error, 'confirm_order_receipt(auto)')
+    await db.rpc('confirm_order_receipt', { p_order_id: orderId })
   }, remainingMs)
 }
 // يعرض شريط مراحل بصري (4 نقاط متصلة) يوضّح موقع الطلب الحالي ضمن رحلة التجهيز والتوصيل
@@ -795,7 +796,7 @@ async function awardLoyaltyAndWelcome(orderId, orderItems, customerId, orderTota
   if (!S.restaurant?.loyalty_enabled || !S.customer) return
   try {
     const { data, error } = await db.rpc('award_order_rewards', { p_order_id: orderId })
-    if (error) { logPaymentFail(error, 'award_order_rewards(order_id=' + orderId + ')'); return }
+    if (error) return
     const coinsAwarded = data?.coins_awarded || 0
     S.customer.welcome_coins_claimed = true
     if (coinsAwarded > 0) {
