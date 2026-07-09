@@ -55,6 +55,10 @@
 .plist-row:active { background: #fafafa; }
 .af-status { transition: opacity 0.2s; }
 
+.orm-btn { border-color: #eee; color: #999; background: #fafafa; }
+.orm-btn.active { border-color: #FF6B00; color: #FF6B00; background: #FFF3E0; }
+.orm-btn:disabled { opacity: 0.5; pointer-events: none; }
+
 /* ══════════════════════════════════════════
    QUICK PRICE UPDATE — إعادة تصميم
 ══════════════════════════════════════════ */

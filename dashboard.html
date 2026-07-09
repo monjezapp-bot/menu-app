@@ -463,6 +463,21 @@
             <p class="af-status hidden text-[11px] mt-1"></p>
             <p class="text-[11px] text-gray-400 mt-1">هيظهر للعميل كرقم اتصال مباشر بالمتجر — اكتبه بأي صيغة وسيتم ضبطه تلقائياً، ويتحفظ فور ما تدوس "تم"</p>
           </div>
+          <div class="af-field pt-2 border-t border-gray-100">
+            <label class="text-xs font-bold text-gray-500 mb-2 block">🔔 طريقة استقبال إشعار الطلبات الجديدة</label>
+            <div id="order-receive-method-toggle" class="grid grid-cols-3 gap-2">
+              <button type="button" onclick="setOrderReceiveMethod('app')" data-val="app" class="orm-btn text-center py-3 px-2 rounded-xl border-2 text-xs font-bold transition">
+                📱 التطبيق فقط
+              </button>
+              <button type="button" onclick="setOrderReceiveMethod('whatsapp')" data-val="whatsapp" class="orm-btn text-center py-3 px-2 rounded-xl border-2 text-xs font-bold transition">
+                💬 واتساب فقط
+              </button>
+              <button type="button" onclick="setOrderReceiveMethod('both')" data-val="both" class="orm-btn text-center py-3 px-2 rounded-xl border-2 text-xs font-bold transition">
+                🔁 الاثنين معًا
+              </button>
+            </div>
+            <p class="text-[11px] text-gray-400 mt-2">لو اخترت واتساب، هيوصلك إشعار على رقم التواصل اللي كتبته فوق فور ما يتعمل أي طلب جديد، وتقدر تأكد أو ترفض الطلب من نفس الرسالة.</p>
+          </div>
         </div>
       </div>
 
@@ -1339,6 +1354,27 @@ async function autoSaveOnBlur(event, inputId, column, opts) {
   await autoSaveRestaurantField(inputId, column, opts)
 }
 
+// ── طريقة استقبال إشعار الطلبات (app / whatsapp / both) ────────────────
+function updateOrmToggleUI(value) {
+  document.querySelectorAll('.orm-btn').forEach(btn => {
+    btn.classList.toggle('active', btn.dataset.val === value)
+  })
+}
+async function setOrderReceiveMethod(value) {
+  if ((value === 'whatsapp' || value === 'both') && !document.getElementById('set-whatsapp').value.trim()) {
+    showToast('لازم تكتب رقم واتساب المتجر فوق الأول قبل ما تفعّل الاستقبال عليه')
+    return
+  }
+  const buttons = document.querySelectorAll('.orm-btn')
+  buttons.forEach(b => b.disabled = true)
+  const { error } = await db.from('restaurants').update({ order_receive_method: value }).eq('id', state.restaurant.id)
+  buttons.forEach(b => b.disabled = false)
+  if (error) { showToast('حصل خطأ أثناء الحفظ'); return }
+  state.restaurant.order_receive_method = value
+  updateOrmToggleUI(value)
+  showToast('✅ تم الحفظ')
+}
+
 // ── BACK TO TOP ───────────────────────────────────────────────────────
 function scrollToTop() { window.scrollTo({ top: 0, behavior: 'smooth' }) }
 window.addEventListener('scroll', () => {
@@ -1623,6 +1659,7 @@ async function loadDashboard(r, branches) {
   document.getElementById('set-name').value        = r.name
   document.getElementById('set-about-text').value = r.about_text || ''
   document.getElementById('set-whatsapp').value = r.whatsapp
+  updateOrmToggleUI(r.order_receive_method || 'app')
   document.getElementById('set-logo').value     = r.logo_url  || ''
   document.getElementById('set-cover').value    = r.cover_url || ''
   document.getElementById('set-admin-passcode').value = r.admin_passcode || ''
