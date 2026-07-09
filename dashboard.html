@@ -1129,6 +1129,17 @@
 </div>
 
 <script>
+// ── XSS PROTECTION: أي بيانات جاية من المستخدم/التاجر/الداتابيز لازم تتعقّم قبل ما تتحط في innerHTML ─────────────────────────────────────
+function escapeHtml(str) {
+  if (str === null || str === undefined) return ''
+  return String(str)
+    .replace(/&/g, '&amp;')
+    .replace(/</g, '&lt;')
+    .replace(/>/g, '&gt;')
+    .replace(/"/g, '&quot;')
+    .replace(/'/g, '&#39;')
+}
+
 // ── GLOBAL ERROR HANDLER (debug) ─────────────────────────────────────
 // قاعدة ثابتة: أي خطأ JS أو Promise مرفوضة لازم تظهر على الشاشة فعلياً
 // (التاجر مفيش عنده DevTools ولا لابتوب يقدر يشوف بيه الـ Console)
@@ -1136,7 +1147,7 @@ window.onerror = function(msg, src, line, col, err) {
   const el = document.body
   const box = document.createElement('div')
   box.style.cssText = 'padding:20px;font-family:monospace;background:#fff;color:#c00;font-size:12px;direction:ltr;word-break:break-all;position:fixed;inset:0;z-index:99999;overflow:auto'
-  box.innerHTML = `<b>JS Error:</b><br>${msg}<br><br><b>Line:</b> ${line}:${col}<br><br><b>Stack:</b><br><pre>${err?.stack || 'N/A'}</pre>`
+  box.innerHTML = `<b>JS Error:</b><br>${escapeHtml(msg)}<br><br><b>Line:</b> ${escapeHtml(line)}:${escapeHtml(col)}<br><br><b>Stack:</b><br><pre>${escapeHtml(err?.stack || 'N/A')}</pre>`
   el.appendChild(box)
   return false
 }
@@ -1144,7 +1155,7 @@ window.addEventListener('unhandledrejection', e => {
   const el = document.body
   const box = document.createElement('div')
   box.style.cssText = 'padding:20px;font-family:monospace;background:#fff;color:#c00;font-size:12px;direction:ltr;word-break:break-all;position:fixed;inset:0;z-index:99999;overflow:auto'
-  box.innerHTML = `<b>Unhandled Promise Rejection:</b><br>${e.reason?.message || e.reason}<br><br><b>Stack:</b><br><pre>${e.reason?.stack || 'N/A'}</pre>`
+  box.innerHTML = `<b>Unhandled Promise Rejection:</b><br>${escapeHtml(e.reason?.message || e.reason)}<br><br><b>Stack:</b><br><pre>${escapeHtml(e.reason?.stack || 'N/A')}</pre>`
   el.appendChild(box)
 })
 
@@ -1506,10 +1517,10 @@ function renderBranchListForPasscode(r, branches) {
     <div><p class="font-extrabold text-gray-800 text-sm">دخول كأدمن</p><p class="text-xs text-gray-400">وصول كامل لكل التبويبات والفروع</p></div>
   </button>`
   branches.forEach(b => {
-    html += `<button onclick="selectPasscodeTarget('${b.id}')"
+    html += `<button onclick="selectPasscodeTarget('${escapeHtml(b.id)}')"
       class="w-full flex items-center gap-3 bg-gray-50 border border-gray-200 rounded-2xl px-4 py-3 text-right hover:bg-gray-100 transition-colors">
       <span class="text-2xl">🏬</span>
-      <div><p class="font-extrabold text-gray-800 text-sm">${b.name}</p><p class="text-xs text-gray-400">عرض طلبات هذا الفرع فقط</p></div>
+      <div><p class="font-extrabold text-gray-800 text-sm">${escapeHtml(b.name)}</p><p class="text-xs text-gray-400">عرض طلبات هذا الفرع فقط</p></div>
     </button>`
   })
   el.innerHTML = html
@@ -1862,7 +1873,7 @@ function renderDiscountCodes(codes) {
     return `<div class="flex items-center justify-between bg-gray-50 rounded-xl p-3 ${exp ? 'opacity-50' : ''}">
       <div>
         <div class="flex items-center gap-2 flex-wrap mb-1">
-          <p class="font-extrabold text-gray-800 text-sm tracking-widest">${c.code}</p>
+          <p class="font-extrabold text-gray-800 text-sm tracking-widest">${escapeHtml(c.code)}</p>
           <span class="text-[10px] font-bold px-2 py-0.5 rounded-full ${t.cls}">${t.label}${c.target_customer_ids?.length ? ` (${c.target_customer_ids.length})` : ''}</span>
         </div>
         <p class="text-xs text-gray-400">خصم ${Number(c.discount_egp).toFixed(2)} ج.م · استُخدم ${c.used_count}${c.max_uses ? '/' + c.max_uses : ''} مرة</p>
@@ -1870,8 +1881,8 @@ function renderDiscountCodes(codes) {
       </div>
       <div class="flex gap-2 items-center">
         <span class="text-xs px-2 py-0.5 rounded-full ${c.is_active && !exp ? 'bg-green-50 text-green-500' : 'bg-gray-100 text-gray-400'}">${c.is_active && !exp ? 'نشط' : 'متوقف'}</span>
-        <button onclick="openDiscountCodeModal('${c.id}')" class="text-xs bg-gray-100 text-gray-600 font-bold px-3 py-1.5 rounded-lg">تعديل</button>
-        <button onclick="deleteDiscountCode('${c.id}')" class="text-xs bg-red-50 text-red-400 font-bold px-3 py-1.5 rounded-lg">حذف</button>
+        <button onclick="openDiscountCodeModal('${escapeHtml(c.id)}')" class="text-xs bg-gray-100 text-gray-600 font-bold px-3 py-1.5 rounded-lg">تعديل</button>
+        <button onclick="deleteDiscountCode('${escapeHtml(c.id)}')" class="text-xs bg-red-50 text-red-400 font-bold px-3 py-1.5 rounded-lg">حذف</button>
       </div>
     </div>`
   }).join('')
@@ -1929,8 +1940,8 @@ function renderDcmCustomerPicker() {
   const el = document.getElementById('dcm-customers-list')
   el.innerHTML = list.slice(0, 100).map(c => `
     <label class="flex items-center gap-2 px-3 py-2 text-sm">
-      <input type="checkbox" onchange="toggleDcmCustomer('${c.id}', this.checked)" ${_dcmSelectedCustomers.has(c.id) ? 'checked' : ''} class="w-4 h-4 accent-orange-500" />
-      <span class="flex-1">${c.name || '(بدون اسم)'} ${c.phone ? '· '+c.phone : ''}</span>
+      <input type="checkbox" onchange="toggleDcmCustomer('${escapeHtml(c.id)}', this.checked)" ${_dcmSelectedCustomers.has(c.id) ? 'checked' : ''} class="w-4 h-4 accent-orange-500" />
+      <span class="flex-1">${escapeHtml(c.name) || '(بدون اسم)'} ${c.phone ? '· '+escapeHtml(c.phone) : ''}</span>
     </label>`).join('') || `<p class="text-center text-gray-400 text-xs py-4">لا يوجد عملاء مطابقين</p>`
   updateDcmCustomersCount()
 }
@@ -2060,16 +2071,16 @@ function renderBanners() {
     const now    = new Date()
     const isLive = b.is_active && (!b.starts_at || new Date(b.starts_at) <= now) && (!b.ends_at || new Date(b.ends_at) >= now)
     return `<div class="bg-white rounded-2xl shadow-sm border border-gray-100 overflow-hidden">
-      ${b.image_url ? `<img src="${b.image_url}" class="w-full h-28 object-cover" />` : `<div class="w-full h-28 bg-gray-100 flex items-center justify-center text-3xl">🖼️</div>`}
+      ${b.image_url ? `<img src="${escapeHtml(b.image_url)}" class="w-full h-28 object-cover" />` : `<div class="w-full h-28 bg-gray-100 flex items-center justify-center text-3xl">🖼️</div>`}
       <div class="p-3">
         <div class="flex items-center justify-between mb-2">
           <span class="text-xs font-bold px-2 py-1 rounded-full ${isLive ? 'bg-green-50 text-green-600' : 'bg-gray-100 text-gray-400'}">${isLive ? '🟢 يعرض الآن' : '⚫ متوقف'}</span>
           <span class="text-xs text-gray-400">${lbl[b.link_type] || ''}</span>
         </div>
         <div class="flex gap-2">
-          <button onclick="toggleBanner('${b.id}',${b.is_active})" class="flex-1 text-xs font-bold px-3 py-2 rounded-xl ${b.is_active ? 'bg-gray-100 text-gray-600' : 'bg-green-500 text-white'}">${b.is_active ? 'إيقاف' : 'تفعيل'}</button>
-          <button onclick="openBannerModal('${b.id}')"             class="flex-1 text-xs bg-gray-100 text-gray-600 font-bold px-3 py-2 rounded-xl">تعديل</button>
-          <button onclick="deleteBanner('${b.id}')"                class="text-xs bg-red-50 text-red-500 font-bold px-3 py-2 rounded-xl">حذف</button>
+          <button onclick="toggleBanner('${escapeHtml(b.id)}',${b.is_active})" class="flex-1 text-xs font-bold px-3 py-2 rounded-xl ${b.is_active ? 'bg-gray-100 text-gray-600' : 'bg-green-500 text-white'}">${b.is_active ? 'إيقاف' : 'تفعيل'}</button>
+          <button onclick="openBannerModal('${escapeHtml(b.id)}')"             class="flex-1 text-xs bg-gray-100 text-gray-600 font-bold px-3 py-2 rounded-xl">تعديل</button>
+          <button onclick="deleteBanner('${escapeHtml(b.id)}')"                class="text-xs bg-red-50 text-red-500 font-bold px-3 py-2 rounded-xl">حذف</button>
         </div>
       </div>
     </div>`
@@ -2079,9 +2090,9 @@ function openBannerModal(id = null) {
   document.getElementById('bnm-id').value = id || ''
   document.getElementById('bnm-error').classList.add('hidden')
   document.getElementById('bnm-image-preview-wrap').classList.add('hidden')
-  document.getElementById('bnm-link-product').innerHTML  = state.products.map(p  => `<option value="${p.id}">${p.name}</option>`).join('')
+  document.getElementById('bnm-link-product').innerHTML  = state.products.map(p  => `<option value="${escapeHtml(p.id)}">${escapeHtml(p.name)}</option>`).join('')
   const bundlesOpt = state.bundles && state.bundles.length ? `<option value="bundles">🎁 كل العروض (صفحة العروض)</option>` : ''
-  document.getElementById('bnm-link-category').innerHTML = bundlesOpt + state.categories.map(c => `<option value="${c.id}">${c.name}</option>`).join('')
+  document.getElementById('bnm-link-category').innerHTML = bundlesOpt + state.categories.map(c => `<option value="${escapeHtml(c.id)}">${escapeHtml(c.name)}</option>`).join('')
   if (id) {
     const b = state.banners.find(x => x.id === id)
     document.getElementById('bnm-image').value            = b.image_url || ''
@@ -2154,23 +2165,23 @@ function renderCategories() {
     <div class="bg-white rounded-2xl p-4 shadow-sm flex items-center justify-between">
       <div class="flex items-center gap-2">
         <div class="flex flex-col gap-1">
-          <button onclick="moveCat('${c.id}',-1)" ${i === 0 ? 'disabled' : ''} class="reorder-btn ${i === 0 ? 'opacity-30 pointer-events-none' : ''}">▲</button>
-          <button onclick="moveCat('${c.id}',1)" ${i === state.categories.length - 1 ? 'disabled' : ''} class="reorder-btn ${i === state.categories.length - 1 ? 'opacity-30 pointer-events-none' : ''}">▼</button>
+          <button onclick="moveCat('${escapeHtml(c.id)}',-1)" ${i === 0 ? 'disabled' : ''} class="reorder-btn ${i === 0 ? 'opacity-30 pointer-events-none' : ''}">▲</button>
+          <button onclick="moveCat('${escapeHtml(c.id)}',1)" ${i === state.categories.length - 1 ? 'disabled' : ''} class="reorder-btn ${i === state.categories.length - 1 ? 'opacity-30 pointer-events-none' : ''}">▼</button>
         </div>
         <div>
-          <span class="font-bold text-gray-800">${c.name}</span>
+          <span class="font-bold text-gray-800">${escapeHtml(c.name)}</span>
           <span class="block text-[10px] text-gray-400 font-bold mt-0.5">${styleLbl[c.display_style || 'grid']}</span>
         </div>
       </div>
       <div class="flex gap-2">
-        <button onclick="openCatModal('${c.id}')" class="text-xs bg-gray-100 text-gray-600 font-bold px-3 py-2 rounded-xl">تعديل</button>
-        <button onclick="deleteCat('${c.id}')"    class="text-xs bg-red-50 text-red-500 font-bold px-3 py-2 rounded-xl">حذف</button>
+        <button onclick="openCatModal('${escapeHtml(c.id)}')" class="text-xs bg-gray-100 text-gray-600 font-bold px-3 py-2 rounded-xl">تعديل</button>
+        <button onclick="deleteCat('${escapeHtml(c.id)}')"    class="text-xs bg-red-50 text-red-500 font-bold px-3 py-2 rounded-xl">حذف</button>
       </div>
     </div>`).join('')
 }
 function updateCategorySelect() {
   const sel = document.getElementById('pm-category')
-  sel.innerHTML = '<option value="" disabled>اختر تصنيف للمنتج...</option>' + state.categories.map(c => `<option value="${c.id}">${c.name}</option>`).join('')
+  sel.innerHTML = '<option value="" disabled>اختر تصنيف للمنتج...</option>' + state.categories.map(c => `<option value="${escapeHtml(c.id)}">${escapeHtml(c.name)}</option>`).join('')
 }
 function setCatStyle(style) {
   document.getElementById('cm-style').value = style
@@ -2234,7 +2245,7 @@ async function loadProducts() {
 function renderProductFilterTabs() {
   const el = document.getElementById('product-filter-tabs'); if (!el) return
   const tabs = [{ id: 'all', name: 'الكل' }, ...state.categories]
-  el.innerHTML = tabs.map(t => `<button onclick="filterProducts('${t.id}')" class="flex-shrink-0 px-4 py-1.5 rounded-full text-sm font-bold border-2 transition-all ${t.id === activeProductFilter ? 'bg-orange-500 text-white border-transparent' : 'bg-white text-gray-500 border-gray-200'}">${t.name}</button>`).join('')
+  el.innerHTML = tabs.map(t => `<button onclick="filterProducts('${escapeHtml(t.id)}')" class="flex-shrink-0 px-4 py-1.5 rounded-full text-sm font-bold border-2 transition-all ${t.id === activeProductFilter ? 'bg-orange-500 text-white border-transparent' : 'bg-white text-gray-500 border-gray-200'}">${escapeHtml(t.name)}</button>`).join('')
 }
 function filterProducts(id) { activeProductFilter = id; renderProductFilterTabs(); renderProducts() }
 function renderProducts() {
@@ -2247,24 +2258,24 @@ function renderProducts() {
     const disOn      = p.discount_active
     return `<div class="bg-white rounded-2xl p-4 shadow-sm border ${!p.is_available ? 'border-red-100 opacity-70' : 'border-gray-100'}">
       <div class="flex items-center gap-3">
-        ${p.image_url ? `<img src="${p.image_url}" class="w-16 h-16 rounded-xl object-cover flex-shrink-0" />` : `<div class="w-16 h-16 rounded-xl bg-gray-100 flex items-center justify-center text-2xl flex-shrink-0">🍽️</div>`}
+        ${p.image_url ? `<img src="${escapeHtml(p.image_url)}" class="w-16 h-16 rounded-xl object-cover flex-shrink-0" />` : `<div class="w-16 h-16 rounded-xl bg-gray-100 flex items-center justify-center text-2xl flex-shrink-0">🍽️</div>`}
         <div class="flex-1 min-w-0">
           <div class="flex items-center gap-2 flex-wrap">
-            <p class="font-bold text-gray-800 truncate">${p.name}</p>
+            <p class="font-bold text-gray-800 truncate">${escapeHtml(p.name)}</p>
             ${!p.is_available ? `<span class="text-xs bg-red-50 text-red-400 px-2 py-0.5 rounded-full">نفذ</span>` : ''}
             ${disOn ? `<span class="text-xs bg-orange-100 text-orange-500 px-2 py-0.5 rounded-full">خصم نشط</span>` : ''}
           </div>
-          ${cat ? `<p class="text-xs text-orange-500 font-bold">${cat.name}</p>` : ''}
+          ${cat ? `<p class="text-xs text-orange-500 font-bold">${escapeHtml(cat.name)}</p>` : ''}
           <p class="text-sm font-extrabold text-gray-700 mt-1">
             ${hasDis && disOn ? `<span class="line-through text-gray-400 text-xs ml-1">${Number(p.price).toFixed(2)}</span><span class="text-orange-500">${Number(p.discount_price).toFixed(2)} ج.م</span>` : `${Number(p.price).toFixed(2)} ج.م`}
           </p>
         </div>
       </div>
       <div class="flex gap-2 mt-3 flex-wrap">
-        ${hasDis ? `<button onclick="toggleDiscount('${p.id}',${disOn})" class="flex-1 text-xs font-bold px-3 py-2 rounded-xl ${disOn ? 'bg-orange-500 text-white' : 'bg-orange-50 text-orange-500 border border-orange-200'}">${disOn ? '🏷️ إلغاء الخصم' : '🏷️ تفعيل الخصم'}</button>` : ''}
-        <button onclick="toggleAvailability('${p.id}',${p.is_available})" class="flex-1 text-xs font-bold px-3 py-2 rounded-xl ${p.is_available ? 'bg-gray-100 text-gray-600' : 'bg-red-500 text-white'}">${p.is_available ? '👁️ إخفاء' : '✅ إظهار'}</button>
-        <button onclick="openProductModal('${p.id}')" class="text-xs bg-gray-100 text-gray-600 font-bold px-3 py-2 rounded-xl">تعديل</button>
-        <button onclick="deleteProduct('${p.id}')"    class="text-xs bg-red-50 text-red-500 font-bold px-3 py-2 rounded-xl">حذف</button>
+        ${hasDis ? `<button onclick="toggleDiscount('${escapeHtml(p.id)}',${disOn})" class="flex-1 text-xs font-bold px-3 py-2 rounded-xl ${disOn ? 'bg-orange-500 text-white' : 'bg-orange-50 text-orange-500 border border-orange-200'}">${disOn ? '🏷️ إلغاء الخصم' : '🏷️ تفعيل الخصم'}</button>` : ''}
+        <button onclick="toggleAvailability('${escapeHtml(p.id)}',${p.is_available})" class="flex-1 text-xs font-bold px-3 py-2 rounded-xl ${p.is_available ? 'bg-gray-100 text-gray-600' : 'bg-red-500 text-white'}">${p.is_available ? '👁️ إخفاء' : '✅ إظهار'}</button>
+        <button onclick="openProductModal('${escapeHtml(p.id)}')" class="text-xs bg-gray-100 text-gray-600 font-bold px-3 py-2 rounded-xl">تعديل</button>
+        <button onclick="deleteProduct('${escapeHtml(p.id)}')"    class="text-xs bg-red-50 text-red-500 font-bold px-3 py-2 rounded-xl">حذف</button>
       </div>
     </div>`
   }).join('')
@@ -2305,22 +2316,22 @@ function renderQuickPrices() {
 
   el.innerHTML = Object.entries(groups).map(([catName, prods]) => `
     <div class="qp-group">
-      <p class="qp-group-title">${catName} <span class="qp-group-count">${prods.length}</span></p>
+      <p class="qp-group-title">${escapeHtml(catName)} <span class="qp-group-count">${prods.length}</span></p>
       <div class="qp-card">
         ${prods.map(p => {
           const unitOptions = QP_UNITS.includes(p.unit) ? QP_UNITS : [...QP_UNITS, p.unit || 'قطعة']
           return `
-          <div class="qp-row" data-qp-row="${p.id}">
-            <span class="qp-dot" data-qp-dot="${p.id}"></span>
-            <p class="qp-row-name">${p.name}</p>
+          <div class="qp-row" data-qp-row="${escapeHtml(p.id)}">
+            <span class="qp-dot" data-qp-dot="${escapeHtml(p.id)}"></span>
+            <p class="qp-row-name">${escapeHtml(p.name)}</p>
             <div class="qp-price-field">
               <input type="number" step="0.01" min="0" inputmode="decimal" value="${Number(p.price)}"
-                     data-qp-price="${p.id}"
-                     onchange="qpMarkChanged('${p.id}','price',this.value)" />
+                     data-qp-price="${escapeHtml(p.id)}"
+                     onchange="qpMarkChanged('${escapeHtml(p.id)}','price',this.value)" />
               <span class="qp-currency">ج.م</span>
             </div>
-            <select data-qp-unit="${p.id}" onchange="qpMarkChanged('${p.id}','unit',this.value)" class="qp-unit-field">
-              ${unitOptions.map(u => `<option value="${u}" ${u === (p.unit || 'قطعة') ? 'selected' : ''}>${u}</option>`).join('')}
+            <select data-qp-unit="${escapeHtml(p.id)}" onchange="qpMarkChanged('${escapeHtml(p.id)}','unit',this.value)" class="qp-unit-field">
+              ${unitOptions.map(u => `<option value="${escapeHtml(u)}" ${u === (p.unit || 'قطعة') ? 'selected' : ''}>${escapeHtml(u)}</option>`).join('')}
             </select>
           </div>`
         }).join('')}
@@ -2407,12 +2418,12 @@ function renderBranches() {
   el.innerHTML = state.branches.map(b => `
     <div class="bg-white rounded-2xl p-4 shadow-sm flex items-center justify-between">
       <div>
-        <p class="font-extrabold text-gray-800">${b.name}</p>
+        <p class="font-extrabold text-gray-800">${escapeHtml(b.name)}</p>
         <p class="text-xs text-gray-400">📍 ${b.lat.toFixed(4)}, ${b.lng.toFixed(4)}</p>
       </div>
       <div class="flex gap-2">
-        <button onclick="openBranchModal('${b.id}')" class="text-xs bg-gray-100 text-gray-600 font-bold px-3 py-2 rounded-xl">تعديل</button>
-        <button onclick="deleteBranch('${b.id}')" class="text-xs bg-red-50 text-red-500 font-bold px-3 py-2 rounded-xl">حذف</button>
+        <button onclick="openBranchModal('${escapeHtml(b.id)}')" class="text-xs bg-gray-100 text-gray-600 font-bold px-3 py-2 rounded-xl">تعديل</button>
+        <button onclick="deleteBranch('${escapeHtml(b.id)}')" class="text-xs bg-red-50 text-red-500 font-bold px-3 py-2 rounded-xl">حذف</button>
       </div>
     </div>`).join('')
 }
@@ -2688,8 +2699,8 @@ function buildGroupEl(g) {
     <div class="flex items-center gap-2">
       <span class="text-xs font-bold text-gray-400 bg-white border border-gray-200 rounded-lg px-2 py-1.5 whitespace-nowrap">${GROUP_TYPE_LABELS[g.type] || GROUP_TYPE_LABELS.custom}</span>
       ${isFixed
-        ? `<input type="text" value="${GROUP_TYPE_LABELS[g.type].replace(/^\S+\s/, '')}" class="opt-group-name flex-1 min-w-0 border border-gray-200 rounded-xl px-3 py-2 text-sm bg-gray-100 text-gray-400" readonly />`
-        : `<input type="text" placeholder="اسم المجموعة" value="${g.name || ''}" class="opt-group-name flex-1 min-w-0 border border-gray-200 rounded-xl px-3 py-2 text-sm focus:outline-none focus:ring-2 focus:ring-orange-400 bg-white" />`
+        ? `<input type="text" value="${escapeHtml(GROUP_TYPE_LABELS[g.type].replace(/^\S+\s/, ''))}" class="opt-group-name flex-1 min-w-0 border border-gray-200 rounded-xl px-3 py-2 text-sm bg-gray-100 text-gray-400" readonly />`
+        : `<input type="text" placeholder="اسم المجموعة" value="${escapeHtml(g.name || '')}" class="opt-group-name flex-1 min-w-0 border border-gray-200 rounded-xl px-3 py-2 text-sm focus:outline-none focus:ring-2 focus:ring-orange-400 bg-white" />`
       }
       <button onclick="this.closest('.border').remove()" class="text-red-400 font-bold text-xl leading-none">×</button>
     </div>
@@ -2712,7 +2723,7 @@ function buildGroupEl(g) {
 }
 function optRowHTML(o) {
   return `<div class="flex gap-2 items-center opt-row">
-    <input type="text"   placeholder="الاسم"  value="${o.name||''}"               class="opt-item-name  flex-1 min-w-0 border border-gray-200 rounded-xl px-3 py-2 text-sm focus:outline-none focus:ring-2 focus:ring-orange-400 bg-white" />
+    <input type="text"   placeholder="الاسم"  value="${escapeHtml(o.name||'')}"               class="opt-item-name  flex-1 min-w-0 border border-gray-200 rounded-xl px-3 py-2 text-sm focus:outline-none focus:ring-2 focus:ring-orange-400 bg-white" />
     <input type="number" placeholder="السعر (0 لو يطابق المنتج الأساسي)" value="${o.price!=null?o.price:''}" step="0.5" class="opt-item-price w-24 border border-gray-200 rounded-xl px-3 py-2 text-sm focus:outline-none focus:ring-2 focus:ring-orange-400 bg-white" />
     <button onclick="this.closest('.opt-row').remove()" class="text-red-400 font-bold text-xl leading-none">×</button>
   </div>`
@@ -2746,7 +2757,7 @@ function renderAlsoWith(ids, currentId) {
     const p = state.products.find(x => x.id === id); if (!p) return
     const tag = document.createElement('div')
     tag.className = 'flex items-center gap-1 bg-orange-50 border border-orange-200 rounded-xl px-3 py-1.5 text-xs font-bold text-orange-700'
-    tag.innerHTML = `${p.name} <button onclick="removeAlso('${id}')" class="text-orange-400 hover:text-red-500 font-black text-base leading-none mr-1">×</button>`
+    tag.innerHTML = `${escapeHtml(p.name)} <button onclick="removeAlso('${escapeHtml(id)}')" class="text-orange-400 hover:text-red-500 font-black text-base leading-none mr-1">×</button>`
     list.appendChild(tag)
   })
   const sel = document.getElementById('pm-also-select')
@@ -2845,23 +2856,23 @@ function renderBundles() {
   if (!state.bundles.length) { el.innerHTML = `<p class="text-center text-gray-400 text-sm py-8">لا توجد عروض بعد</p>`; return }
   el.innerHTML = state.bundles.map(b => {
     const branchTags = b.branch_ids && b.branch_ids.length && state.branches.length > 1
-      ? `<p class="text-xs text-blue-500 mt-1">🏬 ${b.branch_ids.length === state.branches.length ? 'كل الفروع' : b.branch_ids.map(id => state.branches.find(br => br.id === id)?.name || '').filter(Boolean).join('، ')}</p>`
+      ? `<p class="text-xs text-blue-500 mt-1">🏬 ${b.branch_ids.length === state.branches.length ? 'كل الفروع' : b.branch_ids.map(id => escapeHtml(state.branches.find(br => br.id === id)?.name || '')).filter(Boolean).join('، ')}</p>`
       : (state.branches.length > 1 ? `<p class="text-xs text-gray-400 mt-1">🏬 كل الفروع</p>` : '')
     return `
     <div class="bg-white rounded-2xl p-4 shadow-sm border border-gray-100">
       <div class="flex items-start justify-between">
         <div>
-          <div class="flex items-center gap-2"><p class="font-bold text-gray-800">🎁 ${b.name}</p>
+          <div class="flex items-center gap-2"><p class="font-bold text-gray-800">🎁 ${escapeHtml(b.name)}</p>
             <span class="text-xs px-2 py-0.5 rounded-full ${b.is_active ? 'bg-green-50 text-green-500' : 'bg-gray-100 text-gray-400'}">${b.is_active ? 'نشط' : 'متوقف'}</span></div>
-          ${b.description ? `<p class="text-xs text-gray-400 mt-1">${b.description}</p>` : ''}
+          ${b.description ? `<p class="text-xs text-gray-400 mt-1">${escapeHtml(b.description)}</p>` : ''}
           ${branchTags}
           <p class="font-extrabold text-orange-500 mt-2">${Number(b.price).toFixed(2)} ج.م</p>
         </div>
       </div>
       <div class="flex gap-2 mt-3">
-        <button onclick="toggleBundle('${b.id}',${b.is_active})" class="flex-1 text-xs font-bold px-3 py-2 rounded-xl ${b.is_active ? 'bg-gray-100 text-gray-600' : 'bg-green-500 text-white'}">${b.is_active ? 'إيقاف' : 'تفعيل'}</button>
-        <button onclick="openBundleModal('${b.id}')" class="flex-1 text-xs bg-gray-100 text-gray-600 font-bold px-3 py-2 rounded-xl">تعديل</button>
-        <button onclick="deleteBundle('${b.id}')"    class="text-xs bg-red-50 text-red-500 font-bold px-3 py-2 rounded-xl">حذف</button>
+        <button onclick="toggleBundle('${escapeHtml(b.id)}',${b.is_active})" class="flex-1 text-xs font-bold px-3 py-2 rounded-xl ${b.is_active ? 'bg-gray-100 text-gray-600' : 'bg-green-500 text-white'}">${b.is_active ? 'إيقاف' : 'تفعيل'}</button>
+        <button onclick="openBundleModal('${escapeHtml(b.id)}')" class="flex-1 text-xs bg-gray-100 text-gray-600 font-bold px-3 py-2 rounded-xl">تعديل</button>
+        <button onclick="deleteBundle('${escapeHtml(b.id)}')"    class="text-xs bg-red-50 text-red-500 font-bold px-3 py-2 rounded-xl">حذف</button>
       </div>
     </div>`
   }).join('')
@@ -2871,14 +2882,14 @@ function openBundleModal(id = null) {
   document.getElementById('bm-error').classList.add('hidden')
   document.getElementById('bm-image-preview-wrap').classList.add('hidden')
   const container = document.getElementById('bm-products-checkboxes')
-  container.innerHTML = state.products.map(p => `<label class="flex items-center gap-3 py-1 cursor-pointer"><input type="checkbox" value="${p.id}" class="bundle-product-check w-4 h-4 accent-orange-500" onchange="updateBundleSelectedCount()" /><span class="text-sm text-gray-700">${p.name}</span><span class="text-xs text-gray-400 mr-auto">${Number(p.price).toFixed(2)} ج.م</span></label>`).join('')
+  container.innerHTML = state.products.map(p => `<label class="flex items-center gap-3 py-1 cursor-pointer"><input type="checkbox" value="${escapeHtml(p.id)}" class="bundle-product-check w-4 h-4 accent-orange-500" onchange="updateBundleSelectedCount()" /><span class="text-sm text-gray-700">${escapeHtml(p.name)}</span><span class="text-xs text-gray-400 mr-auto">${Number(p.price).toFixed(2)} ج.م</span></label>`).join('')
 
   // قسم الفروع — يظهر فقط لو فيه أكثر من فرع وصلاحية أدمن
   const branchSection = document.getElementById('bm-branches-section')
   const branchContainer = document.getElementById('bm-branches-checkboxes')
   if (state.branches.length > 1 && _role === 'admin') {
     branchContainer.innerHTML = `<label class="flex items-center gap-3 py-1 cursor-pointer"><input type="checkbox" id="bm-branch-all" class="bundle-branch-check w-4 h-4 accent-orange-500" onchange="toggleAllBundleBranches(this)" /><span class="text-sm font-bold text-gray-700">كل الفروع</span></label>`
-      + state.branches.map(br => `<label class="flex items-center gap-3 py-1 cursor-pointer"><input type="checkbox" value="${br.id}" class="bundle-branch-item w-4 h-4 accent-orange-500" onchange="updateBranchAllCheckbox()" /><span class="text-sm text-gray-700">🏬 ${br.name}</span></label>`).join('')
+      + state.branches.map(br => `<label class="flex items-center gap-3 py-1 cursor-pointer"><input type="checkbox" value="${escapeHtml(br.id)}" class="bundle-branch-item w-4 h-4 accent-orange-500" onchange="updateBranchAllCheckbox()" /><span class="text-sm text-gray-700">🏬 ${escapeHtml(br.name)}</span></label>`).join('')
     branchSection.classList.remove('hidden')
   } else {
     branchSection.classList.add('hidden')
@@ -3032,8 +3043,8 @@ function renderCustomers(custs) {
     <div class="bg-white rounded-2xl p-4 shadow-sm">
       <div class="flex items-center justify-between">
         <div>
-          <p class="font-extrabold text-gray-800 text-sm">${c.name || '(بدون اسم)'}</p>
-          <p class="text-xs text-gray-400">${c.email || ''} ${c.phone ? '· ' + c.phone : ''}</p>
+          <p class="font-extrabold text-gray-800 text-sm">${escapeHtml(c.name) || '(بدون اسم)'}</p>
+          <p class="text-xs text-gray-400">${escapeHtml(c.email) || ''} ${c.phone ? '· ' + escapeHtml(c.phone) : ''}</p>
           <p class="text-xs text-gray-400">${new Date(c.created_at).toLocaleDateString('ar-EG')}</p>
         </div>
         <div class="text-left">
@@ -3042,9 +3053,9 @@ function renderCustomers(custs) {
         </div>
       </div>
       <div class="flex gap-2 mt-3">
-        <button onclick="giftCoins('${c.id}','${(c.name||'العميل').replace(/'/g,'')}')"
+        <button onclick="giftCoins('${escapeHtml(c.id)}','${escapeHtml(c.name||'العميل').replace(/'/g,'')}')"
                 class="flex-1 text-xs bg-orange-50 text-orange-600 font-bold px-3 py-2 rounded-xl">🎀 إهداء كوينز</button>
-        <span class="text-xs text-gray-300 px-2 py-2">كود: ${c.referral_code || '—'}</span>
+        <span class="text-xs text-gray-300 px-2 py-2">كود: ${escapeHtml(c.referral_code) || '—'}</span>
       </div>
     </div>`).join('')
 }
@@ -3123,18 +3134,18 @@ function renderOrders() {
   // من تطبيقه (فيه زر تأكيد استلام + تأكيد تلقائي بعد فترة)، مش التاجر
   const waitingNote = { delivering: '🕐 بانتظار تأكيد العميل بالاستلام' }
   el.innerHTML = filtered.map(o => `
-    <div class="bg-white rounded-2xl p-4 shadow-sm cursor-pointer active:bg-gray-50 transition-colors" onclick="openOrderDetailModal('${o.id}')">
+    <div class="bg-white rounded-2xl p-4 shadow-sm cursor-pointer active:bg-gray-50 transition-colors" onclick="openOrderDetailModal('${escapeHtml(o.id)}')">
       <div class="flex items-center justify-between mb-3">
-        <div><p class="font-extrabold text-gray-800">${o.order_number}</p>${o.table_number ? `<p class="text-xs text-gray-400">طاولة ${o.table_number}</p>` : ''}</div>
+        <div><p class="font-extrabold text-gray-800">${escapeHtml(o.order_number)}</p>${o.table_number ? `<p class="text-xs text-gray-400">طاولة ${escapeHtml(o.table_number)}</p>` : ''}</div>
         <span class="text-xs font-bold px-3 py-1 rounded-full ${statusColor[o.status]}">${statusLabel[o.status]}</span>
       </div>
       <div class="space-y-1 border-t border-gray-50 pt-3">
-        ${o.items.map(i => `<div class="flex justify-between text-sm"><span class="text-gray-600">${i.name} × ${i.qty}</span><span class="font-bold text-gray-800">${Number(i.subtotal).toFixed(2)} ج.م</span></div>`).join('')}
+        ${o.items.map(i => `<div class="flex justify-between text-sm"><span class="text-gray-600">${escapeHtml(i.name)} × ${i.qty}</span><span class="font-bold text-gray-800">${Number(i.subtotal).toFixed(2)} ج.م</span></div>`).join('')}
         ${o.delivery_fee ? `<div class="flex justify-between text-sm"><span class="text-gray-500">🛵 رسوم التوصيل</span><span class="font-bold text-gray-700">${Number(o.delivery_fee).toFixed(2)} ج.م</span></div>` : ''}
         <div class="flex justify-between text-sm font-extrabold pt-2 border-t border-gray-100"><span>الإجمالي</span><span class="text-orange-500">${Number(o.total).toFixed(2)} ج.م</span></div>
       </div>
-      ${o.status === 'cancelled' && o.cancel_reason ? `<p class="text-xs text-red-500 bg-red-50 rounded-xl px-3 py-2 mt-2 font-bold">${o.cancel_reason.includes('بواسطة العميل') ? 'ألغاه العميل' : 'سبب الرفض'}: ${o.cancel_reason}</p>` : ''}
-      ${nextActionBtn[o.status] ? `<div class="mt-3">${nextActionBtn[o.status].replace(/\{ID\}/g, o.id).replace(/onclick="/g, 'onclick="event.stopPropagation();')}</div>` : ''}
+      ${o.status === 'cancelled' && o.cancel_reason ? `<p class="text-xs text-red-500 bg-red-50 rounded-xl px-3 py-2 mt-2 font-bold">${o.cancel_reason.includes('بواسطة العميل') ? 'ألغاه العميل' : 'سبب الرفض'}: ${escapeHtml(o.cancel_reason)}</p>` : ''}
+      ${nextActionBtn[o.status] ? `<div class="mt-3">${nextActionBtn[o.status].replace(/\{ID\}/g, escapeHtml(o.id)).replace(/onclick="/g, 'onclick="event.stopPropagation();')}</div>` : ''}
       ${waitingNote[o.status] ? `<p class="text-xs font-bold text-indigo-500 bg-indigo-50 rounded-xl px-3 py-2 mt-3 text-center">${waitingNote[o.status]}</p>` : ''}
       <div class="flex items-center justify-between mt-2">
         <p class="text-xs text-gray-300">${new Date(o.created_at).toLocaleString('ar-EG')}</p>
@@ -3163,16 +3174,16 @@ function renderReturnsList(el) {
     const items = r.requested_items || []
     const deliveredAt = ord.delivered_at ? new Date(ord.delivered_at) : null
     const withCustomerMs = deliveredAt ? (new Date(r.created_at) - deliveredAt) : null
-    return `<div class="bg-white rounded-2xl p-4 shadow-sm cursor-pointer active:bg-gray-50 transition-colors" onclick="openReturnResolveModal('${r.id}')">
+    return `<div class="bg-white rounded-2xl p-4 shadow-sm cursor-pointer active:bg-gray-50 transition-colors" onclick="openReturnResolveModal('${escapeHtml(r.id)}')">
       <div class="flex items-center justify-between mb-3">
-        <div><p class="font-extrabold text-gray-800">${ord.order_number || ''}</p>${ord.table_number ? `<p class="text-xs text-gray-400">طاولة ${ord.table_number}</p>` : ''}</div>
+        <div><p class="font-extrabold text-gray-800">${escapeHtml(ord.order_number) || ''}</p>${ord.table_number ? `<p class="text-xs text-gray-400">طاولة ${escapeHtml(ord.table_number)}</p>` : ''}</div>
         <span class="text-xs font-bold px-3 py-1 rounded-full bg-orange-50 text-orange-600">🔄 بانتظار الرد</span>
       </div>
       <div class="space-y-1 border-t border-gray-50 pt-3">
-        ${items.map(i => `<div class="flex justify-between text-sm"><span class="text-gray-600">${i.name || ''} × ${i.qty}</span></div>`).join('')}
+        ${items.map(i => `<div class="flex justify-between text-sm"><span class="text-gray-600">${escapeHtml(i.name) || ''} × ${i.qty}</span></div>`).join('')}
       </div>
       ${deliveredAt ? `<p class="text-xs text-gray-500 mt-2">📦 اتسلم يوم ${deliveredAt.toLocaleString('ar-EG')}${withCustomerMs !== null ? ` — فضل عند العميل <b class="text-gray-700">${humanDuration(withCustomerMs)}</b> قبل ما يطلب الاسترجاع` : ''}</p>` : ''}
-      ${r.reason ? `<p class="text-xs text-gray-500 bg-gray-50 rounded-xl px-3 py-2 mt-2 break-words">📝 ${r.reason}</p>` : ''}
+      ${r.reason ? `<p class="text-xs text-gray-500 bg-gray-50 rounded-xl px-3 py-2 mt-2 break-words">📝 ${escapeHtml(r.reason)}</p>` : ''}
       ${r.initiated_by === 'merchant' ? `<p class="text-xs text-indigo-500 font-bold mt-2">طلب مُنشأ من التاجر</p>` : ''}
       <div class="flex items-center justify-between mt-2">
         <p class="text-xs text-gray-300">${new Date(r.created_at).toLocaleString('ar-EG')}</p>
@@ -3207,8 +3218,8 @@ function openReturnResolveModal(returnId) {
   const infoRows = []
   if (deliveredAt) infoRows.push(`📦 <b>اتسلم:</b> ${deliveredAt.toLocaleString('ar-EG')}`)
   if (withCustomerMs !== null) infoRows.push(`⏱ <b>فضل عند العميل:</b> ${humanDuration(withCustomerMs)} قبل طلب الاسترجاع`)
-  if (ord.customer_name) infoRows.push(`👤 <b>العميل:</b> ${ord.customer_name}`)
-  if (ord.customer_phone) infoRows.push(`📞 <b>الهاتف:</b> ${ord.customer_phone}`)
+  if (ord.customer_name) infoRows.push(`👤 <b>العميل:</b> ${escapeHtml(ord.customer_name)}`)
+  if (ord.customer_phone) infoRows.push(`📞 <b>الهاتف:</b> ${escapeHtml(ord.customer_phone)}`)
   document.getElementById('orm-delivery-info').innerHTML = infoRows.map(t => `<p>${t}</p>`).join('')
   document.getElementById('orm-delivery-fee').value = isFull ? Number(ord.delivery_fee || 0) : 0
   document.querySelector('input[name="orm-refund-method"][value="wallet"]').checked = true
@@ -3224,13 +3235,13 @@ function renderReturnResolveItems(requestedItems, orderItems) {
     const cur = _returnResolveCtx.selected[ri.id] ?? maxQty
     return `<div class="flex items-center justify-between gap-2 bg-gray-50 rounded-xl px-3 py-2.5">
       <div class="min-w-0 flex-1">
-        <p class="text-sm font-bold text-gray-700 break-words">${oi.name || ri.name || ''}</p>
+        <p class="text-sm font-bold text-gray-700 break-words">${escapeHtml(oi.name || ri.name) || ''}</p>
         <p class="text-xs text-gray-400">${Number(oi.price || 0).toFixed(2)} ج.م × طلب العميل: ${maxQty}</p>
       </div>
       <div class="flex items-center gap-2 flex-shrink-0">
-        <button onclick="changeResolveQty('${ri.id}',-1,${maxQty})" class="w-7 h-7 rounded-full bg-white border border-gray-200 font-bold text-gray-500">-</button>
-        <span class="text-sm font-extrabold min-w-[14px] text-center" id="orm-qty-${ri.id}">${cur}</span>
-        <button onclick="changeResolveQty('${ri.id}',1,${maxQty})" class="w-7 h-7 rounded-full bg-white border border-gray-200 font-bold text-gray-500">+</button>
+        <button onclick="changeResolveQty('${escapeHtml(ri.id)}',-1,${maxQty})" class="w-7 h-7 rounded-full bg-white border border-gray-200 font-bold text-gray-500">-</button>
+        <span class="text-sm font-extrabold min-w-[14px] text-center" id="orm-qty-${escapeHtml(ri.id)}">${cur}</span>
+        <button onclick="changeResolveQty('${escapeHtml(ri.id)}',1,${maxQty})" class="w-7 h-7 rounded-full bg-white border border-gray-200 font-bold text-gray-500">+</button>
       </div>
     </div>`
   }).join('')
@@ -3289,7 +3300,7 @@ async function rejectReturnRequest() {
 let _odCurrentOrder = null
 function _odCopyRow(icon, label, value, field) {
   return `<div class="flex items-start justify-between gap-2">
-    <p class="text-sm text-gray-700 leading-relaxed break-words min-w-0 flex-1">${icon} <b>${label}:</b> ${value}</p>
+    <p class="text-sm text-gray-700 leading-relaxed break-words min-w-0 flex-1">${icon} <b>${label}:</b> ${escapeHtml(value)}</p>
     <button onclick="event.stopPropagation();copyText(_odCurrentOrder && _odCurrentOrder.${field}, '${label}')" class="flex-shrink-0 text-[11px] font-bold text-orange-600 bg-orange-50 px-2.5 py-1.5 rounded-lg active:bg-orange-100 whitespace-nowrap">📋 نسخ</button>
   </div>`
 }
@@ -3308,25 +3319,25 @@ function openOrderDetailModal(orderId) {
 
   // بيانات العميل والتوصيل — أهم جزء لو التاجر احتاج يكلم العميل أو يتأكد من عنوانه
   const rows = []
-  if (order.table_number) rows.push(`<p class="text-sm text-gray-700">🪑 <b>طاولة:</b> ${order.table_number}</p>`)
+  if (order.table_number) rows.push(`<p class="text-sm text-gray-700">🪑 <b>طاولة:</b> ${escapeHtml(order.table_number)}</p>`)
   const branchName = order.branch_id ? state.branches.find(b => b.id === order.branch_id)?.name : null
-  if (branchName)          rows.push(`<p class="text-sm text-gray-700">🏬 <b>الفرع:</b> ${branchName}</p>`)
-  if (order.customer_name) rows.push(`<p class="text-sm text-gray-700 break-words">👤 <b>الاسم:</b> ${order.customer_name}</p>`)
+  if (branchName)          rows.push(`<p class="text-sm text-gray-700">🏬 <b>الفرع:</b> ${escapeHtml(branchName)}</p>`)
+  if (order.customer_name) rows.push(`<p class="text-sm text-gray-700 break-words">👤 <b>الاسم:</b> ${escapeHtml(order.customer_name)}</p>`)
   if (order.customer_phone) {
     const ph = normalizePhone(order.customer_phone)
     rows.push(`<div class="flex items-center justify-between gap-2">
-      <p class="text-sm text-gray-700 break-all min-w-0 flex-1">📞 <b>الهاتف:</b> ${order.customer_phone}</p>
+      <p class="text-sm text-gray-700 break-all min-w-0 flex-1">📞 <b>الهاتف:</b> ${escapeHtml(order.customer_phone)}</p>
       <div class="flex items-center gap-1.5 flex-shrink-0">
-        <a href="tel:${order.customer_phone}" onclick="event.stopPropagation()" class="w-8 h-8 flex items-center justify-center rounded-lg bg-blue-50 text-blue-600">📞</a>
-        ${ph.ok ? `<a href="https://wa.me/${ph.value}" target="_blank" onclick="event.stopPropagation()" class="w-8 h-8 flex items-center justify-center rounded-lg bg-green-50 text-green-600">💬</a>` : ''}
+        <a href="tel:${encodeURIComponent(order.customer_phone)}" onclick="event.stopPropagation()" class="w-8 h-8 flex items-center justify-center rounded-lg bg-blue-50 text-blue-600">📞</a>
+        ${ph.ok ? `<a href="https://wa.me/${encodeURIComponent(ph.value)}" target="_blank" onclick="event.stopPropagation()" class="w-8 h-8 flex items-center justify-center rounded-lg bg-green-50 text-green-600">💬</a>` : ''}
         <button onclick="event.stopPropagation();copyText(_odCurrentOrder && _odCurrentOrder.customer_phone, 'الهاتف')" class="w-8 h-8 flex items-center justify-center rounded-lg bg-gray-100 text-gray-500 text-xs">📋</button>
       </div>
     </div>`)
   }
   if (order.customer_address)  rows.push(_odCopyRow('🏠', 'العنوان', order.customer_address, 'customer_address'))
   if (order.customer_location) rows.push(_odCopyRow('📍', 'تفاصيل الموقع', order.customer_location, 'customer_location'))
-  if (order.customer_lat && order.customer_lng) rows.push(`<a href="https://www.google.com/maps?q=${order.customer_lat},${order.customer_lng}" target="_blank" onclick="event.stopPropagation()" class="flex items-center justify-center gap-1.5 text-sm font-bold text-white bg-blue-500 rounded-xl py-2.5 active:bg-blue-600">🗺️ فتح الموقع على الخريطة</a>`)
-  if (order.note) rows.push(`<p class="text-sm text-gray-700 break-words">📝 <b>ملاحظة العميل:</b> ${order.note}</p>`)
+  if (order.customer_lat && order.customer_lng) rows.push(`<a href="https://www.google.com/maps?q=${encodeURIComponent(order.customer_lat)},${encodeURIComponent(order.customer_lng)}" target="_blank" onclick="event.stopPropagation()" class="flex items-center justify-center gap-1.5 text-sm font-bold text-white bg-blue-500 rounded-xl py-2.5 active:bg-blue-600">🗺️ فتح الموقع على الخريطة</a>`)
+  if (order.note) rows.push(`<p class="text-sm text-gray-700 break-words">📝 <b>ملاحظة العميل:</b> ${escapeHtml(order.note)}</p>`)
   const custBlock = document.getElementById('od-customer-block')
   if (rows.length) { custBlock.innerHTML = rows.join(''); custBlock.classList.remove('hidden') }
   else             { custBlock.innerHTML = ''; custBlock.classList.add('hidden') }
@@ -3334,7 +3345,7 @@ function openOrderDetailModal(orderId) {
   // المنتجات
   document.getElementById('od-items').innerHTML = (order.items || []).map(i => `
     <div class="flex justify-between gap-2 text-sm">
-      <span class="text-gray-600 break-words min-w-0">${i.name} × ${i.qty}${i.options?.length ? `<br><span class="text-xs text-gray-400">${i.options.map(op => op.label || op).join('، ')}</span>` : ''}</span>
+      <span class="text-gray-600 break-words min-w-0">${escapeHtml(i.name)} × ${i.qty}${i.options?.length ? `<br><span class="text-xs text-gray-400">${i.options.map(op => escapeHtml(op.label || op)).join('، ')}</span>` : ''}</span>
       <span class="font-bold text-gray-800 whitespace-nowrap flex-shrink-0">${Number(i.subtotal || 0).toFixed(2)} ج.م</span>
     </div>`).join('')
 
@@ -3367,12 +3378,12 @@ function openOrderDetailModal(orderId) {
   }[order.status]
   document.getElementById('od-actions').innerHTML =
     (order.status === 'pending' ? `
-      <button onclick="acceptOrderDirect('${order.id}');closeOrderDetailModal()" class="w-full bg-green-500 text-white font-extrabold rounded-xl py-3.5 text-sm">✅ قبول الطلب</button>
-      <button onclick="rejectOrderDirect('${order.id}')" class="w-full bg-red-50 text-red-600 font-extrabold rounded-xl py-3.5 text-sm border border-red-200">❌ رفض الطلب</button>
+      <button onclick="acceptOrderDirect('${escapeHtml(order.id)}');closeOrderDetailModal()" class="w-full bg-green-500 text-white font-extrabold rounded-xl py-3.5 text-sm">✅ قبول الطلب</button>
+      <button onclick="rejectOrderDirect('${escapeHtml(order.id)}')" class="w-full bg-red-50 text-red-600 font-extrabold rounded-xl py-3.5 text-sm border border-red-200">❌ رفض الطلب</button>
     ` : '')
-    + (nextAction ? `<button onclick="confirmAndUpdateOrderStatus('${order.id}','${nextAction.next}', true)" class="w-full ${nextAction.cls} text-white font-extrabold rounded-xl py-3.5 text-sm">${nextAction.label}</button>` : '')
-    + (order.status === 'confirmed' ? `<button onclick="openCancelConfirmedModal('${order.id}')" class="w-full bg-red-50 text-red-600 font-extrabold rounded-xl py-3.5 text-sm border border-red-200">❌ إلغاء الطلب (بعد القبول)</button>` : '')
-    + (() => { const pendingReturn = state.returns.find(r => r.order_id === order.id); return pendingReturn ? `<button onclick="closeOrderDetailModal();openReturnResolveModal('${pendingReturn.id}')" class="w-full bg-orange-50 text-orange-600 font-extrabold rounded-xl py-3.5 text-sm border border-orange-200">🔄 مراجعة طلب الاسترجاع</button>` : '' })()
+    + (nextAction ? `<button onclick="confirmAndUpdateOrderStatus('${escapeHtml(order.id)}','${nextAction.next}', true)" class="w-full ${nextAction.cls} text-white font-extrabold rounded-xl py-3.5 text-sm">${nextAction.label}</button>` : '')
+    + (order.status === 'confirmed' ? `<button onclick="openCancelConfirmedModal('${escapeHtml(order.id)}')" class="w-full bg-red-50 text-red-600 font-extrabold rounded-xl py-3.5 text-sm border border-red-200">❌ إلغاء الطلب (بعد القبول)</button>` : '')
+    + (() => { const pendingReturn = state.returns.find(r => r.order_id === order.id); return pendingReturn ? `<button onclick="closeOrderDetailModal();openReturnResolveModal('${escapeHtml(pendingReturn.id)}')" class="w-full bg-orange-50 text-orange-600 font-extrabold rounded-xl py-3.5 text-sm border border-orange-200">🔄 مراجعة طلب الاسترجاع</button>` : '' })()
 
   document.getElementById('modal-order-detail').classList.remove('hidden')
   pushModal('order-detail', closeOrderDetailModal)
@@ -3717,14 +3728,14 @@ function handleOrderUpdatedElsewhere(order) {
 }
 function showNewOrderPopup(order) {
   document.getElementById('nop-order-num').textContent = order.order_number
-  document.getElementById('nop-items').innerHTML = (order.items||[]).map(i => `<div class="flex justify-between text-sm"><span class="text-gray-600 font-bold">${i.name} × ${i.qty}</span><span class="font-extrabold text-gray-800">${Number(i.subtotal).toFixed(2)} ج.م</span></div>`).join('')
+  document.getElementById('nop-items').innerHTML = (order.items||[]).map(i => `<div class="flex justify-between text-sm"><span class="text-gray-600 font-bold">${escapeHtml(i.name)} × ${i.qty}</span><span class="font-extrabold text-gray-800">${Number(i.subtotal).toFixed(2)} ج.م</span></div>`).join('')
   + (order.delivery_fee ? `<div class="flex justify-between text-sm border-t border-gray-100 pt-1.5 mt-1"><span class="text-gray-500 font-bold">🛵 رسوم التوصيل</span><span class="font-extrabold text-gray-700">${Number(order.delivery_fee).toFixed(2)} ج.م</span></div>` : '')
   document.getElementById('nop-total').textContent = Number(order.total).toFixed(2) + ' ج.م'
   const meta = []
-  if (order.table_number)     meta.push(`🪑 طاولة: ${order.table_number}`)
-  if (order.customer_name)    meta.push(`👤 ${order.customer_name}`)
-  if (order.customer_phone)   meta.push(`📞 ${order.customer_phone}`)
-  if (order.customer_address) meta.push(`🏠 ${order.customer_address}`)
+  if (order.table_number)     meta.push(`🪑 طاولة: ${escapeHtml(order.table_number)}`)
+  if (order.customer_name)    meta.push(`👤 ${escapeHtml(order.customer_name)}`)
+  if (order.customer_phone)   meta.push(`📞 ${escapeHtml(order.customer_phone)}`)
+  if (order.customer_address) meta.push(`🏠 ${escapeHtml(order.customer_address)}`)
   document.getElementById('nop-meta').innerHTML = meta.map(m => `<p>${m}</p>`).join('')
   document.getElementById('new-order-popup').classList.remove('hidden')
   _lockBodyScroll()
@@ -4035,7 +4046,7 @@ async function changeOwnerPassword() {
 function showToast(msg) { const t=document.getElementById('toast'); t.textContent=msg; t.classList.remove('hidden'); setTimeout(()=>t.classList.add('hidden'),2500) }
 function showToastWithUndo(msg, cb) {
   const t = document.getElementById('toast')
-  t.innerHTML = `${msg} — <button onclick="(${cb.toString()})();document.getElementById('toast').classList.add('hidden')" style="text-decoration:underline;font-weight:900;background:none;border:none;color:#FF6B00;cursor:pointer;font-family:'Rubik',sans-serif;">تراجع</button>`
+  t.innerHTML = `${escapeHtml(msg)} — <button onclick="(${cb.toString()})();document.getElementById('toast').classList.add('hidden')" style="text-decoration:underline;font-weight:900;background:none;border:none;color:#FF6B00;cursor:pointer;font-family:'Rubik',sans-serif;">تراجع</button>`
   t.classList.remove('hidden'); setTimeout(()=>t.classList.add('hidden'),4000)
 }
 
