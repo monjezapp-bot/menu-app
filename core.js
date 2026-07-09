@@ -22,19 +22,22 @@ window.addEventListener('unhandledrejection', e => {
 
 // ── CLIENT ERROR LOGGING (Supabase: app_logs) ──────────────────────────
 // بيرسل أخطاء الفرونت لجدول app_logs عشان نشوفها من غير ما العميل يشتكي.
-// فيه rate-limit (أقصى 5 لوجز/دقيقة) و loop-guard (لو الإرسال نفسه فشل، بلاش نحاول تاني).
+// فيه rate-limit عام (أقصى 5 لوجز/دقيقة للأخطاء العادية) و loop-guard (لو الإرسال نفسه فشل، بلاش نحاول تاني).
+// أخطاء الفلوس (payment_fail) بتتبعت دايماً بدون rate-limit — دي أهم حاجة نعرفها.
 let _logCount = 0, _logWindowStart = Date.now()
 let _loggingBroken = false
-function logClientError({ message, stack, kind }) {
+function logClientError({ message, stack, kind, extra }) {
   try {
     if (_loggingBroken) return
-    const now = Date.now()
-    if (now - _logWindowStart > 60000) { _logWindowStart = now; _logCount = 0 }
-    if (++_logCount > 5) return // منع الـ spam لو نفس الخطأ بيتكرر بسرعة
+    if (kind !== 'payment_fail') { // أخطاء الفلوس معفاة من الـ rate-limit
+      const now = Date.now()
+      if (now - _logWindowStart > 60000) { _logWindowStart = now; _logCount = 0 }
+      if (++_logCount > 5) return // منع الـ spam لو نفس الخطأ بيتكرر بسرعة
+    }
 
     const slug = new URLSearchParams(location.search).get('r') || localStorage.getItem('mnio_last_slug') || null
     db.from('app_logs').insert({
-      message: message?.slice(0, 2000) || null,
+      message: (extra ? `[${extra}] ` : '') + (message?.slice(0, 2000) || ''),
       stack:   stack?.slice(0, 4000) || null,
       url:     location.href,
       app:     location.pathname.includes('dashboard') ? 'dashboard' : 'customer',
@@ -46,6 +49,24 @@ function logClientError({ message, stack, kind }) {
       if (error) _loggingBroken = true // فشل الإرسال (شبكة/سكيما) — بلاش نكرر المحاولة ونعمل loop
     }).catch(() => { _loggingBroken = true })
   } catch (e) { _loggingBroken = true }
+}
+
+// نداء Supabase فشل (شبكة أو RLS) — error راجع من {data,error} من غير ما يعمل throw،
+// يعني window.onerror ما بيمسكوش لوحده. تِتنده يدوي بعد كل db.from()/db.rpc() مهم.
+function logApiFail(error, context) {
+  if (!error) return
+  logClientError({ message: error.message || JSON.stringify(error), stack: error.details || error.hint || null, kind: 'api_fail', extra: context })
+}
+
+// خطأ قراءة localStorage / JSON.parse — بيعلّق التطبيق فورًا لو حصل قبل أول render.
+function logParseFail(e, context) {
+  logClientError({ message: e?.message || String(e), stack: e?.stack || null, kind: 'parse_fail', extra: context })
+}
+
+// أي خطأ في دوال الكوينز/الفلوس/الطلبات — دي "فلوسك" فبتتبعت فورًا بدون أي rate-limit.
+function logPaymentFail(error, context) {
+  if (!error) return
+  logClientError({ message: error.message || JSON.stringify(error), stack: error.details || error.hint || null, kind: 'payment_fail', extra: context })
 }
 
 // ── CONFIG ────────────────────────────────────────────────────────────
@@ -113,7 +134,7 @@ function loadCart() {
   try {
     const raw = localStorage.getItem(cartKey())
     if (raw) S.cart = JSON.parse(raw)
-  } catch(e) { S.cart = [] }
+  } catch(e) { S.cart = []; logParseFail(e, 'loadCart') }
 }
 function clearCart() { S.cart = []; try { localStorage.removeItem(cartKey()) } catch(e) {} }
 
@@ -394,7 +415,7 @@ async function checkAndAwardBirthdayGift() {
 
   try {
     const { data, error } = await db.rpc('claim_birthday_gift', { p_restaurant_id: r.id })
-    if (error) return // السيرفر رفض المنح (اتمنحت بالفعل / مش عيد ميلاده فعلاً / إلخ) — تجاهل بصمت
+    if (error) { logPaymentFail(error, 'claim_birthday_gift'); return } // السيرفر رفض المنح (اتمنحت بالفعل / مش عيد ميلاده فعلاً / إلخ)
     if (!data?.granted) return
 
     S.customer.birthday_gift_claimed_year = thisYear
@@ -493,7 +514,10 @@ async function _loadCustomerProfileInner(forceCreate, extraData) {
         // وبتسجّل معاملة coin_transactions بنفسها داخلياً، فمفيش داعي لإدراج يدوي هنا تاني
         const referralEnabled = S.restaurant.referral_enabled ?? true
         if (referredBy && referralEnabled && S.restaurant.referral_coins) {
-          try { await db.rpc('credit_referral_reward', { p_new_customer_id: newCust.id }) } catch (e) {}
+          try {
+            const { error: refErr } = await db.rpc('credit_referral_reward', { p_new_customer_id: newCust.id })
+            if (refErr) logPaymentFail(refErr, 'credit_referral_reward')
+          } catch (e) { logPaymentFail(e, 'credit_referral_reward') }
         }
       }
     } catch(e) {

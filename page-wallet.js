@@ -209,6 +209,7 @@ async function convertCoinsToBalance() {
         updateWalletBadge()
       } catch(e) {
         showToast('خطأ: ' + e.message)
+        logPaymentFail({ message: e.message }, 'convert_coins_to_wallet')
       }
     },
     'تأكيد التحويل'

@@ -103,7 +103,7 @@ async function saveEditProfile() {
       const { data, error } = await db.rpc('claim_profile_field', {
         p_field: field, p_value: value, p_restaurant_id: S.restaurant.id
       })
-      if (error) { showErr(`تعذر حفظ "${field}": ${error.message}`); continue }
+      if (error) { showErr(`تعذر حفظ "${field}": ${error.message}`); logPaymentFail(error, 'claim_profile_field(' + field + ')'); continue }
       S.customer[field] = value
       if (data?.new_balance != null) S.customer.coins_balance = data.new_balance
       if (data?.coins_granted) anyCoinsGranted += data.coins_granted
@@ -411,6 +411,7 @@ async function submitEditField(field, value) {
     })
   } catch(e) {
     showToast('خطأ: ' + e.message)
+    logPaymentFail({ message: e.message }, 'claim_profile_field(' + field + ')')
   }
 }
 
@@ -581,6 +582,7 @@ async function redeemVoucher() {
   } catch(e) {
     const friendly = errorMessages[e.message] || ('خطأ: ' + e.message)
     showMsg(friendly, false)
+    if (!errorMessages[e.message]) logPaymentFail({ message: e.message }, 'redeem_discount_code') // استبعاد رفض الأكواد المتوقع (منتهي/مستخدم)، وتسجيل الأعطال الحقيقية بس
   }
 }
 
