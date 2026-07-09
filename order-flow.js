@@ -220,8 +220,9 @@ async function sendOrder() {
     logPaymentFail({ message: e.message }, orderId ? 'create_order:settle_or_verify(order_id=' + orderId + ')' : 'create_order:before_insert')
     // ترجمة أسباب فشل recalc_order_pricing لرسالة مفهومة للعميل بدل عرض الكود الخام
     let friendlyMsg = e.message || 'خطأ غير معروف'
-    if (friendlyMsg.startsWith('item_unavailable:')) friendlyMsg = `عذرًا، "${friendlyMsg.split(':')[1]}" بقى غير متاح — احذفه من السلة وأعد الإرسال`
-    else if (friendlyMsg.startsWith('quantity_too_high:')) friendlyMsg = `الكمية المطلوبة من "${friendlyMsg.split(':')[1]}" أكبر من المسموح`
+    if (friendlyMsg.startsWith('item_unavailable:')) friendlyMsg = `عذرًا، "${escapeHTML(friendlyMsg.split(':')[1])}" بقى غير متاح — احذفه من السلة وأعد الإرسال`
+    else if (friendlyMsg.startsWith('quantity_too_high:')) friendlyMsg = `الكمية المطلوبة من "${escapeHTML(friendlyMsg.split(':')[1])}" أكبر من المسموح`
+    else friendlyMsg = escapeHTML(friendlyMsg)
     btn.style.opacity = '1'
     btn.innerHTML = `<span>⚠️ ${friendlyMsg}</span>`
     setTimeout(resetBtn, 5000)

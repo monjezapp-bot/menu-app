@@ -15,14 +15,14 @@ function openModal(pid) {
   const optionsHTML = opts.map((g, gi) => `
     <div class="opt-group">
       <div class="opt-group-header">
-        <span class="opt-group-name">${g.name}</span>
+        <span class="opt-group-name">${escapeHTML(g.name)}</span>
         <span class="${g.selection === 'multiple' ? 'opt-optional' : 'opt-required'}">${g.selection === 'multiple' ? 'اختياري - أكثر من واحد' : 'اختر واحد (اختياري)'}</span>
       </div>
       <div class="chips-wrap">
         ${g.options.map((o, oi) => `
           <button class="chip-btn" id="chip-${gi}-${oi}"
             onclick="${g.selection === 'multiple' ? `toggleChip(${gi},${oi})` : `selectChip(${gi},${oi})`}">
-            <span>${o.name}</span>
+            <span>${escapeHTML(o.name)}</span>
             ${o.price > 0 ? `<span class="chip-extra">+${fmt(o.price)}</span>` : o.price < 0 ? `<span class="chip-extra">${fmt(o.price)}</span>` : ''}
           </button>`).join('')}
       </div>
@@ -41,7 +41,7 @@ function openModal(pid) {
         return `<div class="also-card" id="also-${s.id}" onclick="toggleAlso('${s.id}',${sp},this)">
           ${s.image_url ? `<img src="${s.image_url}" />` : `<div class="also-no-img">🍽️</div>`}
           <div class="also-info">
-            <p class="also-name">${s.name}</p>
+            <p class="also-name">${escapeHTML(s.name)}</p>
             <span class="also-price">${fmt(sp)}</span>
           </div>
         </div>`
@@ -51,20 +51,20 @@ function openModal(pid) {
   document.getElementById('modal-inner').innerHTML = `
     <div class="prod-page">
       <div class="prod-hero">
-        ${p.image_url ? `<img src="${p.image_url}" alt="${p.name}" />` : `<div class="prod-hero-placeholder">🍽️</div>`}
+        ${p.image_url ? `<img src="${p.image_url}" alt="${escapeHTML(p.name)}" />` : `<div class="prod-hero-placeholder">🍽️</div>`}
         <div class="prod-hero-overlay"></div>
         <button class="prod-back-btn" onclick="closeModal()">←</button>
         <button class="prod-back-btn prod-share-btn" onclick="shareItem('product','${pid}')" aria-label="مشاركة المنتج">
           <svg width="17" height="17" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.3" stroke-linecap="round" stroke-linejoin="round"><path d="M4 12v7a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2v-7"/><polyline points="16 6 12 2 8 6"/><line x1="12" y1="2" x2="12" y2="15"/></svg>
         </button>
-        ${p.offer_badge ? `<div class="prod-badge">${p.offer_badge}</div>` : ''}
+        ${p.offer_badge ? `<div class="prod-badge">${escapeHTML(p.offer_badge)}</div>` : ''}
         <div class="prod-hero-info">
-          <p class="prod-hero-name">${p.name}</p>
+          <p class="prod-hero-name">${escapeHTML(p.name)}</p>
           ${priceHTML}
         </div>
       </div>
       <div class="prod-body">
-        ${p.description ? `<p class="prod-desc">${p.description}</p>` : ''}
+        ${p.description ? `<p class="prod-desc">${escapeHTML(p.description)}</p>` : ''}
         ${opts.length ? `<div class="prod-divider"></div>${optionsHTML}` : ''}
         ${alsoHTML}
       </div>
@@ -216,7 +216,7 @@ function openBundleModal(bid) {
         ${b.items.map(item => `
           <div style="display:flex;align-items:center;gap:10px;padding:9px 0;border-bottom:1px solid #f5f5f5">
             <span style="color:var(--brand);font-weight:900;font-size:14px">✓</span>
-            <span style="font-size:13px;color:#444;font-weight:600">${item.name || item}</span>
+            <span style="font-size:13px;color:#444;font-weight:600">${escapeHTML(item.name || item)}</span>
             ${item.quantity ? `<span style="font-size:12px;color:#aaa;margin-right:auto">× ${item.quantity}</span>` : ''}
           </div>`).join('')}
       </div>`
@@ -225,7 +225,7 @@ function openBundleModal(bid) {
   document.getElementById('bundle-modal-inner').innerHTML = `
     <div style="position:relative">
       ${b.image_url
-        ? `<img src="${b.image_url}" alt="${b.name}" style="width:100%;height:210px;object-fit:cover" />`
+        ? `<img src="${b.image_url}" alt="${escapeHTML(b.name)}" style="width:100%;height:210px;object-fit:cover" />`
         : `<div style="width:100%;height:170px;background:linear-gradient(135deg,var(--brand2),var(--brand));display:flex;align-items:center;justify-content:center;font-size:72px">🎁</div>`}
       <button onclick="closeBundleModal()" style="position:absolute;top:12px;left:12px;width:36px;height:36px;border-radius:50%;background:rgba(0,0,0,0.45);backdrop-filter:blur(4px);color:#fff;font-size:20px;font-weight:700;display:flex;align-items:center;justify-content:center">&times;</button>
       <button onclick="shareItem('bundle','${bid}')" aria-label="مشاركة العرض" style="position:absolute;top:12px;right:12px;width:36px;height:36px;border-radius:50%;background:rgba(0,0,0,0.45);backdrop-filter:blur(4px);color:#fff;display:flex;align-items:center;justify-content:center">
@@ -234,10 +234,10 @@ function openBundleModal(bid) {
     </div>
     <div style="padding:18px 16px 24px">
       <div style="display:flex;align-items:flex-start;justify-content:space-between;gap:10px;margin-bottom:8px">
-        <h2 style="font-size:19px;font-weight:900;color:#1a1a1a">${b.name}</h2>
+        <h2 style="font-size:19px;font-weight:900;color:#1a1a1a">${escapeHTML(b.name)}</h2>
         <span style="font-size:19px;font-weight:900;color:var(--brand);white-space:nowrap">${fmt(b.price)}</span>
       </div>
-      ${b.description ? `<p style="font-size:13px;color:#888;line-height:1.75">${b.description}</p>` : ''}
+      ${b.description ? `<p style="font-size:13px;color:#888;line-height:1.75">${escapeHTML(b.description)}</p>` : ''}
       ${itemsHTML}
       <button onclick="addBundleToCart('${bid}'); closeBundleModal()"
               style="width:100%;background:var(--brand);color:#fff;font-size:15px;font-weight:900;border-radius:18px;padding:16px;display:flex;align-items:center;justify-content:center;gap:10px;margin-top:18px">
@@ -368,9 +368,9 @@ function renderCartItems() {
         ? `<img src="${c.image_url}" style="width:54px;height:54px;border-radius:12px;object-fit:cover;flex-shrink:0" />`
         : `<div style="width:54px;height:54px;border-radius:12px;background:#eee;display:flex;align-items:center;justify-content:center;font-size:22px;flex-shrink:0">${c.type === 'bundle' ? '🎁' : '🍽️'}</div>`}
       <div style="flex:1;min-width:0">
-        <p style="font-size:13px;font-weight:800;color:#1a1a1a;white-space:nowrap;overflow:hidden;text-overflow:ellipsis">${c.name}</p>
+        <p style="font-size:13px;font-weight:800;color:#1a1a1a;white-space:nowrap;overflow:hidden;text-overflow:ellipsis">${escapeHTML(c.name)}</p>
         ${c.type === 'bundle' ? `<span style="font-size:10px;background:#FFF3EB;color:var(--brand);padding:2px 7px;border-radius:6px;font-weight:700">باقة</span>` : ''}
-        ${c.options ? `<p style="font-size:11px;color:var(--brand);font-weight:600;margin-top:1px">${c.options}</p>` : ''}
+        ${c.options ? `<p style="font-size:11px;color:var(--brand);font-weight:600;margin-top:1px">${escapeHTML(c.options)}</p>` : ''}
         <p style="font-size:12px;color:#aaa;margin-top:2px">${c.qty} ${c.unit || 'قطعة'}</p>
         <p style="font-size:13px;font-weight:900;color:var(--brand);margin-top:2px">${fmt(c.price * c.qty)}</p>
       </div>

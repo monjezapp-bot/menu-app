@@ -127,7 +127,8 @@ function renderSuggestions(q, results) {
   const el = document.getElementById('search-suggestions')
   if (!results.length) { el.classList.add('hidden'); return }
   el.innerHTML = results.slice(0, 5).map(p => {
-    const hl    = p.name.replace(new RegExp(q.replace(/[.*+?^${}()|[\]\\]/g, '\\$&'), 'gi'), m => `<span class="suggestion-match">${m}</span>`)
+    const safeName = escapeHTML(p.name)
+    const hl    = safeName.replace(new RegExp(q.replace(/[.*+?^${}()|[\]\\]/g, '\\$&'), 'gi'), m => `<span class="suggestion-match">${m}</span>`)
     const price = isDiscountActive(p) ? fmt(p.discount_price) : fmt(p.price)
     return `<div class="suggestion-item" onmousedown="selectSuggestion('${p.id}')">
       ${p.image_url ? `<img class="suggestion-img" src="${p.image_url}" />` : `<div class="suggestion-img" style="display:flex;align-items:center;justify-content:center;font-size:18px">🍽️</div>`}
@@ -152,7 +153,6 @@ function hideSuggestions() {
 // ── SEARCH OVERLAY (mini mode) ────────────────────────────────────────
 function openSearchOverlay() {
   document.getElementById('search-overlay').classList.remove('hidden')
-  _lockBodyScroll()
   setTimeout(() => document.getElementById('search-overlay-input').focus(), 100)
   pushModal('search', closeSearchOverlay)
 }
@@ -161,7 +161,6 @@ function closeSearchOverlay(e) {
   document.getElementById('search-overlay').classList.add('hidden')
   document.getElementById('search-overlay-input').value = ''
   document.getElementById('overlay-suggestions').classList.add('hidden')
-  _unlockBodyScroll()
   if (e !== true) popModalSilently('search') // e === true يعني تم الاستدعاء من popstate
 }
 function handleOverlaySearch() {
@@ -176,7 +175,8 @@ function handleOverlaySearch() {
   if (!filtered.length) { el.classList.add('hidden'); return }
 
   el.innerHTML = filtered.slice(0, 5).map(p => {
-    const hl    = p.name.replace(new RegExp(q.replace(/[.*+?^${}()|[\]\\]/g, '\\$&'), 'gi'), m => `<span class="suggestion-match">${m}</span>`)
+    const safeName = escapeHTML(p.name)
+    const hl    = safeName.replace(new RegExp(q.replace(/[.*+?^${}()|[\]\\]/g, '\\$&'), 'gi'), m => `<span class="suggestion-match">${m}</span>`)
     const price = isDiscountActive(p) ? fmt(p.discount_price) : fmt(p.price)
     return `<div class="suggestion-item" onmousedown="overlaySelectSuggestion('${p.id}')">
       ${p.image_url ? `<img class="suggestion-img" src="${p.image_url}" />` : `<div class="suggestion-img" style="display:flex;align-items:center;justify-content:center;font-size:18px">🍽️</div>`}
@@ -197,7 +197,7 @@ function renderCatGrid() {
   const el         = document.getElementById('cat-grid')
   const hasBundles = S.bundles.length > 0
   const catsHTML   = S.categories.map(c =>
-    `<button class="cat-tab ${c.id === S.activeCat ? 'active' : ''}" data-cat="${c.id}" onclick="selectCat('${c.id}')">${c.name}</button>`
+    `<button class="cat-tab ${c.id === S.activeCat ? 'active' : ''}" data-cat="${c.id}" onclick="selectCat('${c.id}')">${escapeHTML(c.name)}</button>`
   ).join('')
   const bundleTab  = hasBundles
     ? `<button class="cat-tab ${S.activeCat === 'bundles' ? 'active' : ''}" data-cat="bundles" onclick="selectCat('bundles')">🎁 العروض</button>`
@@ -285,7 +285,7 @@ function renderAllSections(filtered) {
             ? `<div class="products-grid-3">${items.map(p => prodTileHTML(p)).join('')}</div>`
             : `<div class="products-grid">${items.map(p => prodCardHTML(p)).join('')}</div>`
     return `<div id="sec-${cat.id}" class="fade-up" style="margin-top:4px">
-      <p class="section-title"><span class="section-title-text">${cat.name}</span></p>
+      <p class="section-title"><span class="section-title-text">${escapeHTML(cat.name)}</span></p>
       ${body}
     </div>`
   }).join('')
@@ -382,14 +382,14 @@ function prodCardHTML(p) {
        onclick="${unavailable ? '' : `openModal('${p.id}')`}"
        style="${unavailable ? 'cursor:default' : ''}">
     <div class="thumb">
-      ${p.image_url ? `<img src="${p.image_url}" alt="${p.name}" loading="lazy" onload="this.classList.add('loaded'); this.parentElement.classList.add('img-ready')" onerror="this.parentElement.classList.add('img-ready')" />` : `<div class="no-img">🍽️</div>`}
-      ${p.offer_badge ? `<div class="offer-badge">${p.offer_badge}</div>` : ''}
+      ${p.image_url ? `<img src="${p.image_url}" alt="${escapeHTML(p.name)}" loading="lazy" onload="this.classList.add('loaded'); this.parentElement.classList.add('img-ready')" onerror="this.parentElement.classList.add('img-ready')" />` : `<div class="no-img">🍽️</div>`}
+      ${p.offer_badge ? `<div class="offer-badge">${escapeHTML(p.offer_badge)}</div>` : ''}
       ${discPct >= 5 && !p.offer_badge ? `<div class="disc-pct">-${discPct}%</div>` : ''}
       ${unavailable ? `<div class="unavail-overlay"></div>` : ''}
       ${!ci && !unavailable ? `<button class="add-btn" onclick="event.stopPropagation(); quickAdd('${p.id}')">+</button>` : ''}
     </div>
     <div class="info">
-      <h3>${p.name}</h3>
+      <h3>${escapeHTML(p.name)}</h3>
       ${priceHTML}
       ${unavailable
         ? `<span style="font-size:10px;background:#f0f0f0;color:#999;font-weight:700;padding:4px 8px;border-radius:8px;display:inline-block;margin-top:4px">غير متوفر</span>`
@@ -419,8 +419,8 @@ function prodCardListHTML(p) {
        onclick="${unavailable ? '' : `openModal('${p.id}')`}"
        style="${unavailable ? 'cursor:default' : ''}">
     <div class="info">
-      <h3>${p.name}</h3>
-      ${p.description ? `<p class="desc">${p.description}</p>` : ''}
+      <h3>${escapeHTML(p.name)}</h3>
+      ${p.description ? `<p class="desc">${escapeHTML(p.description)}</p>` : ''}
       ${priceHTML}
       ${unavailable
         ? `<span style="font-size:10px;background:#f0f0f0;color:#999;font-weight:700;padding:4px 8px;border-radius:8px;display:inline-block;margin-top:4px">غير متوفر</span>`
@@ -433,8 +433,8 @@ function prodCardListHTML(p) {
           : `<button class="add-btn-list" onclick="event.stopPropagation(); quickAdd('${p.id}')">+ أضف</button>`}
     </div>
     <div class="thumb">
-      ${p.image_url ? `<img src="${p.image_url}" alt="${p.name}" loading="lazy" onload="this.classList.add('loaded'); this.parentElement.classList.add('img-ready')" onerror="this.parentElement.classList.add('img-ready')" />` : `<div class="no-img">🍽️</div>`}
-      ${p.offer_badge ? `<div class="offer-badge">${p.offer_badge}</div>` : ''}
+      ${p.image_url ? `<img src="${p.image_url}" alt="${escapeHTML(p.name)}" loading="lazy" onload="this.classList.add('loaded'); this.parentElement.classList.add('img-ready')" onerror="this.parentElement.classList.add('img-ready')" />` : `<div class="no-img">🍽️</div>`}
+      ${p.offer_badge ? `<div class="offer-badge">${escapeHTML(p.offer_badge)}</div>` : ''}
       ${discPct >= 5 && !p.offer_badge ? `<div class="disc-pct">-${discPct}%</div>` : ''}
       ${unavailable ? `<div class="unavail-overlay"></div>` : ''}
     </div>
@@ -456,8 +456,8 @@ function prodTileHTML(p) {
        onclick="${unavailable ? '' : `openModal('${p.id}')`}"
        style="${unavailable ? 'cursor:default' : ''}">
     <div class="thumb">
-      ${p.image_url ? `<img src="${p.image_url}" alt="${p.name}" loading="lazy" onload="this.classList.add('loaded'); this.parentElement.classList.add('img-ready')" onerror="this.parentElement.classList.add('img-ready')" />` : `<div class="no-img">🍽️</div>`}
-      ${p.offer_badge ? `<div class="offer-badge sm">${p.offer_badge}</div>` : ''}
+      ${p.image_url ? `<img src="${p.image_url}" alt="${escapeHTML(p.name)}" loading="lazy" onload="this.classList.add('loaded'); this.parentElement.classList.add('img-ready')" onerror="this.parentElement.classList.add('img-ready')" />` : `<div class="no-img">🍽️</div>`}
+      ${p.offer_badge ? `<div class="offer-badge sm">${escapeHTML(p.offer_badge)}</div>` : ''}
       ${discPct >= 5 && !p.offer_badge ? `<div class="disc-pct sm">-${discPct}%</div>` : ''}
       ${unavailable ? `<div class="unavail-overlay"></div>` : ''}
       ${!ci && !unavailable ? `<button class="add-btn sm" onclick="event.stopPropagation(); quickAdd('${p.id}')">+</button>` : ''}
@@ -467,7 +467,7 @@ function prodTileHTML(p) {
                <div class="qty-btn sm" onclick="cQty('${p.id}','product',1)">+</div>
              </div>` : ''}
     </div>
-    <h3>${p.name}</h3>
+    <h3>${escapeHTML(p.name)}</h3>
     ${unavailable
       ? `<span style="font-size:9px;background:#f0f0f0;color:#999;font-weight:700;padding:3px 6px;border-radius:6px;display:inline-block">غير متوفر</span>`
       : priceHTML}
@@ -478,13 +478,13 @@ function prodTileHTML(p) {
 function bundleCardHTML(b, forScroll = false) {
   return `<div class="bundle-card${forScroll ? ' bundle-card-scroll' : ''}" onclick="openBundleModal('${b.id}')">
     <div class="bundle-media">
-      ${b.image_url ? `<img src="${b.image_url}" alt="${b.name}" loading="lazy" />` : `<div class="no-img">🎁</div>`}
+      ${b.image_url ? `<img src="${b.image_url}" alt="${escapeHTML(b.name)}" loading="lazy" />` : `<div class="no-img">🎁</div>`}
       <div class="bundle-badge">🔥 عرض خاص</div>
       <div class="bundle-gradient"></div>
     </div>
     <div class="b-info">
-      <h3>${b.name}</h3>
-      ${b.description ? `<p>${b.description}</p>` : ''}
+      <h3>${escapeHTML(b.name)}</h3>
+      ${b.description ? `<p>${escapeHTML(b.description)}</p>` : ''}
       <div class="b-footer">
         <span class="b-price">${fmt(b.price)}</span>
         <div class="bundle-add" onclick="event.stopPropagation(); addBundleToCart('${b.id}')">أضف للسلة +</div>
@@ -497,11 +497,11 @@ function bundleCardHTML(b, forScroll = false) {
 function bundleTileHTML(b) {
   return `<div class="bundle-tile" onclick="openBundleModal('${b.id}')">
     <div class="bundle-tile-media">
-      ${b.image_url ? `<img src="${b.image_url}" alt="${b.name}" loading="lazy" />` : `<div class="no-img">🎁</div>`}
+      ${b.image_url ? `<img src="${b.image_url}" alt="${escapeHTML(b.name)}" loading="lazy" />` : `<div class="no-img">🎁</div>`}
       <div class="bundle-badge sm">عرض</div>
     </div>
     <div class="bundle-tile-info">
-      <h3>${b.name}</h3>
+      <h3>${escapeHTML(b.name)}</h3>
       <div class="b-footer">
         <span class="b-price">${fmt(b.price)}</span>
         <div class="bundle-add sm" onclick="event.stopPropagation(); addBundleToCart('${b.id}')">+</div>
@@ -514,11 +514,11 @@ function bundleTileHTML(b) {
 function bundleCardListHTML(b) {
   return `<div class="bundle-card-list" onclick="openBundleModal('${b.id}')">
     <div class="bundle-list-media">
-      ${b.image_url ? `<img src="${b.image_url}" alt="${b.name}" loading="lazy" />` : `<div class="no-img">🎁</div>`}
+      ${b.image_url ? `<img src="${b.image_url}" alt="${escapeHTML(b.name)}" loading="lazy" />` : `<div class="no-img">🎁</div>`}
     </div>
     <div class="bundle-list-info">
-      <h3>${b.name}</h3>
-      ${b.description ? `<p>${b.description}</p>` : ''}
+      <h3>${escapeHTML(b.name)}</h3>
+      ${b.description ? `<p>${escapeHTML(b.description)}</p>` : ''}
       <div class="b-footer">
         <span class="b-price">${fmt(b.price)}</span>
         <div class="bundle-add sm" onclick="event.stopPropagation(); addBundleToCart('${b.id}')">أضف +</div>

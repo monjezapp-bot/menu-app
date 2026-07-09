@@ -1,5 +1,19 @@
 // هذا الملف جزء من تطبيق Monjez Menu — تم تقسيمه من index.html الأصلي
 
+// ── XSS PROTECTION ──────────────────────────────────────────────────
+// أي نص جاي من الداتابيز (اسم منتج، اسم عميل، ملاحظة...) لازم يعدي من هنا قبل
+// ما يتحقن جوه innerHTML — عشان لو حد كتب <script> أو onerror= في اسم منتج
+// أو ملاحظة طلب، يتعرض كنص عادي على الشاشة بدل ما ينفّذ كـ HTML/JS فعلي.
+function escapeHTML(str) {
+  if (str === null || str === undefined) return ''
+  return String(str)
+    .replace(/&/g, '&amp;')
+    .replace(/</g, '&lt;')
+    .replace(/>/g, '&gt;')
+    .replace(/"/g, '&quot;')
+    .replace(/'/g, '&#39;')
+}
+
 // ── GLOBAL ERROR HANDLER (debug) ─────────────────────────────────────
 window.onerror = function(msg, src, line, col, err) {
   const el = document.getElementById('state-error') || document.body
@@ -946,8 +960,8 @@ function renderNotifList() {
     <div style="display:flex;align-items:flex-start;gap:10px;padding:12px 16px;border-bottom:1px solid #f5f5f5;${n.is_read ? '' : 'background:#fff8f3'}">
       <span style="font-size:20px;flex-shrink:0">${iconMap[n.type] || '🔔'}</span>
       <div style="flex:1">
-        <p style="font-size:13px;font-weight:${n.is_read ? '600' : '800'};color:#1a1a1a;margin-bottom:2px">${n.title || ''}</p>
-        <p style="font-size:11px;color:#888">${n.body || ''}</p>
+        <p style="font-size:13px;font-weight:${n.is_read ? '600' : '800'};color:#1a1a1a;margin-bottom:2px">${escapeHTML(n.title)}</p>
+        <p style="font-size:11px;color:#888">${escapeHTML(n.body)}</p>
         <p style="font-size:10px;color:#ccc;margin-top:3px">${new Date(n.created_at).toLocaleDateString('ar-EG-u-nu-latn', { day:'numeric', month:'short', hour:'2-digit', minute:'2-digit' })}</p>
       </div>
       ${!n.is_read ? '<span style="width:8px;height:8px;border-radius:50%;background:var(--brand);flex-shrink:0;margin-top:4px"></span>' : ''}

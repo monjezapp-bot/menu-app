@@ -57,7 +57,7 @@ async function loadOrdersPage() {
     listEl.innerHTML = orders.map(o => {
       const st = ORDER_STATUS[o.status] || ORDER_STATUS.pending
       const items = typeof o.items === 'string' ? JSON.parse(o.items) : (o.items || [])
-      const preview = items.slice(0,2).map(i => i.name || '').filter(Boolean).join('، ')
+      const preview = items.slice(0,2).map(i => escapeHTML(i.name || '')).filter(Boolean).join('، ')
       const isActiveOrder = !['delivered','cancelled'].includes(o.status)
       return `<div class="order-card" onclick="${isActiveOrder ? `reopenOrderTracking('${o.id}')` : `openOrderDetail('${o.id}')`}">
         <div style="display:flex;justify-content:space-between;align-items:flex-start;margin-bottom:10px">
@@ -154,8 +154,8 @@ async function openOrderDetail(orderId) {
         ${items.map(item => `
           <div style="display:flex;justify-content:space-between;align-items:center;gap:10px;padding:8px 0;border-bottom:1px solid #f0f0f0">
             <div style="flex:1;min-width:0">
-              <p style="font-size:13px;font-weight:700;color:#1a1a1a;overflow-wrap:anywhere">${item.name || ''}</p>
-            ${Array.isArray(item.options) && item.options.length ? `<p style="font-size:11px;color:#aaa;overflow-wrap:anywhere">${item.options.map(op=>op.label||op).join('، ')}</p>` : (typeof item.options === 'string' && item.options ? `<p style="font-size:11px;color:#aaa;overflow-wrap:anywhere">${item.options}</p>` : '')}
+              <p style="font-size:13px;font-weight:700;color:#1a1a1a;overflow-wrap:anywhere">${escapeHTML(item.name || '')}</p>
+              ${Array.isArray(item.options) && item.options.length ? `<p style="font-size:11px;color:#aaa;overflow-wrap:anywhere">${escapeHTML(item.options.map(op=>op.label||op).join('، '))}</p>` : (typeof item.options === 'string' && item.options ? `<p style="font-size:11px;color:#aaa;overflow-wrap:anywhere">${escapeHTML(item.options)}</p>` : '')}
             </div>
             <div style="text-align:left;flex-shrink:0">
               <p style="font-size:12px;color:#888">×${item.qty||1}</p>
@@ -178,14 +178,14 @@ async function openOrderDetail(orderId) {
       ${(() => {
         // بيانات التسليم/التواصل كما وصلت للمتجر — تساعد العميل يتأكد إن مفيش خطأ في بياناته
         const rows = []
-        if (o.table_number)      rows.push(`🪑 طاولة رقم ${o.table_number}`)
-        if (o.customer_address)  rows.push(`🏠 ${o.customer_address}`)
-        if (o.customer_location) rows.push(`📍 ${o.customer_location}`)
-        if (o.customer_phone)    rows.push(`📞 ${o.customer_phone}`)
-        if (o.note)              rows.push(`📝 ${o.note}`)
+        if (o.table_number)      rows.push(`🪑 طاولة رقم ${escapeHTML(o.table_number)}`)
+        if (o.customer_address)  rows.push(`🏠 ${escapeHTML(o.customer_address)}`)
+        if (o.customer_location) rows.push(`📍 ${escapeHTML(o.customer_location)}`)
+        if (o.customer_phone)    rows.push(`📞 ${escapeHTML(o.customer_phone)}`)
+        if (o.note)              rows.push(`📝 ${escapeHTML(o.note)}`)
         return rows.length ? `<div style="margin-top:12px;background:#f9f9f9;border-radius:12px;padding:12px 14px">${rows.map(r => `<p style="font-size:12px;color:#888;font-weight:600;margin-bottom:4px;overflow-wrap:anywhere">${r}</p>`).join('')}</div>` : ''
       })()}
-      ${o.status === 'cancelled' && o.cancel_reason ? `<div style="margin-top:12px;background:#fef2f2;border-radius:12px;padding:12px 14px"><p style="font-size:12px;color:#ef4444;font-weight:700;overflow-wrap:anywhere">${o.cancel_reason.includes('بواسطة العميل') ? 'تم الإلغاء' : 'سبب الرفض'}: ${o.cancel_reason}</p></div>` : ''}
+      ${o.status === 'cancelled' && o.cancel_reason ? `<div style="margin-top:12px;background:#fef2f2;border-radius:12px;padding:12px 14px"><p style="font-size:12px;color:#ef4444;font-weight:700;overflow-wrap:anywhere">${o.cancel_reason.includes('بواسطة العميل') ? 'تم الإلغاء' : 'سبب الرفض'}: ${escapeHTML(o.cancel_reason)}</p></div>` : ''}
       ${renderReturnStatusBlock(latestReturn)}
       ${o.status === 'delivered' && (!latestReturn || ['rejected','cancelled'].includes(latestReturn.status))
         ? `<button onclick="openReturnSheet('${o.id}')" style="width:100%;margin-top:12px;background:#fff7ed;color:#c2410c;font-size:13px;font-weight:800;border-radius:14px;padding:13px;border:1.5px solid #fed7aa;cursor:pointer;font-family:'Rubik',sans-serif">🔄 طلب استرجاع</button>`
@@ -266,7 +266,7 @@ function renderReturnItemsList() {
     const qty = _returnCtx.selected[it.id] || 0
     return `<div style="display:flex;align-items:center;justify-content:space-between;gap:10px;background:#f9f9f9;border-radius:14px;padding:10px 12px">
       <div style="min-width:0;flex:1">
-        <p style="font-size:13px;font-weight:700;color:#1a1a1a;overflow-wrap:anywhere">${it.name}</p>
+        <p style="font-size:13px;font-weight:700;color:#1a1a1a;overflow-wrap:anywhere">${escapeHTML(it.name)}</p>
         <p style="font-size:11px;color:#aaa">أقصى كمية للاسترجاع: ${it.max}</p>
       </div>
       <div style="display:flex;align-items:center;gap:10px;flex-shrink:0">

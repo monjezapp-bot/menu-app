@@ -27,7 +27,7 @@ async function openWalletModal() {
   ordersEl.innerHTML = orders && orders.length ? orders.map(o => `
     <div style="background:#f9f9f9;border-radius:14px;padding:12px 14px;margin-bottom:8px;display:flex;justify-content:space-between;align-items:center">
       <div>
-        <p style="font-size:13px;font-weight:800;color:#1a1a1a">${o.order_number}</p>
+        <p style="font-size:13px;font-weight:800;color:#1a1a1a">${escapeHTML(o.order_number)}</p>
         <p style="font-size:11px;color:#aaa">${new Date(o.created_at).toLocaleDateString('ar-EG-u-nu-latn')}</p>
         ${o.loyalty_coins_earned ? `<p style="font-size:11px;color:#f97316">+${numFmt(o.loyalty_coins_earned)} 🪙</p>` : ''}
       </div>
@@ -45,8 +45,8 @@ async function openWalletModal() {
   txEl.innerHTML = txs && txs.length ? txs.map(t => `
     <div style="display:flex;justify-content:space-between;align-items:center;padding:10px 0;border-bottom:1px solid #f0f0f0">
       <div>
-        <p style="font-size:13px;font-weight:700;color:#333">${txLabel[t.type] || t.type}</p>
-        <p style="font-size:11px;color:#bbb">${new Date(t.created_at).toLocaleDateString('ar-EG-u-nu-latn')} ${t.note ? '· ' + t.note : ''}</p>
+        <p style="font-size:13px;font-weight:700;color:#333">${escapeHTML(txLabel[t.type] || t.type)}</p>
+        <p style="font-size:11px;color:#bbb">${new Date(t.created_at).toLocaleDateString('ar-EG-u-nu-latn')} ${t.note ? '· ' + escapeHTML(t.note) : ''}</p>
       </div>
       <p style="font-size:15px;font-weight:900;color:${t.amount > 0 ? '#22c55e' : '#ef4444'}">${t.amount > 0 ? '+' : ''}${numFmt(t.amount)}</p>
     </div>`).join('') : `<p style="font-size:13px;color:#aaa;text-align:center;padding:12px 0">لا توجد حركات بعد</p>`
@@ -160,8 +160,8 @@ async function loadWalletPage() {
       return `<div class="tx-row">
         <div style="width:40px;height:40px;border-radius:14px;background:${type.color}18;display:flex;align-items:center;justify-content:center;font-size:20px;flex-shrink:0">${type.icon}</div>
         <div style="flex:1">
-          <p style="font-size:13px;font-weight:800;color:#1a1a1a;margin-bottom:2px">${type.label}</p>
-          <p style="font-size:11px;color:#bbb">${new Date(t.created_at).toLocaleDateString('ar-EG-u-nu-latn',{day:'numeric',month:'short',hour:'2-digit',minute:'2-digit'})}${t.note?' · '+t.note:''}</p>
+          <p style="font-size:13px;font-weight:800;color:#1a1a1a;margin-bottom:2px">${escapeHTML(type.label)}</p>
+          <p style="font-size:11px;color:#bbb">${new Date(t.created_at).toLocaleDateString('ar-EG-u-nu-latn',{day:'numeric',month:'short',hour:'2-digit',minute:'2-digit'})}${t.note?' · '+escapeHTML(t.note):''}</p>
         </div>
         <p style="font-size:16px;font-weight:900;color:${plus?'#22c55e':'#ef4444'}">${amountText}</p>
       </div>`
