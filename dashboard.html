@@ -1204,6 +1204,8 @@ const state = {
   restaurant: null,
   categories: [],
   products:   [],
+  productsCount: 0,   // إجمالي عدد منتجات المطعم (بيتحدث من count query، مش من .length)
+  allProductsLite: null, // كاش خفيف {id,name,price,category_id} لكل المنتجات — يتحمّل مرة واحدة عند الحاجة (بانرات/باقات/also-with)
   orders:     [],
   returns:    [],
   banners:    [],
@@ -1211,6 +1213,10 @@ const state = {
   branches:   [],
   discountCodes: []
 }
+const PRODUCTS_PAGE_SIZE = 50
+let _productsPage = 0
+let _productsHasMore = true
+let _productsLoading = false
 
 let pickrInstance    = null
 let settingsSnapshot = null
@@ -2086,11 +2092,12 @@ function renderBanners() {
     </div>`
   }).join('')
 }
-function openBannerModal(id = null) {
+async function openBannerModal(id = null) {
   document.getElementById('bnm-id').value = id || ''
   document.getElementById('bnm-error').classList.add('hidden')
   document.getElementById('bnm-image-preview-wrap').classList.add('hidden')
-  document.getElementById('bnm-link-product').innerHTML  = state.products.map(p  => `<option value="${escapeHtml(p.id)}">${escapeHtml(p.name)}</option>`).join('')
+  const lite = await getAllProductsLite()
+  document.getElementById('bnm-link-product').innerHTML  = lite.map(p  => `<option value="${escapeHtml(p.id)}">${escapeHtml(p.name)}</option>`).join('')
   const bundlesOpt = state.bundles && state.bundles.length ? `<option value="bundles">🎁 كل العروض (صفحة العروض)</option>` : ''
   document.getElementById('bnm-link-category').innerHTML = bundlesOpt + state.categories.map(c => `<option value="${escapeHtml(c.id)}">${escapeHtml(c.name)}</option>`).join('')
   if (id) {
@@ -2237,20 +2244,44 @@ async function moveCat(id, dir) {
 async function deleteCat(id) { const ok = await showConfirm('هل تريد حذف هذا التصنيف؟ المنتجات المرتبطة ستفقد تصنيفها.', 'حذف'); if (!ok) return; await db.from('categories').delete().eq('id', id); await loadCategories(); showToast('تم حذف التصنيف') }
 
 // ── PRODUCTS ──────────────────────────────────────────────────────────
-async function loadProducts() {
-  const { data } = await db.from('products').select('*').eq('restaurant_id', state.restaurant.id).order('sort_order')
-  state.products = data || []
+// أعمدة خفيفة بس لقائمة المنتجات — من غير الأعمدة التقيلة (product_options/sizes/addons/also_with/suggested_ids)
+// اللي مش محتاجينها إلا وقت فتح منتج معين للتعديل
+const PRODUCTS_LIST_COLUMNS = 'id,name,price,image_url,is_available,category_id,discount_price,discount_active,sort_order'
+
+// reset = true يعني بداية جديدة (فتح الصفحة أو تغيير الفلتر) — بيصفّر الصفحات ويحمّل من الأول
+async function loadProducts(reset = true) {
+  if (_productsLoading) return
+  _productsLoading = true
+  if (reset) { _productsPage = 0; _productsHasMore = true; state.products = [] }
+  if (!_productsHasMore) { _productsLoading = false; return }
+
+  const from = _productsPage * PRODUCTS_PAGE_SIZE
+  const to   = from + PRODUCTS_PAGE_SIZE - 1
+  let q = db.from('products').select(PRODUCTS_LIST_COLUMNS, { count: 'exact' })
+    .eq('restaurant_id', state.restaurant.id).order('sort_order').range(from, to)
+  if (activeProductFilter !== 'all') q = q.eq('category_id', activeProductFilter)
+
+  const { data, count } = await q
+  const page = data || []
+  state.products = reset ? page : [...state.products, ...page]
+  if (typeof count === 'number') state.productsCount = count
+  _productsHasMore = page.length === PRODUCTS_PAGE_SIZE
+  _productsPage++
+  _productsLoading = false
   renderProductFilterTabs(); renderProducts()
 }
+function loadMoreProducts() { loadProducts(false) }
+
 function renderProductFilterTabs() {
   const el = document.getElementById('product-filter-tabs'); if (!el) return
   const tabs = [{ id: 'all', name: 'الكل' }, ...state.categories]
   el.innerHTML = tabs.map(t => `<button onclick="filterProducts('${escapeHtml(t.id)}')" class="flex-shrink-0 px-4 py-1.5 rounded-full text-sm font-bold border-2 transition-all ${t.id === activeProductFilter ? 'bg-orange-500 text-white border-transparent' : 'bg-white text-gray-500 border-gray-200'}">${escapeHtml(t.name)}</button>`).join('')
 }
-function filterProducts(id) { activeProductFilter = id; renderProductFilterTabs(); renderProducts() }
+// الفلترة بقت query جديد من قاعدة البيانات مباشرة، مش فلترة على مصفوفة محمّلة بالكامل في المتصفح
+function filterProducts(id) { activeProductFilter = id; renderProductFilterTabs(); loadProducts(true) }
 function renderProducts() {
   const el       = document.getElementById('products-list')
-  const filtered = activeProductFilter === 'all' ? state.products : state.products.filter(p => p.category_id === activeProductFilter)
+  const filtered = state.products
   if (!filtered.length) { el.innerHTML = `<p class="text-center text-gray-400 text-sm py-8">لا توجد منتجات</p>`; return }
   el.innerHTML = filtered.map(p => {
     const cat        = state.categories.find(c => c.id === p.category_id)
@@ -2278,21 +2309,32 @@ function renderProducts() {
         <button onclick="deleteProduct('${escapeHtml(p.id)}')"    class="text-xs bg-red-50 text-red-500 font-bold px-3 py-2 rounded-xl">حذف</button>
       </div>
     </div>`
-  }).join('')
+  }).join('') + (_productsHasMore
+    ? `<button onclick="loadMoreProducts()" class="w-full mt-2 text-sm font-bold text-orange-500 bg-orange-50 rounded-xl py-3">تحميل المزيد (${state.products.length} من ${state.productsCount})</button>`
+    : '')
 }
 
 // ── QUICK PRICE UPDATE (تحديث سريع لكل الأسعار من صفحة واحدة) ──────────
 let _qpChanges = {} // { productId: { price?, unit? } } — بيتصفّر بعد كل حفظ ناجح
 
+// كاش خفيف (id,name,price,unit,category_id) لكل منتجات المطعم — يُستخدم في أي مكان محتاج
+// "كل المنتجات" مرة واحدة (تسعير سريع، اختيار منتج لبانر/باقة، اقتراحات also-with) من غير ما
+// نحمّل الأعمدة التقيلة (صور بجودة كاملة، product_options، sizes، إلخ) ومن غير ما نكرر النداء لقاعدة البيانات.
+// forceRefresh=true بعد أي إضافة/حذف/تعديل عشان الكاش يفضل متزامن مع الداتابيز.
+async function getAllProductsLite(forceRefresh = false) {
+  if (state.allProductsLite && !forceRefresh) return state.allProductsLite
+  const { data } = await db.from('products').select('id,name,price,unit,category_id')
+    .eq('restaurant_id', state.restaurant.id).order('sort_order')
+  state.allProductsLite = data || []
+  return state.allProductsLite
+}
+function invalidateProductsLiteCache() { state.allProductsLite = null }
+
 async function loadQuickPrices() {
-  // لو المنتجات لسه متحمّلتش (أول دخول للوحة)، حمّلها هنا
-  if (!state.products.length) {
-    const { data } = await db.from('products').select('*').eq('restaurant_id', state.restaurant.id).order('sort_order')
-    state.products = data || []
-  }
+  const lite = await getAllProductsLite()
   _qpChanges = {}
   updateQpSaveBar()
-  renderQuickPrices()
+  renderQuickPrices(lite)
 }
 
 const QP_UNITS = ['قطعة', 'كيلو', 'جرام', 'لتر', 'متر', 'علبة']
@@ -2300,10 +2342,11 @@ const QP_UNITS = ['قطعة', 'كيلو', 'جرام', 'لتر', 'متر', 'عل�
 function renderQuickPrices() {
   const el = document.getElementById('qp-list')
   if (!el) return
-  if (!state.products.length) { el.innerHTML = `<p class="text-center text-gray-400 text-sm py-8">لا توجد منتجات بعد</p>`; return }
+  const lite = state.allProductsLite || []
+  if (!lite.length) { el.innerHTML = `<p class="text-center text-gray-400 text-sm py-8">لا توجد منتجات بعد</p>`; return }
 
   const q = (document.getElementById('qp-search')?.value || '').trim().toLowerCase()
-  const items = q ? state.products.filter(p => p.name.toLowerCase().includes(q)) : state.products
+  const items = q ? lite.filter(p => p.name.toLowerCase().includes(q)) : lite
 
   if (!items.length) { el.innerHTML = `<p class="text-center text-gray-400 text-sm py-8">مفيش صنف بالاسم ده</p>`; return }
 
@@ -2365,16 +2408,19 @@ async function saveQuickPrices() {
   try {
     const results = await Promise.all(ids.map(id => db.from('products').update(_qpChanges[id]).eq('id', id)))
     const failed  = results.filter(r => r.error)
-    // حدّث النسخة المحلية من المنتجات بالقيم اللي اتحفظت فعلاً
+    // حدّث النسخة المحلية (كاش الأسعار الخفيف + قائمة المنتجات المعروضة لو الصنف ظاهر فيها) بالقيم اللي اتحفظت فعلاً
     ids.forEach(id => {
       if (_qpChanges[id]) {
-        const p = state.products.find(x => x.id === id)
-        if (p) Object.assign(p, _qpChanges[id])
+        const liteP = state.allProductsLite?.find(x => x.id === id)
+        if (liteP) Object.assign(liteP, _qpChanges[id])
+        const listP = state.products.find(x => x.id === id)
+        if (listP) Object.assign(listP, _qpChanges[id])
       }
     })
     _qpChanges = {}
     updateQpSaveBar()
     renderQuickPrices()
+    renderProducts()
     showToast(failed.length ? `⚠️ اتحفظ الأغلب، وفشل تحديث ${failed.length} صنف` : `✅ تم تحديث ${ids.length} صنف بنجاح`)
   } catch (e) {
     showToast('❌ حصل خطأ أثناء الحفظ، حاول تاني')
@@ -2604,12 +2650,15 @@ async function confirmRestaurantLocation() {
 }
 
 // ── PRODUCT MODAL ─────────────────────────────────────────────────────
-function openProductModal(id = null) {
+async function openProductModal(id = null) {
   document.getElementById('pm-id').value = id || ''
   document.getElementById('pm-error').classList.add('hidden')
   updateCategorySelect()
+  await getAllProductsLite() // لازم يكون جاهز قبل renderAlsoWith تحت
   if (id) {
-    const p = state.products.find(x => x.id === id)
+    // القائمة بقت بتحمّل أعمدة خفيفة بس (للأداء مع آلاف المنتجات)، فلازم نجيب الصف الكامل من قاعدة البيانات هنا
+    const { data: p, error } = await db.from('products').select('*').eq('id', id).single()
+    if (error || !p) { showToast('تعذر تحميل بيانات المنتج'); return }
     document.getElementById('pm-name').value         = p.name
     document.getElementById('pm-desc').value         = p.description    || ''
     document.getElementById('pm-price').value        = p.price
@@ -2752,9 +2801,10 @@ function getOptionsData() {
 // ── ALSO WITH ─────────────────────────────────────────────────────────
 function renderAlsoWith(ids, currentId) {
   _alsoWith = [...ids]
+  const lite = state.allProductsLite || []
   const list = document.getElementById('pm-also-list'); list.innerHTML = ''
   ids.forEach(id => {
-    const p = state.products.find(x => x.id === id); if (!p) return
+    const p = lite.find(x => x.id === id); if (!p) return
     const tag = document.createElement('div')
     tag.className = 'flex items-center gap-1 bg-orange-50 border border-orange-200 rounded-xl px-3 py-1.5 text-xs font-bold text-orange-700'
     tag.innerHTML = `${escapeHtml(p.name)} <button onclick="removeAlso('${escapeHtml(id)}')" class="text-orange-400 hover:text-red-500 font-black text-base leading-none mr-1">×</button>`
@@ -2762,7 +2812,7 @@ function renderAlsoWith(ids, currentId) {
   })
   const sel = document.getElementById('pm-also-select')
   sel.innerHTML = '<option value="">+ اختر منتجاً...</option>'
-  state.products.filter(p => p.id !== currentId && !_alsoWith.includes(p.id)).forEach(p => { const o = document.createElement('option'); o.value = p.id; o.textContent = p.name; sel.appendChild(o) })
+  lite.filter(p => p.id !== currentId && !_alsoWith.includes(p.id)).forEach(p => { const o = document.createElement('option'); o.value = p.id; o.textContent = p.name; sel.appendChild(o) })
 }
 function addAlsoWith(sel)  { const id = sel.value; if (!id) return; _alsoWith.push(id); renderAlsoWith(_alsoWith, document.getElementById('pm-id').value || null); sel.value = '' }
 function removeAlso(id)    { _alsoWith = _alsoWith.filter(x => x !== id); renderAlsoWith(_alsoWith, document.getElementById('pm-id').value || null) }
@@ -2799,14 +2849,17 @@ async function saveProduct() {
   }
   const { error } = id
     ? await db.from('products').update(payload).eq('id', id)
-    : await db.from('products').insert({ ...payload, restaurant_id: state.restaurant.id, sort_order: state.products.length })
+    : await db.from('products').insert({ ...payload, restaurant_id: state.restaurant.id, sort_order: state.productsCount })
   if (error) { errEl.textContent = 'فشل الحفظ: ' + error.message; errEl.classList.remove('hidden'); console.error('saveProduct error:', error); return }
-  closeProductModal(); await loadProducts(); showToast(id ? 'تم تعديل المنتج ✅' : 'تم إضافة المنتج ✅')
+  closeProductModal(); invalidateProductsLiteCache(); await loadProducts(); showToast(id ? 'تم تعديل المنتج ✅' : 'تم إضافة المنتج ✅')
 }
 async function deleteProduct(id) {
   const ok = await showConfirm('هل تريد حذف هذا المنتج؟', 'حذف'); if (!ok) return
-  productSnapshot = state.products.find(p => p.id === id)
+  // نجيب الصف الكامل من الداتابيز مباشرة (القائمة المعروضة فيها أعمدة خفيفة بس) عشان نقدر نسترجعه لو حصل تراجع (undo)
+  const { data: full } = await db.from('products').select('*').eq('id', id).single()
+  productSnapshot = full || null
   await db.from('products').delete().eq('id', id)
+  invalidateProductsLiteCache()
   await loadProducts()
   showToastWithUndo('تم حذف المنتج', restoreProduct)
 }
@@ -2815,6 +2868,7 @@ async function restoreProduct() {
   const { id, ...rest } = productSnapshot
   await db.from('products').insert(rest)
   productSnapshot = null
+  invalidateProductsLiteCache()
   await loadProducts(); showToast('تم استعادة المنتج ✅')
 }
 async function toggleDiscount(id, current)    { const { error } = await db.from('products').update({ discount_active: !current }).eq('id', id); if (error) { console.error('toggleDiscount error:', error); showToast('فشل تحديث الخصم: ' + error.message); return } await loadProducts(); showToast(!current ? '🏷️ تم تفعيل الخصم' : 'تم إلغاء الخصم') }
@@ -2877,12 +2931,13 @@ function renderBundles() {
     </div>`
   }).join('')
 }
-function openBundleModal(id = null) {
+async function openBundleModal(id = null) {
   document.getElementById('bm-id').value = id || ''
   document.getElementById('bm-error').classList.add('hidden')
   document.getElementById('bm-image-preview-wrap').classList.add('hidden')
+  const lite = await getAllProductsLite()
   const container = document.getElementById('bm-products-checkboxes')
-  container.innerHTML = state.products.map(p => `<label class="flex items-center gap-3 py-1 cursor-pointer"><input type="checkbox" value="${escapeHtml(p.id)}" class="bundle-product-check w-4 h-4 accent-orange-500" onchange="updateBundleSelectedCount()" /><span class="text-sm text-gray-700">${escapeHtml(p.name)}</span><span class="text-xs text-gray-400 mr-auto">${Number(p.price).toFixed(2)} ج.م</span></label>`).join('')
+  container.innerHTML = lite.map(p => `<label class="flex items-center gap-3 py-1 cursor-pointer"><input type="checkbox" value="${escapeHtml(p.id)}" class="bundle-product-check w-4 h-4 accent-orange-500" onchange="updateBundleSelectedCount()" /><span class="text-sm text-gray-700">${escapeHtml(p.name)}</span><span class="text-xs text-gray-400 mr-auto">${Number(p.price).toFixed(2)} ج.م</span></label>`).join('')
 
   // قسم الفروع — يظهر فقط لو فيه أكثر من فرع وصلاحية أدمن
   const branchSection = document.getElementById('bm-branches-section')
@@ -2971,7 +3026,7 @@ async function saveBundle() {
     if (!selectedProducts.length) { errEl.textContent = 'اختر منتجاً واحداً على الأقل'; errEl.classList.remove('hidden'); return }
     if (_uploadsInFlight > 0)     { errEl.textContent = 'استنى ثانية… الصورة لسه بترفع';   errEl.classList.remove('hidden'); return }
 
-    const items   = selectedProducts.map(pid => { const p = state.products.find(x => x.id === pid); return { product_id: pid, name: p?.name||'', price: p?.price||0, quantity: 1 } })
+    const items   = selectedProducts.map(pid => { const p = (state.allProductsLite || []).find(x => x.id === pid); return { product_id: pid, name: p?.name||'', price: p?.price||0, quantity: 1 } })
     const payload = { name, description: document.getElementById('bm-desc').value.trim() || null, price, items, image_url: document.getElementById('bm-image').value.trim() || null, is_active: document.getElementById('bm-active').checked, restaurant_id: state.restaurant.id }
 
     let bundleId = id
@@ -3554,17 +3609,19 @@ async function notifyCustomerOrderStatus(orderId, status) {
 async function loadAnalytics() {
   const rid        = state.restaurant.id
   const todayStart = new Date(); todayStart.setHours(0,0,0,0)
-  const [{ count: total }, { count: today }, { data: revRows }, { data: itemRows }] = await Promise.all([
+  const [{ count: total }, { count: today }, { data: revRows }, { data: itemRows }, { count: productsTotal }] = await Promise.all([
     db.from('orders').select('*',{count:'exact',head:true}).eq('restaurant_id',rid).neq('status','cancelled'),
     db.from('orders').select('*',{count:'exact',head:true}).eq('restaurant_id',rid).neq('status','cancelled').gte('created_at',todayStart.toISOString()),
     db.from('orders').select('total').eq('restaurant_id',rid).neq('status','cancelled'),
-    db.from('orders').select('items').eq('restaurant_id',rid).neq('status','cancelled').order('created_at',{ascending:false}).limit(200)
+    db.from('orders').select('items').eq('restaurant_id',rid).neq('status','cancelled').order('created_at',{ascending:false}).limit(200),
+    // count مباشر بدل الاعتماد على state.productsCount اللي ممكن يكون لسه صفر لو تبويب المنتجات ما اتفتحش
+    db.from('products').select('*',{count:'exact',head:true}).eq('restaurant_id',rid)
   ])
   const revenue = (revRows||[]).reduce((s,o) => s + Number(o.total), 0)
   document.getElementById('stat-total-orders').textContent  = total   || 0
   document.getElementById('stat-total-revenue').textContent = revenue.toFixed(2)
   document.getElementById('stat-today-orders').textContent  = today   || 0
-  document.getElementById('stat-products-count').textContent= state.products.length
+  document.getElementById('stat-products-count').textContent= productsTotal || 0
   const counter = {}
   ;(itemRows||[]).forEach(o => (o.items||[]).forEach(i => { counter[i.name] = (counter[i.name]||0) + (i.qty||1) }))
   const sorted = Object.entries(counter).sort((a,b) => b[1]-a[1]).slice(0,5)
