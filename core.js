@@ -8,6 +8,7 @@ window.onerror = function(msg, src, line, col, err) {
     <b>Line:</b> ${line}:${col}<br><br>
     <b>Stack:</b><br><pre>${err?.stack || 'N/A'}</pre>
   </div>`
+  logClientError({ message: String(msg), stack: err?.stack || null, kind: 'error' })
   return false
 }
 window.addEventListener('unhandledrejection', e => {
@@ -16,7 +17,36 @@ window.addEventListener('unhandledrejection', e => {
     <b>Unhandled Promise Rejection:</b><br>${e.reason?.message || e.reason}<br><br>
     <b>Stack:</b><br><pre>${e.reason?.stack || 'N/A'}</pre>
   </div>`
+  logClientError({ message: String(e.reason?.message || e.reason), stack: e.reason?.stack || null, kind: 'rejection' })
 })
+
+// ── CLIENT ERROR LOGGING (Supabase: app_logs) ──────────────────────────
+// بيرسل أخطاء الفرونت لجدول app_logs عشان نشوفها من غير ما العميل يشتكي.
+// فيه rate-limit (أقصى 5 لوجز/دقيقة) و loop-guard (لو الإرسال نفسه فشل، بلاش نحاول تاني).
+let _logCount = 0, _logWindowStart = Date.now()
+let _loggingBroken = false
+function logClientError({ message, stack, kind }) {
+  try {
+    if (_loggingBroken) return
+    const now = Date.now()
+    if (now - _logWindowStart > 60000) { _logWindowStart = now; _logCount = 0 }
+    if (++_logCount > 5) return // منع الـ spam لو نفس الخطأ بيتكرر بسرعة
+
+    const slug = new URLSearchParams(location.search).get('r') || localStorage.getItem('mnio_last_slug') || null
+    db.from('app_logs').insert({
+      message: message?.slice(0, 2000) || null,
+      stack:   stack?.slice(0, 4000) || null,
+      url:     location.href,
+      app:     location.pathname.includes('dashboard') ? 'dashboard' : 'customer',
+      restaurant_slug: slug,
+      customer_id: S?.customer?.id || null,
+      user_agent: navigator.userAgent,
+      kind
+    }).then(({ error }) => {
+      if (error) _loggingBroken = true // فشل الإرسال (شبكة/سكيما) — بلاش نكرر المحاولة ونعمل loop
+    }).catch(() => { _loggingBroken = true })
+  } catch (e) { _loggingBroken = true }
+}
 
 // ── CONFIG ────────────────────────────────────────────────────────────
 const SUPABASE_URL  = 'https://pcmyugeqveyjnappulng.supabase.co'
