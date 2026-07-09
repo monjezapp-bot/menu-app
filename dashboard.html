@@ -1621,7 +1621,12 @@ async function doLogin() {
   btn.innerHTML = '<span class="spinner"></span>'
   try {
     const { error } = await db.auth.signInWithPassword({ email, password: pass })
-    if (error) { errEl.textContent = 'بيانات الدخول غير صحيحة: ' + error.message; errEl.classList.remove('hidden'); btn.textContent = 'دخول'; return }
+    if (error) {
+      errEl.textContent = 'بيانات الدخول غير صحيحة: ' + error.message; errEl.classList.remove('hidden'); btn.textContent = 'دخول'
+      // تسجيل المحاولة الفاشلة لصالح مركز المخاطر في لوحة صاحب المنصة (لا يؤثر على تجربة المستخدم حتى لو فشل النداء)
+      db.rpc('log_failed_login_attempt', { p_email: email, p_context: 'merchant_dashboard' }).catch(()=>{})
+      return
+    }
     // لو نجح تسجيل الدخول، onAuthStateChange هيستدعي afterLogin() ويغيّر الشاشة.
     // afterLogin() لازم تتولى تصفير الزرار أو الانتقال للداشبورد — مفيش حاجة تانية تتعمل هنا.
   } catch(e) {
@@ -4007,7 +4012,11 @@ async function changeOwnerPassword() {
 
     // تحقق من كلمة السر الحالية أولاً (إعادة تسجيل دخول) قبل التغيير — حماية لو الجهاز مفتوح ومشترك
     const { error: verifyErr } = await db.auth.signInWithPassword({ email: user.email, password: current })
-    if (verifyErr) { errEl.textContent = 'كلمة السر الحالية غير صحيحة'; errEl.classList.remove('hidden'); return }
+    if (verifyErr) {
+      errEl.textContent = 'كلمة السر الحالية غير صحيحة'; errEl.classList.remove('hidden')
+      db.rpc('log_failed_login_attempt', { p_email: user.email, p_context: 'password_change_verification' }).catch(()=>{})
+      return
+    }
 
     const { error: updateErr } = await db.auth.updateUser({ password: next })
     if (updateErr) { errEl.textContent = updateErr.message || 'حدث خطأ أثناء تغيير كلمة السر'; errEl.classList.remove('hidden'); return }
