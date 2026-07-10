@@ -14,24 +14,36 @@ function escapeHTML(str) {
     .replace(/'/g, '&#39;')
 }
 
-// ── GLOBAL ERROR HANDLER (debug) ─────────────────────────────────────
+// ── GLOBAL ERROR HANDLER ──────────────────────────────────────────────
+// أي خطأ JS غير متوقع بيتسجل في app_logs عشان تتابعه من قاعدة البيانات،
+// من غير ما يظهر للعميل العادي أي رسالة تقنية مخيفة. العميل لسه شايف
+// التطبيق شغال عادي (أو شاشة الخطأ العامة الودّية لو الصفحة فشلت تحمل
+// من الأساس — showError()، مش الرسالة التقنية دي).
+function _isDebugMode() {
+  return new URLSearchParams(location.search).get('debug') === '1' ||
+         localStorage.getItem('mnio_debug') === '1'
+}
 window.onerror = function(msg, src, line, col, err) {
-  const el = document.getElementById('state-error') || document.body
-  el.innerHTML = `<div style="padding:20px;font-family:monospace;background:#fff;color:#c00;font-size:12px;direction:ltr;word-break:break-all;position:fixed;inset:0;z-index:9999;overflow:auto">
-    <b>JS Error:</b><br>${msg}<br><br>
-    <b>Line:</b> ${line}:${col}<br><br>
-    <b>Stack:</b><br><pre>${err?.stack || 'N/A'}</pre>
-  </div>`
   logClientError({ message: String(msg), stack: err?.stack || null, kind: 'error' })
+  if (_isDebugMode()) {
+    const el = document.getElementById('state-error') || document.body
+    el.innerHTML = `<div style="padding:20px;font-family:monospace;background:#fff;color:#c00;font-size:12px;direction:ltr;word-break:break-all;position:fixed;inset:0;z-index:9999;overflow:auto">
+      <b>JS Error:</b><br>${msg}<br><br>
+      <b>Line:</b> ${line}:${col}<br><br>
+      <b>Stack:</b><br><pre>${err?.stack || 'N/A'}</pre>
+    </div>`
+  }
   return false
 }
 window.addEventListener('unhandledrejection', e => {
-  const el = document.getElementById('state-error') || document.body
-  el.innerHTML = `<div style="padding:20px;font-family:monospace;background:#fff;color:#c00;font-size:12px;direction:ltr;word-break:break-all;position:fixed;inset:0;z-index:9999;overflow:auto">
-    <b>Unhandled Promise Rejection:</b><br>${e.reason?.message || e.reason}<br><br>
-    <b>Stack:</b><br><pre>${e.reason?.stack || 'N/A'}</pre>
-  </div>`
   logClientError({ message: String(e.reason?.message || e.reason), stack: e.reason?.stack || null, kind: 'rejection' })
+  if (_isDebugMode()) {
+    const el = document.getElementById('state-error') || document.body
+    el.innerHTML = `<div style="padding:20px;font-family:monospace;background:#fff;color:#c00;font-size:12px;direction:ltr;word-break:break-all;position:fixed;inset:0;z-index:9999;overflow:auto">
+      <b>Unhandled Promise Rejection:</b><br>${e.reason?.message || e.reason}<br><br>
+      <b>Stack:</b><br><pre>${e.reason?.stack || 'N/A'}</pre>
+    </div>`
+  }
 })
 
 // ── CLIENT ERROR LOGGING (Supabase: app_logs) ──────────────────────────
@@ -242,9 +254,22 @@ async function boot() {
     showError(isNotFound ? e.message : ('خطأ: ' + (e.message || e)), !isNotFound)
   }
 }
-// ── DEBUG: إظهار أخطاء الأوث الحقيقية بدل إخفائها ──────────────────────
+// ── DEBUG: تسجيل أخطاء الأوث في قاعدة البيانات بدل إظهارها للعميل ──────
+// العميل العادي مش المفروض يشوف أي رسائل خطأ تقنية حمرا خالص — ده بيخوّفه
+// من غير داعي، خصوصاً إن أغلب الحالات دي مؤقتة/عابرة (زي "state expired")
+// ومش بتمنعه إنه يستخدم الموقع فعلياً. فبقت الدالة دي بترسل الخطأ لجدول
+// app_logs (تقدر تتابعهم من لوحة تحكم Supabase) بدل ما تعرضه على الشاشة.
+//
+// للمطوّر بس: لو عايز تشوف الأخطاء دي ظاهرة وانت بتختبر، ضيف ?debug=1
+// في آخر رابط الموقع، أو نفّذ localStorage.setItem('mnio_debug','1') من
+// console المتصفح.
 function showAuthDebug(msg) {
   console.error('[AUTH DEBUG]', msg)
+  logClientError({ message: msg, kind: 'auth_debug' })
+
+  const debugMode = _isDebugMode()
+  if (!debugMode) return // العميل العادي ما يشوفش حاجة خالص
+
   let el = document.getElementById('auth-debug-banner')
   if (!el) {
     el = document.createElement('div')
@@ -258,6 +283,55 @@ function showAuthDebug(msg) {
   el.appendChild(line)
 }
 
+// ── ANDROID WEBVIEW / IN-APP BROWSER DETECTION ──────────────────────────
+// جوجل بيمنع رسمياً تسجيل الدخول عن طريق WebView مدمج جوه تطبيق تاني
+// (disallowed_useragent policy). المشكلة إن المتصفح المدمج ده أحياناً
+// بيحوّل صفحة الدخول لمتصفح خارجي (Chrome) عشان جوجل رافض يفتح جواه —
+// والمتصفح الخارجي ده عنده localStorage منفصل تماماً عن اللي بدأ فيه
+// الطلب (واللي فيه الـ PKCE code_verifier). فلما جوجل يرجّع الـ code،
+// التحقق بيفشل بـ "OAuth state not found or expired" لأن الـ verifier
+// مش موجود في الـ storage بتاع الصفحة اللي استقبلت الرجوع.
+// الحل الوحيد الحقيقي: منع محاولة الدخول أصلاً من جوه WebView وتوجيه
+// المستخدم يفتح الرابط في متصفح حقيقي.
+function isInAppOrWebView() {
+  const ua = navigator.userAgent || ''
+  if (/FBAN|FBAV|Instagram|Line\/|MicroMessenger|TikTok|Twitter|GSA\/|KAKAOTALK|Snapchat/i.test(ua)) return true
+  if (/Android/i.test(ua) && /; ?wv\)/i.test(ua)) return true
+  if (/iPhone|iPad|iPod/i.test(ua) && !/Safari/i.test(ua) && !/CriOS|FxiOS/i.test(ua)) return true
+  return false
+}
+
+function showOpenInBrowserPrompt() {
+  const url = window.location.href
+  const el = document.createElement('div')
+  el.style.cssText = 'position:fixed;inset:0;background:rgba(0,0,0,.75);z-index:100000;display:flex;align-items:center;justify-content:center;padding:20px'
+
+  const card = document.createElement('div')
+  card.style.cssText = 'background:#fff;border-radius:16px;padding:24px 20px;max-width:340px;text-align:center;direction:rtl;font-family:inherit'
+  card.innerHTML = `
+      <div style="font-size:40px;margin-bottom:10px">⚠️</div>
+      <div style="font-weight:900;font-size:16px;margin-bottom:10px">لازم تفتح الرابط في متصفح حقيقي</div>
+      <div style="font-size:13.5px;color:#555;line-height:1.7;margin-bottom:16px">جوجل بيمنع تسجيل الدخول من داخل متصفحات التطبيقات (زي داخل واتساب/انستجرام أو أي تطبيق تاني). انسخ الرابط وافتحه في Chrome أو Safari مباشرة عشان تقدر تسجل دخول من غير مشاكل.</div>`
+
+  const copyBtn = document.createElement('button')
+  copyBtn.textContent = '📋 انسخ الرابط'
+  copyBtn.style.cssText = 'width:100%;padding:12px;border:none;border-radius:10px;background:#1a73e8;color:#fff;font-weight:800;font-size:14px;margin-bottom:8px'
+  copyBtn.onclick = () => {
+    navigator.clipboard?.writeText(url).catch(() => {})
+    copyBtn.textContent = '✅ اتنسخ'
+  }
+
+  const closeBtn = document.createElement('button')
+  closeBtn.textContent = 'إغلاق'
+  closeBtn.style.cssText = 'width:100%;padding:10px;border:none;background:none;color:#888;font-size:13px'
+  closeBtn.onclick = () => el.remove()
+
+  card.appendChild(copyBtn)
+  card.appendChild(closeBtn)
+  el.appendChild(card)
+  document.body.appendChild(el)
+}
+
 function checkOAuthErrorInUrl() {
   const hash = new URLSearchParams(window.location.hash.replace('#', ''))
   const search = new URLSearchParams(window.location.search)
@@ -265,7 +339,38 @@ function checkOAuthErrorInUrl() {
   const errDesc = hash.get('error_description') || search.get('error_description')
   if (err) {
     sessionStorage.removeItem('mnio_oauth_pending')
-    showAuthDebug(`Google/Supabase رجّع خطأ: ${err} — ${errDesc || ''}`)
+    // نظّف أي code_verifier PKCE قديم عالق في localStorage
+    try {
+      Object.keys(localStorage)
+        .filter(k => k.startsWith('menu-customer-auth') && k.includes('code-verifier'))
+        .forEach(k => localStorage.removeItem(k))
+    } catch(e) {}
+
+    const isStateExpired = /state.*(not found|expired)/i.test(errDesc || '') || /state.*(not found|expired)/i.test(err || '')
+
+    if (isStateExpired) {
+      // حالة مؤكدة حصلت فعلياً: الدخول بينجح فعلاً وتتعمل سيشن، وبعدها بثواني
+      // بيتحمّل نفس رابط الـ callback تاني مرة (المتصفح بيعمل resume للصفحة
+      // بعد ما ترجع من الخلفية) — فبيفشل لأن الكود ده استخدام واحد بس، رغم
+      // إن تسجيل الدخول الأصلي كان نجح 100%. فبنتأكد الأول: لو فيه سيشن
+      // شغالة فعلاً، الخطأ ده وهمي ومفيش داعي نخوّف المستخدم بيه.
+      db.auth.getSession().then(({ data: { session } }) => {
+        if (session) {
+          // فعلاً مسجل دخول رغم الخطأ الظاهري — امسح الخطأ من الـ URL بهدوء وبس
+          history.replaceState({}, '', window.location.pathname + window.location.search.replace(/([?&])(error|error_description|error_code)=[^&]*/g, '').replace(/^&/, '?') )
+          return
+        }
+        if (isInAppOrWebView()) {
+          showOpenInBrowserPrompt()
+        } else {
+          showAuthDebug('انتهت صلاحية محاولة الدخول — من فضلك اقفل الصفحة وافتحها من جديد وحاول تسجل دخول مرة واحدة بس (من غير رجوع بالمتصفح أو تشغيل التطبيق في الخلفية أثناء الدخول).')
+        }
+      }).catch(() => {
+        showAuthDebug(`Google/Supabase رجّع خطأ: ${err} — ${errDesc || ''}`)
+      })
+    } else {
+      showAuthDebug(`Google/Supabase رجّع خطأ: ${err} — ${errDesc || ''}`)
+    }
   }
 }
 

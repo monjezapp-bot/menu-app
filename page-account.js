@@ -169,6 +169,15 @@ function closeAccountSubPage() {
 let _googleSignInInFlight = false
 async function signInWithGoogle(btn) {
   if (_googleSignInInFlight) return   // يمنع الضغط المتكرر — كل ضغطة بتولّد PKCE verifier جديد بيدوس على القديم
+
+  // امنع محاولة الدخول أصلاً لو المستخدم فاتح الموقع من جوه WebView مدمج
+  // (تطبيق شات/سوشيال ميديا...) — جوجل بيرفض/بيحوّل الطلب دا لمتصفح خارجي
+  // له localStorage مختلف، وده اللي بيسبب "OAuth state not found or expired"
+  if (isInAppOrWebView()) {
+    showOpenInBrowserPrompt()
+    return
+  }
+
   _googleSignInInFlight = true
 
   const errEl = document.getElementById('acc-error')
