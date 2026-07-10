@@ -146,10 +146,11 @@ function statusBadge(status) {
 }
 
 // ── الخطوة التالية بعد التأكيد (نفس تتابع ORDER_STEPS في dashboard.html) ──
+// ملحوظة: مفيش "delivered" هنا عمدًا — استلام الطلب قرار العميل حصريًا
+// (زر "تم استلام طلبي" أو التأكيد التلقائي بعد مهلة)، مش قرار التاجر.
 const NEXT_STATUS_ACTIONS = {
-  confirmed:  { next:'ready',      label:'📦 تم التجهيز',    confirmMsg:'هل أنت متأكد إن الطلب جاهز بالكامل؟',        cls:'btn-ready' },
-  ready:      { next:'delivering', label:'🛵 جاري التوصيل',  confirmMsg:'هل تأكدت إن المندوب استلم الطلب فعلاً؟',     cls:'btn-delivering' },
-  delivering: { next:'delivered',  label:'🎉 تم التسليم',    confirmMsg:'هل تأكدت إن العميل استلم طلبه فعلاً؟',       cls:'btn-delivered' }
+  confirmed: { next:'ready',      label:'📦 تم التجهيز',   confirmMsg:'هل أنت متأكد إن الطلب جاهز بالكامل؟',    cls:'btn-ready' },
+  ready:     { next:'delivering', label:'🛵 تم التسليم للمندوب', confirmMsg:'هل تأكدت إن المندوب استلم الطلب فعلاً؟', cls:'btn-delivering' }
 }
 
 function render(html) {
@@ -202,6 +203,11 @@ function renderOrder(order, notice) {
     <div class="card center">
       <p class="muted" style="margin-bottom:12px">${statusBadge(order.status)}</p>
       <button class="btn-confirm" id="btn-advance">${NEXT_STATUS_ACTIONS[order.status].label}</button>
+    </div>` : order.status === 'delivering' ? `
+    <div class="card center">
+      <p class="muted" style="margin-bottom:6px">${statusBadge(order.status)}</p>
+      <p style="font-weight:700;font-size:14px">🛵 الطلب مع المندوب دلوقتي</p>
+      <p class="muted" style="margin-top:6px">هيتم تأكيد الاستلام تلقائيًا من العميل، مفيش حاجة تانية مطلوبة منك.</p>
     </div>` : `
     <div class="card center"><p class="muted">${escapeHTML(notice || 'تم اتخاذ قرار على هذا الطلب بالفعل.')}</p></div>`
 
