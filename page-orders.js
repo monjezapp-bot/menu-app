@@ -212,7 +212,7 @@ function renderReturnStatusBlock(r) {
   if (r.status === 'pending') {
     return `<div style="margin-top:12px;background:#fffbeb;border-radius:12px;padding:12px 14px">
       <p style="font-size:12px;color:#b45309;font-weight:800;margin-bottom:${r.reason ? '4px' : '8px'}">🔄 طلب الاسترجاع قيد المراجعة من المتجر</p>
-      ${r.reason ? `<p style="font-size:11px;color:#b45309;overflow-wrap:anywhere;margin-bottom:8px">السبب: ${r.reason}</p>` : ''}
+      ${r.reason ? `<p style="font-size:11px;color:#b45309;overflow-wrap:anywhere;margin-bottom:8px">السبب: ${escapeHTML(r.reason)}</p>` : ''}
       <button onclick="cancelReturnRequest('${r.id}')" style="width:100%;background:#fff;color:#b45309;font-size:12px;font-weight:800;border-radius:10px;padding:9px;border:1.5px solid #fde68a;cursor:pointer;font-family:'Rubik',sans-serif">إلغاء طلب الاسترجاع</button>
     </div>`
   }
@@ -222,8 +222,10 @@ function renderReturnStatusBlock(r) {
     </div>`
   }
   if (r.status === 'rejected') {
+    // أمان: merchant_notes نص بيكتبه التاجر ويتعرض في متصفح العميل — لازم escapeHTML
+    // زي أي نص عابر لحدود مستخدمين تانية (كان بيتحط في innerHTML من غير أي معالجة).
     return `<div style="margin-top:12px;background:#fef2f2;border-radius:12px;padding:12px 14px">
-      <p style="font-size:12px;color:#ef4444;font-weight:800;overflow-wrap:anywhere">❌ تم رفض طلب الاسترجاع${r.merchant_notes ? ' — ' + r.merchant_notes : ''}</p>
+      <p style="font-size:12px;color:#ef4444;font-weight:800;overflow-wrap:anywhere">❌ تم رفض طلب الاسترجاع${r.merchant_notes ? ' — ' + escapeHTML(r.merchant_notes) : ''}</p>
     </div>`
   }
   return ''

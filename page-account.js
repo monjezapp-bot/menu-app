@@ -31,7 +31,7 @@ function openEditProfile() {
     <div style="display:flex;flex-direction:column;gap:12px">
       <div>
         <label style="font-size:11px;font-weight:800;color:#888;display:block;margin-bottom:5px">الاسم</label>
-        <input id="ep-name" type="text" value="${c.name || ''}" placeholder="اسمك"
+        <input id="ep-name" type="text" value="${escapeHTML(c.name || '')}" placeholder="اسمك"
                style="width:100%;background:#f5f5f5;border:1.5px solid #eee;border-radius:12px;padding:12px 14px;font-size:14px;font-family:'Rubik',sans-serif;outline:none;box-sizing:border-box"
                onfocus="this.style.borderColor='var(--brand)'" onblur="this.style.borderColor='#eee'" />
       </div>

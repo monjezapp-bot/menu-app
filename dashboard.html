@@ -3477,83 +3477,39 @@ async function submitCancelConfirmedOrder() {
   closeOrderDetailModal()
   await cancelConfirmedOrder(orderId, reason)
 }
-// ── استرجاع رصيد المحفظة والكوينز المستخدمة في الطلب عند إلغائه ────────
-// نفس المنطق المستخدم في تطبيق العميل، لكن هنا بصلاحية التاجر (owner_update_orders على orders،
-// و mc_owner_read/ما يعادلها من صلاحيات على menu_customers و coin_transactions عبر restaurant ownership).
-async function refundOrderPayment(order) {
-  if (!order?.customer_id) return null
-  const walletAmt = Number(order.wallet_amount_used || 0)
-  const coinsAmt  = Number(order.coins_redeemed || 0)
-  if (walletAmt <= 0 && coinsAmt <= 0) return null
-
-  const { data: cust } = await db.from('menu_customers')
-    .select('wallet_balance, coins_balance').eq('id', order.customer_id).single()
-  if (!cust) return null
-
-  const updates = {}
-  if (walletAmt > 0) updates.wallet_balance = Number(cust.wallet_balance || 0) + walletAmt
-  if (coinsAmt  > 0) updates.coins_balance  = (cust.coins_balance || 0) + coinsAmt
-  await db.from('menu_customers').update(updates).eq('id', order.customer_id)
-
-  const txs = []
-  if (walletAmt > 0) txs.push({
-    customer_id: order.customer_id, restaurant_id: order.restaurant_id,
-    type: 'wallet_refund', amount: Math.round(walletAmt), order_id: order.id,
-    note: 'استرجاع رصيد المحفظة بعد إلغاء الطلب'
-  })
-  if (coinsAmt > 0) txs.push({
-    customer_id: order.customer_id, restaurant_id: order.restaurant_id,
-    type: 'refund', amount: coinsAmt, order_id: order.id,
-    note: 'استرجاع كوينز بعد إلغاء الطلب'
-  })
-  if (txs.length) await db.from('coin_transactions').insert(txs)
-
-  return { walletAmt, coinsAmt }
-}
-function refundNoticeText(refund) {
-  if (!refund) return ''
+// ── إلغاء طلب مؤكَّد من التاجر (استرجاع + تعويض) ─────────────────────
+// أمان/فلوس: ده كان زمان بيتنفذ بخطوات منفصلة من الكلاينت (قراءة رصيد ثم update ثم insert)
+// من غير أي قفل أو فحص "already refunded" — يعني دبل كليك أو تابين مفتوحين على نفس الطلب
+// كان ممكن يعمل استرجاع/تعويض مزدوج فعليًا (الكتابة كانت بتنجح من غير ما حد يمنعها).
+// الاستبدال ده بيمر بالكامل عن طريق RPC آمن (cancel_confirmed_order_owner) بيقفل صف الطلب
+// (FOR UPDATE) وبيضمن تنفيذ الاسترجاع/التعويض مرة واحدة بس (refund_settled_at / compensation_coins_sent)،
+// بنفس فلسفة refund_order_payment_customer المستخدمة في تطبيق العميل — مصدر حقيقة واحد للمنطق ده.
+function refundNoticeText(walletAmt, coinsAmt) {
   const parts = []
-  if (refund.walletAmt > 0) parts.push(`${refund.walletAmt.toFixed(2)} ج.م`)
-  if (refund.coinsAmt  > 0) parts.push(`${refund.coinsAmt.toLocaleString('ar-EG')} كوين`)
+  if (walletAmt > 0) parts.push(`${Number(walletAmt).toFixed(2)} ج.م`)
+  if (coinsAmt  > 0) parts.push(`${Number(coinsAmt).toLocaleString('ar-EG')} كوين`)
   return parts.length ? parts.join(' و') : ''
 }
 
 async function cancelConfirmedOrder(orderId, reason) {
   const order = state.orders.find(o => o.id === orderId)
   if (!order) return
-  // حماية: لا يُنفَّذ الإلغاء إلا لو الطلب لسه confirmed فعلياً على السيرفر (لم يتحول لـ ready في نفس اللحظة من مكان آخر)
-  const { error } = await db.from('orders')
-    .update({ status: 'cancelled', cancel_reason: reason, refunded_at: new Date().toISOString() })
-    .eq('id', orderId)
-    .eq('status', 'confirmed')
-  if (error) { showToast('تعذّر إلغاء الطلب'); return }
 
-  const refund = await refundOrderPayment(order)
-  const refundText = refundNoticeText(refund)
+  const { data, error } = await db.rpc('cancel_confirmed_order_owner', { p_order_id: orderId, p_reason: reason })
+  if (error) { showToast('تعذّر إلغاء الطلب: ' + error.message); return }
+  if (!data?.ok) { showToast('تعذّر إلغاء الطلب — ربما تغيّرت حالته بالفعل'); await loadOrders(); return }
 
+  const refundText = refundNoticeText(data.wallet_amt, data.coins_amt)
   let compensationMsg = ''
-  if (state.restaurant.cancel_compensation_enabled) {
-    const coins = state.restaurant.cancel_compensation_coins || 0
-    if (coins > 0 && order.customer_id) {
-      const { data: cust } = await db.from('menu_customers').select('coins_balance').eq('id', order.customer_id).single()
-      if (cust) {
-        const newBalance = (cust.coins_balance || 0) + coins
-        await db.from('menu_customers').update({ coins_balance: newBalance }).eq('id', order.customer_id)
-        await db.from('coin_transactions').insert({
-          customer_id: order.customer_id, restaurant_id: state.restaurant.id,
-          type: 'compensation', amount: coins, order_id: orderId,
-          note: 'تعويض عن إلغاء الطلب بعد القبول'
-        })
-        await db.from('orders').update({ compensation_coins_sent: coins }).eq('id', orderId)
-        compensationMsg = ` — تم تعويض العميل بـ ${coins.toLocaleString('ar-EG')} كوين`
-      }
-    } else if (coins > 0 && !order.customer_id) {
-      compensationMsg = ' — تنبيه: العميل زائر بدون حساب، لم يتم إرسال تعويض تلقائي'
-    }
+  if (data.compensation_coins > 0) {
+    compensationMsg = ` — تم تعويض العميل بـ ${Number(data.compensation_coins).toLocaleString('ar-EG')} كوين`
+  } else if (state.restaurant.cancel_compensation_enabled && (state.restaurant.cancel_compensation_coins || 0) > 0 && !data.has_customer_account) {
+    compensationMsg = ' — تنبيه: العميل زائر بدون حساب، لم يتم إرسال تعويض تلقائي'
   }
+
   const refundNotifPart = refundText ? ` — تم استرجاع ${refundText} لمحفظتك تلقائيًا` : ''
   await insertCustomerNotification(order.customer_id, 'order_cancelled', '❌ تم إلغاء طلبك',
-    `للأسف تم إلغاء طلبك ${order.order_number} بعد قبوله. السبب: ${reason}` + refundNotifPart + (compensationMsg.includes('تعويض العميل') ? ' — تم تعويضك بكوينز في محفظتك 🎁' : ''), orderId)
+    `للأسف تم إلغاء طلبك ${order.order_number} بعد قبوله. السبب: ${reason}` + refundNotifPart + (data.compensation_coins > 0 ? ' — تم تعويضك بكوينز في محفظتك 🎁' : ''), orderId)
   showToast('❌ تم إلغاء الطلب' + (refundText ? ` — تم استرجاع ${refundText} للعميل` : '') + compensationMsg)
   await loadOrders()
 }
@@ -3627,7 +3583,7 @@ async function loadAnalytics() {
   const sorted = Object.entries(counter).sort((a,b) => b[1]-a[1]).slice(0,5)
   const bsEl   = document.getElementById('best-sellers-list')
   bsEl.innerHTML = sorted.length
-    ? sorted.map(([name,qty],i) => `<div class="flex items-center justify-between py-2 border-b border-gray-50 last:border-0"><div class="flex items-center gap-2"><span class="text-lg">${['🥇','🥈','🥉','4️⃣','5️⃣'][i]}</span><span class="text-sm text-gray-700 font-bold">${name}</span></div><span class="text-xs bg-orange-50 text-orange-500 font-bold px-2 py-1 rounded-full">${qty} طلب</span></div>`).join('')
+    ? sorted.map(([name,qty],i) => `<div class="flex items-center justify-between py-2 border-b border-gray-50 last:border-0"><div class="flex items-center gap-2"><span class="text-lg">${['🥇','🥈','🥉','4️⃣','5️⃣'][i]}</span><span class="text-sm text-gray-700 font-bold">${escapeHtml(name)}</span></div><span class="text-xs bg-orange-50 text-orange-500 font-bold px-2 py-1 rounded-full">${qty} طلب</span></div>`).join('')
     : `<p class="text-center text-gray-400 text-sm py-4">لا توجد طلبات بعد</p>`
 }
 
@@ -3885,15 +3841,16 @@ async function submitRejectReason(reason) {
   if (!order) return
   const transferred = await tryTransferToNextBranch(order, reason)
   if (!transferred) {
-    const { error } = await db.from('orders')
-      .update({ status:'cancelled', cancel_reason: reason, refunded_at: new Date().toISOString() })
-      .eq('id', order.id)
-      .eq('status', 'pending')
-    const refund = error ? null : await refundOrderPayment(order)
-    const refundText = refundNoticeText(refund)
-    await insertCustomerNotification(order.customer_id, 'order_cancelled', '❌ تعذّر تنفيذ طلبك',
-      `للأسف تعذّر تنفيذ طلبك ${order.order_number}. السبب: ${reason}` + (refundText ? ` — تم استرجاع ${refundText} لمحفظتك تلقائيًا` : ''), order.id)
-    showToast('❌ تم رفض الطلب' + (refundText ? ` — تم استرجاع ${refundText} للعميل` : ''))
+    // أمان/فلوس: نفس إصلاح مسار "إلغاء طلب مؤكَّد" — بيمر عن طريق RPC آمن (reject_pending_order_owner)
+    // بدل خطوات منفصلة على الكلاينت، فمينفعش يحصل استرجاع مزدوج لو اترفض نفس الطلب مرتين بالغلط.
+    const { data, error } = await db.rpc('reject_pending_order_owner', { p_order_id: order.id, p_reason: reason })
+    const refundText = (!error && data?.ok) ? refundNoticeText(data.wallet_amt, data.coins_amt) : ''
+    if (error || !data?.ok) { showToast('تعذّر رفض الطلب — ربما تغيّرت حالته بالفعل') }
+    else {
+      await insertCustomerNotification(order.customer_id, 'order_cancelled', '❌ تعذّر تنفيذ طلبك',
+        `للأسف تعذّر تنفيذ طلبك ${order.order_number}. السبب: ${reason}` + (refundText ? ` — تم استرجاع ${refundText} لمحفظتك تلقائيًا` : ''), order.id)
+      showToast('❌ تم رفض الطلب' + (refundText ? ` — تم استرجاع ${refundText} للعميل` : ''))
+    }
   }
   closeRejectReasonModal()
   closeOrderDetailModal()

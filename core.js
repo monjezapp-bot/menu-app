@@ -618,14 +618,15 @@ async function _loadCustomerProfileInner(forceCreate, extraData) {
         _justCreatedNewCustomer = true // إنشاء حقيقي جديد — هذا هو التوقيت الصحيح لإطلاق احتفال الترحيب
         clearPendingRef() // امسح الكود بعد الاستخدام
         // سجّل معاملة الترحيب (لو الميزة مفعّلة)
+        // أمان/فلوس: الإدراج المباشر القديم من هنا (db.from('coin_transactions').insert) كان بيترفض
+        // بصمت من الـ RLS (مفيش policy تسمح للعميل يعمل INSERT في coin_transactions لنفسه)، والـ
+        // .catch(()=>{}) كان بيبلع الخطأ — يعني صف "welcome" ملوش أي وجود فعلي في سجل الحركات رغم
+        // إن الرصيد الفعلي (wallet_balance) كان مظبوط صح من التريجر. الاستبدال ده بيمر عن طريق RPC
+        // آمن (record_welcome_bonus_transaction) بياخد القيمة من إعدادات المطعم على السيرفر نفسه
+        // (مش من قيمة الكلاينت)، وidempotent فمينفعش يتكرر لو اتنادى أكتر من مرة.
         if (welcomeEnabled) {
-          await db.from('coin_transactions').insert({
-            customer_id:   newCust.id,
-            restaurant_id: S.restaurant.id,
-            type:   'welcome',
-            amount: welcomeCoins,
-            note:   'بونص الترحيب — تحوّل فوراً لرصيد المحفظة النقدي'
-          }).catch(() => {})
+          const { error: welcomeTxErr } = await db.rpc('record_welcome_bonus_transaction', { p_customer_id: newCust.id })
+          if (welcomeTxErr) logPaymentFail(welcomeTxErr, 'record_welcome_bonus_transaction')
         }
         // كوينز الإحالة للمُحيل (لو الميزة مفعّلة) — تتحول فلوس فوراً في wallet_balance أيضاً
         // ملاحظة: كان بيُستخدم incrementCustomerWallet(referredBy,...) وده كان بيفشل بصمت
