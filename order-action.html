@@ -1,0 +1,219 @@
+<!DOCTYPE html>
+<html lang="ar" dir="rtl">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1, maximum-scale=1, user-scalable=no">
+<title>تفاصيل الطلب</title>
+
+<script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link href="https://fonts.googleapis.com/css2?family=Rubik:wght@400;500;600;700;800;900&display=swap" rel="stylesheet">
+
+<style>
+  :root { --brand:#FF6B00; --brand2:#1A1A1A; }
+  * { box-sizing:border-box; }
+  body { margin:0; font-family:'Rubik', -apple-system, 'Segoe UI', Tahoma, Arial, sans-serif; background:#F7F7F8; color:#1A1A1A; padding:16px; padding-bottom:40px; max-width:480px; margin-inline:auto; }
+  .card { background:#fff; border-radius:16px; padding:18px; margin-bottom:14px; box-shadow:0 1px 3px rgba(0,0,0,0.06); }
+  .header { text-align:center; padding:10px 0 18px; }
+  .header .logo { font-size:22px; font-weight:800; color:var(--brand); }
+  .badge { display:inline-block; padding:4px 12px; border-radius:20px; font-size:12.5px; font-weight:700; }
+  .badge.pending { background:#FFF3E0; color:var(--brand); }
+  .badge.confirmed { background:#E8F5E9; color:#2E7D32; }
+  .badge.cancelled { background:#FFEBEE; color:#C62828; }
+  h2 { font-size:16px; margin:0 0 10px; }
+  .item-row { display:flex; justify-content:space-between; font-size:14.5px; padding:7px 0; border-bottom:1px solid #F0F0F0; }
+  .item-row:last-child { border-bottom:none; }
+  .item-name { font-weight:600; }
+  .item-qty { color:#888; font-size:13px; margin-right:6px; }
+  .totals-row { display:flex; justify-content:space-between; font-size:14px; padding:5px 0; color:#555; }
+  .totals-row.grand { font-size:17px; font-weight:800; color:#1A1A1A; border-top:2px solid #F0F0F0; margin-top:6px; padding-top:10px; }
+  .totals-row.discount { color:#2E7D32; }
+  .info-line { font-size:14px; padding:5px 0; color:#333; }
+  .info-line b { color:#888; font-weight:600; font-size:12.5px; display:block; margin-bottom:2px; }
+  .btns { display:flex; flex-direction:column; gap:10px; margin-top:6px; }
+  button { display:block; width:100%; padding:15px; border:none; border-radius:14px; font-size:16px; font-weight:800; cursor:pointer; text-align:center; font-family:inherit; }
+  .btn-confirm { background:var(--brand); color:#fff; }
+  .btn-reject { background:#fff; color:#C62828; border:2px solid #FFCDD2; }
+  .reason-btn { background:#fff; border:1.5px solid #E0E0E0; color:#333; text-align:right; font-weight:700; font-size:14.5px; padding:13px 16px; border-radius:12px; margin-bottom:8px; width:100%; }
+  .center { text-align:center; }
+  .muted { color:#999; font-size:13px; }
+  .spinner { width:34px; height:34px; border:3px solid #eee; border-top-color:var(--brand); border-radius:50%; margin:60px auto; animation:spin 0.8s linear infinite; }
+  @keyframes spin { to { transform:rotate(360deg); } }
+  .hidden { display:none !important; }
+</style>
+</head>
+<body>
+
+<div id="loading" class="spinner"></div>
+<div id="app" class="hidden"></div>
+
+<script>
+// ── نفس الحماية والنمط المستخدم في core.js ──────────────────────────
+function escapeHTML(str) {
+  if (str === null || str === undefined) return ''
+  return String(str)
+    .replace(/&/g, '&amp;').replace(/</g, '&lt;').replace(/>/g, '&gt;')
+    .replace(/"/g, '&quot;').replace(/'/g, '&#39;')
+}
+
+const SUPABASE_URL  = 'https://pcmyugeqveyjnappulng.supabase.co'
+const SUPABASE_ANON = 'eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6InBjbXl1Z2VxdmV5am5hcHB1bG5nIiwicm9sZSI6ImFub24iLCJpYXQiOjE3ODExNjU0NDAsImV4cCI6MjA5Njc0MTQ0MH0.uwn0X4CvNRW38FGh_0rYD9KjBRM19CydXucfBsCDYeo'
+const { createClient } = supabase
+const db = createClient(SUPABASE_URL, SUPABASE_ANON)
+
+// ── تسجيل الأخطاء في app_logs (نفس منطق core.js: logApiFail) ────────
+function logApiFail(error, context) {
+  if (!error) return
+  try {
+    db.from('app_logs').insert({
+      message: `[${context}] ` + (error.message || JSON.stringify(error)).slice(0, 2000),
+      stack: (error.details || error.hint || null),
+      url: location.href,
+      app: 'order-action',
+      restaurant_slug: params.get('r') || null,
+      user_agent: navigator.userAgent,
+      kind: 'api_fail'
+    }).then(() => {}).catch(() => {})
+  } catch (e) {}
+}
+
+const REJECT_REASONS = ['غير متوفر حالياً', 'المتجر مغلق الآن', 'تأخير كبير في التحضير']
+const params = new URLSearchParams(location.search)
+const token  = params.get('token') || ''
+
+const loadingEl = document.getElementById('loading')
+const appEl     = document.getElementById('app')
+
+function money(n) {
+  return Number(n || 0).toLocaleString('ar-EG', { maximumFractionDigits: 2 })
+}
+
+function statusBadge(status) {
+  const map = { pending:'بانتظار الرد', confirmed:'تم القبول', ready:'جاهز', delivering:'جاري التوصيل', delivered:'تم التسليم', cancelled:'ملغي' }
+  const cls = status === 'pending' ? 'pending' : status === 'cancelled' ? 'cancelled' : 'confirmed'
+  return `<span class="badge ${cls}">${escapeHTML(map[status] || status)}</span>`
+}
+
+function render(html) {
+  loadingEl.classList.add('hidden')
+  appEl.classList.remove('hidden')
+  appEl.innerHTML = html
+}
+
+function renderError(msg) {
+  render(`<div class="card center" style="margin-top:60px"><h2>⚠️ ${escapeHTML(msg)}</h2><p class="muted">تأكد إنك فاتح آخر رسالة وصلتك على واتساب</p></div>`)
+}
+
+function renderOrder(order, notice) {
+  const items = Array.isArray(order.items) ? order.items : []
+  const itemsHtml = items.map(it => `
+    <div class="item-row">
+      <div><span class="item-name">${escapeHTML(it.name)}</span><span class="item-qty">× ${Number(it.qty || 1)}</span></div>
+      <div>${money(it.subtotal ?? (it.price * (it.qty || 1)))} ج.م</div>
+    </div>`).join('')
+
+  const subtotal = items.reduce((s, it) => s + Number(it.subtotal ?? (it.price * (it.qty || 1)) ?? 0), 0)
+
+  let discountsHtml = ''
+  if (order.discount_code_amount > 0) discountsHtml += `<div class="totals-row discount"><span>خصم كود (${escapeHTML(order.discount_code || '')})</span><span>- ${money(order.discount_code_amount)} ج.م</span></div>`
+  if (order.wallet_amount_used > 0)   discountsHtml += `<div class="totals-row discount"><span>من رصيد المحفظة</span><span>- ${money(order.wallet_amount_used)} ج.م</span></div>`
+  if (order.coins_discount > 0)       discountsHtml += `<div class="totals-row discount"><span>خصم كوينز</span><span>- ${money(order.coins_discount)} ج.م</span></div>`
+  const deliveryHtml = order.delivery_fee > 0 ? `<div class="totals-row"><span>رسوم التوصيل</span><span>${money(order.delivery_fee)} ج.م</span></div>` : ''
+
+  const actionsHtml = order.status === 'pending' ? `
+    <div class="card">
+      <div id="main-actions" class="btns">
+        <button class="btn-confirm" id="btn-show-confirm">✅ تأكيد الطلب</button>
+        <button class="btn-reject" id="btn-show-reject">❌ رفض الطلب</button>
+      </div>
+      <div id="confirm-box" class="hidden">
+        <p class="muted center" style="margin-bottom:14px">هيتم تأكيد الطلب رقم ${escapeHTML(order.order_number)}</p>
+        <button class="btn-confirm" id="btn-confirm-final">تأكيد نهائي ✅</button>
+      </div>
+      <div id="reject-box" class="hidden">
+        <p class="muted" style="margin-bottom:10px">اختر سبب الرفض:</p>
+        ${REJECT_REASONS.map(r => `<button class="reason-btn" data-reason="${escapeHTML(r)}">${escapeHTML(r)}</button>`).join('')}
+      </div>
+    </div>` : `
+    <div class="card center"><p class="muted">${escapeHTML(notice || 'تم اتخاذ قرار على هذا الطلب بالفعل.')}</p></div>`
+
+  render(`
+    <div class="header">
+      <div class="logo">${escapeHTML(order.restaurant_name || 'منيو')}</div>
+      <div class="muted" style="margin-top:2px">طلب رقم ${escapeHTML(order.order_number)}</div>
+      <div style="margin-top:8px">${statusBadge(order.status)}</div>
+    </div>
+    <div class="card">
+      <h2>🛒 المنتجات</h2>
+      ${itemsHtml}
+      <div class="totals-row" style="margin-top:8px"><span>الإجمالي الفرعي</span><span>${money(subtotal)} ج.م</span></div>
+      ${deliveryHtml}
+      ${discountsHtml}
+      <div class="totals-row grand"><span>الإجمالي المطلوب</span><span>${money(order.total)} ج.م</span></div>
+    </div>
+    <div class="card">
+      <h2>📋 بيانات العميل</h2>
+      <div class="info-line"><b>الاسم</b>${escapeHTML(order.customer_name || '—')}</div>
+      <div class="info-line"><b>الهاتف</b>${escapeHTML(order.customer_phone || '—')}</div>
+      ${order.customer_address ? `<div class="info-line"><b>العنوان</b>${escapeHTML(order.customer_address)}</div>` : ''}
+      ${order.note ? `<div class="info-line"><b>ملاحظات العميل</b>${escapeHTML(order.note)}</div>` : ''}
+    </div>
+    ${actionsHtml}
+  `)
+
+  if (order.status === 'pending') {
+    document.getElementById('btn-show-confirm').onclick = () => {
+      document.getElementById('main-actions').classList.add('hidden')
+      document.getElementById('confirm-box').classList.remove('hidden')
+    }
+    document.getElementById('btn-show-reject').onclick = () => {
+      document.getElementById('main-actions').classList.add('hidden')
+      document.getElementById('reject-box').classList.remove('hidden')
+    }
+    document.getElementById('btn-confirm-final').onclick = () => submitAction('confirm')
+    document.querySelectorAll('.reason-btn').forEach(btn => {
+      btn.onclick = () => submitAction('reject', btn.dataset.reason)
+    })
+  }
+}
+
+function renderDone(action, order) {
+  render(`
+    <div class="header"><div class="logo">${escapeHTML(order?.restaurant_name || 'منيو')}</div></div>
+    <div class="card center" style="padding:40px 18px">
+      <div style="font-size:40px">${action === 'confirm' ? '✅' : '❌'}</div>
+      <h2 style="margin-top:14px">${action === 'confirm' ? 'تم تأكيد الطلب بنجاح' : 'تم رفض الطلب'}</h2>
+      <p class="muted">طلب رقم ${escapeHTML(order?.order_number || '')}</p>
+    </div>`)
+}
+
+async function submitAction(action, reason) {
+  render(`<div class="spinner"></div>`)
+  const { data, error } = await db.rpc('resolve_order_action', {
+    p_token: token, p_action: action, p_reason: reason || null
+  })
+  if (error) {
+    logApiFail(error, 'resolve_order_action')
+    renderError('حصل خطأ، حاول تاني')
+    return
+  }
+  if (!data?.ok) {
+    if (data?.error === 'already_resolved') { await loadOrder(); return }
+    renderError('حصل خطأ، حاول تاني')
+    return
+  }
+  renderDone(action, data.order)
+}
+
+async function loadOrder() {
+  if (!token) { renderError('رابط غير صالح'); return }
+  const { data, error } = await db.rpc('get_order_by_action_token', { p_token: token })
+  if (error) { logApiFail(error, 'get_order_by_action_token'); renderError('رابط غير صالح'); return }
+  if (!data)  { renderError('رابط غير صالح'); return }
+  renderOrder(data)
+}
+
+loadOrder()
+</script>
+</body>
+</html>
