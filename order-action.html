@@ -37,6 +37,17 @@
   .reason-btn { background:#fff; border:1.5px solid #E0E0E0; color:#333; text-align:right; font-weight:700; font-size:14.5px; padding:13px 16px; border-radius:12px; margin-bottom:8px; width:100%; }
   .center { text-align:center; }
   .muted { color:#999; font-size:13px; }
+  .qty-row { display:flex; align-items:center; justify-content:space-between; gap:8px; background:#F7F7F7; border-radius:12px; padding:10px 12px; margin-bottom:8px; }
+  .qty-name { font-size:13.5px; font-weight:700; color:#333; }
+  .qty-sub { font-size:11.5px; color:#999; margin-top:2px; }
+  .qty-controls { display:flex; align-items:center; gap:8px; flex-shrink:0; }
+  .qty-btn { width:28px; height:28px; border-radius:50%; background:#fff; border:1px solid #E0E0E0; font-weight:800; color:#555; padding:0; }
+  .qty-val { min-width:16px; text-align:center; font-weight:800; }
+  .field-label { font-size:12px; font-weight:800; color:#888; margin-bottom:6px; display:block; }
+  .refund-methods { display:flex; gap:8px; margin-bottom:4px; }
+  .refund-method-label { flex:1; display:flex; align-items:center; gap:6px; border:1.5px solid #E0E0E0; border-radius:12px; padding:10px 12px; font-size:13px; font-weight:700; color:#333; }
+  input[type="number"], textarea { width:100%; border:1.5px solid #eee; border-radius:12px; padding:10px 12px; font-size:13.5px; font-family:inherit; box-sizing:border-box; }
+  .btn-approve { background:#22C55E; color:#fff; }
   .spinner { width:34px; height:34px; border:3px solid #eee; border-top-color:var(--brand); border-radius:50%; margin:60px auto; animation:spin 0.8s linear infinite; }
   @keyframes spin { to { transform:rotate(360deg); } }
   .hidden { display:none !important; }
@@ -88,10 +99,57 @@ function money(n) {
   return Number(n || 0).toLocaleString('ar-EG', { maximumFractionDigits: 2 })
 }
 
+// ── نسخ نص عام (نفس منطق copyText في dashboard.html) ─────────────────
+function copyText(text, label) {
+  if (!text) return
+  navigator.clipboard?.writeText(text).then(() => showToast(`✅ تم نسخ ${label || 'النص'}`)).catch(() => {
+    const ta = document.createElement('textarea')
+    ta.value = text
+    ta.style.position = 'fixed'; ta.style.opacity = '0'
+    document.body.appendChild(ta); ta.select()
+    document.execCommand('copy')
+    document.body.removeChild(ta)
+    showToast(`✅ تم نسخ ${label || 'النص'}`)
+  })
+}
+
+let _toastTimer = null
+function showToast(msg) {
+  let el = document.getElementById('toast-el')
+  if (!el) {
+    el = document.createElement('div')
+    el.id = 'toast-el'
+    el.style.cssText = 'position:fixed;bottom:24px;left:50%;transform:translateX(-50%);background:#1A1A1A;color:#fff;padding:10px 18px;border-radius:20px;font-size:13px;font-weight:700;z-index:999;box-shadow:0 4px 14px rgba(0,0,0,0.2)'
+    document.body.appendChild(el)
+  }
+  el.textContent = msg
+  el.style.display = 'block'
+  clearTimeout(_toastTimer)
+  _toastTimer = setTimeout(() => { el.style.display = 'none' }, 1800)
+}
+
+// كل قيمة نسخ بتتخزن هنا بمفتاحها (name/phone/address/location) عشان زرار "نسخ الكل" يلمّها
+let _copyValues = {}
+function infoRow(label, value, key) {
+  if (!value && key !== 'name' && key !== 'phone') return ''
+  _copyValues[key] = value || ''
+  return `<div class="info-line" style="display:flex;justify-content:space-between;align-items:center;gap:8px">
+    <div style="min-width:0"><b>${escapeHTML(label)}</b>${escapeHTML(value || '—')}</div>
+    ${value ? `<button type="button" class="copy-btn" data-copy="${key}" style="width:auto;padding:6px 10px;font-size:11.5px;background:#F5F5F5;color:#555;border-radius:8px;flex-shrink:0">📋</button>` : ''}
+  </div>`
+}
+
 function statusBadge(status) {
   const map = { pending:'بانتظار الرد', confirmed:'تم القبول', ready:'جاهز', delivering:'جاري التوصيل', delivered:'تم التسليم', cancelled:'ملغي' }
   const cls = status === 'pending' ? 'pending' : status === 'cancelled' ? 'cancelled' : 'confirmed'
   return `<span class="badge ${cls}">${escapeHTML(map[status] || status)}</span>`
+}
+
+// ── الخطوة التالية بعد التأكيد (نفس تتابع ORDER_STEPS في dashboard.html) ──
+const NEXT_STATUS_ACTIONS = {
+  confirmed:  { next:'ready',      label:'📦 تم التجهيز',    confirmMsg:'هل أنت متأكد إن الطلب جاهز بالكامل؟',        cls:'btn-ready' },
+  ready:      { next:'delivering', label:'🛵 جاري التوصيل',  confirmMsg:'هل تأكدت إن المندوب استلم الطلب فعلاً؟',     cls:'btn-delivering' },
+  delivering: { next:'delivered',  label:'🎉 تم التسليم',    confirmMsg:'هل تأكدت إن العميل استلم طلبه فعلاً؟',       cls:'btn-delivered' }
 }
 
 function render(html) {
@@ -120,6 +178,12 @@ function renderOrder(order, notice) {
   if (order.coins_discount > 0)       discountsHtml += `<div class="totals-row discount"><span>خصم كوينز</span><span>- ${money(order.coins_discount)} ج.م</span></div>`
   const deliveryHtml = order.delivery_fee > 0 ? `<div class="totals-row"><span>رسوم التوصيل</span><span>${money(order.delivery_fee)} ج.م</span></div>` : ''
 
+  _copyValues = {}
+  const mapsLink = (order.customer_lat && order.customer_lng)
+    ? `https://www.google.com/maps?q=${encodeURIComponent(order.customer_lat)},${encodeURIComponent(order.customer_lng)}`
+    : ''
+  if (mapsLink) _copyValues.location = mapsLink
+
   const actionsHtml = order.status === 'pending' ? `
     <div class="card">
       <div id="main-actions" class="btns">
@@ -134,6 +198,10 @@ function renderOrder(order, notice) {
         <p class="muted" style="margin-bottom:10px">اختر سبب الرفض:</p>
         ${REJECT_REASONS.map(r => `<button class="reason-btn" data-reason="${escapeHTML(r)}">${escapeHTML(r)}</button>`).join('')}
       </div>
+    </div>` : NEXT_STATUS_ACTIONS[order.status] ? `
+    <div class="card center">
+      <p class="muted" style="margin-bottom:12px">${statusBadge(order.status)}</p>
+      <button class="btn-confirm" id="btn-advance">${NEXT_STATUS_ACTIONS[order.status].label}</button>
     </div>` : `
     <div class="card center"><p class="muted">${escapeHTML(notice || 'تم اتخاذ قرار على هذا الطلب بالفعل.')}</p></div>`
 
@@ -152,14 +220,44 @@ function renderOrder(order, notice) {
       <div class="totals-row grand"><span>الإجمالي المطلوب</span><span>${money(order.total)} ج.م</span></div>
     </div>
     <div class="card">
-      <h2>📋 بيانات العميل</h2>
-      <div class="info-line"><b>الاسم</b>${escapeHTML(order.customer_name || '—')}</div>
-      <div class="info-line"><b>الهاتف</b>${escapeHTML(order.customer_phone || '—')}</div>
-      ${order.customer_address ? `<div class="info-line"><b>العنوان</b>${escapeHTML(order.customer_address)}</div>` : ''}
+      <div style="display:flex;justify-content:space-between;align-items:center;margin-bottom:10px">
+        <h2 style="margin:0">📋 بيانات العميل</h2>
+        <button type="button" id="btn-copy-all" style="width:auto;padding:7px 12px;font-size:12px;font-weight:800;background:#F5F5F5;color:#555;border-radius:10px">📋 نسخ الكل</button>
+      </div>
+      ${infoRow('الاسم', order.customer_name, 'name')}
+      ${infoRow('الهاتف', order.customer_phone, 'phone')}
+      ${order.customer_address ? infoRow('العنوان', order.customer_address, 'address') : ''}
+      ${(order.customer_lat && order.customer_lng) ? `
+        <div class="info-line" style="display:flex;justify-content:space-between;align-items:center;gap:8px">
+          <b style="flex-shrink:0">الموقع</b>
+          <div style="display:flex;gap:6px;flex-shrink:0">
+            <a href="https://www.google.com/maps?q=${encodeURIComponent(order.customer_lat)},${encodeURIComponent(order.customer_lng)}" target="_blank" style="font-size:11.5px;font-weight:800;color:#1a73e8;background:#e8f0fe;padding:6px 10px;border-radius:8px;text-decoration:none">🗺️ فتح</a>
+            <button type="button" class="copy-btn" data-copy="location" style="width:auto;padding:6px 10px;font-size:11.5px;background:#F5F5F5;color:#555;border-radius:8px">📋 نسخ</button>
+          </div>
+        </div>` : ''}
       ${order.note ? `<div class="info-line"><b>ملاحظات العميل</b>${escapeHTML(order.note)}</div>` : ''}
     </div>
     ${actionsHtml}
   `)
+
+  document.querySelectorAll('.copy-btn').forEach(btn => {
+    btn.onclick = () => {
+      const key = btn.dataset.copy
+      const labels = { name:'الاسم', phone:'الهاتف', address:'العنوان', location:'رابط الموقع' }
+      copyText(_copyValues[key], labels[key])
+    }
+  })
+  const copyAllBtn = document.getElementById('btn-copy-all')
+  if (copyAllBtn) {
+    copyAllBtn.onclick = () => {
+      const parts = []
+      if (_copyValues.name)     parts.push(_copyValues.name)
+      if (_copyValues.phone)    parts.push(_copyValues.phone)
+      if (_copyValues.address)  parts.push(_copyValues.address)
+      if (_copyValues.location) parts.push(_copyValues.location)
+      copyText(parts.join('\n'), 'كل البيانات')
+    }
+  }
 
   if (order.status === 'pending') {
     document.getElementById('btn-show-confirm').onclick = () => {
@@ -174,6 +272,11 @@ function renderOrder(order, notice) {
     document.querySelectorAll('.reason-btn').forEach(btn => {
       btn.onclick = () => submitAction('reject', btn.dataset.reason)
     })
+  } else if (NEXT_STATUS_ACTIONS[order.status]) {
+    const cfg = NEXT_STATUS_ACTIONS[order.status]
+    document.getElementById('btn-advance').onclick = () => {
+      if (confirm(cfg.confirmMsg)) submitAdvance(cfg.next)
+    }
   }
 }
 
@@ -205,12 +308,170 @@ async function submitAction(action, reason) {
   renderDone(action, data.order)
 }
 
+async function submitAdvance(nextStatus) {
+  render(`<div class="spinner"></div>`)
+  const { data, error } = await db.rpc('advance_order_status', { p_token: token, p_status: nextStatus })
+  if (error) {
+    logApiFail(error, 'advance_order_status')
+    renderError('حصل خطأ، حاول تاني')
+    return
+  }
+  if (!data?.ok) {
+    // لو حد تاني حدّث الحالة قبلنا (سباق)، أعد تحميل الطلب الحالي بدل ما نظهر خطأ
+    await loadOrder()
+    return
+  }
+  await loadOrder()
+}
+
+// ── طلب الاسترجاع (نفس منطق order-return-resolve-modal في dashboard.html) ──
+let _returnCtx = null
+
+function humanMoney(n) { return money(n) }
+
+function renderReturnRequest(order, ret) {
+  const orderItems = Array.isArray(order.items) ? order.items : []
+  const requestedItems = Array.isArray(ret.requested_items) ? ret.requested_items : []
+
+  _returnCtx = { returnId: ret.id, selected: {} }
+  requestedItems.forEach(i => { _returnCtx.selected[i.id] = Number(i.qty || 0) })
+
+  const orderQtyTotal = orderItems.reduce((s, i) => s + Number(i.qty || 0), 0)
+  const reqQtyTotal = requestedItems.reduce((s, i) => s + Number(i.qty || 0), 0)
+  const isFull = orderQtyTotal > 0 && reqQtyTotal >= orderQtyTotal
+
+  const itemsRowsHtml = requestedItems.map(ri => {
+    const oi = orderItems.find(x => x.id === ri.id) || {}
+    const maxQty = Number(ri.qty || 0)
+    return `
+    <div class="qty-row" data-item-id="${escapeHTML(ri.id)}">
+      <div>
+        <div class="qty-name">${escapeHTML(oi.name || ri.name || '')}</div>
+        <div class="qty-sub">${money(oi.price)} ج.م × طلب العميل: ${maxQty}</div>
+      </div>
+      <div class="qty-controls">
+        <button type="button" class="qty-btn" data-delta="-1" data-max="${maxQty}">－</button>
+        <span class="qty-val" id="ret-qty-${escapeHTML(ri.id)}">${maxQty}</span>
+        <button type="button" class="qty-btn" data-delta="1" data-max="${maxQty}">＋</button>
+      </div>
+    </div>`
+  }).join('')
+
+  render(`
+    <div class="header">
+      <div class="logo">${escapeHTML(order.restaurant_name || 'منيو')}</div>
+      <div class="muted" style="margin-top:2px">🔄 طلب استرجاع — طلب رقم ${escapeHTML(order.order_number)}</div>
+    </div>
+
+    ${ret.reason ? `<div class="card"><p class="muted"><b>📝 سبب العميل:</b> ${escapeHTML(ret.reason)}</p></div>` : ''}
+
+    <div class="card">
+      <h2>الأصناف المطلوب استرجاعها</h2>
+      <p class="muted" style="margin-bottom:10px">تقدر تعدّل الكمية الموافق عليها لكل صنف</p>
+      ${itemsRowsHtml}
+    </div>
+
+    <div class="card">
+      <h2>طريقة الاسترداد</h2>
+      <div class="refund-methods">
+        <label class="refund-method-label"><input type="radio" name="ret-refund-method" value="wallet" checked> 💳 محفظة العميل</label>
+        <label class="refund-method-label"><input type="radio" name="ret-refund-method" value="external"> 💵 كاش/تحويل خارجي</label>
+      </div>
+      <p class="muted" style="margin-top:6px">لو جزء من المبلغ كان مدفوع أصلاً من رصيد المحفظة، هيرجع للمحفظة إجباريًا في الحالتين.</p>
+    </div>
+
+    <div class="card">
+      <label class="field-label">استرداد رسوم التوصيل (ج.م)</label>
+      <input id="ret-delivery-fee" type="number" min="0" step="0.5" value="${isFull ? Number(order.delivery_fee || 0) : 0}">
+    </div>
+
+    <div class="card">
+      <label class="field-label">ملاحظات (هتظهر للعميل لو رفضت الطلب)</label>
+      <textarea id="ret-notes" rows="2" placeholder="اكتب ملاحظتك هنا..."></textarea>
+    </div>
+
+    <div class="btns">
+      <button class="btn-approve" id="btn-approve-return">✅ موافقة واسترداد</button>
+      <button class="btn-reject" id="btn-reject-return">❌ رفض الطلب</button>
+    </div>
+  `)
+
+  document.querySelectorAll('.qty-btn').forEach(btn => {
+    btn.onclick = () => {
+      const row = btn.closest('.qty-row')
+      const itemId = row.dataset.itemId
+      const maxQty = Number(btn.dataset.max)
+      const delta = Number(btn.dataset.delta)
+      const cur = _returnCtx.selected[itemId] ?? maxQty
+      const next = Math.max(0, Math.min(maxQty, cur + delta))
+      _returnCtx.selected[itemId] = next
+      document.getElementById('ret-qty-' + itemId).textContent = next
+    }
+  })
+
+  document.getElementById('btn-approve-return').onclick = submitReturnApprove
+  document.getElementById('btn-reject-return').onclick = submitReturnReject
+}
+
+async function submitReturnApprove() {
+  if (!_returnCtx) return
+  const approvedItems = Object.entries(_returnCtx.selected).filter(([, qty]) => qty > 0).map(([id, qty]) => ({ id, qty }))
+  if (!approvedItems.length) { alert('لازم توافق على صنف واحد على الأقل، أو استخدم زر الرفض'); return }
+  const refundMethod = document.querySelector('input[name="ret-refund-method"]:checked')?.value || 'wallet'
+  const deliveryFeeRefund = Number(document.getElementById('ret-delivery-fee').value || 0)
+  const notes = document.getElementById('ret-notes').value.trim() || null
+
+  render(`<div class="spinner"></div>`)
+  const { data, error } = await db.rpc('resolve_order_return_by_token', {
+    p_token: token, p_return_id: _returnCtx.returnId, p_decision: 'approved',
+    p_refund_method: refundMethod, p_approved_items: approvedItems,
+    p_delivery_fee_refund: deliveryFeeRefund, p_notes: notes
+  })
+  if (error || !data?.ok) {
+    logApiFail(error || data, 'resolve_order_return_by_token(approve)')
+    renderError('حصل خطأ، حاول تاني')
+    return
+  }
+  render(`
+    <div class="card center" style="padding:40px 18px;margin-top:40px">
+      <div style="font-size:40px">✅</div>
+      <h2 style="margin-top:14px">تمت الموافقة على الاسترجاع</h2>
+      <p class="muted">إجمالي المسترد: ${money(data.total_refund_amount)} ج.م</p>
+    </div>`)
+}
+
+async function submitReturnReject() {
+  if (!_returnCtx) return
+  const notes = document.getElementById('ret-notes').value.trim()
+  if (!notes) { alert('اكتب سبب الرفض في خانة الملاحظات أولاً'); return }
+
+  render(`<div class="spinner"></div>`)
+  const { data, error } = await db.rpc('resolve_order_return_by_token', {
+    p_token: token, p_return_id: _returnCtx.returnId, p_decision: 'rejected', p_notes: notes
+  })
+  if (error || !data?.ok) {
+    logApiFail(error || data, 'resolve_order_return_by_token(reject)')
+    renderError('حصل خطأ، حاول تاني')
+    return
+  }
+  render(`
+    <div class="card center" style="padding:40px 18px;margin-top:40px">
+      <div style="font-size:40px">❌</div>
+      <h2 style="margin-top:14px">تم رفض طلب الاسترجاع</h2>
+    </div>`)
+}
+
 async function loadOrder() {
   if (!token) { renderError('رابط غير صالح'); return }
   const { data, error } = await db.rpc('get_order_by_action_token', { p_token: token })
   if (error) { logApiFail(error, 'get_order_by_action_token'); renderError('رابط غير صالح'); return }
   if (!data)  { renderError('رابط غير صالح'); return }
-  renderOrder(data)
+
+  const { data: returnReq, error: retErr } = await db.rpc('get_pending_return_by_token', { p_token: token })
+  if (retErr) logApiFail(retErr, 'get_pending_return_by_token')
+
+  if (returnReq) renderReturnRequest(data, returnReq)
+  else renderOrder(data)
 }
 
 loadOrder()
