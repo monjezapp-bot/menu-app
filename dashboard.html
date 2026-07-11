@@ -1832,7 +1832,8 @@ async function saveLoyaltySettings() {
     purchase_voucher_coins:      purchaseVoucherCoins,
   }
 
-  await db.from('restaurants').update(payload).eq('id', state.restaurant.id)
+  const { error } = await db.from('restaurants').update(payload).eq('id', state.restaurant.id)
+  if (error) { showToast('حصل خطأ أثناء الحفظ — الإعدادات لم تُحفظ، حاول تاني'); return }
   Object.assign(state.restaurant, payload)
   showToast('تم حفظ إعدادات الكوينز ✅')
 }
@@ -2057,7 +2058,10 @@ function saveAnnouncement() {
   annSaveTimeout = setTimeout(async () => {
     const text   = document.getElementById('ann-text').value.trim()
     const active = document.getElementById('ann-active-toggle').checked
-    await db.from('restaurants').update({ announcement_text: text || null, announcement_active: active }).eq('id', state.restaurant.id)
+    const { error } = await db.from('restaurants').update({ announcement_text: text || null, announcement_active: active }).eq('id', state.restaurant.id)
+    if (error) { showToast('حصل خطأ أثناء الحفظ — حاول تاني'); return }
+    state.restaurant.announcement_text = text || null
+    state.restaurant.announcement_active = active
     showToast(active ? '📣 الرسالة نشطة' : 'تم الحفظ')
   }, 800)
 }
@@ -3762,7 +3766,10 @@ function advanceToNextPendingOrder() {
 async function confirmNewOrder() {
   if (!_pendingOrdersQueue.length) return
   const id = _pendingOrdersQueue[0].id
-  await db.from('orders').update({ status:'confirmed', confirmed_at: new Date().toISOString() }).eq('id', id).eq('status', 'pending')
+  const { error } = await db.from('orders')
+    .update({ status:'confirmed', confirmed_at: new Date().toISOString() })
+    .eq('id', id).eq('status', 'pending')
+  if (error) { showToast('تعذّر قبول الطلب — حاول تاني'); return }
   showToast('✅ تم قبول الطلب')
   _pendingOrdersQueue.shift()
   advanceToNextPendingOrder()

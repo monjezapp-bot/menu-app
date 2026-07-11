@@ -539,6 +539,7 @@ async function checkAndAwardBirthdayGift() {
 
     S.customer.birthday_gift_claimed_year = thisYear
     S.customer.coins_balance = data.new_balance
+    updateWalletBadge()
     showToast(`🎂 عيد ميلاد سعيد! حصلت على ${numFmt(data.coins_granted)} كوين هدية 🎉`)
     playSuccessSound()
   } catch(e) {}
