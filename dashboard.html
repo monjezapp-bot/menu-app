@@ -3507,9 +3507,8 @@ async function cancelConfirmedOrder(orderId, reason) {
     compensationMsg = ' — تنبيه: العميل زائر بدون حساب، لم يتم إرسال تعويض تلقائي'
   }
 
-  const refundNotifPart = refundText ? ` — تم استرجاع ${refundText} لمحفظتك تلقائيًا` : ''
-  await insertCustomerNotification(order.customer_id, 'order_cancelled', '❌ تم إلغاء طلبك',
-    `للأسف تم إلغاء طلبك ${order.order_number} بعد قبوله. السبب: ${reason}` + refundNotifPart + (data.compensation_coins > 0 ? ' — تم تعويضك بكوينز في محفظتك 🎁' : ''), orderId)
+  // ملحوظة: مفيش insertCustomerNotification هنا عمدًا — trg_order_status_notification بيبعت
+  // إشعار "order_cancelled" (فيه سبب الإلغاء) تلقائيًا لما status يتغيّر لـ cancelled جوه الـ RPC.
   showToast('❌ تم إلغاء الطلب' + (refundText ? ` — تم استرجاع ${refundText} للعميل` : '') + compensationMsg)
   await loadOrders()
 }
@@ -3529,8 +3528,10 @@ async function updateOrderStatus(id, status) {
   const timestampField = { ready: 'ready_at', delivering: 'delivering_at', delivered: 'delivered_at' }[status]
   const payload = { status }
   if (timestampField) payload[timestampField] = new Date().toISOString()
+  // ملحوظة: مفيش نداء لإشعار العميل هنا عمدًا — trg_order_status_notification (تريجر على orders)
+  // بيبعت الإشعار تلقائيًا لأي تغيير في status، وكان فيه نداء مكرر من هنا بيعمل duplicate فعلي
+  // (اتأكدنا منه في قاعدة البيانات: صفوف notifications متكررة لنفس order_id+type بالمئات).
   await db.from('orders').update(payload).eq('id', id)
-  await notifyCustomerOrderStatus(id, status)
   await loadOrders()
   showToast('تم تحديث حالة الطلب')
 }
@@ -3547,19 +3548,9 @@ async function insertCustomerNotification(customerId, type, title, body, orderId
     })
   } catch (e) { /* الإشعار ليس حرجاً لسير العمل — نتجاهل أي خطأ بصمت */ }
 }
-async function notifyCustomerOrderStatus(orderId, status) {
-  const order = state.orders.find(o => o.id === orderId)
-  if (!order) return
-  const messages = {
-    confirmed:  { title: '✅ تم تأكيد طلبك',   body: `المتجر بدأ في تجهيز طلبك ${order.order_number}` },
-    ready:      { title: '📦 طلبك جاهز',        body: `طلبك ${order.order_number} جاهز وفي انتظار التوصيل` },
-    delivering: { title: '🛵 طلبك في الطريق',   body: `المندوب في الطريق إليك مع طلبك ${order.order_number}` },
-    delivered:  { title: '🎉 تم التسليم',       body: `نتمنى أن تكون استمتعت بطلبك ${order.order_number}` },
-  }
-  const m = messages[status]
-  if (!m) return
-  await insertCustomerNotification(order.customer_id, `order_${status}`, m.title, m.body, orderId)
-}
+// ملحوظة: notifyCustomerOrderStatus (كانت بتغطي confirmed/ready/delivering/delivered) اتشالت من هنا —
+// trg_order_status_notification في قاعدة البيانات بيغطي نفس الحالات دي تلقائيًا لكل مسارات
+// التطبيق (الداشبورد، واتساب، تطبيق العميل، الكرون)، مش الداشبورد بس.
 
 // ── ANALYTICS ─────────────────────────────────────────────────────────
 async function loadAnalytics() {
@@ -3846,9 +3837,9 @@ async function submitRejectReason(reason) {
     const { data, error } = await db.rpc('reject_pending_order_owner', { p_order_id: order.id, p_reason: reason })
     const refundText = (!error && data?.ok) ? refundNoticeText(data.wallet_amt, data.coins_amt) : ''
     if (error || !data?.ok) { showToast('تعذّر رفض الطلب — ربما تغيّرت حالته بالفعل') }
+    // ملحوظة: مفيش insertCustomerNotification هنا عمدًا لنفس سبب مسار الإلغاء فوق —
+    // trg_order_status_notification بيبعت إشعار order_cancelled (فيه السبب) تلقائيًا.
     else {
-      await insertCustomerNotification(order.customer_id, 'order_cancelled', '❌ تعذّر تنفيذ طلبك',
-        `للأسف تعذّر تنفيذ طلبك ${order.order_number}. السبب: ${reason}` + (refundText ? ` — تم استرجاع ${refundText} لمحفظتك تلقائيًا` : ''), order.id)
       showToast('❌ تم رفض الطلب' + (refundText ? ` — تم استرجاع ${refundText} للعميل` : ''))
     }
   }
