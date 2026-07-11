@@ -342,10 +342,6 @@ function renderReturnRequest(order, ret) {
   _returnCtx = { returnId: ret.id, selected: {} }
   requestedItems.forEach(i => { _returnCtx.selected[i.id] = Number(i.qty || 0) })
 
-  const orderQtyTotal = orderItems.reduce((s, i) => s + Number(i.qty || 0), 0)
-  const reqQtyTotal = requestedItems.reduce((s, i) => s + Number(i.qty || 0), 0)
-  const isFull = orderQtyTotal > 0 && reqQtyTotal >= orderQtyTotal
-
   const itemsRowsHtml = requestedItems.map(ri => {
     const oi = orderItems.find(x => x.id === ri.id) || {}
     const maxQty = Number(ri.qty || 0)
@@ -387,8 +383,7 @@ function renderReturnRequest(order, ret) {
     </div>
 
     <div class="card">
-      <label class="field-label">استرداد رسوم التوصيل (ج.م)</label>
-      <input id="ret-delivery-fee" type="number" min="0" step="0.5" value="${isFull ? Number(order.delivery_fee || 0) : 0}">
+      <p class="muted">🛵 رسوم التوصيل مش قابلة للاسترداد في أي عملية إرجاع — الخدمة اتنفذت فعلاً. مينفعش ترجع لا تلقائيًا ولا يدويًا.</p>
     </div>
 
     <div class="card">
@@ -424,7 +419,7 @@ async function submitReturnApprove() {
   const approvedItems = Object.entries(_returnCtx.selected).filter(([, qty]) => qty > 0).map(([id, qty]) => ({ id, qty }))
   if (!approvedItems.length) { alert('لازم توافق على صنف واحد على الأقل، أو استخدم زر الرفض'); return }
   const refundMethod = document.querySelector('input[name="ret-refund-method"]:checked')?.value || 'wallet'
-  const deliveryFeeRefund = Number(document.getElementById('ret-delivery-fee').value || 0)
+  const deliveryFeeRefund = 0
   const notes = document.getElementById('ret-notes').value.trim() || null
 
   render(`<div class="spinner"></div>`)

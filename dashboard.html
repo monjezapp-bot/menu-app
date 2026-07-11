@@ -1112,9 +1112,8 @@
         </div>
         <p class="text-[11px] text-gray-400 mt-1.5">لو جزء من المبلغ كان مدفوع أصلاً من رصيد المحفظة، هيرجع للمحفظة إجباريًا في الحالتين.</p>
       </div>
-      <div>
-        <label class="text-xs font-extrabold text-gray-400 mb-1.5 block">استرداد رسوم التوصيل (ج.م)</label>
-        <input id="orm-delivery-fee" type="number" min="0" step="0.5" class="w-full border border-gray-200 rounded-xl px-3 py-2 text-sm focus:outline-none focus:ring-2 focus:ring-orange-300">
+      <div class="bg-gray-50 rounded-xl px-3 py-2.5 text-[11px] text-gray-500 font-bold">
+        🛵 رسوم التوصيل مش قابلة للاسترداد في أي عملية إرجاع — الخدمة اتنفذت فعلاً. مينفعش ترجع لا تلقائيًا ولا يدويًا.
       </div>
       <div>
         <label class="text-xs font-extrabold text-gray-400 mb-1.5 block">ملاحظات (هتظهر للعميل لو رفضت الطلب)</label>
@@ -3255,11 +3254,7 @@ function openReturnResolveModal(returnId) {
   if (!r) return
   const ord = r.orders || {}
   const items = r.requested_items || []
-  // نحسب هل ده استرجاع كامل (كل أصناف الطلب متضمنة بنفس الكمية) عشان نقترح استرداد رسوم التوصيل تلقائيًا
   const orderItems = ord.items || []
-  const orderQtyTotal = orderItems.reduce((s, i) => s + Number(i.qty || 0), 0)
-  const reqQtyTotal = items.reduce((s, i) => s + Number(i.qty || 0), 0)
-  const isFull = orderQtyTotal > 0 && reqQtyTotal >= orderQtyTotal
 
   _returnResolveCtx = { returnId, selected: {} }
   items.forEach(i => { _returnResolveCtx.selected[i.id] = Number(i.qty || 0) })
@@ -3276,7 +3271,6 @@ function openReturnResolveModal(returnId) {
   if (ord.customer_name) infoRows.push(`👤 <b>العميل:</b> ${escapeHtml(ord.customer_name)}`)
   if (ord.customer_phone) infoRows.push(`📞 <b>الهاتف:</b> ${escapeHtml(ord.customer_phone)}`)
   document.getElementById('orm-delivery-info').innerHTML = infoRows.map(t => `<p>${t}</p>`).join('')
-  document.getElementById('orm-delivery-fee').value = isFull ? Number(ord.delivery_fee || 0) : 0
   document.querySelector('input[name="orm-refund-method"][value="wallet"]').checked = true
   document.getElementById('orm-notes').value = ''
   renderReturnResolveItems(items, orderItems)
@@ -3317,7 +3311,9 @@ async function approveReturnRequest() {
   const approvedItems = Object.entries(_returnResolveCtx.selected).filter(([,qty]) => qty > 0).map(([id, qty]) => ({ id, qty }))
   if (!approvedItems.length) { showToast('لازم توافق على صنف واحد على الأقل، أو استخدم زر الرفض'); return }
   const refundMethod = document.querySelector('input[name="orm-refund-method"]:checked')?.value || 'wallet'
-  const deliveryFeeRefund = Number(document.getElementById('orm-delivery-fee').value || 0)
+  // رسوم التوصيل مش قابلة للاسترداد خالص (راجع الملحوظة في الشاشة) — بتتفرض صفر هنا وكمان
+  // بتترفض أي قيمة تانية على مستوى قاعدة البيانات نفسها، دي مجرد صراحة مع القيمة المرسلة.
+  const deliveryFeeRefund = 0
   const notes = document.getElementById('orm-notes').value.trim() || null
   try {
     const { data, error } = await db.rpc('resolve_order_return', {

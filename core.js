@@ -1061,7 +1061,7 @@ function renderNotifList() {
     el.innerHTML = `<p style="font-size:13px;color:#bbb;text-align:center;padding:24px 0">لا توجد إشعارات</p>`
     return
   }
-  const iconMap = { order_confirmed:'✅', order_ready:'📦', order_delivering:'🛵', order_delivered:'🎉', order_cancelled:'❌', coins:'🪙', promo:'🎁' }
+  const iconMap = { order_confirmed:'✅', order_ready:'📦', order_delivering:'🛵', order_delivered:'🎉', order_cancelled:'❌', coins:'🪙', promo:'🎁', return_approved:'✅', return_rejected:'❌' }
   el.innerHTML = _notifications.map(n => `
     <div style="display:flex;align-items:flex-start;gap:10px;padding:12px 16px;border-bottom:1px solid #f5f5f5;${n.is_read ? '' : 'background:#fff8f3'}">
       <span style="font-size:20px;flex-shrink:0">${iconMap[n.type] || '🔔'}</span>
