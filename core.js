@@ -238,7 +238,11 @@ async function boot() {
     renderAccountPage()
     showBottomNav(!!S.customer)
     updateWalletBadge()
-    if (S.customer) loadNotifications().catch(() => {})
+    if (S.customer) {
+      loadNotifications().catch(() => {})
+      initCustomerPushUI().catch(() => {})
+      startCustomerNotifRealtime()
+    }
     window._bootDone = true
     // استعادة الصفحة بعد refresh أو Google redirect
     const savedPage = sessionStorage.getItem('mnio_page')
@@ -246,6 +250,14 @@ async function boot() {
       switchPage(savedPage)
     } else if (S.customer && new URLSearchParams(location.search).get('ref')) {
       switchPage('account')
+    }
+    // فتح تفاصيل طلب معيّن لو جاي من رابط إشعار Push (?order=uuid) — وتنظيف الرابط
+    // بعد كده عشان ما يتكررش فتح نفس التفاصيل لو المستخدم عمل refresh بعدين
+    const notifOrderId = new URLSearchParams(location.search).get('order')
+    if (notifOrderId && S.customer) {
+      openOrderDetail(notifOrderId).catch(() => {})
+      const cleanUrl = location.pathname + location.hash
+      history.replaceState(history.state, '', cleanUrl)
     }
 
   } catch(e) {
@@ -539,7 +551,6 @@ async function checkAndAwardBirthdayGift() {
 
     S.customer.birthday_gift_claimed_year = thisYear
     S.customer.coins_balance = data.new_balance
-    updateWalletBadge()
     showToast(`🎂 عيد ميلاد سعيد! حصلت على ${numFmt(data.coins_granted)} كوين هدية 🎉`)
     playSuccessSound()
   } catch(e) {}
@@ -1063,8 +1074,11 @@ function renderNotifList() {
     return
   }
   const iconMap = { order_confirmed:'✅', order_ready:'📦', order_delivering:'🛵', order_delivered:'🎉', order_cancelled:'❌', coins:'🪙', promo:'🎁', return_approved:'✅', return_rejected:'❌' }
+  // n.id و n.order_id قيم uuid جاية من قاعدة البيانات مش نص حر من مستخدم، فمفيش داعي لـ escapeHTML ليهم
+  // (زي نفس التعامل مع الـ ids في باقي الكود) — بس أي نص ظاهر فعليًا (title/body) بيتعامل معاه escapeHTML دايمًا
   el.innerHTML = _notifications.map(n => `
-    <div style="display:flex;align-items:flex-start;gap:10px;padding:12px 16px;border-bottom:1px solid #f5f5f5;${n.is_read ? '' : 'background:#fff8f3'}">
+    <div onclick="handleNotifClick('${n.id}', ${n.order_id ? `'${n.order_id}'` : 'null'})"
+         style="display:flex;align-items:flex-start;gap:10px;padding:12px 16px;border-bottom:1px solid #f5f5f5;cursor:pointer;${n.is_read ? '' : 'background:#fff8f3'}">
       <span style="font-size:20px;flex-shrink:0">${iconMap[n.type] || '🔔'}</span>
       <div style="flex:1">
         <p style="font-size:13px;font-weight:${n.is_read ? '600' : '800'};color:#1a1a1a;margin-bottom:2px">${escapeHTML(n.title)}</p>
@@ -1073,6 +1087,21 @@ function renderNotifList() {
       </div>
       ${!n.is_read ? '<span style="width:8px;height:8px;border-radius:50%;background:var(--brand);flex-shrink:0;margin-top:4px"></span>' : ''}
     </div>`).join('')
+}
+
+// الضغط على إشعار معين: نعلّمه مقروء (لوحده، مش الكل) ولو مرتبط بطلب نفتح تفاصيل الطلب مباشرة
+async function handleNotifClick(notifId, orderId) {
+  const n = _notifications.find(x => x.id === notifId)
+  if (n && !n.is_read) {
+    n.is_read = true
+    renderNotifList()
+    updateNotifBadge()
+    try { await db.from('notifications').update({ is_read: true }).eq('id', notifId) } catch(e) {}
+  }
+  if (orderId) {
+    toggleNotifPanel()
+    openOrderDetail(orderId).catch(() => {})
+  }
 }
 
 function updateNotifBadge() {
@@ -1092,6 +1121,88 @@ async function markAllNotifsRead() {
   try {
     await db.from('notifications').update({ is_read: true }).eq('customer_id', S.customer.id).eq('is_read', false)
   } catch(e) {}
+}
+
+// ── تحديث فوري للإشعارات (Realtime) ────────────────────────────────────
+// من غير ده، الجرس ما كانش بيتحدث إلا لما العميل يقفل ويفتح الصفحة تاني أو يعمل
+// أوردر جديد — يعني لو التطبيق فاتح فعلاً قدامه وحالة طلبه اتغيّرت، محدش كان
+// هيعرف غير لو عمل refresh يدوي بنفسه.
+let _customerNotifChannel = null
+function startCustomerNotifRealtime() {
+  if (!S.customer || _customerNotifChannel) return
+  _customerNotifChannel = db
+    .channel('customer-notifs-' + S.customer.id)
+    .on('postgres_changes', { event: 'INSERT', schema: 'public', table: 'notifications', filter: `customer_id=eq.${S.customer.id}` }, p => {
+      _notifications.unshift(p.new)
+      if (_notifications.length > 20) _notifications = _notifications.slice(0, 20)
+      renderNotifList()
+      updateNotifBadge()
+      if (!_notifPanelOpen) showToast((p.new.title || '🔔 إشعار جديد'))
+    })
+    .subscribe()
+}
+
+// ── تفعيل تنبيهات Push للعميل (متصفح) ──────────────────────────────────
+// المفتاح العام لـ VAPID — نفس زوج المفاتيح المستخدم مع تنبيهات التاجر، آمن نشره
+// في كود العميل (المفتاح الخاص فاضل سري في الـ Edge Function فقط)
+const CUSTOMER_VAPID_PUBLIC_KEY = 'BHpeyTZ57ZxBaWldVJ2qNWqrwWZMUSsLFIzOGvtl0suELxgRqoiZ8oLXNQNQEoTIv_4dYzelHMGG3llLWV_FMaE'
+
+function urlBase64ToUint8Array(base64String) {
+  const padding = '='.repeat((4 - base64String.length % 4) % 4)
+  const base64  = (base64String + padding).replace(/-/g, '+').replace(/_/g, '/')
+  const rawData = window.atob(base64)
+  return Uint8Array.from([...rawData].map(c => c.charCodeAt(0)))
+}
+
+// بتتنفذ بصمت عند فتح التطبيق: تسجّل الـ service worker ولو فيه اشتراك متصفح
+// قائم بالفعل (المستخدم وافق قبل كده) تتأكد إنه محفوظ عندنا في الداتابيز.
+// لو لسه ما وافقش، تظهر زرار التفعيل جوه لوحة الإشعارات من غير أي إزعاج تلقائي
+// (طلب صلاحية الإشعارات من غير ضغطة مستخدم مباشرة بيترفض أو يتجاهله أغلب المتصفحات).
+async function initCustomerPushUI() {
+  const row = document.getElementById('notif-enable-push-row')
+  if (!('serviceWorker' in navigator) || !('PushManager' in window)) { if (row) row.style.display = 'none'; return }
+  try {
+    const reg = await navigator.serviceWorker.register('./sw.js')
+    if (Notification.permission === 'granted') {
+      const existing = await reg.pushManager.getSubscription()
+      if (existing) await saveCustomerPushSubscription(existing)
+      if (row) row.style.display = 'none'
+    } else if (Notification.permission === 'denied') {
+      if (row) row.style.display = 'none' // العميل رفض قبل كده — مانتلحّش عليه تاني
+    } else {
+      if (row) row.style.display = 'flex'
+    }
+  } catch (e) { if (row) row.style.display = 'none' }
+}
+
+async function enableCustomerPush() {
+  if (!S.customer) return
+  try {
+    const reg = await navigator.serviceWorker.register('./sw.js')
+    const permission = await Notification.requestPermission()
+    if (permission !== 'granted') { showToast('لازم توافق على الإشعارات عشان توصلك تنبيهات طلبك أول بأول'); return }
+    const sub = await reg.pushManager.subscribe({
+      userVisibleOnly: true,
+      applicationServerKey: urlBase64ToUint8Array(CUSTOMER_VAPID_PUBLIC_KEY)
+    })
+    await saveCustomerPushSubscription(sub)
+    const row = document.getElementById('notif-enable-push-row')
+    if (row) row.style.display = 'none'
+    showToast('🔔 تم تفعيل تنبيهات طلبك بنجاح')
+  } catch (e) { showToast('تعذّر تفعيل الإشعارات، جرّب تاني') }
+}
+
+async function saveCustomerPushSubscription(sub) {
+  if (!S.customer) return
+  const json = sub.toJSON ? sub.toJSON() : sub
+  try {
+    await db.from('customer_push_subscriptions').upsert({
+      customer_id: S.customer.id,
+      endpoint:    json.endpoint,
+      p256dh:      json.keys.p256dh,
+      auth:        json.keys.auth
+    }, { onConflict: 'endpoint' })
+  } catch (e) {}
 }
 
 // ملاحظة: الدالتين incrementCustomerCoins/incrementCustomerWallet اتشالوا نهائيًا —
