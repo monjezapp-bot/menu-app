@@ -1182,6 +1182,14 @@ async function initCustomerPushUI() {
   const row      = document.getElementById('notif-enable-push-row')
   const rowText  = document.getElementById('notif-enable-push-text')
   const rowBtn   = document.getElementById('notif-enable-push-btn')
+  // لو الـ service worker جدد الاشتراك من تلقاء نفسه (pushsubscriptionchange)،
+  // بيبعتلنا الاشتراك الجديد هنا عشان نحفظه — مرة واحدة كفاية مهما اتفتحت الدالة دي
+  if ('serviceWorker' in navigator && !window._notifSWMsgBound) {
+    window._notifSWMsgBound = true
+    navigator.serviceWorker.addEventListener('message', (event) => {
+      if (event.data?.type === 'PUSH_SUBSCRIPTION_RENEWED') saveCustomerPushSubscription(event.data.subscription)
+    })
+  }
   // آيفون: التنبيهات مستحيل تشتغل غير لو التطبيق متثبّت كـ PWA على الشاشة الرئيسية أولاً
   if (isIOS() && !isStandalonePWA()) {
     if (row && rowText && rowBtn) {
@@ -1196,9 +1204,17 @@ async function initCustomerPushUI() {
   try {
     const reg = await navigator.serviceWorker.register('./sw.js')
     if (Notification.permission === 'granted') {
-      const existing = await reg.pushManager.getSubscription()
-      if (existing) await saveCustomerPushSubscription(existing)
-      if (row) row.style.display = 'none'
+      let existing = await reg.pushManager.getSubscription()
+      // الإذن ممنوح بالفعل بس مفيش اشتراك فعلي (ممكن يكون المتصفح لغاه من تلقاء نفسه) —
+      // مش محتاجين نزعج العميل بزرار تاني، إعادة الاشتراك هنا مبتحتاجش تفاعل مستخدم
+      // جديد أصلاً طالما الإذن ممنوح فعلاً
+      if (!existing) {
+        try {
+          existing = await reg.pushManager.subscribe({ userVisibleOnly: true, applicationServerKey: urlBase64ToUint8Array(CUSTOMER_VAPID_PUBLIC_KEY) })
+        } catch (e) { existing = null }
+      }
+      if (existing) { await saveCustomerPushSubscription(existing); if (row) row.style.display = 'none' }
+      else if (row) row.style.display = 'flex' // فشلت المحاولتين — سيب الزرار ظاهر يجرب العميل بنفسه
     } else if (Notification.permission === 'denied') {
       if (row) row.style.display = 'none' // العميل رفض قبل كده — مانتلحّش عليه تاني
     } else {

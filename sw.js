@@ -89,3 +89,31 @@ self.addEventListener('notificationclick', (event) => {
     })
   );
 });
+
+// ── PUSH SUBSCRIPTION CHANGE ─────────────────────────────────────────
+// المتصفح (خصوصاً كروم) ممكن يلغي/يجدد الاشتراك من تلقاء نفسه من وقت للتاني
+// (مش حاجة إحنا بنتحكم فيها)، والحدث ده بيتفعل حتى لو التطبيق مقفول تمامًا.
+// من غير الاستماع له، الاشتراك القديم بيبقى عاطل بصمت والإشعارات بتقف من غير
+// ما حد ياخد باله، لحد ما يفتح التطبيق تاني ويلاحظ بنفسه إن التفعيل اتلغى.
+const VAPID_PUBLIC_KEY = 'BHpeyTZ57ZxBaWldVJ2qNWqrwWZMUSsLFIzOGvtl0suELxgRqoiZ8oLXNQNQEoTIv_4dYzelHMGG3llLWV_FMaE'
+function urlBase64ToUint8Array(base64String) {
+  const padding = '='.repeat((4 - base64String.length % 4) % 4)
+  const base64  = (base64String + padding).replace(/-/g, '+').replace(/_/g, '/')
+  const rawData = atob(base64)
+  return Uint8Array.from([...rawData].map((c) => c.charCodeAt(0)))
+}
+self.addEventListener('pushsubscriptionchange', (event) => {
+  event.waitUntil(
+    self.registration.pushManager.subscribe({
+      userVisibleOnly: true,
+      applicationServerKey: urlBase64ToUint8Array(VAPID_PUBLIC_KEY)
+    }).then((newSub) =>
+      self.clients.matchAll({ type: 'window', includeUncontrolled: true }).then((clientsArr) => {
+        // مبعرفش هنا لوحدي لو الجهاز ده تاجر ولا عميل ولا فرع معيّن — فبنسيب صفحة
+        // التطبيق نفسها (core.js أو dashboard.html) تحفظ الاشتراك الجديد بالتفاصيل
+        // الصح بتاعتها (customer_id أو restaurant_id/branch_id)
+        clientsArr.forEach((c) => c.postMessage({ type: 'PUSH_SUBSCRIPTION_RENEWED', subscription: newSub.toJSON() }))
+      })
+    ).catch(() => {})
+  );
+});

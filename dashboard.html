@@ -4102,6 +4102,7 @@ async function initPushUI() {
   if ('serviceWorker' in navigator) {
     navigator.serviceWorker.addEventListener('message', (event) => {
       if (event.data?.type === 'PLAY_LOUD_ALERT') playAlarm()
+      if (event.data?.type === 'PUSH_SUBSCRIPTION_RENEWED') savePushSubscription(event.data.subscription)
     })
   }
   // آيفون: لازم يكون مثبّت كـ PWA على الشاشة الرئيسية، وإلا الإشعارات مستحيل تشتغل
@@ -4142,7 +4143,7 @@ async function enablePushNotifications() {
   }
 }
 async function savePushSubscription(sub) {
-  const json = sub.toJSON()
+  const json = sub.toJSON ? sub.toJSON() : sub
   await db.from('push_subscriptions').upsert({
     restaurant_id: state.restaurant.id,
     branch_id:     _activeBranchId, // null = اشتراك أدمن (كل الفروع)، أو معرف الفرع لو الجهاز داخل بدور فرع
