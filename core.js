@@ -239,9 +239,7 @@ async function boot() {
     showBottomNav(!!S.customer)
     updateWalletBadge()
     if (S.customer) {
-      loadNotifications().catch(() => {})
-      initCustomerPushUI().catch(() => {})
-      startCustomerNotifRealtime()
+      activateCustomerNotifications()
     }
     window._bootDone = true
     // استعادة الصفحة بعد refresh أو Google redirect
@@ -758,6 +756,7 @@ async function genUniqueReferralCode() {
 }
 
 async function custLogout() {
+  await deactivateCustomerNotifications()
   await db.auth.signOut()
   S.customer = null
   _appliedDiscount = 0
@@ -947,7 +946,7 @@ async function accAuthSubmit() {
       const { error } = await db.auth.signInWithPassword({ email, password: pass })
       if (error) throw new Error('البريد أو كلمة المرور غير صحيحة')
       await initCustomerSession()
-      renderAccountPage(); showBottomNav(true); loadNotifications().catch(() => {}); playSuccessSound()
+      renderAccountPage(); showBottomNav(true); activateCustomerNotifications(); playSuccessSound()
     } else {
       const name      = document.getElementById('acc-name')?.value.trim()
       const phone     = document.getElementById('acc-phone')?.value.trim()
@@ -969,7 +968,7 @@ async function accAuthSubmit() {
       } else {
         await initCustomerSession(true, { name, phone, birthdate, area, gender: _selectedGender, referral_code_used: ref })
       }
-      renderAccountPage(); showBottomNav(true); loadNotifications().catch(() => {})
+      renderAccountPage(); showBottomNav(true); activateCustomerNotifications()
       if (S.restaurant?.welcome_bonus_enabled ?? true) { showCelebration(S.restaurant?.welcome_coins ?? 10000); playSuccessSound() }
     }
   } catch(e) {
@@ -1063,7 +1062,7 @@ async function loadNotifications() {
       .limit(20)
     _notifications = data || []
     renderNotifList()
-    updateNotifBadge()
+    await refreshUnreadNotifCount()
   } catch(e) { /* جدول notifications مش موجود بعد */ }
 }
 
@@ -1095,8 +1094,10 @@ async function handleNotifClick(notifId, orderId) {
   if (n && !n.is_read) {
     n.is_read = true
     renderNotifList()
-    updateNotifBadge()
-    try { await db.from('notifications').update({ is_read: true }).eq('id', notifId) } catch(e) {}
+    try {
+      await db.from('notifications').update({ is_read: true }).eq('id', notifId)
+    } catch(e) {}
+    refreshUnreadNotifCount()
   }
   if (orderId) {
     toggleNotifPanel()
@@ -1104,23 +1105,31 @@ async function handleNotifClick(notifId, orderId) {
   }
 }
 
-function updateNotifBadge() {
-  const unread = _notifications.filter(n => !n.is_read).length
-  const badge  = document.getElementById('notif-badge')
-  if (badge) {
-    badge.textContent    = unread > 9 ? '9+' : String(unread)
-    badge.style.display  = unread > 0 ? 'block' : 'none'
-  }
+// شكل الجرس بيعتمد على عدد حقيقي بالـ COUNT مش على طول الـ 20 المحمّلين بس —
+// عميل نادر الدخول ممكن يتراكم عنده أكتر من 20 إشعار غير مقروء، وكان العداد
+// وقتها بيوريه رقم أقل من الحقيقي.
+async function refreshUnreadNotifCount() {
+  const badge = document.getElementById('notif-badge')
+  if (!S.customer || !badge) return
+  try {
+    const { count } = await db.from('notifications')
+      .select('id', { count: 'exact', head: true })
+      .eq('customer_id', S.customer.id)
+      .eq('is_read', false)
+    const unread = count || 0
+    badge.textContent   = unread > 9 ? '9+' : String(unread)
+    badge.style.display = unread > 0 ? 'block' : 'none'
+  } catch(e) {}
 }
 
 async function markAllNotifsRead() {
   if (!S.customer || !_notifications.length) return
   _notifications.forEach(n => n.is_read = true)
   renderNotifList()
-  updateNotifBadge()
   try {
     await db.from('notifications').update({ is_read: true }).eq('customer_id', S.customer.id).eq('is_read', false)
   } catch(e) {}
+  refreshUnreadNotifCount()
 }
 
 // ── تحديث فوري للإشعارات (Realtime) ────────────────────────────────────
@@ -1136,16 +1145,27 @@ function startCustomerNotifRealtime() {
       _notifications.unshift(p.new)
       if (_notifications.length > 20) _notifications = _notifications.slice(0, 20)
       renderNotifList()
-      updateNotifBadge()
+      refreshUnreadNotifCount()
       if (!_notifPanelOpen) showToast((p.new.title || '🔔 إشعار جديد'))
     })
     .subscribe()
+}
+
+// بتتقفل عند تسجيل الخروج عشان ما يفضلش القناة سامعة لإشعارات عميل مسجّل خروج
+// أصلاً، ومنعًا لمشكلة تانية: لو عميل مختلف سجّل دخول بعد كده في نفس التاب من
+// غير refresh، الحارس جوه startCustomerNotifRealtime (يمنع فتح قناة جديدة لو
+// فيه واحدة قديمة) كان هيمنعه هو كمان من الاشتراك في تحديثاته
+function stopCustomerNotifRealtime() {
+  if (_customerNotifChannel) { db.removeChannel(_customerNotifChannel); _customerNotifChannel = null }
 }
 
 // ── تفعيل تنبيهات Push للعميل (متصفح) ──────────────────────────────────
 // المفتاح العام لـ VAPID — نفس زوج المفاتيح المستخدم مع تنبيهات التاجر، آمن نشره
 // في كود العميل (المفتاح الخاص فاضل سري في الـ Edge Function فقط)
 const CUSTOMER_VAPID_PUBLIC_KEY = 'BHpeyTZ57ZxBaWldVJ2qNWqrwWZMUSsLFIzOGvtl0suELxgRqoiZ8oLXNQNQEoTIv_4dYzelHMGG3llLWV_FMaE'
+
+function isIOS() { return /iphone|ipad|ipod/i.test(navigator.userAgent) }
+function isStandalonePWA() { return window.matchMedia('(display-mode: standalone)').matches || window.navigator.standalone === true }
 
 function urlBase64ToUint8Array(base64String) {
   const padding = '='.repeat((4 - base64String.length % 4) % 4)
@@ -1159,7 +1179,19 @@ function urlBase64ToUint8Array(base64String) {
 // لو لسه ما وافقش، تظهر زرار التفعيل جوه لوحة الإشعارات من غير أي إزعاج تلقائي
 // (طلب صلاحية الإشعارات من غير ضغطة مستخدم مباشرة بيترفض أو يتجاهله أغلب المتصفحات).
 async function initCustomerPushUI() {
-  const row = document.getElementById('notif-enable-push-row')
+  const row      = document.getElementById('notif-enable-push-row')
+  const rowText  = document.getElementById('notif-enable-push-text')
+  const rowBtn   = document.getElementById('notif-enable-push-btn')
+  // آيفون: التنبيهات مستحيل تشتغل غير لو التطبيق متثبّت كـ PWA على الشاشة الرئيسية أولاً
+  if (isIOS() && !isStandalonePWA()) {
+    if (row && rowText && rowBtn) {
+      rowText.textContent = 'ثبّت التطبيق على شاشتك الرئيسية الأول عشان تقدر تفعّل الإشعارات (من صفحة "حسابي")'
+      rowBtn.style.display = 'none'
+      row.style.display = 'flex'
+    }
+    return
+  }
+  if (rowBtn) rowBtn.style.display = ''
   if (!('serviceWorker' in navigator) || !('PushManager' in window)) { if (row) row.style.display = 'none'; return }
   try {
     const reg = await navigator.serviceWorker.register('./sw.js')
@@ -1177,6 +1209,7 @@ async function initCustomerPushUI() {
 
 async function enableCustomerPush() {
   if (!S.customer) return
+  if (isIOS() && !isStandalonePWA()) { showToast('ثبّت التطبيق على شاشتك الرئيسية الأول من صفحة "حسابي"'); return }
   try {
     const reg = await navigator.serviceWorker.register('./sw.js')
     const permission = await Notification.requestPermission()
@@ -1202,6 +1235,40 @@ async function saveCustomerPushSubscription(sub) {
       p256dh:      json.keys.p256dh,
       auth:        json.keys.auth
     }, { onConflict: 'endpoint' })
+  } catch (e) {}
+}
+
+// نقطة دخول واحدة لتفعيل كل حاجة خاصة بالإشعارات (القايمة + الـ Push + التحديث
+// الفوري) — بتتنادى من أي مكان ممكن يظهر فيه S.customer لأول مرة في الجلسة:
+// أول تحميل للصفحة (boot)، تسجيل دخول، أو إنشاء حساب جديد. من غير التوحيد ده،
+// أي نقطة دخول جديدة كانت بتنسى تربط الـ Push أو الـ Realtime بسهولة.
+async function activateCustomerNotifications() {
+  if (!S.customer) return
+  await loadNotifications().catch(() => {})
+  await initCustomerPushUI().catch(() => {})
+  startCustomerNotifRealtime()
+}
+
+// عكس activateCustomerNotifications — بتتنادى عند تسجيل الخروج فقط:
+// 1) توقف قناة الـ Realtime (وإلا هتفضل سامعة لإشعارات عميل خرج بالفعل)
+// 2) تلغي اشتراك الـ Push من المتصفح نفسه وتمسحه من الداتابيز — عشان لو الجهاز
+//    ده مشترك (تابلت مطعم/جهاز عيلة)، العميل اللي خرج ما يفضلش يوصله push بتاع
+//    حساب مش شغال بيه دلوقتي
+async function deactivateCustomerNotifications() {
+  stopCustomerNotifRealtime()
+  _notifications = []
+  renderNotifList()
+  const badge = document.getElementById('notif-badge')
+  if (badge) badge.style.display = 'none'
+  try {
+    if ('serviceWorker' in navigator) {
+      const reg = await navigator.serviceWorker.getRegistration('./sw.js')
+      const sub = reg && await reg.pushManager.getSubscription()
+      if (sub) {
+        await db.from('customer_push_subscriptions').delete().eq('endpoint', sub.endpoint)
+        await sub.unsubscribe()
+      }
+    }
   } catch (e) {}
 }
 
