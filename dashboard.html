@@ -1832,8 +1832,7 @@ async function saveLoyaltySettings() {
     purchase_voucher_coins:      purchaseVoucherCoins,
   }
 
-  const { error } = await db.from('restaurants').update(payload).eq('id', state.restaurant.id)
-  if (error) { showToast('حصل خطأ أثناء الحفظ — الإعدادات لم تُحفظ، حاول تاني'); return }
+  await db.from('restaurants').update(payload).eq('id', state.restaurant.id)
   Object.assign(state.restaurant, payload)
   showToast('تم حفظ إعدادات الكوينز ✅')
 }
@@ -2058,10 +2057,7 @@ function saveAnnouncement() {
   annSaveTimeout = setTimeout(async () => {
     const text   = document.getElementById('ann-text').value.trim()
     const active = document.getElementById('ann-active-toggle').checked
-    const { error } = await db.from('restaurants').update({ announcement_text: text || null, announcement_active: active }).eq('id', state.restaurant.id)
-    if (error) { showToast('حصل خطأ أثناء الحفظ — حاول تاني'); return }
-    state.restaurant.announcement_text = text || null
-    state.restaurant.announcement_active = active
+    await db.from('restaurants').update({ announcement_text: text || null, announcement_active: active }).eq('id', state.restaurant.id)
     showToast(active ? '📣 الرسالة نشطة' : 'تم الحفظ')
   }, 800)
 }
@@ -3766,10 +3762,7 @@ function advanceToNextPendingOrder() {
 async function confirmNewOrder() {
   if (!_pendingOrdersQueue.length) return
   const id = _pendingOrdersQueue[0].id
-  const { error } = await db.from('orders')
-    .update({ status:'confirmed', confirmed_at: new Date().toISOString() })
-    .eq('id', id).eq('status', 'pending')
-  if (error) { showToast('تعذّر قبول الطلب — حاول تاني'); return }
+  await db.from('orders').update({ status:'confirmed', confirmed_at: new Date().toISOString() }).eq('id', id).eq('status', 'pending')
   showToast('✅ تم قبول الطلب')
   _pendingOrdersQueue.shift()
   advanceToNextPendingOrder()
@@ -4152,6 +4145,7 @@ async function savePushSubscription(sub) {
   const json = sub.toJSON()
   await db.from('push_subscriptions').upsert({
     restaurant_id: state.restaurant.id,
+    branch_id:     _activeBranchId, // null = اشتراك أدمن (كل الفروع)، أو معرف الفرع لو الجهاز داخل بدور فرع
     endpoint:      json.endpoint,
     p256dh:        json.keys?.p256dh,
     auth:          json.keys?.auth
