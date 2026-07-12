@@ -82,12 +82,27 @@
       <h1 id="dash-restaurant-name" class="text-lg font-extrabold text-gray-800"></h1>
     </div>
     <div class="flex items-center gap-3">
+      <button id="merchant-notif-bell-btn" onclick="toggleMerchantNotifPanel()" class="relative text-xs bg-gray-50 text-gray-600 font-bold px-3 py-2 rounded-xl">
+        🔔
+        <span id="merchant-notif-badge" class="hidden absolute -top-1 -right-1 bg-red-500 text-white text-[10px] font-bold rounded-full min-w-[16px] h-4 px-1 flex items-center justify-center leading-none">0</span>
+      </button>
       <button id="enable-push-btn" onclick="enablePushNotifications()" class="hidden text-xs bg-blue-50 text-blue-600 font-bold px-3 py-2 rounded-xl">🔔 تفعيل التنبيهات</button>
       <a id="preview-link" href="#" target="_blank" class="text-xs bg-orange-50 text-orange-500 font-bold px-3 py-2 rounded-xl">👁️ معاينة</a>
       <a id="support-link" href="#" target="_blank" onclick="openSupportChat(event)" class="text-xs bg-green-50 text-green-600 font-bold px-3 py-2 rounded-xl">💬 الدعم الفني</a>
       <button onclick="doLogout()" class="text-xs text-gray-400 hover:text-red-500 font-bold px-3 py-2 rounded-xl border border-gray-200 transition-colors">خروج</button>
     </div>
   </header>
+
+  <!-- لوحة إشعارات التاجر (طلب جديد / استرجاع / إلغاء من العميل) -->
+  <div id="merchant-notif-panel" class="hidden fixed top-16 left-4 w-80 max-w-[90vw] bg-white rounded-2xl shadow-2xl border border-gray-100 z-40 overflow-hidden">
+    <div class="flex items-center justify-between px-4 py-3 border-b border-gray-100">
+      <span class="font-extrabold text-sm text-gray-800">الإشعارات</span>
+      <button onclick="markAllMerchantNotifsRead()" class="text-[11px] font-bold text-orange-500">تحديد الكل كمقروء</button>
+    </div>
+    <div id="merchant-notif-list" class="max-h-96 overflow-y-auto">
+      <p class="text-xs text-gray-300 text-center py-6">لا توجد إشعارات</p>
+    </div>
+  </div>
 
   <!-- Desktop Tabs (الأقسام الرئيسية الأربعة) -->
   <div class="bg-white border-b border-gray-100 px-2 gap-1 sticky top-[69px] z-20 overflow-x-auto hidden md:flex">
@@ -1652,7 +1667,7 @@ async function doLogin() {
     btn.textContent = 'دخول'
   }
 }
-async function doLogout() { await db.auth.signOut() }
+async function doLogout() { stopMerchantNotifRealtime(); await db.auth.signOut() }
 
 // ── LOAD DASHBOARD ────────────────────────────────────────────────────
 async function loadDashboard(r, branches) {
@@ -1673,6 +1688,8 @@ async function loadDashboard(r, branches) {
   document.getElementById('preview-link').href = MENU_BASE_URL + '?r=' + r.slug + '&preview=1'
   document.getElementById('share-menu-link').value = MENU_BASE_URL + '?r=' + r.slug
   initPushUI()
+  loadMerchantNotifications()
+  startMerchantNotifRealtime()
 
   await Promise.all([loadCategories(), loadProducts(), loadOrders(), loadBanners(), loadBundles(), loadBranches(), loadDiscountCodes()])
 
@@ -2015,7 +2032,10 @@ async function saveDiscountCode() {
   showToast(id ? 'تم تعديل الكود ✅' : 'تم إنشاء الكود ✅')
 }
 
-// ── إشعار العملاء بكود خصم جديد — عام لكل العملاء، أو موجّه فقط للقائمة المستهدفة ─────
+// ── إشعار العملاء بكود خصم جديد — بيميّز 3 حالات مختلفة فعليًا:
+// 1) target_type='public' → كود عام لكل عملاء المطعم
+// 2) target_type='customers' وعدد المستلمين = 1 → كود لعميل واحد بعينه (مُختار يدويًا)
+// 3) غير كده (customers بعدد أكتر من واحد، أو top_spenders/bottom_spenders) → كود لمجموعة مستهدفة
 async function notifyDiscountCodeCreated(payload, codeId) {
   let recipientIds = payload.target_customer_ids
   if (payload.target_type === 'public') {
@@ -2023,12 +2043,30 @@ async function notifyDiscountCodeCreated(payload, codeId) {
     recipientIds = _allCustomers.map(c => c.id)
   }
   if (!recipientIds || !recipientIds.length) return
-  const title = payload.target_type === 'public' ? '🎁 كود خصم جديد!' : '🎁 كود خصم خاص بك!'
-  const body  = `استخدم الكود ${payload.code} واحصل على خصم ${Number(payload.discount_egp).toFixed(2)} ج.م على طلبك القادم`
+
+  let title
+  if (payload.target_type === 'public') {
+    title = '🎁 كود خصم جديد!'
+  } else if (payload.target_type === 'customers' && recipientIds.length === 1) {
+    title = '🎁 كود خصم خاص بيك انت!'
+  } else {
+    title = '🎁 كود خصم لعملائنا المميزين!'
+  }
+  const body = `استخدم الكود ${payload.code} واحصل على خصم ${Number(payload.discount_egp).toFixed(2)} ج.م على طلبك القادم`
+
+  // إدراج صفوف الجرس زي ما هو (سريع، صف واحد لكل عميل، يبان فورًا في لوحة إشعارات
+  // العميل بغض النظر عن أي حاجة تانية)
   const rows = recipientIds.map(cid => ({
     customer_id: cid, restaurant_id: state.restaurant.id, type: 'promo', title, body
   }))
   try { await db.from('notifications').insert(rows) } catch (e) {}
+
+  // إرسال الـ Push نفسه باستدعاء واحد مجمّع (batch) بدل ما نعتمد على تريجر منفصل
+  // لكل صف من الآلاف اللي ممكن تتدرج مع نمو قاعدة العملاء — راجع الشرح اللي فات
+  // عن ليه ده كان بيبقى مشكلة أداء حقيقية مع عدد عملاء كبير
+  try {
+    await db.functions.invoke('send-promo-push', { body: { customer_ids: recipientIds, title, body } })
+  } catch (e) {}
 }
 
 async function deleteDiscountCode(id) {
@@ -4151,6 +4189,114 @@ async function savePushSubscription(sub) {
     p256dh:        json.keys?.p256dh,
     auth:          json.keys?.auth
   }, { onConflict: 'endpoint' })
+}
+
+// ── لوحة إشعارات التاجر (طلب جديد / استرجاع / إلغاء عميل) ──────────────
+let _merchantNotifications  = []
+let _merchantNotifPanelOpen = false
+
+function toggleMerchantNotifPanel() {
+  _merchantNotifPanelOpen = !_merchantNotifPanelOpen
+  document.getElementById('merchant-notif-panel').classList.toggle('hidden', !_merchantNotifPanelOpen)
+  if (_merchantNotifPanelOpen) loadMerchantNotifications()
+}
+
+async function loadMerchantNotifications() {
+  if (!state.restaurant) return
+  try {
+    const { data } = await db.from('merchant_notifications')
+      .select('*')
+      .eq('restaurant_id', state.restaurant.id)
+      .order('created_at', { ascending: false })
+      .limit(20)
+    _merchantNotifications = data || []
+    renderMerchantNotifList()
+    refreshMerchantUnreadCount()
+  } catch (e) {}
+}
+
+function renderMerchantNotifList() {
+  const el = document.getElementById('merchant-notif-list')
+  if (!el) return
+  if (!_merchantNotifications.length) {
+    el.innerHTML = `<p class="text-xs text-gray-300 text-center py-6">لا توجد إشعارات</p>`
+    return
+  }
+  const iconMap = { new_order: '🔔', return_requested: '↩️', order_cancelled_by_customer: '↩️' }
+  el.innerHTML = _merchantNotifications.map(n => `
+    <div onclick="handleMerchantNotifClick('${n.id}', ${n.order_id ? `'${n.order_id}'` : 'null'})"
+         class="flex items-start gap-2.5 px-4 py-3 border-b border-gray-50 cursor-pointer ${n.is_read ? '' : 'bg-orange-50'}">
+      <span class="text-lg flex-shrink-0">${iconMap[n.type] || '🔔'}</span>
+      <div class="flex-1 min-w-0">
+        <p class="text-[13px] ${n.is_read ? 'font-semibold' : 'font-extrabold'} text-gray-800 truncate">${escapeHtml(n.title)}</p>
+        <p class="text-[11px] text-gray-400 truncate">${escapeHtml(n.body)}</p>
+        <p class="text-[10px] text-gray-300 mt-0.5">${new Date(n.created_at).toLocaleString('ar-EG', { day:'numeric', month:'short', hour:'2-digit', minute:'2-digit' })}</p>
+      </div>
+      ${!n.is_read ? '<span class="w-2 h-2 rounded-full bg-orange-500 flex-shrink-0 mt-1"></span>' : ''}
+    </div>`).join('')
+}
+
+async function handleMerchantNotifClick(id, orderId) {
+  const n = _merchantNotifications.find(x => x.id === id)
+  if (n && !n.is_read) {
+    n.is_read = true
+    renderMerchantNotifList()
+    try { await db.from('merchant_notifications').update({ is_read: true }).eq('id', id) } catch (e) {}
+    refreshMerchantUnreadCount()
+  }
+  if (!orderId) return
+  toggleMerchantNotifPanel()
+  // الطلب ممكن ميكونش محمّل في state.orders حاليًا (لو متفلتر بتاب/حالة تانية) —
+  // نجيبه بنفسنا لو كده قبل ما نحاول نفتح تفاصيله
+  let order = state.orders.find(o => o.id === orderId)
+  if (!order) {
+    try {
+      const { data } = await db.from('orders').select('*').eq('id', orderId).single()
+      if (data) { state.orders.push(data); order = data }
+    } catch (e) {}
+  }
+  if (order) openOrderDetailModal(orderId)
+}
+
+async function markAllMerchantNotifsRead() {
+  if (!state.restaurant || !_merchantNotifications.length) return
+  _merchantNotifications.forEach(n => n.is_read = true)
+  renderMerchantNotifList()
+  try {
+    await db.from('merchant_notifications').update({ is_read: true }).eq('restaurant_id', state.restaurant.id).eq('is_read', false)
+  } catch (e) {}
+  refreshMerchantUnreadCount()
+}
+
+async function refreshMerchantUnreadCount() {
+  const badge = document.getElementById('merchant-notif-badge')
+  if (!state.restaurant || !badge) return
+  try {
+    const { count } = await db.from('merchant_notifications')
+      .select('id', { count: 'exact', head: true })
+      .eq('restaurant_id', state.restaurant.id)
+      .eq('is_read', false)
+    const unread = count || 0
+    badge.textContent   = unread > 9 ? '9+' : String(unread)
+    badge.classList.toggle('hidden', unread === 0)
+  } catch (e) {}
+}
+
+let _merchantNotifChannel = null
+function startMerchantNotifRealtime() {
+  if (!state.restaurant || _merchantNotifChannel) return
+  _merchantNotifChannel = db
+    .channel('merchant-notifs-' + state.restaurant.id)
+    .on('postgres_changes', { event: 'INSERT', schema: 'public', table: 'merchant_notifications', filter: `restaurant_id=eq.${state.restaurant.id}` }, p => {
+      _merchantNotifications.unshift(p.new)
+      if (_merchantNotifications.length > 20) _merchantNotifications = _merchantNotifications.slice(0, 20)
+      renderMerchantNotifList()
+      refreshMerchantUnreadCount()
+    })
+    .subscribe()
+}
+function stopMerchantNotifRealtime() {
+  if (_merchantNotifChannel) { db.removeChannel(_merchantNotifChannel); _merchantNotifChannel = null }
 }
 
 // ── START ─────────────────────────────────────────────────────────────
