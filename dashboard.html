@@ -1587,6 +1587,12 @@ async function submitPasscode() {
       _role = 'branch'; _activeBranchId = data.branch_id
       localStorage.setItem(LS_ROLE_KEY + '_' + _pcRestaurant.id, 'branch:' + data.branch_id)
     }
+    // مهم: verify_dashboard_passcode سجّلت الفرع النشط في الداتابيز، لكن التوكن الحالي
+    // (JWT) لسه فيه الـ claim القديم لحد ما يتجدد. refreshSession() بتجبر Supabase
+    // يصدر توكن جديد فورًا (ويستدعي الـ hook تاني) قبل ما نكمل تحميل أي بيانات —
+    // من غيرها، أول تحميل للطلبات كان هيستخدم صلاحيات الجلسة القديمة (أدمن أو فرع
+    // سابق) لحد ما يحصل تجديد تلقائي طبيعي بعدين
+    try { await db.auth.refreshSession() } catch (e) {}
     await loadDashboard(_pcRestaurant, _pcBranches)
   } catch (e) {
     errEl.classList.remove('hidden')
@@ -1655,7 +1661,7 @@ async function doLogin() {
     if (error) {
       errEl.textContent = 'بيانات الدخول غير صحيحة: ' + error.message; errEl.classList.remove('hidden'); btn.textContent = 'دخول'
       // تسجيل المحاولة الفاشلة لصالح مركز المخاطر في لوحة صاحب المنصة (لا يؤثر على تجربة المستخدم حتى لو فشل النداء)
-      db.rpc('log_failed_login_attempt', { p_email: email, p_context: 'merchant_dashboard' }).then(() => {}, () => {})
+      db.rpc('log_failed_login_attempt', { p_email: email, p_context: 'merchant_dashboard' }).catch(()=>{})
       return
     }
     // لو نجح تسجيل الدخول، onAuthStateChange هيستدعي afterLogin() ويغيّر الشاشة.
@@ -2483,7 +2489,7 @@ function setUnitField(unit) {
 
 // ── BRANCHES ──────────────────────────────────────────────────────────
 async function loadBranches() {
-  const { data } = await db.from('branches').select('*').eq('restaurant_id', state.restaurant.id).order('created_at')
+  const { data } = await db.from('branches').select('id,restaurant_id,name,lat,lng,is_active,created_at').eq('restaurant_id', state.restaurant.id).order('created_at')
   state.branches = data || []
   // أمان: passcode الفرع مش موجود في select('*') بعد الحماية الجديدة — نجيبه من نفس
   // الدالة الآمنة المستخدمة في تسجيل الدخول (owner-only)
@@ -4064,7 +4070,7 @@ async function changeOwnerPassword() {
     const { error: verifyErr } = await db.auth.signInWithPassword({ email: user.email, password: current })
     if (verifyErr) {
       errEl.textContent = 'كلمة السر الحالية غير صحيحة'; errEl.classList.remove('hidden')
-      db.rpc('log_failed_login_attempt', { p_email: user.email, p_context: 'password_change_verification' }).then(() => {}, () => {})
+      db.rpc('log_failed_login_attempt', { p_email: user.email, p_context: 'password_change_verification' }).catch(()=>{})
       return
     }
 
@@ -4204,11 +4210,12 @@ function toggleMerchantNotifPanel() {
 async function loadMerchantNotifications() {
   if (!state.restaurant) return
   try {
-    const { data } = await db.from('merchant_notifications')
+    let q = db.from('merchant_notifications')
       .select('*')
       .eq('restaurant_id', state.restaurant.id)
-      .order('created_at', { ascending: false })
-      .limit(20)
+    // جهاز فرع (مش أدمن): يشوف بس إشعارات فرعه + الإشعارات غير المصنّفة لفرع معين
+    if (_activeBranchId) q = q.or(`branch_id.is.null,branch_id.eq.${_activeBranchId}`)
+    const { data } = await q.order('created_at', { ascending: false }).limit(20)
     _merchantNotifications = data || []
     renderMerchantNotifList()
     refreshMerchantUnreadCount()
@@ -4263,7 +4270,11 @@ async function markAllMerchantNotifsRead() {
   _merchantNotifications.forEach(n => n.is_read = true)
   renderMerchantNotifList()
   try {
-    await db.from('merchant_notifications').update({ is_read: true }).eq('restaurant_id', state.restaurant.id).eq('is_read', false)
+    // نفس فلترة الفرع بتاعة التحميل بالظبط — جهاز فرع ميعلّمش إشعارات فروع تانية
+    // كمقروءة (كانت هتختفي من شاشة الأدمن أو الفروع التانية من غير ما يشوفوها أصلاً)
+    let q = db.from('merchant_notifications').update({ is_read: true }).eq('restaurant_id', state.restaurant.id).eq('is_read', false)
+    if (_activeBranchId) q = q.or(`branch_id.is.null,branch_id.eq.${_activeBranchId}`)
+    await q
   } catch (e) {}
   refreshMerchantUnreadCount()
 }
@@ -4272,10 +4283,12 @@ async function refreshMerchantUnreadCount() {
   const badge = document.getElementById('merchant-notif-badge')
   if (!state.restaurant || !badge) return
   try {
-    const { count } = await db.from('merchant_notifications')
+    let q = db.from('merchant_notifications')
       .select('id', { count: 'exact', head: true })
       .eq('restaurant_id', state.restaurant.id)
       .eq('is_read', false)
+    if (_activeBranchId) q = q.or(`branch_id.is.null,branch_id.eq.${_activeBranchId}`)
+    const { count } = await q
     const unread = count || 0
     badge.textContent   = unread > 9 ? '9+' : String(unread)
     badge.classList.toggle('hidden', unread === 0)
@@ -4288,6 +4301,9 @@ function startMerchantNotifRealtime() {
   _merchantNotifChannel = db
     .channel('merchant-notifs-' + state.restaurant.id)
     .on('postgres_changes', { event: 'INSERT', schema: 'public', table: 'merchant_notifications', filter: `restaurant_id=eq.${state.restaurant.id}` }, p => {
+      // فلترة الفرع هنا لازم تبقى client-side لأن Realtime مش بيدعم شرط OR جوه الـ filter
+      // نفسه — جهاز فرع (مش أدمن) يتجاهل أي إشعار مش بتاعه أو غير مصنّف لفرع
+      if (_activeBranchId && p.new.branch_id && p.new.branch_id !== _activeBranchId) return
       _merchantNotifications.unshift(p.new)
       if (_merchantNotifications.length > 20) _merchantNotifications = _merchantNotifications.slice(0, 20)
       renderMerchantNotifList()
