@@ -32,7 +32,6 @@ function focusNextField(event, nextFieldId, submitFn) {
 async function sendOrder() {
   if (!S.cart.length) return
 
-  const table    = document.getElementById('table-number-input').value.trim()
   const custName = document.getElementById('order-name').value.trim()
   const custPhone= document.getElementById('order-phone').value.trim()
   const custAddr = document.getElementById('order-address').value.trim()
@@ -41,10 +40,10 @@ async function sendOrder() {
   const custLng  = document.getElementById('order-location-lng').value
   const note     = document.getElementById('order-note').value.trim()
 
-  // تحقق إجباري: لو الطلب توصيل (مفيش رقم طاولة)، لازم رقم تواصل + تحديد الموقع على الخريطة
-  // (الموقع إجباري وليس بديلاً اختيارياً للعنوان، لأنه أساس حساب أقرب فرع وتكلفة التوصيل)
+  // تحقق إجباري: رقم تواصل + تحديد الموقع على الخريطة (الموقع إجباري وليس بديلاً
+  // اختيارياً للعنوان، لأنه أساس حساب أقرب فرع وتكلفة التوصيل)
   clearFieldErrors()
-  if (!table) {
+  {
     const missing = []
     if (!custPhone) missing.push('order-phone')
     if (!custLat) missing.push('map-pick-btn')
@@ -78,10 +77,10 @@ async function sendOrder() {
     })
   )
 
-  // أقرب فرع نشط لموقع العميل (لو الطلب توصيل ومفيش طاولة) — أساس توجيه الطلب وحساب التوصيل
+  // أقرب فرع نشط لموقع العميل — أساس توجيه الطلب وحساب رسوم التوصيل
   let nearestBranchId = null
   let deliveryFee     = 0
-  if (!table && custLat && custLng) {
+  if (custLat && custLng) {
     const pricePerKm = parseFloat(S.restaurant.price_per_km) || 0
     if (S.branches.length > 0) {
       const result = findNearestBranch(parseFloat(custLat), parseFloat(custLng))
@@ -116,7 +115,6 @@ async function sendOrder() {
         restaurant_id:    S.restaurant.id,
         order_number:     rpc,
         items, total:     finalTotal,
-        table_number:     table     || null,
         customer_name:    custName  || S.customer?.name || null,
         customer_phone:   custPhone || S.customer?.phone || null,
         customer_address: custAddr  || null,
@@ -145,8 +143,7 @@ async function sendOrder() {
           restaurant_id:    S.restaurant.id,
           order_number:     rpc,
           items, total:     finalTotal,
-          table_number:     table     || null,
-          customer_name:    custName  || null,
+            customer_name:    custName  || null,
           customer_phone:   custPhone || null,
           customer_address: custAddr  || null,
           customer_location:custLoc   || null,
@@ -216,16 +213,13 @@ async function sendOrder() {
           .eq('id', orderId)
       } catch(_) {}
     }
-    // تسجيل فشل الدفع الفعلي لمركز المخاطر (admin_alerts عن طريق app_logs kind=payment_fail) —
-    // مستثنى منه الرفض المتعمد (صنف اتباع/كمية غير منطقية) لأنه مش "باج" فلوس، ده تحقق طبيعي بينجح غالبًا
-    const rawMsg = e.message || 'خطأ غير معروف'
-    if (!rawMsg.startsWith('item_unavailable:') && !rawMsg.startsWith('quantity_too_high:') && !rawMsg.startsWith('invalid_quantity:')) {
-      logClientError({ message: 'فشل تسوية دفع الطلب: ' + rawMsg, stack: e.stack || null, kind: 'payment_fail' })
-    }
+    // أي فشل هنا معناه طلب اتلغى تلقائيًا أو اتحسب غلط — لازم يتسجل فورًا (فلوس التاجر)
+    logPaymentFail({ message: e.message }, orderId ? 'create_order:settle_or_verify(order_id=' + orderId + ')' : 'create_order:before_insert')
     // ترجمة أسباب فشل recalc_order_pricing لرسالة مفهومة للعميل بدل عرض الكود الخام
     let friendlyMsg = e.message || 'خطأ غير معروف'
-    if (friendlyMsg.startsWith('item_unavailable:')) friendlyMsg = `عذرًا، "${friendlyMsg.split(':')[1]}" بقى غير متاح — احذفه من السلة وأعد الإرسال`
-    else if (friendlyMsg.startsWith('quantity_too_high:')) friendlyMsg = `الكمية المطلوبة من "${friendlyMsg.split(':')[1]}" أكبر من المسموح`
+    if (friendlyMsg.startsWith('item_unavailable:')) friendlyMsg = `عذرًا، "${escapeHTML(friendlyMsg.split(':')[1])}" بقى غير متاح — احذفه من السلة وأعد الإرسال`
+    else if (friendlyMsg.startsWith('quantity_too_high:')) friendlyMsg = `الكمية المطلوبة من "${escapeHTML(friendlyMsg.split(':')[1])}" أكبر من المسموح`
+    else friendlyMsg = escapeHTML(friendlyMsg)
     btn.style.opacity = '1'
     btn.innerHTML = `<span>⚠️ ${friendlyMsg}</span>`
     setTimeout(resetBtn, 5000)
@@ -233,7 +227,7 @@ async function sendOrder() {
   }
 
   clearCart(); updateCartUI(); closeCartSheet()
-  ;['order-name', 'order-phone', 'order-address', 'order-location', 'order-note', 'table-number-input', 'cart-discount-code']
+  ;['order-name', 'order-phone', 'order-address', 'order-location', 'order-note', 'cart-discount-code']
     .forEach(id => { const el = document.getElementById(id); if (el) el.value = '' })
   document.getElementById('order-location-lat').value = ''
   document.getElementById('order-location-lng').value = ''
@@ -286,7 +280,7 @@ function handleOrderStatusChange(order) {
 // طلب مُصغّر = العميل ضغط (−)؛ بطاقة التتبع متبقاش بتفرض نفسها تلقائي،
 // والرجوع ليها يبقى فقط من صفحة "طلباتي" (active-order-tracker أو تفاصيل الطلب)
 function getMinimizedOrders() {
-  try { return JSON.parse(localStorage.getItem('minimized_orders') || '[]') } catch(e) { return [] }
+  try { return JSON.parse(localStorage.getItem('minimized_orders') || '[]') } catch(e) { logParseFail(e, 'getMinimizedOrders'); return [] }
 }
 function isOrderMinimized(orderId) { return getMinimizedOrders().includes(orderId) }
 function setOrderMinimized(orderId, minimized) {
@@ -447,7 +441,8 @@ async function refundOrderPayment(order) {
   if (!order?.customer_id || !order?.id) return null
   try {
     const { data, error } = await db.rpc('refund_order_payment_customer', { p_order_id: order.id })
-    if (error || !data || data.already_refunded) return null
+    if (error) { logPaymentFail(error, 'refund_order_payment_customer(order_id=' + order.id + ')'); return null }
+    if (!data || data.already_refunded) return null
     const walletAmt = Number(data.wallet_amt || 0)
     const coinsAmt  = Number(data.coins_amt || 0)
     if (walletAmt <= 0 && coinsAmt <= 0) return null
@@ -459,7 +454,7 @@ async function refundOrderPayment(order) {
       updateWalletBadge()
     }
     return { walletAmt, coinsAmt }
-  } catch(e) { return null }
+  } catch(e) { logPaymentFail({ message: e.message }, 'refund_order_payment_customer(order_id=' + order.id + ')'); return null }
 }
 
 // رسالة قصيرة تتعرض للعميل بعد الإلغاء توضّح إن المبلغ رجع لمحفظته
@@ -626,7 +621,7 @@ async function confirmOrderReceipt() {
   const orderId = document.getElementById('order-success-modal').dataset.orderId
   if (!orderId) return
   const { data, error } = await db.rpc('confirm_order_receipt', { p_order_id: orderId })
-  if (error) { console.error('confirm_order_receipt failed:', error); return }
+  if (error) { console.error('confirm_order_receipt failed:', error); logApiFail(error, 'confirm_order_receipt(manual)'); return }
   if (!data?.updated) return // الحالة اتغيرت من تحت العميل (مش delivering)، متعملش هيد الزر
   document.getElementById('confirm-receipt-btn').classList.add('hidden')
   clearTimeout(_autoConfirmTimeout)
@@ -643,7 +638,8 @@ function startAutoConfirmTimer(orderId, deliveringAt) {
   const elapsedMs   = deliveringAt ? (Date.now() - new Date(deliveringAt).getTime()) : 0
   const remainingMs = Math.max(0, AUTO_CONFIRM_MINUTES_AFTER_DELIVERING * 60 * 1000 - elapsedMs)
   _autoConfirmTimeout = setTimeout(async () => {
-    await db.rpc('confirm_order_receipt', { p_order_id: orderId })
+    const { error } = await db.rpc('confirm_order_receipt', { p_order_id: orderId })
+    if (error) logApiFail(error, 'confirm_order_receipt(auto)')
   }, remainingMs)
 }
 // يعرض شريط مراحل بصري (4 نقاط متصلة) يوضّح موقع الطلب الحالي ضمن رحلة التجهيز والتوصيل
@@ -796,7 +792,7 @@ async function awardLoyaltyAndWelcome(orderId, orderItems, customerId, orderTota
   if (!S.restaurant?.loyalty_enabled || !S.customer) return
   try {
     const { data, error } = await db.rpc('award_order_rewards', { p_order_id: orderId })
-    if (error) return
+    if (error) { logPaymentFail(error, 'award_order_rewards(order_id=' + orderId + ')'); return }
     const coinsAwarded = data?.coins_awarded || 0
     S.customer.welcome_coins_claimed = true
     if (coinsAwarded > 0) {

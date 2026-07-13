@@ -417,6 +417,7 @@ async function loadData(slug) {
   S.products   = prodRes.data
   S.branches   = branchRes.data ?? []
   S.banners    = bannerRes.data ?? []
+  requestAutoLocation()
 
   // جلب bundle_branches مفلترة بالـ ids بتاعة bundles هذا المتجر
   const bundleIds = (bundleRes.data ?? []).map(b => b.id)
@@ -482,6 +483,39 @@ function findNearestBranch(custLat, custLng, excludeIds = []) {
     if (d < minDist) { minDist = d; nearest = b }
   })
   return nearest ? { branch: nearest, distanceKm: minDist } : null
+}
+
+// ── تحديد الموقع تلقائيًا عند فتح التطبيق (من غير أي زرار أو اختيار يدوي) ────
+// المتصفح بيسأل "تسمح بالوصول لموقعك؟" مرة واحدة بس (بيحفظ القرار بعدها)، فتجربة
+// العميل بعد أول مرة بتبقى سلسة تمامًا. لو وافق، بنعرف أقرب فرع فورًا ونحضّر بيانات
+// موقعه في نموذج الطلب من غير ما يحتاج يحدده بنفسه على الخريطة. لو رفض أو فشل التحديد،
+// نتجاهل بصمت ونسيب الصفحة زي ما هي — العميل يقدر يحدد موقعه يدويًا وقت الطلب زي الأول
+function requestAutoLocation() {
+  if (!navigator.geolocation) return
+  navigator.geolocation.getCurrentPosition(
+    pos => {
+      S.autoLat = pos.coords.latitude
+      S.autoLng = pos.coords.longitude
+      applyAutoDetectedLocation()
+    },
+    () => { /* رفض الإذن أو تعذّر التحديد — نكمل عادي من غير أي إزعاج للعميل */ },
+    { timeout: 8000, maximumAge: 5 * 60 * 1000 }
+  )
+}
+
+function applyAutoDetectedLocation() {
+  if (S.autoLat == null || S.autoLng == null) return
+  // لو العميل سبق وحدد موقعه يدويًا بنفسه (مثلاً رجع لصفحة السلة بعد ما اختار)، منلمسش
+  // اختياره — التحديد التلقائي بس لأول مرة يفتح فيها الصفحة
+  if (document.getElementById('order-location-lat')?.value) return
+  document.getElementById('order-location').value     = `https://www.google.com/maps?q=${S.autoLat},${S.autoLng}`
+  document.getElementById('order-location-lat').value = S.autoLat
+  document.getElementById('order-location-lng').value = S.autoLng
+  const label = document.getElementById('map-pick-label')
+  const btn   = document.getElementById('map-pick-btn')
+  if (label) label.textContent = '✅ تم تحديد موقعك تلقائيًا (تقدر تغيّره)'
+  if (btn) { btn.style.borderColor = 'var(--brand)'; btn.style.color = 'var(--brand)' }
+  renderCartItems() // تحديث رسوم التوصيل المعروضة في السلة لو مفتوحة
 }
 // تنضيف رقم تواصل المتجر لصيغة دولية موحدة قبل استخدامه في رابط tel:
 // (يغطي صيغ مختلفة: 0 محلي / + / مسافات / بدون كود دولة)
