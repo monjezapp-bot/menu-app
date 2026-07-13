@@ -1655,7 +1655,7 @@ async function doLogin() {
     if (error) {
       errEl.textContent = 'بيانات الدخول غير صحيحة: ' + error.message; errEl.classList.remove('hidden'); btn.textContent = 'دخول'
       // تسجيل المحاولة الفاشلة لصالح مركز المخاطر في لوحة صاحب المنصة (لا يؤثر على تجربة المستخدم حتى لو فشل النداء)
-      db.rpc('log_failed_login_attempt', { p_email: email, p_context: 'merchant_dashboard' }).catch(()=>{})
+      db.rpc('log_failed_login_attempt', { p_email: email, p_context: 'merchant_dashboard' }).then(() => {}, () => {})
       return
     }
     // لو نجح تسجيل الدخول، onAuthStateChange هيستدعي afterLogin() ويغيّر الشاشة.
@@ -4064,7 +4064,7 @@ async function changeOwnerPassword() {
     const { error: verifyErr } = await db.auth.signInWithPassword({ email: user.email, password: current })
     if (verifyErr) {
       errEl.textContent = 'كلمة السر الحالية غير صحيحة'; errEl.classList.remove('hidden')
-      db.rpc('log_failed_login_attempt', { p_email: user.email, p_context: 'password_change_verification' }).catch(()=>{})
+      db.rpc('log_failed_login_attempt', { p_email: user.email, p_context: 'password_change_verification' }).then(() => {}, () => {})
       return
     }
 
