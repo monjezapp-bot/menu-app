@@ -595,6 +595,36 @@
     <!-- Account Tab -->
     <div id="tab-content-account" class="hidden fade-up">
       <h2 class="font-extrabold text-gray-800 mb-4 flex items-center gap-2"><svg class="w-5 h-5 text-orange-500" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"><rect x="5" y="10" width="14" height="10" rx="2"/><path d="M8 10V7a4 4 0 018 0v3"/><circle cx="12" cy="15" r="1.2" fill="currentColor" stroke="none"/></svg>الحساب</h2>
+
+      <div class="bg-white rounded-2xl p-5 shadow-sm space-y-3 mb-4">
+        <div class="flex items-center justify-between">
+          <p class="font-extrabold text-gray-800 text-sm flex items-center gap-2">🤖 استهلاك المساعد الذكي (واتساب)</p>
+          <select id="ai-usage-period" onchange="loadAiUsageSummary()" class="text-xs font-bold border border-gray-200 rounded-lg px-2 py-1 text-gray-600">
+            <option value="7">آخر 7 أيام</option>
+            <option value="30" selected>آخر 30 يوم</option>
+            <option value="all">من البداية</option>
+          </select>
+        </div>
+        <p class="text-[11px] text-gray-400">تكلفة تشغيل الذكاء الاصطناعي اللي بيرد على عملائك على واتساب، محسوبة من عدد الطلبات اللي فعلاً اتعملت في الفترة دي.</p>
+        <div id="ai-usage-loading" class="text-xs text-gray-400 py-2">جاري التحميل...</div>
+        <div id="ai-usage-content" class="hidden grid grid-cols-2 gap-3">
+          <div class="bg-orange-50 rounded-xl p-3">
+            <p class="text-[11px] text-gray-500 mb-1">إجمالي التكلفة</p>
+            <p id="ai-usage-total-egp" class="text-lg font-extrabold text-orange-600">—</p>
+            <p id="ai-usage-total-usd" class="text-[10px] text-gray-400">—</p>
+          </div>
+          <div class="bg-gray-50 rounded-xl p-3">
+            <p class="text-[11px] text-gray-500 mb-1">عدد الأوردرات (عبر البوت)</p>
+            <p id="ai-usage-order-count" class="text-lg font-extrabold text-gray-800">—</p>
+          </div>
+          <div class="bg-gray-50 rounded-xl p-3 col-span-2">
+            <p class="text-[11px] text-gray-500 mb-1">متوسط التكلفة للأوردر الواحد</p>
+            <p id="ai-usage-avg" class="text-sm font-extrabold text-gray-800">—</p>
+          </div>
+        </div>
+        <p id="ai-usage-empty" class="hidden text-xs text-gray-400 py-2">مفيش بيانات استهلاك في الفترة دي لسه.</p>
+      </div>
+
       <div class="bg-white rounded-2xl p-5 shadow-sm space-y-4">
         <p class="text-xs text-gray-400">غيّر كلمة سر دخولك للوحة التحكم (الإيميل وكلمة السر اللي بتدخل بيهم في شاشة تسجيل الدخول). هذه غير كلمة سر الفروع.</p>
         <div><label class="text-xs font-bold text-gray-500 mb-1 block">كلمة السر الحالية</label>
@@ -4038,6 +4068,7 @@ function showTab(name) {
   renderSubTabsBar(section)
 
   if (name === 'orders')       loadOrders()
+  if (name === 'account')      loadAiUsageSummary()
   if (name === 'profile')      closeProfileSubpage()
   if (name === 'quickprices')  loadQuickPrices()
   if (name === 'bundles')   loadBundles()
@@ -4045,6 +4076,58 @@ function showTab(name) {
   if (name === 'customers') loadCustomers()
   if (name === 'banners')   loadBanners()
   if (name === 'branches')  loadBranches()
+}
+
+// ── AI USAGE & COST SUMMARY (تبويب الحساب) ─────────────────────────────
+// بيقرأ ai_cost_usd/ai_call_count من جدول orders (بتتسجل من بوت الواتساب لكل
+// أوردر اتعمل عن طريقه) ويعرضها للتاجر مباشرة، بدل ما يسأل عنها كل مرة.
+const AI_USAGE_USD_TO_EGP = 50.5 // سعر تقريبي، مش سعر لحظي حقيقي — يتحدث يدويًا لو الفرق كبير
+
+async function loadAiUsageSummary() {
+  const loadingEl = document.getElementById('ai-usage-loading')
+  const contentEl = document.getElementById('ai-usage-content')
+  const emptyEl   = document.getElementById('ai-usage-empty')
+  if (!loadingEl || !state.restaurant) return
+
+  loadingEl.classList.remove('hidden')
+  contentEl.classList.add('hidden')
+  emptyEl.classList.add('hidden')
+
+  try {
+    const period = document.getElementById('ai-usage-period')?.value || '30'
+    let query = db.from('orders')
+      .select('ai_cost_usd, ai_call_count, created_at')
+      .eq('restaurant_id', state.restaurant.id)
+      .gt('ai_cost_usd', 0)
+
+    if (period !== 'all') {
+      const since = new Date(Date.now() - Number(period) * 86400000).toISOString()
+      query = query.gte('created_at', since)
+    }
+
+    const { data, error } = await query
+    if (error) throw error
+
+    loadingEl.classList.add('hidden')
+
+    if (!data || !data.length) {
+      emptyEl.classList.remove('hidden')
+      return
+    }
+
+    const totalUsd = data.reduce((s, o) => s + (Number(o.ai_cost_usd) || 0), 0)
+    const orderCount = data.length
+    const totalEgp = totalUsd * AI_USAGE_USD_TO_EGP
+    const avgEgp = orderCount > 0 ? totalEgp / orderCount : 0
+
+    document.getElementById('ai-usage-total-egp').textContent = `${totalEgp.toLocaleString('ar-EG', { maximumFractionDigits: 2 })} ج.م`
+    document.getElementById('ai-usage-total-usd').textContent = `≈ $${totalUsd.toFixed(4)} (بسعر تقريبي)`
+    document.getElementById('ai-usage-order-count').textContent = orderCount.toLocaleString('ar-EG')
+    document.getElementById('ai-usage-avg').textContent = `${avgEgp.toLocaleString('ar-EG', { maximumFractionDigits: 3 })} ج.م / أوردر`
+    contentEl.classList.remove('hidden')
+  } catch (e) {
+    loadingEl.textContent = 'تعذر تحميل بيانات الاستهلاك: ' + e.message
+  }
 }
 
 async function changeOwnerPassword() {
