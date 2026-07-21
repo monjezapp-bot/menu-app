@@ -596,6 +596,17 @@
     <div id="tab-content-account" class="hidden fade-up">
       <h2 class="font-extrabold text-gray-800 mb-4 flex items-center gap-2"><svg class="w-5 h-5 text-orange-500" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"><rect x="5" y="10" width="14" height="10" rx="2"/><path d="M8 10V7a4 4 0 018 0v3"/><circle cx="12" cy="15" r="1.2" fill="currentColor" stroke="none"/></svg>الحساب</h2>
 
+      <div class="bg-white rounded-2xl p-5 shadow-sm space-y-2 mb-4">
+        <p class="font-extrabold text-gray-800 text-sm flex items-center gap-2">💳 اشتراكك في منيوز</p>
+        <div id="sub-status-loading" class="text-xs text-gray-400 py-1">جاري التحميل...</div>
+        <div id="sub-status-content" class="hidden space-y-1">
+          <p class="text-sm text-gray-700">الباقة: <strong id="sub-plan-txt">—</strong></p>
+          <p class="text-sm text-gray-700">السعر: <strong id="sub-price-txt">—</strong></p>
+          <p class="text-sm text-gray-700">ميعاد الفاتورة الجاية: <strong id="sub-next-txt">—</strong></p>
+          <p id="sub-locked-warning" class="hidden text-xs font-bold text-red-600 bg-red-50 rounded-lg p-2 mt-1">⚠️ حسابك مقفول لعدم دفع الاشتراك. تواصل معانا عشان نفعّله تاني.</p>
+        </div>
+      </div>
+
       <div class="bg-white rounded-2xl p-5 shadow-sm space-y-3 mb-4">
         <div class="flex items-center justify-between">
           <p class="font-extrabold text-gray-800 text-sm flex items-center gap-2">🤖 استهلاك المساعد الذكي (واتساب)</p>
@@ -611,7 +622,6 @@
           <div class="bg-orange-50 rounded-xl p-3">
             <p class="text-[11px] text-gray-500 mb-1">إجمالي التكلفة</p>
             <p id="ai-usage-total-egp" class="text-lg font-extrabold text-orange-600">—</p>
-            <p id="ai-usage-total-usd" class="text-[10px] text-gray-400">—</p>
           </div>
           <div class="bg-gray-50 rounded-xl p-3">
             <p class="text-[11px] text-gray-500 mb-1">عدد الأوردرات (عبر البوت)</p>
@@ -4078,12 +4088,15 @@ function showTab(name) {
   if (name === 'branches')  loadBranches()
 }
 
-// ── AI USAGE & COST SUMMARY (تبويب الحساب) ─────────────────────────────
-// بيقرأ ai_cost_usd/ai_call_count من جدول orders (بتتسجل من بوت الواتساب لكل
-// أوردر اتعمل عن طريقه) ويعرضها للتاجر مباشرة، بدل ما يسأل عنها كل مرة.
+// ── AI USAGE & SUBSCRIPTION SUMMARY (تبويب الحساب) ─────────────────────
+// بيقرا من get_my_subscription_and_ai_cost RPC، اللي بترجع تكلفة الـ AI
+// بعد ما الأدمن يكون ضاف الهامش الربحي بتاعه، وسعر الاشتراك بعد أي خصم.
+const BILLING_CYCLE_LABELS_MERCHANT = { monthly:'شهري', quarterly:'كل 3 شهور', biannual:'كل 6 شهور', yearly:'سنوي' }
 const AI_USAGE_USD_TO_EGP = 50.5 // سعر تقريبي، مش سعر لحظي حقيقي — يتحدث يدويًا لو الفرق كبير
 
 async function loadAiUsageSummary() {
+  const subLoadingEl = document.getElementById('sub-status-loading')
+  const subContentEl = document.getElementById('sub-status-content')
   const loadingEl = document.getElementById('ai-usage-loading')
   const contentEl = document.getElementById('ai-usage-content')
   const emptyEl   = document.getElementById('ai-usage-empty')
@@ -4092,41 +4105,50 @@ async function loadAiUsageSummary() {
   loadingEl.classList.remove('hidden')
   contentEl.classList.add('hidden')
   emptyEl.classList.add('hidden')
+  subLoadingEl.classList.remove('hidden')
+  subContentEl.classList.add('hidden')
 
   try {
     const period = document.getElementById('ai-usage-period')?.value || '30'
-    let query = db.from('orders')
-      .select('ai_cost_usd, ai_call_count, created_at')
-      .eq('restaurant_id', state.restaurant.id)
-      .gt('ai_cost_usd', 0)
+    const days = period === 'all' ? 36500 : Number(period)
 
-    if (period !== 'all') {
-      const since = new Date(Date.now() - Number(period) * 86400000).toISOString()
-      query = query.gte('created_at', since)
-    }
-
-    const { data, error } = await query
+    const { data, error } = await db.rpc('get_my_subscription_and_ai_cost', {
+      p_restaurant_id: state.restaurant.id,
+      p_days: days
+    })
     if (error) throw error
+    const row = data && data[0]
+
+    // كارت الاشتراك
+    subLoadingEl.classList.add('hidden')
+    if (row) {
+      document.getElementById('sub-plan-txt').textContent = row.subscription_plan
+        ? `${row.subscription_plan === 'multi_branch' ? 'أكتر من فرع' : 'فرع واحد'} / ${BILLING_CYCLE_LABELS_MERCHANT[row.billing_cycle] || row.billing_cycle}`
+        : 'مفيش باقة متحددة لسه'
+      document.getElementById('sub-price-txt').textContent = row.effective_price ? `${row.effective_price} ج.م` : '—'
+      document.getElementById('sub-next-txt').textContent = row.next_billing_date
+        ? new Date(row.next_billing_date).toLocaleDateString('ar-EG') : '—'
+      document.getElementById('sub-locked-warning').classList.toggle('hidden', !row.is_locked)
+      subContentEl.classList.remove('hidden')
+    }
 
     loadingEl.classList.add('hidden')
 
-    if (!data || !data.length) {
+    if (!row || !row.ai_order_count) {
       emptyEl.classList.remove('hidden')
       return
     }
 
-    const totalUsd = data.reduce((s, o) => s + (Number(o.ai_cost_usd) || 0), 0)
-    const orderCount = data.length
-    const totalEgp = totalUsd * AI_USAGE_USD_TO_EGP
-    const avgEgp = orderCount > 0 ? totalEgp / orderCount : 0
+    const totalEgp = Number(row.ai_cost_usd_with_markup) * AI_USAGE_USD_TO_EGP
+    const avgEgp = row.ai_order_count > 0 ? totalEgp / row.ai_order_count : 0
 
     document.getElementById('ai-usage-total-egp').textContent = `${totalEgp.toLocaleString('ar-EG', { maximumFractionDigits: 2 })} ج.م`
-    document.getElementById('ai-usage-total-usd').textContent = `≈ $${totalUsd.toFixed(4)} (بسعر تقريبي)`
-    document.getElementById('ai-usage-order-count').textContent = orderCount.toLocaleString('ar-EG')
+    document.getElementById('ai-usage-order-count').textContent = row.ai_order_count.toLocaleString('ar-EG')
     document.getElementById('ai-usage-avg').textContent = `${avgEgp.toLocaleString('ar-EG', { maximumFractionDigits: 3 })} ج.م / أوردر`
     contentEl.classList.remove('hidden')
   } catch (e) {
     loadingEl.textContent = 'تعذر تحميل بيانات الاستهلاك: ' + e.message
+    subLoadingEl.textContent = 'تعذر تحميل بيانات الاشتراك'
   }
 }
 
