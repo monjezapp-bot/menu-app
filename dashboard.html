@@ -242,6 +242,45 @@
       <div id="customers-list" class="space-y-3"></div>
     </div>
 
+    <!-- Broadcast Tab -->
+    <div id="tab-content-broadcast" class="hidden fade-up">
+      <h2 class="font-extrabold text-gray-800 mb-1">📣 رسالة جماعية على واتساب</h2>
+      <p class="text-xs text-gray-400 mb-4">اختار عملاءك وابعتلهم رسالة واحدة على واتساب دفعة واحدة</p>
+
+      <div class="bg-white rounded-2xl p-4 shadow-sm mb-4">
+        <label class="text-sm font-bold text-gray-700 block mb-2">نص الرسالة</label>
+        <textarea id="bc-message" rows="3" placeholder="عندنا عرض خصم 20% على كل الطلبات النهاردة بس!"
+          class="w-full border border-gray-200 rounded-xl px-4 py-2.5 text-sm focus:outline-none focus:ring-2 focus:ring-orange-400"></textarea>
+        <p class="text-xs text-gray-400 mt-1">هتتبعت مع اسم متجرك تلقائيًا، وفيها زرار إلغاء اشتراك جاهز.</p>
+      </div>
+
+      <div class="bg-white rounded-2xl p-4 shadow-sm mb-4">
+        <div class="flex items-center justify-between mb-3">
+          <label class="text-sm font-bold text-gray-700">اختار العملاء</label>
+          <span id="bc-customers-count" class="text-xs text-gray-400">لم يتم اختيار أحد بعد</span>
+        </div>
+        <div class="flex gap-2 mb-3">
+          <input id="bc-cust-search" type="search" placeholder="ابحث بالاسم أو الرقم..." oninput="renderBroadcastCustomerPicker()"
+                 class="flex-1 border border-gray-200 rounded-xl px-4 py-2 text-sm focus:outline-none focus:ring-2 focus:ring-orange-400" />
+          <button onclick="selectAllBroadcastCustomers()" class="bg-gray-100 text-gray-600 font-bold px-3 py-2 rounded-xl text-xs whitespace-nowrap">اختار الكل</button>
+        </div>
+        <div id="bc-customers-list" class="space-y-1 max-h-64 overflow-y-auto border border-gray-100 rounded-xl p-2"></div>
+      </div>
+
+      <div id="bc-error" class="hidden bg-red-50 text-red-600 text-sm rounded-xl p-3 mb-4"></div>
+
+      <button onclick="sendBroadcastMessage()" id="bc-send-btn"
+        class="w-full bg-orange-500 text-white font-extrabold py-3.5 rounded-2xl text-sm">ابعت الرسالة دلوقتي</button>
+
+      <div id="bc-results" class="hidden mt-4">
+        <div class="grid grid-cols-3 gap-2">
+          <div class="bg-green-50 rounded-2xl p-3 text-center"><p class="text-xl font-extrabold text-green-500" id="bc-res-sent">—</p><p class="text-xs text-gray-500 mt-1">اتبعتت</p></div>
+          <div class="bg-amber-50 rounded-2xl p-3 text-center"><p class="text-xl font-extrabold text-amber-500" id="bc-res-skip">—</p><p class="text-xs text-gray-500 mt-1">اتخطت</p></div>
+          <div class="bg-red-50 rounded-2xl p-3 text-center"><p class="text-xl font-extrabold text-red-500" id="bc-res-fail">—</p><p class="text-xs text-gray-500 mt-1">فشلت</p></div>
+        </div>
+      </div>
+    </div>
+
     <!-- Analytics Tab -->
     <div id="tab-content-analytics" class="hidden fade-up">
       <h2 class="font-extrabold text-gray-800 mb-4">📊 إحصائيات</h2>
@@ -1287,14 +1326,14 @@ let activeProductFilter = 'all'
 const SECTION_TABS = {
   orders:     ['orders'],
   products:   ['products', 'categories', 'quickprices'],
-  marketing:  ['bundles', 'banners', 'analytics', 'customers', 'loyalty'],
+  marketing:  ['bundles', 'banners', 'analytics', 'customers', 'loyalty', 'broadcast'],
   store:      ['profile', 'appearance', 'branches', 'delivery', 'account']
 }
 const TAB_TO_SECTION = {}
 Object.entries(SECTION_TABS).forEach(([sec, tabs]) => tabs.forEach(t => TAB_TO_SECTION[t] = sec))
 const TAB_SUBLABEL = {
   products: 'المنتجات', categories: 'التصنيفات', quickprices: '⚡ تحديث سريع',
-  bundles: '🎁 العروض', banners: '📢 البنرات', analytics: '📊 الإحصائيات', customers: '👥 العملاء', loyalty: '🎁 هدايا الولاء',
+  bundles: '🎁 العروض', banners: '📢 البنرات', analytics: '📊 الإحصائيات', customers: '👥 العملاء', loyalty: '🎁 هدايا الولاء', broadcast: '📣 رسالة جماعية',
   profile: 'ملف المتجر', appearance: 'المظهر', branches: 'الفروع', delivery: 'التوصيل', account: 'الحساب'
 }
 // أيقونات SVG لقائمة قسم "المتجر" الجانبية (بديل الايموجيز القديمة، Heroicons-style)
@@ -3198,6 +3237,82 @@ function renderCustomers(custs) {
     </div>`).join('')
 }
 
+// ── رسالة جماعية على واتساب (تبويب التسويق → broadcast) ────────────────
+// بيستخدم نفس _allCustomers اللي بتحمّلها loadCustomers()، وبيبعت عن طريق
+// send-broadcast Edge Function (اللي بتتحقق من هوية التاجر بجلسة الدخول
+// نفسها، وبتحترم whatsapp_marketing_optin لكل عميل تلقائيًا في الباك إند)
+let _bcSelectedCustomers = new Set()
+
+async function loadBroadcastTab() {
+  if (!_allCustomers.length) await loadCustomers()
+  renderBroadcastCustomerPicker()
+  document.getElementById('bc-results').classList.add('hidden')
+}
+
+function renderBroadcastCustomerPicker() {
+  const q = document.getElementById('bc-cust-search').value.trim().toLowerCase()
+  const list = (_allCustomers || []).filter(c => c.phone && (!q || (c.name || '').toLowerCase().includes(q) || (c.phone || '').includes(q)))
+  const el = document.getElementById('bc-customers-list')
+  el.innerHTML = list.length ? list.map(c => `
+    <label class="flex items-center gap-2 px-3 py-2 text-sm border-b border-gray-50 last:border-0">
+      <input type="checkbox" onchange="toggleBroadcastCustomer('${escapeHtml(c.id)}', this.checked)" ${_bcSelectedCustomers.has(c.id) ? 'checked' : ''} class="w-4 h-4 accent-orange-500" />
+      <span class="flex-1">${escapeHtml(c.name) || '(بدون اسم)'} <span class="text-gray-400">· ${escapeHtml(c.phone)}</span></span>
+    </label>`).join('') : `<p class="text-center text-gray-400 text-xs py-4">لا يوجد عملاء بأرقام مسجلة</p>`
+  updateBroadcastCustomersCount()
+}
+function toggleBroadcastCustomer(id, checked) {
+  if (checked) _bcSelectedCustomers.add(id); else _bcSelectedCustomers.delete(id)
+  updateBroadcastCustomersCount()
+}
+function selectAllBroadcastCustomers() {
+  const q = document.getElementById('bc-cust-search').value.trim().toLowerCase()
+  const list = (_allCustomers || []).filter(c => c.phone && (!q || (c.name || '').toLowerCase().includes(q) || (c.phone || '').includes(q)))
+  list.forEach(c => _bcSelectedCustomers.add(c.id))
+  renderBroadcastCustomerPicker()
+}
+function updateBroadcastCustomersCount() {
+  document.getElementById('bc-customers-count').textContent =
+    _bcSelectedCustomers.size ? `تم اختيار ${_bcSelectedCustomers.size} عميل` : 'لم يتم اختيار أحد بعد'
+}
+
+async function sendBroadcastMessage() {
+  const errEl = document.getElementById('bc-error')
+  errEl.classList.add('hidden')
+  const message = document.getElementById('bc-message').value.trim()
+
+  if (!_bcSelectedCustomers.size) { errEl.textContent = 'اختار عميل واحد على الأقل'; errEl.classList.remove('hidden'); return }
+  if (!message)                   { errEl.textContent = 'اكتب نص الرسالة';           errEl.classList.remove('hidden'); return }
+
+  const phones = _allCustomers.filter(c => _bcSelectedCustomers.has(c.id)).map(c => c.phone).filter(Boolean)
+  const btn = document.getElementById('bc-send-btn')
+  btn.disabled = true
+  btn.textContent = `بيبعت... (${phones.length} رقم)`
+  document.getElementById('bc-results').classList.add('hidden')
+
+  try {
+    const { data: { session } } = await db.auth.getSession()
+    const res = await fetch('https://pcmyugeqveyjnappulng.supabase.co/functions/v1/send-broadcast', {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json', 'Authorization': `Bearer ${session.access_token}` },
+      body: JSON.stringify({ phones, message })
+    })
+    const data = await res.json()
+    if (!res.ok) { errEl.textContent = 'خطأ: ' + (data?.error || res.status); errEl.classList.remove('hidden'); return }
+
+    document.getElementById('bc-res-sent').textContent = data.summary.sent
+    document.getElementById('bc-res-skip').textContent = data.summary.skipped
+    document.getElementById('bc-res-fail').textContent = data.summary.failed
+    document.getElementById('bc-results').classList.remove('hidden')
+    showToast(`تم إرسال الرسالة لـ ${data.summary.sent} عميل ✅`)
+  } catch (e) {
+    errEl.textContent = 'فشل الاتصال: ' + e.message
+    errEl.classList.remove('hidden')
+  } finally {
+    btn.disabled = false
+    btn.textContent = 'ابعت الرسالة دلوقتي'
+  }
+}
+
 async function giftCoins(customerId, customerName) {
   const amount = prompt(`كم كوين تريد إهداء لـ ${customerName}؟\n(مثال: 5000 = 5 ج.م)`)
   if (!amount || isNaN(parseInt(amount))) return
@@ -4060,7 +4175,7 @@ function renderSubTabsBar(section) {
 }
 
 function showTab(name) {
-  const tabs = ['products','categories','quickprices','bundles','banners','orders','customers','analytics','branches','profile','appearance','delivery','loyalty','account']
+  const tabs = ['products','categories','quickprices','bundles','banners','orders','customers','analytics','branches','profile','appearance','delivery','loyalty','account','broadcast']
   tabs.forEach(t => document.getElementById('tab-content-' + t).classList.add('hidden'))
   document.getElementById('tab-content-' + name).classList.remove('hidden')
 
@@ -4086,6 +4201,7 @@ function showTab(name) {
   if (name === 'customers') loadCustomers()
   if (name === 'banners')   loadBanners()
   if (name === 'branches')  loadBranches()
+  if (name === 'broadcast') loadBroadcastTab()
 }
 
 // ── AI USAGE & SUBSCRIPTION SUMMARY (تبويب الحساب) ─────────────────────
