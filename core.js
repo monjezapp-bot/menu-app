@@ -191,13 +191,27 @@ window.addEventListener('popstate', () => {
   history.back()
 })
 
+// بيتحدد إننا راجعين فعليًا من ريدايركت Google (مش زيارة عادية جديدة) — 3 إشارات
+// موثوقة: علم اتسجّل قبل التحويل مباشرة، أو access_token في الـ hash، أو code/error
+// في الـ query string. أي حاجة تانية = زيارة جديدة عادية.
+function isOAuthReturn() {
+  return sessionStorage.getItem('mnio_oauth_pending') === '1' ||
+         window.location.hash.includes('access_token') ||
+         window.location.search.includes('code=') ||
+         window.location.search.includes('error=') ||
+         window.location.hash.includes('error=')
+}
+
 // ── BOOT ──────────────────────────────────────────────────────────────
 let _lastSlug = null
 async function boot() {
   let slug = new URLSearchParams(location.search).get('r')
 
-  // لو مفيش slug في URL (بعد Google redirect)، جيبه من localStorage
-  if (!slug) {
+  // لو مفيش slug في الرابط، منجيبوش من localStorage إلا في حالة واحدة فقط:
+  // إننا فعليًا راجعين من ريدايركت Google وضاع منّا ?r= في الرحلة. أي زيارة
+  // عادية للرابط الأساسي (من غير ?r=) لازم تودّي لواجهة اكتشاف المطاعم دايمًا،
+  // مش ترجّع العميل تلقائي لآخر تاجر زاره قبل كده.
+  if (!slug && isOAuthReturn()) {
     slug = localStorage.getItem('mnio_last_slug')
   }
   if (slug) {
