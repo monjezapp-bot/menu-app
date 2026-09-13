@@ -28,15 +28,14 @@ let activeFilter    = null
 let searchTerm      = ''
 
 // أيقونات 3D الحقيقية (PNG شفافة موحدة المقاس) بدل Material Symbols المسطحة.
-// سوبر ماركت وأسماك ولحوم دلوقتي بأيقونات رمادية placeholder (نفس المقاس
-// والنظام بالظبط) لحد ما توصل الصور الحقيقية بنفس ستايل الباقي — لما توصل
-// هنبدّل ملفين بس جوه icons/ من غير أي تعديل تاني في الكود.
+// الملفات موجودة في جذر المشروع نفسه (جنب index.html وhome.html مباشرة)،
+// مش جوه مجلد فرعي — المسارات هنا بتطابق مكانها الفعلي على GitHub.
 const HOME_TYPES = [
-  { key: 'مطاعم',       label: 'مطاعم',       iconImg: 'icons/مطاعم.png' },
-  { key: 'كافيهات',     label: 'كافيهات',     iconImg: 'icons/كافيهات.png' },
-  { key: 'سوبر ماركت',  label: 'سوبر ماركت',  iconImg: 'icons/سوبر ماركت.png' },
-  { key: 'أسماك ولحوم', label: 'أسماك ولحوم', iconImg: 'icons/أسماك ولحوم.png' },
-  { key: 'صيدليات',     label: 'صيدليات',     iconImg: 'icons/صيدليات.png' },
+  { key: 'مطاعم',       label: 'مطاعم',       iconImg: 'مطاعم.png' },
+  { key: 'كافيهات',     label: 'كافيهات',     iconImg: 'كافيهات.png' },
+  { key: 'سوبر ماركت',  label: 'سوبر ماركت',  iconImg: 'سوبر ماركت.png' },
+  { key: 'أسماك ولحوم', label: 'أسماك ولحوم', iconImg: 'أسماك ولحوم.png' },
+  { key: 'صيدليات',     label: 'صيدليات',     iconImg: 'صيدليات.png' },
 ]
 
 function showHomeState(name) {
