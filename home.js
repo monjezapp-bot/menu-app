@@ -25,12 +25,14 @@ const db = createClient(SUPABASE_URL, SUPABASE_ANON)
 let allRestaurants = []
 let activeType      = 'مطاعم'
 let activeFilter    = null
+let searchTerm      = ''
 
+// أيقونات Material Symbols بتاعة نفس مكتبة تصميم Stitch
 const HOME_TYPES = [
-  { key: 'مطاعم',       label: 'مطاعم',       icon: '🍽️' },
-  { key: 'كافيهات',     label: 'كافيهات',     icon: '☕' },
-  { key: 'سوبر ماركت',  label: 'سوبر ماركت',  icon: '🛒' },
-  { key: 'أسماك ولحوم', label: 'أسماك ولحوم', icon: '🍗' },
+  { key: 'مطاعم',       label: 'مطاعم',       icon: 'restaurant' },
+  { key: 'كافيهات',     label: 'كافيهات',     icon: 'local_cafe' },
+  { key: 'سوبر ماركت',  label: 'سوبر ماركت',  icon: 'local_grocery_store' },
+  { key: 'أسماك ولحوم', label: 'أسماك ولحوم', icon: 'set_meal' },
 ]
 
 function showHomeState(name) {
@@ -66,15 +68,18 @@ function getLocation() {
   })
 }
 
-// ── RENDER: NAV ───────────────────────────────────────────────────────
+// ── RENDER: TYPE TABS ─────────────────────────────────────────────────
 function renderTypeTabs() {
   const wrap = document.getElementById('home-type-tabs')
-  wrap.innerHTML = HOME_TYPES.map(t => `
-    <div class="home-type-tab${activeType === t.key ? ' active' : ''}" data-type="${t.key}" onclick="setActiveType(this.dataset.type)">
-      <span class="home-type-icon">${t.icon}</span>
-      <span>${t.label}</span>
-    </div>
-  `).join('')
+  wrap.innerHTML = HOME_TYPES.map(t => {
+    const active = activeType === t.key
+    return `<button data-type="${t.key}" onclick="setActiveType(this.dataset.type)"
+      class="flex-shrink-0 flex flex-col items-center justify-center gap-1 w-20 h-16 rounded-xl shadow-[0_4px_16px_0_rgba(0,0,0,0.08)] transition-all
+      ${active ? 'bg-primary text-on-primary' : 'bg-surface-container-lowest text-on-surface-variant'}">
+      <span class="material-symbols-outlined" style="font-size:20px; font-variation-settings:'FILL' ${active ? 1 : 0}">${t.icon}</span>
+      <span class="text-[11px] font-bold">${t.label}</span>
+    </button>`
+  }).join('')
 }
 
 function setActiveType(type) {
@@ -85,16 +90,22 @@ function setActiveType(type) {
   renderGrid()
 }
 
+// ── RENDER: SUB FILTERS ───────────────────────────────────────────────
 function renderFilters() {
   const wrap = document.getElementById('home-filters')
   const inType = allRestaurants.filter(r => r.business_type === activeType)
   const allCats = [...new Set(inType.flatMap(r => r.categories || []))]
   if (!allCats.length) { wrap.innerHTML = ''; return }
 
-  wrap.innerHTML = `<div class="home-chip${!activeFilter ? ' active' : ''}" onclick="setActiveFilter(null)">الكل</div>` +
+  const chip = (active, label, onclick) =>
+    `<button onclick="${onclick}" class="flex-shrink-0 text-xs font-bold rounded-full px-4 py-2 border transition-all whitespace-nowrap
+      ${active ? 'bg-secondary-container text-white border-secondary-container' : 'bg-surface-container-lowest text-on-surface-variant border-outline-variant'}">${label}</button>`
+
+  wrap.innerHTML = chip(!activeFilter, 'الكل', 'setActiveFilter(null)') +
     allCats.map(c => {
       const safe = escapeHTML(c)
-      return `<div class="home-chip${activeFilter === c ? ' active' : ''}" data-cat="${safe}" onclick="setActiveFilter(this.dataset.cat)">${safe}</div>`
+      return `<button data-cat="${safe}" onclick="setActiveFilter(this.dataset.cat)" class="flex-shrink-0 text-xs font-bold rounded-full px-4 py-2 border transition-all whitespace-nowrap
+        ${activeFilter === c ? 'bg-secondary-container text-white border-secondary-container' : 'bg-surface-container-lowest text-on-surface-variant border-outline-variant'}">${safe}</button>`
     }).join('')
 }
 
@@ -104,29 +115,42 @@ function setActiveFilter(cat) {
   renderGrid()
 }
 
+function onSearchInput(val) {
+  searchTerm = (val || '').trim()
+  renderGrid()
+}
+
 // ── RENDER: GRID ──────────────────────────────────────────────────────
 function restaurantCardHTML(r) {
-  const closedBadge   = r.is_open === false ? `<div class="restaurant-badge restaurant-badge-closed">مغلق الآن</div>` : ''
+  const closedBadge = r.is_open === false
+    ? `<div class="absolute top-2.5 right-2.5 bg-on-background/75 text-white text-[10px] font-extrabold px-2.5 py-1 rounded-lg">مغلق الآن</div>` : ''
   const distanceBadge = (r.distance_km !== null && r.distance_km !== undefined)
-    ? `<div class="restaurant-badge restaurant-badge-distance">${r.distance_km} كم</div>` : ''
+    ? `<div class="absolute top-2.5 left-2.5 bg-white text-on-background text-[10px] font-extrabold px-2.5 py-1 rounded-lg shadow-sm flex items-center gap-1">
+         <span class="material-symbols-outlined" style="font-size:12px">near_me</span>${r.distance_km} كم
+       </div>` : ''
+
   const metaParts = []
-  if (r.rating)           metaParts.push(`⭐ ${Number(r.rating).toFixed(1)}`)
-  if (r.avg_prep_minutes) metaParts.push(`${r.avg_prep_minutes} دقيقة`)
+  if (r.rating)           metaParts.push(`<span class="flex items-center gap-0.5"><span class="material-symbols-outlined text-secondary" style="font-size:14px;font-variation-settings:'FILL' 1">star</span>${Number(r.rating).toFixed(1)}</span>`)
+  if (r.avg_prep_minutes)  metaParts.push(`<span>${r.avg_prep_minutes} دقيقة</span>`)
   const tags = (r.categories || []).slice(0, 3).map(c => escapeHTML(c)).join(' · ')
 
-  return `<div class="restaurant-card" onclick="goToRestaurant('${r.slug}')">
-    <div class="restaurant-card-cover">
-      ${r.cover_url ? `<img src="${r.cover_url}" alt="${escapeHTML(r.name)}" loading="lazy" />` : `<div class="no-img">🍽️</div>`}
+  return `<div onclick="goToRestaurant('${r.slug}')"
+    class="bg-surface-container-lowest rounded-xl overflow-hidden shadow-[0_4px_16px_0_rgba(0,0,0,0.06)] cursor-pointer active:scale-[0.98] transition-transform">
+    <div class="relative w-full h-32 bg-surface-container">
+      ${r.cover_url ? `<img src="${r.cover_url}" alt="${escapeHTML(r.name)}" loading="lazy" class="w-full h-full object-cover" />`
+                    : `<div class="w-full h-full flex items-center justify-center text-outline"><span class="material-symbols-outlined" style="font-size:34px">storefront</span></div>`}
       ${closedBadge}
       ${distanceBadge}
     </div>
-    <div class="restaurant-card-info">
-      ${r.logo_url ? `<img class="restaurant-card-logo" src="${r.logo_url}" alt="" />` : `<div class="restaurant-card-logo no-img" style="font-size:18px">🏪</div>`}
-      <div style="flex:1;min-width:0">
-        <h3>${escapeHTML(r.name)}</h3>
-        ${metaParts.length ? `<div class="restaurant-card-meta">${metaParts.join(' · ')}</div>` : ''}
-        ${tags ? `<div class="restaurant-card-tags">${tags}</div>` : ''}
+    <div class="flex items-center gap-3 p-3.5">
+      ${r.logo_url ? `<img src="${r.logo_url}" alt="" class="w-11 h-11 rounded-lg object-cover border border-outline-variant flex-shrink-0" />`
+                   : `<div class="w-11 h-11 rounded-lg bg-surface-container flex items-center justify-center flex-shrink-0"><span class="material-symbols-outlined text-outline" style="font-size:18px">store</span></div>`}
+      <div class="flex-1 min-w-0">
+        <h3 class="text-sm font-extrabold text-on-surface truncate">${escapeHTML(r.name)}</h3>
+        ${metaParts.length ? `<div class="flex items-center gap-2.5 text-[11px] font-bold text-on-surface-variant mt-0.5">${metaParts.join('')}</div>` : ''}
+        ${tags ? `<div class="text-[10.5px] font-semibold text-secondary mt-1 truncate">${tags}</div>` : ''}
       </div>
+      <span class="material-symbols-outlined text-outline flex-shrink-0">chevron_left</span>
     </div>
   </div>`
 }
@@ -135,9 +159,16 @@ function renderGrid() {
   const wrap = document.getElementById('home-grid')
   let list = allRestaurants.filter(r => r.business_type === activeType)
   if (activeFilter) list = list.filter(r => (r.categories || []).includes(activeFilter))
+  if (searchTerm) {
+    const q = searchTerm.toLowerCase()
+    list = list.filter(r => r.name.toLowerCase().includes(q) || (r.categories || []).some(c => c.toLowerCase().includes(q)))
+  }
 
   if (!list.length) {
-    wrap.innerHTML = `<div class="home-empty">${activeFilter ? 'مفيش متاجر في التصنيف ده دلوقتي' : 'مفيش متاجر في القسم ده دلوقتي'}</div>`
+    wrap.innerHTML = `<div class="text-center py-16 px-4 text-outline text-xs">
+      <span class="material-symbols-outlined block mx-auto mb-2" style="font-size:32px">search_off</span>
+      ${searchTerm ? 'مفيش نتائج تطابق بحثك' : (activeFilter ? 'مفيش متاجر في التصنيف ده دلوقتي' : 'مفيش متاجر في القسم ده دلوقتي')}
+    </div>`
     return
   }
   wrap.innerHTML = list.map(restaurantCardHTML).join('')

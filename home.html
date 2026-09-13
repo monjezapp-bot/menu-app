@@ -1,67 +1,118 @@
 <!DOCTYPE html>
 <html lang="ar" dir="rtl">
 <head>
-  <meta charset="UTF-8" />
-  <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no" />
-  <title>منيوز — اطلب من مطعمك المفضل</title>
+<meta charset="UTF-8" />
+<meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no" />
+<title>منيوز — اطلب من مطعمك المفضل</title>
 
-  <!-- ── PWA ── -->
-  <link rel="manifest" href="manifest.json" />
-  <meta name="theme-color" content="#FF6B00" />
-  <link rel="apple-touch-icon" href="icon-192.png" />
+<!-- ── PWA ── -->
+<link rel="manifest" href="manifest.json" />
+<meta name="theme-color" content="#0d631b" />
+<link rel="apple-touch-icon" href="icon-192.png" />
 
-  <!-- ── Libraries ── -->
-  <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
-  <link  rel="preconnect" href="https://fonts.googleapis.com" />
-  <link  href="https://fonts.googleapis.com/css2?family=Rubik:wght@400;500;600;700;800;900&display=swap" rel="stylesheet" />
+<!-- ── Libraries ── -->
+<script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
+<script src="https://cdn.tailwindcss.com?plugins=forms,container-queries"></script>
+<link href="https://fonts.googleapis.com/css2?family=Cairo:wght@400;500;600;700;800&display=swap" rel="stylesheet" />
+<link href="https://fonts.googleapis.com/css2?family=Material+Symbols+Outlined:wght,FILL@100..700,0..1&display=swap" rel="stylesheet" />
 
-  <link rel="stylesheet" href="home.css" />
+<!-- ── نفس نظام الألوان والتوكينز المعتمد لهوية منيوز (مستخرج من تصميم Stitch) ── -->
+<script id="tailwind-config">
+  tailwind.config = {
+    theme: {
+      extend: {
+        colors: {
+          "primary":                  "#0d631b",
+          "on-primary":                "#ffffff",
+          "primary-container":         "#2e7d32",
+          "on-primary-container":      "#cbffc2",
+          "secondary":                 "#9f4200",
+          "on-secondary":              "#ffffff",
+          "secondary-container":       "#fd6c00",
+          "on-secondary-container":    "#562000",
+          "background":                "#f9f9fc",
+          "on-background":             "#1a1c1e",
+          "surface":                   "#f9f9fc",
+          "surface-container-lowest":  "#ffffff",
+          "surface-container-low":     "#f3f3f6",
+          "surface-container":         "#eeeef0",
+          "surface-container-high":    "#e8e8ea",
+          "on-surface":                "#1a1c1e",
+          "on-surface-variant":        "#40493d",
+          "outline":                   "#707a6c",
+          "outline-variant":           "#bfcaba",
+        },
+        borderRadius: { DEFAULT: "0.25rem", lg: "0.5rem", xl: "0.75rem", full: "9999px" },
+        fontFamily: { sans: ["Cairo", "sans-serif"] },
+      },
+    },
+  }
+</script>
+<style>
+  body { font-family: 'Cairo', sans-serif; }
+  .material-symbols-outlined { font-variation-settings: 'FILL' 0, 'wght' 400, 'GRAD' 0, 'opsz' 24; font-size: 22px; }
+  .hidden { display: none !important; }
+  .skeleton { background: linear-gradient(90deg, #ececec 25%, #f6f6f6 37%, #ececec 63%); background-size: 400% 100%; animation: skeleton-loading 1.4s ease infinite; }
+  @keyframes skeleton-loading { 0% { background-position: 100% 50%; } 100% { background-position: 0 50%; } }
+  ::-webkit-scrollbar { display: none; }
+</style>
 </head>
-<body>
+<body class="bg-background text-on-surface antialiased">
 
 <!-- ══════════════════════════════════════════
      LOADING STATE
 ══════════════════════════════════════════ -->
-<div id="home-loading" class="home-wrap">
-  <div class="home-header">
-    <h1>منيوز</h1>
-    <p>اطلب من مطعمك المفضل في دقايق</p>
+<div id="home-loading" class="max-w-[480px] mx-auto min-h-screen bg-background">
+  <header class="bg-primary px-4 pt-8 pb-6 rounded-b-3xl">
+    <h1 class="text-white text-xl font-extrabold">منيوز</h1>
+    <p class="text-white/80 text-xs font-semibold mt-1">اطلب من مطعمك المفضل في دقايق</p>
+  </header>
+  <div class="flex gap-3 px-4 -mt-4 overflow-hidden">
+    <div class="skeleton w-20 h-16 rounded-xl flex-shrink-0"></div>
+    <div class="skeleton w-20 h-16 rounded-xl flex-shrink-0"></div>
+    <div class="skeleton w-20 h-16 rounded-xl flex-shrink-0"></div>
   </div>
-  <div style="display:flex;gap:10px;padding:16px 16px 2px;overflow:hidden">
-    <div class="skeleton" style="width:74px;height:56px;border-radius:16px;flex-shrink:0"></div>
-    <div class="skeleton" style="width:74px;height:56px;border-radius:16px;flex-shrink:0"></div>
-    <div class="skeleton" style="width:74px;height:56px;border-radius:16px;flex-shrink:0"></div>
-  </div>
-  <div style="padding:16px">
-    <div class="skeleton" style="height:190px;border-radius:18px;margin-bottom:14px"></div>
-    <div class="skeleton" style="height:190px;border-radius:18px;margin-bottom:14px"></div>
-    <div class="skeleton" style="height:190px;border-radius:18px"></div>
+  <div class="p-4 space-y-3">
+    <div class="skeleton h-48 rounded-xl"></div>
+    <div class="skeleton h-48 rounded-xl"></div>
+    <div class="skeleton h-48 rounded-xl"></div>
   </div>
 </div>
 
 <!-- ══════════════════════════════════════════
-     HOME STATE (بعد ما البيانات تجهز)
+     HOME STATE
 ══════════════════════════════════════════ -->
-<div id="home-app" class="home-wrap hidden">
-  <div class="home-header">
-    <h1>منيوز</h1>
-    <p>اطلب من مطعمك المفضل في دقايق</p>
-  </div>
+<div id="home-app" class="max-w-[480px] mx-auto min-h-screen bg-background hidden pb-8">
 
-  <div id="home-type-tabs" class="home-type-tabs"></div>
-  <div id="home-filters" class="home-filters"></div>
-  <div id="home-grid" class="home-grid"></div>
+  <!-- Top App Bar + Search (نفس ستايل السيرش بار الدائري من تصميم Stitch) -->
+  <header class="bg-primary px-4 pt-8 pb-9 rounded-b-3xl shadow-sm">
+    <h1 class="text-white text-xl font-extrabold">منيوز</h1>
+    <p class="text-white/80 text-xs font-semibold mt-1 mb-4">اطلب من مطعمك المفضل في دقايق</p>
+    <div class="flex items-center gap-2 bg-surface-container-lowest rounded-full h-11 px-4">
+      <span class="material-symbols-outlined text-on-surface-variant" style="font-size:20px">search</span>
+      <input id="home-search" oninput="onSearchInput(this.value)" class="bg-transparent border-none outline-none focus:ring-0 text-sm w-full text-right placeholder:text-outline" placeholder="دوّر على مطعم أو أكلة..." type="text" />
+    </div>
+  </header>
+
+  <!-- Type Tabs -->
+  <div id="home-type-tabs" class="flex gap-3 overflow-x-auto px-4 -mt-5 relative z-10 pb-1"></div>
+
+  <!-- Sub Filters -->
+  <div id="home-filters" class="flex gap-2 overflow-x-auto px-4 pt-4 pb-1"></div>
+
+  <!-- Restaurant Grid -->
+  <div id="home-grid" class="grid grid-cols-1 gap-4 px-4 pt-3"></div>
 </div>
 
 <!-- ══════════════════════════════════════════
      ERROR STATE
 ══════════════════════════════════════════ -->
-<div id="home-error" class="home-wrap hidden" style="display:flex;flex-direction:column;align-items:center;justify-content:center;min-height:100vh;padding:32px;text-align:center">
-  <div style="font-size:56px;margin-bottom:14px">📡</div>
-  <h2 style="font-size:18px;font-weight:900;color:#1a1a1a;margin-bottom:6px">حدثت مشكلة في الاتصال</h2>
-  <p style="font-size:13px;color:#aaa;margin-bottom:18px">تأكد من الإنترنت وحاول تاني</p>
-  <button onclick="location.reload()" style="background:var(--brand);color:#fff;font-size:14px;font-weight:800;border-radius:14px;padding:12px 28px;border:none">
-    🔄 حاول مرة أخرى
+<div id="home-error" class="max-w-[480px] mx-auto min-h-screen bg-background hidden flex flex-col items-center justify-center px-8 text-center">
+  <span class="material-symbols-outlined text-outline mb-3" style="font-size:52px">wifi_off</span>
+  <h2 class="text-base font-extrabold text-on-surface mb-1">حدثت مشكلة في الاتصال</h2>
+  <p class="text-xs text-outline mb-5">تأكد من الإنترنت وحاول تاني</p>
+  <button onclick="location.reload()" class="bg-primary text-on-primary text-sm font-bold rounded-full px-7 py-3 flex items-center gap-2">
+    <span class="material-symbols-outlined" style="font-size:18px">refresh</span> حاول مرة أخرى
   </button>
 </div>
 
