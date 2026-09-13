@@ -28,14 +28,13 @@ let activeFilter    = null
 let searchTerm      = ''
 
 // أيقونات 3D الحقيقية (PNG شفافة موحدة المقاس) بدل Material Symbols المسطحة.
-// الملفات موجودة في جذر المشروع نفسه (جنب index.html وhome.html مباشرة)،
-// مش جوه مجلد فرعي — المسارات هنا بتطابق مكانها الفعلي على GitHub.
+// الملفات جوه مجلد icons/ في جذر المشروع (icons/مطاعم.png وهكذا).
 const HOME_TYPES = [
-  { key: 'مطاعم',       label: 'مطاعم',       iconImg: 'مطاعم.png' },
-  { key: 'كافيهات',     label: 'كافيهات',     iconImg: 'كافيهات.png' },
-  { key: 'سوبر ماركت',  label: 'سوبر ماركت',  iconImg: 'سوبر ماركت.png' },
-  { key: 'أسماك ولحوم', label: 'أسماك ولحوم', iconImg: 'أسماك ولحوم.png' },
-  { key: 'صيدليات',     label: 'صيدليات',     iconImg: 'صيدليات.png' },
+  { key: 'مطاعم',       label: 'مطاعم',       iconImg: 'icons/مطاعم.png' },
+  { key: 'كافيهات',     label: 'كافيهات',     iconImg: 'icons/كافيهات.png' },
+  { key: 'سوبر ماركت',  label: 'سوبر ماركت',  iconImg: 'icons/سوبر ماركت.png' },
+  { key: 'أسماك ولحوم', label: 'أسماك ولحوم', iconImg: 'icons/أسماك ولحوم.png' },
+  { key: 'صيدليات',     label: 'صيدليات',     iconImg: 'icons/صيدليات.png' },
 ]
 
 function showHomeState(name) {
@@ -77,13 +76,13 @@ function renderTypeTabs() {
   wrap.innerHTML = HOME_TYPES.map(t => {
     const active = activeType === t.key
     const iconHTML = t.iconImg
-      ? `<img src="${t.iconImg}" alt="" class="w-7 h-7 object-contain" />`
-      : `<span class="material-symbols-outlined" style="font-size:20px; font-variation-settings:'FILL' ${active ? 1 : 0}">${t.icon}</span>`
+      ? `<img src="${t.iconImg}" alt="" class="w-16 h-16 object-contain transition-transform ${active ? 'scale-110' : ''}" />`
+      : `<span class="material-symbols-outlined" style="font-size:40px; font-variation-settings:'FILL' ${active ? 1 : 0}">${t.icon}</span>`
     return `<button data-type="${t.key}" onclick="setActiveType(this.dataset.type)"
-      class="flex-shrink-0 flex flex-col items-center justify-center gap-1 w-20 h-16 rounded-xl shadow-[0_4px_16px_0_rgba(0,0,0,0.08)] transition-all
-      ${active ? 'bg-primary text-on-primary' : 'bg-surface-container-lowest text-on-surface-variant'}">
+      class="flex-shrink-0 flex flex-col items-center justify-center gap-1 w-20 bg-transparent">
       ${iconHTML}
-      <span class="text-[11px] font-bold">${t.label}</span>
+      <span class="text-[11px] font-bold ${active ? 'text-secondary' : 'text-on-surface-variant'}">${t.label}</span>
+      <span class="w-1 h-1 rounded-full ${active ? 'bg-secondary' : 'bg-transparent'}"></span>
     </button>`
   }).join('')
 }
