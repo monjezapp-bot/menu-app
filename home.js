@@ -27,12 +27,16 @@ let activeType      = 'مطاعم'
 let activeFilter    = null
 let searchTerm      = ''
 
-// أيقونات Material Symbols بتاعة نفس مكتبة تصميم Stitch
+// أيقونات 3D الحقيقية (PNG شفافة موحدة المقاس) بدل Material Symbols المسطحة.
+// سوبر ماركت وأسماك ولحوم دلوقتي بأيقونات رمادية placeholder (نفس المقاس
+// والنظام بالظبط) لحد ما توصل الصور الحقيقية بنفس ستايل الباقي — لما توصل
+// هنبدّل ملفين بس جوه icons/ من غير أي تعديل تاني في الكود.
 const HOME_TYPES = [
-  { key: 'مطاعم',       label: 'مطاعم',       icon: 'restaurant' },
-  { key: 'كافيهات',     label: 'كافيهات',     icon: 'local_cafe' },
-  { key: 'سوبر ماركت',  label: 'سوبر ماركت',  icon: 'local_grocery_store' },
-  { key: 'أسماك ولحوم', label: 'أسماك ولحوم', icon: 'set_meal' },
+  { key: 'مطاعم',       label: 'مطاعم',       iconImg: 'icons/مطاعم.png' },
+  { key: 'كافيهات',     label: 'كافيهات',     iconImg: 'icons/كافيهات.png' },
+  { key: 'سوبر ماركت',  label: 'سوبر ماركت',  iconImg: 'icons/سوبر ماركت.png' },
+  { key: 'أسماك ولحوم', label: 'أسماك ولحوم', iconImg: 'icons/أسماك ولحوم.png' },
+  { key: 'صيدليات',     label: 'صيدليات',     iconImg: 'icons/صيدليات.png' },
 ]
 
 function showHomeState(name) {
@@ -73,10 +77,13 @@ function renderTypeTabs() {
   const wrap = document.getElementById('home-type-tabs')
   wrap.innerHTML = HOME_TYPES.map(t => {
     const active = activeType === t.key
+    const iconHTML = t.iconImg
+      ? `<img src="${t.iconImg}" alt="" class="w-7 h-7 object-contain" />`
+      : `<span class="material-symbols-outlined" style="font-size:20px; font-variation-settings:'FILL' ${active ? 1 : 0}">${t.icon}</span>`
     return `<button data-type="${t.key}" onclick="setActiveType(this.dataset.type)"
       class="flex-shrink-0 flex flex-col items-center justify-center gap-1 w-20 h-16 rounded-xl shadow-[0_4px_16px_0_rgba(0,0,0,0.08)] transition-all
       ${active ? 'bg-primary text-on-primary' : 'bg-surface-container-lowest text-on-surface-variant'}">
-      <span class="material-symbols-outlined" style="font-size:20px; font-variation-settings:'FILL' ${active ? 1 : 0}">${t.icon}</span>
+      ${iconHTML}
       <span class="text-[11px] font-bold">${t.label}</span>
     </button>`
   }).join('')
