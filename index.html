@@ -58,6 +58,29 @@
 </div>
 
 <!-- ══════════════════════════════════════════
+     DISCOVER STATE (لا يوجد ?r= في الرابط — شبكة كل المطاعم على المنصة)
+══════════════════════════════════════════ -->
+<div id="state-discover" class="hidden">
+  <div class="discover-header">
+    <div class="discover-header-title">
+      <h1>منيوز</h1>
+      <p>اطلب من مطعمك المفضل في دقايق</p>
+    </div>
+  </div>
+
+  <div id="discover-type-tabs" class="discover-type-tabs"></div>
+
+  <div id="discover-filters" class="discover-filters"></div>
+
+  <div id="discover-grid" class="discover-grid">
+    <div class="skeleton" style="height:190px;border-radius:18px"></div>
+    <div class="skeleton" style="height:190px;border-radius:18px"></div>
+    <div class="skeleton" style="height:190px;border-radius:18px"></div>
+    <div class="skeleton" style="height:190px;border-radius:18px"></div>
+  </div>
+</div>
+
+<!-- ══════════════════════════════════════════
      APP STATE
 ══════════════════════════════════════════ -->
 <div id="state-app" class="hidden" style="padding-bottom: calc(70px + env(safe-area-inset-bottom, 0px))">
@@ -889,6 +912,7 @@
 
 <!-- ══ JAVASCRIPT ══ -->
 <script src="core.js"></script>
+<script src="page-discover.js"></script>
 <script src="page-home.js"></script>
 <script src="modals.js"></script>
 <script src="order-flow.js"></script>

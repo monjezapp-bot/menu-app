@@ -212,7 +212,7 @@ async function boot() {
   }
 
   _lastSlug = slug
-  if (!slug) return showError('لم يتم تحديد المتجر. تأكد من الرابط الذي تستخدمه.', false)
+  if (!slug) return bootDiscover() // مفيش تاجر محدد — اعرض شبكة المطاعم بدل رسالة الخطأ (page-discover.js)
   setManifestLink(slug)
 
   try {
@@ -528,7 +528,7 @@ function normalizeWhatsAppNumber(raw) {
   return (n.length >= 10 && n.length <= 15) ? n : null
 }
 function showState(name) {
-  ['loading', 'error', 'app'].forEach(s => document.getElementById('state-' + s).classList.add('hidden'))
+  ['loading', 'error', 'app', 'discover'].forEach(s => document.getElementById('state-' + s).classList.add('hidden'))
   document.getElementById('state-' + name).classList.remove('hidden')
 }
 function showError(msg, showRetry = false) {
