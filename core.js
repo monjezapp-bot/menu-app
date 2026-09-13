@@ -207,10 +207,10 @@ let _lastSlug = null
 async function boot() {
   let slug = new URLSearchParams(location.search).get('r')
 
-  // لو مفيش slug في الرابط، منجيبوش من localStorage إلا في حالة واحدة فقط:
-  // إننا فعليًا راجعين من ريدايركت Google وضاع منّا ?r= في الرحلة. أي زيارة
-  // عادية للرابط الأساسي (من غير ?r=) لازم تودّي لواجهة اكتشاف المطاعم دايمًا،
-  // مش ترجّع العميل تلقائي لآخر تاجر زاره قبل كده.
+  // لو مفيش slug في الرابط، منجيبوش من localStorage إلا لو راجعين فعليًا من
+  // ريدايركت Google وضاع منّا ?r= في الرحلة. أي زيارة عادية للرابط الأساسي
+  // (من غير ?r=) لازم توديه لـ home.html (واجهة منيوز الرئيسية) دايمًا،
+  // مش ترجّعه تلقائي لآخر تاجر زاره قبل كده.
   if (!slug && isOAuthReturn()) {
     slug = localStorage.getItem('mnio_last_slug')
   }
@@ -226,7 +226,7 @@ async function boot() {
   }
 
   _lastSlug = slug
-  if (!slug) return bootDiscover() // مفيش تاجر محدد — اعرض شبكة المطاعم بدل رسالة الخطأ (page-discover.js)
+  if (!slug) { location.replace('home.html'); return } // مفيش تاجر محدد — منيوز الرئيسية ملف مستقل (home.html)
   setManifestLink(slug)
 
   try {
@@ -542,7 +542,7 @@ function normalizeWhatsAppNumber(raw) {
   return (n.length >= 10 && n.length <= 15) ? n : null
 }
 function showState(name) {
-  ['loading', 'error', 'app', 'discover'].forEach(s => document.getElementById('state-' + s).classList.add('hidden'))
+  ['loading', 'error', 'app'].forEach(s => document.getElementById('state-' + s).classList.add('hidden'))
   document.getElementById('state-' + name).classList.remove('hidden')
 }
 function showError(msg, showRetry = false) {

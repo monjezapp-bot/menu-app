@@ -1,0 +1,70 @@
+<!DOCTYPE html>
+<html lang="ar" dir="rtl">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no" />
+  <title>منيوز — اطلب من مطعمك المفضل</title>
+
+  <!-- ── PWA ── -->
+  <link rel="manifest" href="manifest.json" />
+  <meta name="theme-color" content="#FF6B00" />
+  <link rel="apple-touch-icon" href="icon-192.png" />
+
+  <!-- ── Libraries ── -->
+  <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
+  <link  rel="preconnect" href="https://fonts.googleapis.com" />
+  <link  href="https://fonts.googleapis.com/css2?family=Rubik:wght@400;500;600;700;800;900&display=swap" rel="stylesheet" />
+
+  <link rel="stylesheet" href="home.css" />
+</head>
+<body>
+
+<!-- ══════════════════════════════════════════
+     LOADING STATE
+══════════════════════════════════════════ -->
+<div id="home-loading" class="home-wrap">
+  <div class="home-header">
+    <h1>منيوز</h1>
+    <p>اطلب من مطعمك المفضل في دقايق</p>
+  </div>
+  <div style="display:flex;gap:10px;padding:16px 16px 2px;overflow:hidden">
+    <div class="skeleton" style="width:74px;height:56px;border-radius:16px;flex-shrink:0"></div>
+    <div class="skeleton" style="width:74px;height:56px;border-radius:16px;flex-shrink:0"></div>
+    <div class="skeleton" style="width:74px;height:56px;border-radius:16px;flex-shrink:0"></div>
+  </div>
+  <div style="padding:16px">
+    <div class="skeleton" style="height:190px;border-radius:18px;margin-bottom:14px"></div>
+    <div class="skeleton" style="height:190px;border-radius:18px;margin-bottom:14px"></div>
+    <div class="skeleton" style="height:190px;border-radius:18px"></div>
+  </div>
+</div>
+
+<!-- ══════════════════════════════════════════
+     HOME STATE (بعد ما البيانات تجهز)
+══════════════════════════════════════════ -->
+<div id="home-app" class="home-wrap hidden">
+  <div class="home-header">
+    <h1>منيوز</h1>
+    <p>اطلب من مطعمك المفضل في دقايق</p>
+  </div>
+
+  <div id="home-type-tabs" class="home-type-tabs"></div>
+  <div id="home-filters" class="home-filters"></div>
+  <div id="home-grid" class="home-grid"></div>
+</div>
+
+<!-- ══════════════════════════════════════════
+     ERROR STATE
+══════════════════════════════════════════ -->
+<div id="home-error" class="home-wrap hidden" style="display:flex;flex-direction:column;align-items:center;justify-content:center;min-height:100vh;padding:32px;text-align:center">
+  <div style="font-size:56px;margin-bottom:14px">📡</div>
+  <h2 style="font-size:18px;font-weight:900;color:#1a1a1a;margin-bottom:6px">حدثت مشكلة في الاتصال</h2>
+  <p style="font-size:13px;color:#aaa;margin-bottom:18px">تأكد من الإنترنت وحاول تاني</p>
+  <button onclick="location.reload()" style="background:var(--brand);color:#fff;font-size:14px;font-weight:800;border-radius:14px;padding:12px 28px;border:none">
+    🔄 حاول مرة أخرى
+  </button>
+</div>
+
+<script src="home.js"></script>
+</body>
+</html>

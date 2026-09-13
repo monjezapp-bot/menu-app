@@ -1,0 +1,66 @@
+* { margin:0; padding:0; box-sizing:border-box; }
+html, body { font-family:'Rubik', sans-serif; background:#F5F5F5; -webkit-tap-highlight-color:transparent; }
+.hidden { display:none !important; }
+
+:root {
+  --brand:  #FF6B00;
+  --brand2: #1A1A1A;
+  --max: 480px;
+}
+
+.home-wrap { max-width:var(--max); margin:0 auto; min-height:100vh; background:#F5F5F5; padding-bottom:24px; }
+
+/* ── Skeleton ── */
+.skeleton {
+  background:linear-gradient(90deg, #ececec 25%, #f6f6f6 37%, #ececec 63%);
+  background-size:400% 100%; animation:skeleton-loading 1.4s ease infinite;
+}
+@keyframes skeleton-loading { 0% { background-position:100% 50%; } 100% { background-position:0 50%; } }
+
+/* ── Header ── */
+.home-header { background:linear-gradient(135deg, var(--brand2) 0%, var(--brand) 100%); padding:28px 16px 20px; }
+.home-header h1 { color:#fff; font-size:22px; font-weight:900; margin-bottom:4px; }
+.home-header p  { color:rgba(255,255,255,0.85); font-size:12.5px; font-weight:600; }
+
+/* ── Type tabs (مطاعم / كافيهات / سوبر ماركت / أسماك ولحوم) ── */
+.home-type-tabs { display:flex; gap:10px; overflow-x:auto; padding:16px 16px 2px; scrollbar-width:none; margin-top:-14px; position:relative; z-index:1; }
+.home-type-tabs::-webkit-scrollbar { display:none; }
+.home-type-tab {
+  flex:0 0 auto; display:flex; flex-direction:column; align-items:center; gap:4px;
+  background:#fff; border-radius:16px; padding:10px 18px; min-width:74px;
+  box-shadow:0 3px 10px rgba(0,0,0,0.08); cursor:pointer; transition:all 0.15s;
+  font-size:11.5px; font-weight:800; color:#777;
+}
+.home-type-tab.active { background:var(--brand); color:#fff; box-shadow:0 4px 14px rgba(255,107,0,0.35); }
+.home-type-icon { font-size:20px; }
+
+/* ── Sub filters (وسوم حرة جوه النوع المختار) ── */
+.home-filters { display:flex; gap:8px; overflow-x:auto; padding:14px 16px 4px; scrollbar-width:none; }
+.home-filters::-webkit-scrollbar { display:none; }
+.home-chip {
+  flex:0 0 auto; font-size:12.5px; font-weight:700; color:#666; background:#fff;
+  border:1.5px solid #eee; border-radius:20px; padding:7px 16px; white-space:nowrap; cursor:pointer; transition:all 0.15s;
+}
+.home-chip.active { background:var(--brand); border-color:var(--brand); color:#fff; }
+
+/* ── Restaurant grid/cards ── */
+.home-grid { display:grid; grid-template-columns:1fr; gap:14px; padding:14px 16px 0; }
+.home-empty { padding:60px 16px; text-align:center; color:#aaa; font-size:13px; }
+
+.restaurant-card {
+  background:#fff; border-radius:18px; overflow:hidden; cursor:pointer;
+  box-shadow:0 2px 10px rgba(0,0,0,0.06); transition:transform 0.15s;
+}
+.restaurant-card:active { transform:scale(0.98); }
+.restaurant-card-cover { position:relative; width:100%; height:130px; background:linear-gradient(135deg,#f8f8f8,#f0f0f0); }
+.restaurant-card-cover img { width:100%; height:100%; object-fit:cover; display:block; }
+.restaurant-card-cover .no-img { width:100%; height:100%; display:flex; align-items:center; justify-content:center; font-size:32px; }
+.restaurant-badge { position:absolute; top:10px; font-size:11px; font-weight:800; padding:5px 10px; border-radius:10px; }
+.restaurant-badge-closed   { right:10px; background:rgba(20,20,20,0.75); color:#fff; }
+.restaurant-badge-distance { left:10px; background:#fff; color:var(--brand2); box-shadow:0 2px 6px rgba(0,0,0,0.12); }
+
+.restaurant-card-info { display:flex; align-items:center; gap:10px; padding:12px 14px; }
+.restaurant-card-logo { width:44px; height:44px; border-radius:12px; object-fit:cover; flex-shrink:0; border:1.5px solid #f0f0f0; background:#fafafa; align-items:center; justify-content:center; display:flex; }
+.restaurant-card-info h3 { font-size:14.5px; font-weight:800; color:#1a1a1a; white-space:nowrap; overflow:hidden; text-overflow:ellipsis; }
+.restaurant-card-meta { font-size:11.5px; font-weight:700; color:#999; margin-top:2px; }
+.restaurant-card-tags { font-size:10.5px; font-weight:600; color:var(--brand); margin-top:3px; white-space:nowrap; overflow:hidden; text-overflow:ellipsis; }
