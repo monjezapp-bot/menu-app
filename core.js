@@ -620,10 +620,12 @@ async function _loadCustomerProfileInner(forceCreate, extraData) {
   const { data: { user } } = await db.auth.getUser()
   if (!user || !S.restaurant) return
 
-  const { data, error: selErr } = await db.from('menu_customers')
+  // العميل بقى واحد على مستوى منيوز كله — مش صف منفصل لكل تاجر. أول مرة
+  // العميل يسجّل دخول (من أي مطعم كان) بيتعمله صف واحد بس يفضل يتصرف بيه
+  // في أي مطعم تاني بعد كده.
+  const { data, error: selErr } = await db.from('platform_customers')
     .select('*')
     .eq('user_id', user.id)
-    .eq('restaurant_id', S.restaurant.id)
     .maybeSingle()
 
   if (selErr) showAuthDebug('select الأساسي رجع error: ' + selErr.message + ' (code: ' + selErr.code + ')')
@@ -631,30 +633,28 @@ async function _loadCustomerProfileInner(forceCreate, extraData) {
   if (data) {
     S.customer = data
   } else if (forceCreate || user.app_metadata?.provider === 'google') {
-    // أنشئ profile جديد لهذا المتجر
+    // أنشئ بروفايل جديد على مستوى المنصة (أول مرة للعميل ده مطلقًا، بصرف النظر عن التاجر)
     const refCode    = await genUniqueReferralCode()
-    const welcomeEnabled = S.restaurant.welcome_bonus_enabled ?? true
-    const welcomeCoins   = S.restaurant.welcome_coins ?? 10000
-    const cpE            = S.restaurant.coins_per_egp ?? 1000
+    const { data: loyaltySettings } = await db.from('menuz_loyalty_settings').select('*').eq('id', true).maybeSingle()
+    const welcomeCoins = loyaltySettings?.welcome_coins ?? 10000
+    const cpE           = loyaltySettings?.coins_per_egp ?? 1000
     const name       = extraData?.name || user.user_metadata?.full_name || null
     const avatarUrl  = user.user_metadata?.avatar_url || null
 
-    // تحقق من كود الإحالة
+    // تحقق من كود الإحالة (بقى بحث على مستوى المنصة كلها، مش مقصور على تاجر واحد)
     let referredBy = null
     const pendingRef = extraData?.referral_code_used || getPendingRef()
     if (pendingRef) {
       try {
-        const { data: refCust } = await db.from('menu_customers')
-          .select('id').eq('referral_code', pendingRef)
-          .eq('restaurant_id', S.restaurant.id).maybeSingle()
+        const { data: refCust } = await db.from('platform_customers')
+          .select('id').eq('referral_code', pendingRef).maybeSingle()
         if (refCust) referredBy = refCust.id
       } catch(e) {}
     }
 
     try {
-      const { data: newCust, error: insertErr } = await db.from('menu_customers').insert({
+      const { data: newCust, error: insertErr } = await db.from('platform_customers').insert({
         user_id:     user.id,
-        restaurant_id: S.restaurant.id,
         email:       user.email,
         name,
         avatar_url:  avatarUrl,
@@ -663,7 +663,7 @@ async function _loadCustomerProfileInner(forceCreate, extraData) {
         gender:      extraData?.gender    || null,
         area:        extraData?.area      || null,
         // بونص الترحيب يتحول فلوس فوراً في wallet_balance، لا يدخل محفظة الكوينز العادية
-        wallet_balance: welcomeEnabled ? (welcomeCoins / cpE) : 0,
+        wallet_balance: welcomeCoins / cpE,
         referral_code: refCode,
         referred_by: referredBy,
         welcome_coins_claimed: false
@@ -675,23 +675,12 @@ async function _loadCustomerProfileInner(forceCreate, extraData) {
         S.customer = newCust
         _justCreatedNewCustomer = true // إنشاء حقيقي جديد — هذا هو التوقيت الصحيح لإطلاق احتفال الترحيب
         clearPendingRef() // امسح الكود بعد الاستخدام
-        // سجّل معاملة الترحيب (لو الميزة مفعّلة)
-        // أمان/فلوس: الإدراج المباشر القديم من هنا (db.from('coin_transactions').insert) كان بيترفض
-        // بصمت من الـ RLS (مفيش policy تسمح للعميل يعمل INSERT في coin_transactions لنفسه)، والـ
-        // .catch(()=>{}) كان بيبلع الخطأ — يعني صف "welcome" ملوش أي وجود فعلي في سجل الحركات رغم
-        // إن الرصيد الفعلي (wallet_balance) كان مظبوط صح من التريجر. الاستبدال ده بيمر عن طريق RPC
-        // آمن (record_welcome_bonus_transaction) بياخد القيمة من إعدادات المطعم على السيرفر نفسه
-        // (مش من قيمة الكلاينت)، وidempotent فمينفعش يتكرر لو اتنادى أكتر من مرة.
-        if (welcomeEnabled) {
-          const { error: welcomeTxErr } = await db.rpc('record_welcome_bonus_transaction', { p_customer_id: newCust.id })
-          if (welcomeTxErr) logPaymentFail(welcomeTxErr, 'record_welcome_bonus_transaction')
-        }
-        // كوينز الإحالة للمُحيل (لو الميزة مفعّلة) — تتحول فلوس فوراً في wallet_balance أيضاً
-        // ملاحظة: كان بيُستخدم incrementCustomerWallet(referredBy,...) وده كان بيفشل بصمت
-        // لأن الـ RLS بترفض تعديل عميل تاني من جلسة العميل الجديد — الدالة الآمنة دي بتتخطى المشكلة
-        // وبتسجّل معاملة coin_transactions بنفسها داخلياً، فمفيش داعي لإدراج يدوي هنا تاني
-        const referralEnabled = S.restaurant.referral_enabled ?? true
-        if (referredBy && referralEnabled && S.restaurant.referral_coins) {
+        // سجّل معاملة الترحيب (توثيق في سجل الحركات فقط — الرصيد اتحط فوق مباشرة عند الإنشاء)
+        const { error: welcomeTxErr } = await db.rpc('record_welcome_bonus_transaction', { p_customer_id: newCust.id })
+        if (welcomeTxErr) logPaymentFail(welcomeTxErr, 'record_welcome_bonus_transaction')
+
+        // كوينز الإحالة للمُحيل — بتتحول فلوس فوراً في wallet_balance عن طريق دالة آمنة
+        if (referredBy) {
           try {
             const { error: refErr } = await db.rpc('credit_referral_reward', { p_new_customer_id: newCust.id })
             if (refErr) logPaymentFail(refErr, 'credit_referral_reward')
@@ -699,10 +688,10 @@ async function _loadCustomerProfileInner(forceCreate, extraData) {
         }
       }
     } catch(e) {
-      showAuthDebug('فشل إنشاء menu_customers: ' + (e?.message || e))
+      showAuthDebug('فشل إنشاء platform_customers: ' + (e?.message || e))
       // لو فشل الـ insert (race condition)، جرب تجيب الـ profile تاني
-      const { data: retry } = await db.from('menu_customers')
-        .select('*').eq('user_id', user.id).eq('restaurant_id', S.restaurant.id).maybeSingle()
+      const { data: retry } = await db.from('platform_customers')
+        .select('*').eq('user_id', user.id).maybeSingle()
       if (retry) S.customer = retry
     }
   }
@@ -797,7 +786,7 @@ async function genUniqueReferralCode() {
   for (let i = 0; i < 10; i++) {
     let code = ''
     for (let j = 0; j < 6; j++) code += chars[Math.floor(Math.random() * chars.length)]
-    const { data } = await db.from('menu_customers').select('id').eq('referral_code', code).eq('restaurant_id', S.restaurant.id).maybeSingle()
+    const { data } = await db.from('platform_customers').select('id').eq('referral_code', code).maybeSingle()
     if (!data) return code
   }
   return 'REF' + Date.now().toString(36).toUpperCase().slice(-3)

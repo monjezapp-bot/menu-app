@@ -90,7 +90,7 @@ async function saveEditProfile() {
   try {
     // الاسم فقط: تحديث مباشر، مفيش كوينز مرتبطة بيه
     if (name && name !== S.customer.name) {
-      const { error } = await db.from('menu_customers').update({ name }).eq('id', S.customer.id)
+      const { error } = await db.from('platform_customers').update({ name }).eq('id', S.customer.id)
       if (error) throw error
       S.customer.name = name
     }
@@ -101,7 +101,7 @@ async function saveEditProfile() {
     for (const [field, value] of Object.entries(gamifiedFields)) {
       if (!value || value === S.customer[field]) continue
       const { data, error } = await db.rpc('claim_profile_field', {
-        p_field: field, p_value: value, p_restaurant_id: S.restaurant.id
+        p_field: field, p_value: value
       })
       if (error) { showErr(`تعذر حفظ "${field}": ${error.message}`); logPaymentFail(error, 'claim_profile_field(' + field + ')'); continue }
       S.customer[field] = value
@@ -403,7 +403,7 @@ async function submitEditField(field, value) {
   try {
     // الدالة الآمنة بتحدّث الحقل وتمنح الكوينز معاً في نفس المعاملة على السيرفر،
     // وبترفض الطلب لو الحقل كان معبّى بالفعل (بتمنع أي محاولة تكرار)
-    const { data, error } = await db.rpc('claim_profile_field', { p_field: field, p_value: value, p_restaurant_id: S.restaurant.id })
+    const { data, error } = await db.rpc('claim_profile_field', { p_field: field, p_value: value })
     if (error) throw error
 
     S.customer[field] = value

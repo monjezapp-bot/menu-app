@@ -194,12 +194,12 @@ async function convertCoinsToBalance() {
       <p style="font-size:36px;font-weight:900;color:var(--brand);margin-bottom:4px">${numFmt(coins)} 🪙</p>
       <p style="font-size:16px;color:#888;margin-bottom:16px">= ${amount.toFixed(2)} ج.م</p>
       <div style="background:#f0fdf4;border-radius:14px;padding:14px;border:1.5px solid #bbf7d0">
-        <p style="font-size:13px;color:#16a34a;font-weight:700;line-height:1.6">سيتم تحويل الكوينز لرصيد نقدي في محفظتك ويُستخدم للشراء من المتجر فقط 🛒</p>
+        <p style="font-size:13px;color:#16a34a;font-weight:700;line-height:1.6">سيتم تحويل الكوينز لرصيد نقدي في محفظتك ويُستخدم للشراء من أي متجر على منيوز 🛒</p>
       </div>
     </div>`,
     async () => {
       try {
-        const { data, error } = await db.rpc('convert_coins_to_wallet', { p_restaurant_id: S.restaurant.id })
+        const { data, error } = await db.rpc('convert_coins_to_wallet')
         if (error) throw error
         S.customer.coins_balance = 0
         S.customer.wallet_balance = data.new_wallet_balance
