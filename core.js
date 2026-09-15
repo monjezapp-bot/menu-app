@@ -769,13 +769,11 @@ function updateWalletBadge() {
   }
 }
 
-function openWalletOrLogin() {
-  if (S.customer) switchPage('wallet')
-  else switchPage('account')
-}
-
-// Auth القديم اتشال — Google OAuth بس
-function openCustAuth()           { switchPage('account') }
+// حسابك/محفظتك بقوا حصريًا في home.html (منيوز الرئيسية) — التاجر مالوش
+// صفحة مستقلة ليهم بعد النهاردة. السيشن مشتركة (نفس storageKey)، فلو
+// العميل سجّل دخول من home.html هيلاقي نفسه مسجّل هنا تلقائيًا عادي.
+function openWalletOrLogin() { location.href = 'home.html' }
+function openCustAuth()      { location.href = 'home.html' }
 function closeCustAuth()          { }
 function toggleCauthMode()        { }
 function syncCauthUI()            { }
