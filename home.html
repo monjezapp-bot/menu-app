@@ -82,7 +82,7 @@
 <!-- ══════════════════════════════════════════
      HOME STATE
 ══════════════════════════════════════════ -->
-<div id="home-app" class="max-w-[480px] mx-auto min-h-screen bg-background hidden pb-8">
+<div id="home-app" class="max-w-[480px] mx-auto min-h-screen bg-background hidden pb-24">
 
   <!-- Top App Bar + Search (نفس ستايل السيرش بار الدائري من تصميم Stitch) -->
   <header class="bg-primary px-4 pt-8 pb-9 rounded-b-3xl shadow-sm">
@@ -103,6 +103,59 @@
   <!-- Restaurant Grid -->
   <div id="home-grid" class="grid grid-cols-1 gap-4 px-4 pt-3"></div>
 </div>
+
+<!-- ══════════════════════════════════════════
+     ORDERS TAB (طلباتك — عبر كل المطاعم)
+══════════════════════════════════════════ -->
+<div id="home-tab-orders" class="max-w-[480px] mx-auto min-h-screen bg-background hidden pb-24">
+  <header class="bg-primary px-4 pt-8 pb-5"><h1 class="text-white text-lg font-extrabold">طلباتك</h1></header>
+  <div id="orders-list" class="p-4 space-y-3"></div>
+</div>
+
+<!-- ══════════════════════════════════════════
+     WALLET TAB (محفظتك — رصيد موحّد على كل منيوز)
+══════════════════════════════════════════ -->
+<div id="home-tab-wallet" class="max-w-[480px] mx-auto min-h-screen bg-background hidden pb-24">
+  <header class="bg-primary px-4 pt-8 pb-5"><h1 class="text-white text-lg font-extrabold">محفظتك</h1></header>
+  <div id="wallet-content" class="p-4"></div>
+</div>
+
+<!-- ══════════════════════════════════════════
+     ACCOUNT TAB (حسابك)
+══════════════════════════════════════════ -->
+<div id="home-tab-account" class="max-w-[480px] mx-auto min-h-screen bg-background hidden pb-24">
+  <header class="bg-primary px-4 pt-8 pb-5"><h1 class="text-white text-lg font-extrabold">حسابك</h1></header>
+  <div id="account-content" class="p-4"></div>
+</div>
+
+<!-- ══════════════════════════════════════════
+     BOTTOM NAV (ثابت — نفس فكرة طلبات: حسابك / المحفظة / طلباتك / الرئيسية)
+══════════════════════════════════════════ -->
+<nav id="bottom-nav" class="fixed bottom-0 left-1/2 -translate-x-1/2 w-full max-w-[480px] bg-surface-container-lowest border-t border-outline-variant z-50" style="padding-bottom:max(8px, env(safe-area-inset-bottom))">
+  <div class="flex justify-around items-center">
+    <button data-tab="account" onclick="switchTab('account')" class="bnav-btn flex flex-col items-center gap-1 py-2 px-4 min-w-[64px]">
+      <span class="material-symbols-outlined bnav-icon" style="font-size:22px">person</span>
+      <span class="bnav-label text-[10px] font-bold">حسابك</span>
+    </button>
+    <button data-tab="wallet" onclick="switchTab('wallet')" class="bnav-btn flex flex-col items-center gap-1 py-2 px-4 min-w-[64px]">
+      <span class="material-symbols-outlined bnav-icon" style="font-size:22px">account_balance_wallet</span>
+      <span class="bnav-label text-[10px] font-bold">المحفظة</span>
+    </button>
+    <button data-tab="orders" onclick="switchTab('orders')" class="bnav-btn flex flex-col items-center gap-1 py-2 px-4 min-w-[64px] relative">
+      <span class="material-symbols-outlined bnav-icon" style="font-size:22px">receipt_long</span>
+      <span class="bnav-label text-[10px] font-bold">طلباتك</span>
+    </button>
+    <button data-tab="home" onclick="switchTab('home')" class="bnav-btn flex flex-col items-center gap-1 py-2 px-4 min-w-[64px]">
+      <span class="material-symbols-outlined bnav-icon" style="font-size:22px">storefront</span>
+      <span class="bnav-label text-[10px] font-bold">الرئيسية</span>
+    </button>
+  </div>
+</nav>
+<style>
+  .bnav-btn .bnav-icon, .bnav-btn .bnav-label { color: #9aa39a; }
+  .bnav-btn.active .bnav-icon, .bnav-btn.active .bnav-label { color: #0d631b; }
+  .bnav-btn.active .bnav-icon { font-variation-settings: 'FILL' 1; }
+</style>
 
 <!-- ══════════════════════════════════════════
      ERROR STATE
