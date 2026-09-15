@@ -223,64 +223,6 @@
       <div id="orders-list" class="space-y-4"></div>
     </div>
 
-    <!-- Customers Tab -->
-    <div id="tab-content-customers" class="hidden fade-up">
-      <h2 class="font-extrabold text-gray-800 mb-4">👥 العملاء</h2>
-      <!-- إحصائيات سريعة -->
-      <div class="grid grid-cols-3 gap-3 mb-4">
-        <div class="bg-orange-50 rounded-2xl p-3 text-center"><p class="text-2xl font-extrabold text-orange-500" id="cust-stat-total">—</p><p class="text-xs text-gray-500 mt-1">عدد العملاء</p></div>
-        <div class="bg-green-50 rounded-2xl p-3 text-center"><p class="text-2xl font-extrabold text-green-500" id="cust-stat-coins">—</p><p class="text-xs text-gray-500 mt-1">إجمالي الكوينز</p></div>
-        <div class="bg-blue-50 rounded-2xl p-3 text-center"><p class="text-2xl font-extrabold text-blue-500" id="cust-stat-orders">—</p><p class="text-xs text-gray-500 mt-1">طلبات بحسابات</p></div>
-      </div>
-      <!-- فلتر بحث -->
-      <div class="flex gap-2 mb-4">
-        <input id="cust-search" type="search" placeholder="ابحث بالاسم أو الإيميل..." oninput="filterCustomers()"
-               class="flex-1 border border-gray-200 rounded-xl px-4 py-2.5 text-sm focus:outline-none focus:ring-2 focus:ring-orange-400" />
-        <button onclick="loadCustomers()" class="bg-gray-100 text-gray-600 font-bold px-4 py-2.5 rounded-xl text-sm">تحديث</button>
-      </div>
-      <!-- قائمة العملاء -->
-      <div id="customers-list" class="space-y-3"></div>
-    </div>
-
-    <!-- Broadcast Tab -->
-    <div id="tab-content-broadcast" class="hidden fade-up">
-      <h2 class="font-extrabold text-gray-800 mb-1">📣 رسالة جماعية على واتساب</h2>
-      <p class="text-xs text-gray-400 mb-4">اختار عملاءك وابعتلهم رسالة واحدة على واتساب دفعة واحدة</p>
-
-      <div class="bg-white rounded-2xl p-4 shadow-sm mb-4">
-        <label class="text-sm font-bold text-gray-700 block mb-2">نص الرسالة</label>
-        <textarea id="bc-message" rows="3" placeholder="عندنا عرض خصم 20% على كل الطلبات النهاردة بس!"
-          class="w-full border border-gray-200 rounded-xl px-4 py-2.5 text-sm focus:outline-none focus:ring-2 focus:ring-orange-400"></textarea>
-        <p class="text-xs text-gray-400 mt-1">هتتبعت مع اسم متجرك تلقائيًا، وفيها زرار إلغاء اشتراك جاهز.</p>
-      </div>
-
-      <div class="bg-white rounded-2xl p-4 shadow-sm mb-4">
-        <div class="flex items-center justify-between mb-3">
-          <label class="text-sm font-bold text-gray-700">اختار العملاء</label>
-          <span id="bc-customers-count" class="text-xs text-gray-400">لم يتم اختيار أحد بعد</span>
-        </div>
-        <div class="flex gap-2 mb-3">
-          <input id="bc-cust-search" type="search" placeholder="ابحث بالاسم أو الرقم..." oninput="renderBroadcastCustomerPicker()"
-                 class="flex-1 border border-gray-200 rounded-xl px-4 py-2 text-sm focus:outline-none focus:ring-2 focus:ring-orange-400" />
-          <button onclick="selectAllBroadcastCustomers()" class="bg-gray-100 text-gray-600 font-bold px-3 py-2 rounded-xl text-xs whitespace-nowrap">اختار الكل</button>
-        </div>
-        <div id="bc-customers-list" class="space-y-1 max-h-64 overflow-y-auto border border-gray-100 rounded-xl p-2"></div>
-      </div>
-
-      <div id="bc-error" class="hidden bg-red-50 text-red-600 text-sm rounded-xl p-3 mb-4"></div>
-
-      <button onclick="sendBroadcastMessage()" id="bc-send-btn"
-        class="w-full bg-orange-500 text-white font-extrabold py-3.5 rounded-2xl text-sm">ابعت الرسالة دلوقتي</button>
-
-      <div id="bc-results" class="hidden mt-4">
-        <div class="grid grid-cols-3 gap-2">
-          <div class="bg-green-50 rounded-2xl p-3 text-center"><p class="text-xl font-extrabold text-green-500" id="bc-res-sent">—</p><p class="text-xs text-gray-500 mt-1">اتبعتت</p></div>
-          <div class="bg-amber-50 rounded-2xl p-3 text-center"><p class="text-xl font-extrabold text-amber-500" id="bc-res-skip">—</p><p class="text-xs text-gray-500 mt-1">اتخطت</p></div>
-          <div class="bg-red-50 rounded-2xl p-3 text-center"><p class="text-xl font-extrabold text-red-500" id="bc-res-fail">—</p><p class="text-xs text-gray-500 mt-1">فشلت</p></div>
-        </div>
-      </div>
-    </div>
-
     <!-- Analytics Tab -->
     <div id="tab-content-analytics" class="hidden fade-up">
       <h2 class="font-extrabold text-gray-800 mb-4">📊 إحصائيات</h2>
@@ -297,40 +239,21 @@
     </div>
 
 
-    <!-- Loyalty Gifts Tab (هدايا الولاء) -->
+    <!-- Offers & Compensation Tab (كانت هدايا الولاء — دلوقتي بس العروض اللي فعلاً بيد التاجر) -->
     <div id="tab-content-loyalty" class="hidden fade-up">
-      <h2 class="font-extrabold text-gray-800 mb-4">🎁 هدايا الولاء</h2>
+      <h2 class="font-extrabold text-gray-800 mb-4">🏷️ عروض وتعويضات</h2>
+      <p class="text-[11px] text-gray-400 mb-4">بونص الترحيب وبونص الإحالة والحد الأدنى للاسترداد بقوا إعداد موحّد على مستوى منيوز كله، مش من هنا.</p>
 
-      <!-- إعدادات الولاء والكوينز -->
+      <!-- إعدادات هدية الميلاد وهدية/قسيمة الشراء -->
       <div id="loyalty-section" class="hidden bg-white rounded-2xl p-5 shadow-sm space-y-4">
         <div class="flex items-center justify-between">
-          <h3 class="font-bold text-gray-700">🪙 نظام الكوينز</h3>
+          <h3 class="font-bold text-gray-700">🪙 عروض الشراء</h3>
           <div class="flex items-center gap-2">
             <input id="set-loyalty-enabled" type="checkbox" class="w-5 h-5 accent-orange-500" onchange="toggleLoyaltySection()" />
           </div>
         </div>
         <div id="loyalty-fields" class="hidden space-y-4">
           <p class="text-xs text-gray-400">1,000 كوين = 1 ج.م — كل القيم بالكوين إلا كود الخصم المخصص (بالجنيه)</p>
-
-          <!-- بونص الترحيب -->
-          <div class="border border-gray-100 rounded-xl p-3 space-y-2">
-            <div class="flex items-center justify-between">
-              <label class="text-xs font-bold text-gray-600">🎁 بونص الترحيب عند أول تسجيل</label>
-              <input id="set-welcome-enabled" type="checkbox" class="w-5 h-5 accent-orange-500" onchange="toggleLoyaltySubfield('welcome')" />
-            </div>
-            <input id="set-welcome-coins" type="number" min="0" placeholder="10000" class="hidden w-full border border-gray-200 rounded-xl px-4 py-3 text-sm focus:outline-none focus:ring-2 focus:ring-orange-400" />
-            <p class="text-[11px] text-gray-400">يتحول تلقائياً لرصيد نقدي بالمحفظة فوراً، ليستخدمه العميل في أول أوردر</p>
-          </div>
-
-          <!-- بونص الإحالة -->
-          <div class="border border-gray-100 rounded-xl p-3 space-y-2">
-            <div class="flex items-center justify-between">
-              <label class="text-xs font-bold text-gray-600">🔗 بونص الإحالة للمُحيل</label>
-              <input id="set-referral-enabled" type="checkbox" class="w-5 h-5 accent-orange-500" onchange="toggleLoyaltySubfield('referral')" />
-            </div>
-            <input id="set-referral-coins" type="number" min="0" placeholder="5000" class="hidden w-full border border-gray-200 rounded-xl px-4 py-3 text-sm focus:outline-none focus:ring-2 focus:ring-orange-400" />
-            <p class="text-[11px] text-gray-400">يتحول تلقائياً لرصيد نقدي بالمحفظة فوراً عند نجاح الإحالة</p>
-          </div>
 
           <!-- هدية عيد الميلاد -->
           <div class="border border-gray-100 rounded-xl p-3 space-y-2">
@@ -375,10 +298,7 @@
             </div>
           </div>
 
-          <div><label class="text-xs font-bold text-gray-500 mb-1 block">⬇️ الحد الأدنى للاسترداد (كوين) — مثال: 100,000 = 100 ج.م</label>
-            <input id="set-min-redeem" type="number" min="0" placeholder="100000" class="w-full border border-gray-200 rounded-xl px-4 py-3 text-sm focus:outline-none focus:ring-2 focus:ring-orange-400" /></div>
-
-          <button onclick="saveLoyaltySettings()" class="w-full bg-orange-500 text-white font-bold rounded-xl py-3">حفظ إعدادات الكوينز</button>
+          <button onclick="saveLoyaltySettings()" class="w-full bg-orange-500 text-white font-bold rounded-xl py-3">حفظ إعدادات العروض</button>
         </div>
       </div>
 
@@ -1326,14 +1246,14 @@ let activeProductFilter = 'all'
 const SECTION_TABS = {
   orders:     ['orders'],
   products:   ['products', 'categories', 'quickprices'],
-  marketing:  ['bundles', 'banners', 'analytics', 'customers', 'loyalty', 'broadcast'],
+  marketing:  ['bundles', 'banners', 'analytics', 'loyalty'],
   store:      ['profile', 'appearance', 'branches', 'delivery', 'account']
 }
 const TAB_TO_SECTION = {}
 Object.entries(SECTION_TABS).forEach(([sec, tabs]) => tabs.forEach(t => TAB_TO_SECTION[t] = sec))
 const TAB_SUBLABEL = {
   products: 'المنتجات', categories: 'التصنيفات', quickprices: '⚡ تحديث سريع',
-  bundles: '🎁 العروض', banners: '📢 البنرات', analytics: '📊 الإحصائيات', customers: '👥 العملاء', loyalty: '🎁 هدايا الولاء', broadcast: '📣 رسالة جماعية',
+  bundles: '🎁 العروض', banners: '📢 البنرات', analytics: '📊 الإحصائيات', loyalty: '🏷️ عروض وتعويضات',
   profile: 'ملف المتجر', appearance: 'المظهر', branches: 'الفروع', delivery: 'التوصيل', account: 'الحساب'
 }
 // أيقونات SVG لقائمة قسم "المتجر" الجانبية (بديل الايموجيز القديمة، Heroicons-style)
@@ -1716,7 +1636,7 @@ function applyRoleUI() {
       const el = document.getElementById('tab-content-' + t)
       return el && !el.classList.contains('hidden')
     })
-    if (['profile', 'appearance', 'delivery', 'analytics', 'branches', 'customers', 'loyalty'].includes(currentTab)) showSection('orders')
+    if (['profile', 'appearance', 'delivery', 'analytics', 'branches', 'loyalty'].includes(currentTab)) showSection('orders')
   }
   // تحديث شريط التبويبات الفرعية الحالي (لإخفاء تبويبات الأدمن فيه لو لزم)
   const activeSection = Object.keys(SECTION_TABS).find(sec => {
@@ -1795,17 +1715,10 @@ async function loadDashboard(r, branches) {
     document.getElementById('set-restaurant-lng').value = r.lng
     document.getElementById('set-location-label').textContent = `✅ تم تحديد الموقع (${_restPickedLat.toFixed(4)}, ${_restPickedLng.toFixed(4)})`
   }
-  // إعدادات الولاء
+  // إعدادات العروض (الترحيب/الإحالة/الحد الأدنى بقوا مركزيين في menuz_loyalty_settings، مش هنا)
   const loyEl = document.getElementById('set-loyalty-enabled')
   if (loyEl) {
     loyEl.checked = r.loyalty_enabled || false
-    document.getElementById('set-min-redeem').value = r.min_redeem_coins ?? 100000
-
-    document.getElementById('set-welcome-enabled').checked = r.welcome_bonus_enabled ?? true
-    document.getElementById('set-welcome-coins').value     = r.welcome_coins ?? 10000
-
-    document.getElementById('set-referral-enabled').checked = r.referral_enabled ?? true
-    document.getElementById('set-referral-coins').value     = r.referral_coins ?? 5000
 
     document.getElementById('set-birthday-enabled').checked = r.birthday_gift_enabled || false
     document.getElementById('set-birthday-coins').value     = r.birthday_coins ?? 3000
@@ -1870,8 +1783,6 @@ function toggleLoyaltySection() {
 // keepCurrentCheckbox=true تُستخدم وقت التحميل الأولي (الـ checkbox خلاص مظبوط من قبل، مجرد إظهار/إخفاء)
 function toggleLoyaltySubfield(key, keepCurrentCheckbox) {
   const map = {
-    welcome:         { checkbox: 'set-welcome-enabled',         field: 'set-welcome-coins' },
-    referral:        { checkbox: 'set-referral-enabled',        field: 'set-referral-coins' },
     birthday:        { checkbox: 'set-birthday-enabled',        field: 'set-birthday-coins' },
     purchaseReward:  { checkbox: 'set-purchase-reward-enabled', field: 'purchase-reward-fields' },
     purchaseVoucher: { checkbox: 'set-purchase-voucher-enabled', field: 'purchase-voucher-fields' },
@@ -1892,13 +1803,6 @@ function togglePurchaseRewardMode() {
 
 async function saveLoyaltySettings() {
   const enabled    = document.getElementById('set-loyalty-enabled').checked
-  const minRedeem  = parseInt(document.getElementById('set-min-redeem').value) || 100000
-
-  const welcomeEnabled  = document.getElementById('set-welcome-enabled').checked
-  const welcome         = parseInt(document.getElementById('set-welcome-coins').value) || 10000
-
-  const referralEnabled = document.getElementById('set-referral-enabled').checked
-  const referral         = parseInt(document.getElementById('set-referral-coins').value) || 5000
 
   const birthdayEnabled = document.getElementById('set-birthday-enabled').checked
   const birthdayCoins    = parseInt(document.getElementById('set-birthday-coins').value) || 3000
@@ -1914,13 +1818,6 @@ async function saveLoyaltySettings() {
 
   const payload = {
     loyalty_enabled:  enabled,
-    min_redeem_coins: minRedeem,
-
-    welcome_bonus_enabled: welcomeEnabled,
-    welcome_coins:         welcome,
-
-    referral_enabled: referralEnabled,
-    referral_coins:   referral,
 
     birthday_gift_enabled: birthdayEnabled,
     birthday_coins:        birthdayCoins,
@@ -3186,148 +3083,23 @@ async function deleteBundle(id) { const ok = await showConfirm('هل تريد ح
 
 // ── CUSTOMERS TAB ─────────────────────────────────────────────────────
 let _allCustomers = []
+// بيجيب عملاء منيوز (platform_customers) اللي فعلاً طلبوا من المتجر ده قبل
+// كده — الاستخدام الوحيد المتبقي: قائمة اختيار عملاء محددين لاستهداف كود
+// خصم. عرض/تعديل رصيد العميل مش شغل التاجر خالص دلوقتي (بقى تابع لمنيوز).
 async function loadCustomers() {
-  const { data: custs } = await db.from('menu_customers')
-    .select('id,name,email,phone,coins_balance,referral_code,created_at,welcome_coins_claimed')
+  const { data: rows } = await db.from('orders')
+    .select('customer_id, platform_customers(id,name,phone)')
     .eq('restaurant_id', state.restaurant.id)
+    .not('customer_id', 'is', null)
     .order('created_at', { ascending: false })
-    .limit(200)
-  _allCustomers = custs || []
+    .limit(500)
 
-  // إحصائيات
-  document.getElementById('cust-stat-total').textContent  = _allCustomers.length
-  const totalCoins = _allCustomers.reduce((s, c) => s + (c.coins_balance || 0), 0)
-  document.getElementById('cust-stat-coins').textContent  = (totalCoins / 1000).toFixed(0) + ' ج'
-  const { count } = await db.from('orders').select('id', { count: 'exact', head: true })
-    .eq('restaurant_id', state.restaurant.id).not('customer_id', 'is', null)
-  document.getElementById('cust-stat-orders').textContent = count || 0
-
-  renderCustomers(_allCustomers)
-}
-
-function filterCustomers() {
-  const q = document.getElementById('cust-search').value.trim().toLowerCase()
-  if (!q) { renderCustomers(_allCustomers); return }
-  renderCustomers(_allCustomers.filter(c =>
-    (c.name || '').toLowerCase().includes(q) || (c.email || '').toLowerCase().includes(q) || (c.phone || '').includes(q)
-  ))
-}
-
-function renderCustomers(custs) {
-  const el = document.getElementById('customers-list')
-  if (!custs.length) { el.innerHTML = `<p class="text-center text-gray-400 text-sm py-8">لا يوجد عملاء بعد</p>`; return }
-  el.innerHTML = custs.map(c => `
-    <div class="bg-white rounded-2xl p-4 shadow-sm">
-      <div class="flex items-center justify-between">
-        <div>
-          <p class="font-extrabold text-gray-800 text-sm">${escapeHtml(c.name) || '(بدون اسم)'}</p>
-          <p class="text-xs text-gray-400">${escapeHtml(c.email) || ''} ${c.phone ? '· ' + escapeHtml(c.phone) : ''}</p>
-          <p class="text-xs text-gray-400">${new Date(c.created_at).toLocaleDateString('ar-EG')}</p>
-        </div>
-        <div class="text-left">
-          <p class="text-sm font-extrabold text-orange-500">${(c.coins_balance || 0).toLocaleString('ar-EG')} 🪙</p>
-          <p class="text-xs text-gray-400">= ${((c.coins_balance || 0) / 1000).toFixed(2)} ج.م</p>
-        </div>
-      </div>
-      <div class="flex gap-2 mt-3">
-        <button onclick="giftCoins('${escapeHtml(c.id)}','${escapeHtml(c.name||'العميل').replace(/'/g,'')}')"
-                class="flex-1 text-xs bg-orange-50 text-orange-600 font-bold px-3 py-2 rounded-xl">🎀 إهداء كوينز</button>
-        <span class="text-xs text-gray-300 px-2 py-2">كود: ${escapeHtml(c.referral_code) || '—'}</span>
-      </div>
-    </div>`).join('')
-}
-
-// ── رسالة جماعية على واتساب (تبويب التسويق → broadcast) ────────────────
-// بيستخدم نفس _allCustomers اللي بتحمّلها loadCustomers()، وبيبعت عن طريق
-// send-broadcast Edge Function (اللي بتتحقق من هوية التاجر بجلسة الدخول
-// نفسها، وبتحترم whatsapp_marketing_optin لكل عميل تلقائيًا في الباك إند)
-let _bcSelectedCustomers = new Set()
-
-async function loadBroadcastTab() {
-  if (!_allCustomers.length) await loadCustomers()
-  renderBroadcastCustomerPicker()
-  document.getElementById('bc-results').classList.add('hidden')
-}
-
-function renderBroadcastCustomerPicker() {
-  const q = document.getElementById('bc-cust-search').value.trim().toLowerCase()
-  const list = (_allCustomers || []).filter(c => c.phone && (!q || (c.name || '').toLowerCase().includes(q) || (c.phone || '').includes(q)))
-  const el = document.getElementById('bc-customers-list')
-  el.innerHTML = list.length ? list.map(c => `
-    <label class="flex items-center gap-2 px-3 py-2 text-sm border-b border-gray-50 last:border-0">
-      <input type="checkbox" onchange="toggleBroadcastCustomer('${escapeHtml(c.id)}', this.checked)" ${_bcSelectedCustomers.has(c.id) ? 'checked' : ''} class="w-4 h-4 accent-orange-500" />
-      <span class="flex-1">${escapeHtml(c.name) || '(بدون اسم)'} <span class="text-gray-400">· ${escapeHtml(c.phone)}</span></span>
-    </label>`).join('') : `<p class="text-center text-gray-400 text-xs py-4">لا يوجد عملاء بأرقام مسجلة</p>`
-  updateBroadcastCustomersCount()
-}
-function toggleBroadcastCustomer(id, checked) {
-  if (checked) _bcSelectedCustomers.add(id); else _bcSelectedCustomers.delete(id)
-  updateBroadcastCustomersCount()
-}
-function selectAllBroadcastCustomers() {
-  const q = document.getElementById('bc-cust-search').value.trim().toLowerCase()
-  const list = (_allCustomers || []).filter(c => c.phone && (!q || (c.name || '').toLowerCase().includes(q) || (c.phone || '').includes(q)))
-  list.forEach(c => _bcSelectedCustomers.add(c.id))
-  renderBroadcastCustomerPicker()
-}
-function updateBroadcastCustomersCount() {
-  document.getElementById('bc-customers-count').textContent =
-    _bcSelectedCustomers.size ? `تم اختيار ${_bcSelectedCustomers.size} عميل` : 'لم يتم اختيار أحد بعد'
-}
-
-async function sendBroadcastMessage() {
-  const errEl = document.getElementById('bc-error')
-  errEl.classList.add('hidden')
-  const message = document.getElementById('bc-message').value.trim()
-
-  if (!_bcSelectedCustomers.size) { errEl.textContent = 'اختار عميل واحد على الأقل'; errEl.classList.remove('hidden'); return }
-  if (!message)                   { errEl.textContent = 'اكتب نص الرسالة';           errEl.classList.remove('hidden'); return }
-
-  const phones = _allCustomers.filter(c => _bcSelectedCustomers.has(c.id)).map(c => c.phone).filter(Boolean)
-  const btn = document.getElementById('bc-send-btn')
-  btn.disabled = true
-  btn.textContent = `بيبعت... (${phones.length} رقم)`
-  document.getElementById('bc-results').classList.add('hidden')
-
-  try {
-    const { data: { session } } = await db.auth.getSession()
-    const res = await fetch('https://pcmyugeqveyjnappulng.supabase.co/functions/v1/send-broadcast', {
-      method: 'POST',
-      headers: { 'Content-Type': 'application/json', 'Authorization': `Bearer ${session.access_token}` },
-      body: JSON.stringify({ phones, message })
-    })
-    const data = await res.json()
-    if (!res.ok) { errEl.textContent = 'خطأ: ' + (data?.error || res.status); errEl.classList.remove('hidden'); return }
-
-    document.getElementById('bc-res-sent').textContent = data.summary.sent
-    document.getElementById('bc-res-skip').textContent = data.summary.skipped
-    document.getElementById('bc-res-fail').textContent = data.summary.failed
-    document.getElementById('bc-results').classList.remove('hidden')
-    showToast(`تم إرسال الرسالة لـ ${data.summary.sent} عميل ✅`)
-  } catch (e) {
-    errEl.textContent = 'فشل الاتصال: ' + e.message
-    errEl.classList.remove('hidden')
-  } finally {
-    btn.disabled = false
-    btn.textContent = 'ابعت الرسالة دلوقتي'
+  const seen = new Set()
+  _allCustomers = []
+  for (const row of (rows || [])) {
+    const c = row.platform_customers
+    if (c && !seen.has(c.id)) { seen.add(c.id); _allCustomers.push(c) }
   }
-}
-
-async function giftCoins(customerId, customerName) {
-  const amount = prompt(`كم كوين تريد إهداء لـ ${customerName}؟\n(مثال: 5000 = 5 ج.م)`)
-  if (!amount || isNaN(parseInt(amount))) return
-  const coins = Math.abs(parseInt(amount))
-  const { data: cust } = await db.from('menu_customers').select('coins_balance').eq('id', customerId).single()
-  if (!cust) return
-  const newBalance = (cust.coins_balance || 0) + coins
-  await db.from('menu_customers').update({ coins_balance: newBalance }).eq('id', customerId)
-  await db.from('coin_transactions').insert({
-    customer_id: customerId, restaurant_id: state.restaurant.id,
-    type: 'gift', amount: coins, note: `هدية من المتجر`
-  })
-  await insertCustomerNotification(customerId, 'coins', '🎀 هدية من المتجر!', `${state.restaurant.name} أهداك ${coins.toLocaleString('ar-EG')} كوين — شوفها في محفظتك`)
-  showToast(`تم إهداء ${coins.toLocaleString('ar-EG')} كوين ✅`)
-  loadCustomers()
 }
 async function loadOrders() {
   let q = db.from('orders').select('*').eq('restaurant_id', state.restaurant.id).order('created_at', { ascending: false }).limit(50)
@@ -4169,13 +3941,13 @@ function renderSubTabsBar(section) {
   // إخفاء التبويبات المخصصة للأدمن فقط لو الدخول بصلاحية فرع
   if (_role && _role !== 'admin') {
     bar.querySelectorAll('button[data-admin-tab]').forEach(btn => {
-      if (['analytics', 'customers', 'branches', 'profile', 'appearance', 'delivery', 'loyalty', 'account'].includes(btn.getAttribute('data-admin-tab'))) btn.style.display = 'none'
+      if (['analytics', 'branches', 'profile', 'appearance', 'delivery', 'loyalty', 'account'].includes(btn.getAttribute('data-admin-tab'))) btn.style.display = 'none'
     })
   }
 }
 
 function showTab(name) {
-  const tabs = ['products','categories','quickprices','bundles','banners','orders','customers','analytics','branches','profile','appearance','delivery','loyalty','account','broadcast']
+  const tabs = ['products','categories','quickprices','bundles','banners','orders','analytics','branches','profile','appearance','delivery','loyalty','account']
   tabs.forEach(t => document.getElementById('tab-content-' + t).classList.add('hidden'))
   document.getElementById('tab-content-' + name).classList.remove('hidden')
 
@@ -4198,10 +3970,8 @@ function showTab(name) {
   if (name === 'quickprices')  loadQuickPrices()
   if (name === 'bundles')   loadBundles()
   if (name === 'analytics') loadAnalytics()
-  if (name === 'customers') loadCustomers()
   if (name === 'banners')   loadBanners()
   if (name === 'branches')  loadBranches()
-  if (name === 'broadcast') loadBroadcastTab()
 }
 
 // ── AI USAGE & SUBSCRIPTION SUMMARY (تبويب الحساب) ─────────────────────
