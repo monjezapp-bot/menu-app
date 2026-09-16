@@ -57,6 +57,13 @@ async function bootHome() {
   renderFilters()
   renderGrid()
   showHomeState('app')
+
+  // الأقسام الإضافية (بانرات/اشتريت منها/الأكثر مبيعًا/عروض/مقترحات) —
+  // كل واحد بيحمّل ويعرض نفسه لوحده وبيختفي بأمان لو مفيش بيانات كفاية
+  loadBanners()
+  loadBestSellers()
+  loadOffers()
+  if (customer) { loadBoughtBefore().then(renderRecommended) }
 }
 
 // بيحاول ياخد موقع العميل عشان ترتيب المطاعم بالمسافة (القريب الأول). لو
@@ -164,6 +171,93 @@ function restaurantCardHTML(r) {
   </div>`
 }
 
+function restaurantCardSmHTML(r) {
+  return `<div onclick="goToRestaurant('${r.slug}')" class="flex-shrink-0 w-36 bg-surface-container-lowest rounded-xl overflow-hidden shadow-[0_4px_16px_0_rgba(0,0,0,0.06)] cursor-pointer active:scale-[0.98] transition-transform snap-start">
+    <div class="relative w-full h-24 bg-surface-container">
+      ${r.cover_url || r.logo_url ? `<img src="${r.cover_url || r.logo_url}" alt="${escapeHTML(r.name)}" loading="lazy" class="w-full h-full object-cover" />`
+                    : `<div class="w-full h-full flex items-center justify-center text-outline"><span class="material-symbols-outlined" style="font-size:26px">storefront</span></div>`}
+    </div>
+    <div class="p-2">
+      <h4 class="text-xs font-extrabold text-on-surface truncate">${escapeHTML(r.name)}</h4>
+      ${r.rating ? `<div class="text-[10px] text-on-surface-variant mt-0.5">⭐ ${Number(r.rating).toFixed(1)}</div>` : ''}
+    </div>
+  </div>`
+}
+
+function renderHorizontalSection(wrapId, listId, restaurants) {
+  const wrap = document.getElementById(wrapId)
+  const list = document.getElementById(listId)
+  if (!restaurants || !restaurants.length) { wrap.classList.add('hidden'); return }
+  wrap.classList.remove('hidden')
+  list.innerHTML = restaurants.map(restaurantCardSmHTML).join('')
+}
+
+// ── 2) بانرات وإعلانات (اختياري — لو الجدول مش موجود أو فاضي، القسم بيختفي بهدوء) ──
+async function loadBanners() {
+  try {
+    const { data, error } = await db.from('platform_banners').select('*').eq('is_active', true).order('sort_order', { ascending: true })
+    if (error || !data || !data.length) { document.getElementById('home-banners-wrap').classList.add('hidden'); return }
+    document.getElementById('home-banners-wrap').classList.remove('hidden')
+    document.getElementById('home-banners').innerHTML = data.map(b => `
+      <a href="${b.link_url || '#'}" class="flex-shrink-0 w-[85%] snap-start rounded-xl overflow-hidden">
+        <img src="${b.image_url}" alt="${escapeHTML(b.title || '')}" class="w-full h-28 object-cover" />
+      </a>`).join('')
+  } catch (e) { document.getElementById('home-banners-wrap').classList.add('hidden') }
+}
+
+// ── 3) متاجر اشتريت منها (محتاج تسجيل دخول) ──
+async function loadBoughtBefore() {
+  if (!customer) { document.getElementById('home-bought-before-wrap').classList.add('hidden'); return }
+  const { data } = await db.from('orders')
+    .select('restaurant_id, restaurants(id, slug, name, logo_url, cover_url, rating)')
+    .eq('customer_id', customer.id).order('created_at', { ascending: false }).limit(50)
+  const seen = new Set(); const list = []
+  for (const row of (data || [])) {
+    const r = row.restaurants
+    if (r && !seen.has(r.id)) { seen.add(r.id); list.push(r) }
+  }
+  renderHorizontalSection('home-bought-before-wrap', 'home-bought-before', list.slice(0, 10))
+}
+
+// ── 4) الأكثر مبيعًا (عدد الطلبات المكتملة لكل مطعم عبر المنصة) ──
+async function loadBestSellers() {
+  try {
+    const { data, error } = await db.from('orders').select('restaurant_id').eq('status', 'delivered').limit(2000)
+    if (error || !data) { document.getElementById('home-best-sellers-wrap').classList.add('hidden'); return }
+    const counts = {}
+    data.forEach(o => { counts[o.restaurant_id] = (counts[o.restaurant_id] || 0) + 1 })
+    const topIds = Object.entries(counts).sort((a, b) => b[1] - a[1]).slice(0, 10).map(x => x[0])
+    const list = topIds.map(id => allRestaurants.find(r => r.id === id)).filter(Boolean)
+    renderHorizontalSection('home-best-sellers-wrap', 'home-best-sellers', list)
+  } catch (e) { document.getElementById('home-best-sellers-wrap').classList.add('hidden') }
+}
+
+// ── 5) عروض (منتجات عليها عرض عبر كل المطاعم — يعتمد على جدول bundles، بيختفي بأمان لو مش جاهز) ──
+async function loadOffers() {
+  try {
+    const { data, error } = await db.from('bundles')
+      .select('*, restaurants(id, slug, name, logo_url, cover_url, rating)')
+      .eq('is_active', true).limit(10)
+    if (error || !data || !data.length) { document.getElementById('home-offers-wrap').classList.add('hidden'); return }
+    const list = data.map(b => b.restaurants).filter(Boolean)
+    renderHorizontalSection('home-offers-wrap', 'home-offers', list)
+  } catch (e) { document.getElementById('home-offers-wrap').classList.add('hidden') }
+}
+
+// ── 7) نقترح لك (بدائي دلوقتي: نفس نوع المطاعم اللي طلب منها قبل كده، غير اللي طلب منها) ──
+function renderRecommended() {
+  if (!customer) { document.getElementById('home-recommended-wrap').classList.add('hidden'); return }
+  const boughtIds = new Set()
+  document.querySelectorAll('#home-bought-before [onclick]').forEach(el => {
+    const m = el.getAttribute('onclick').match(/goToRestaurant\('([^']+)'\)/)
+    if (m) boughtIds.add(m[1])
+  })
+  if (!boughtIds.size) { document.getElementById('home-recommended-wrap').classList.add('hidden'); return }
+  const boughtTypes = new Set(allRestaurants.filter(r => boughtIds.has(r.slug)).map(r => r.business_type))
+  const list = allRestaurants.filter(r => boughtTypes.has(r.business_type) && !boughtIds.has(r.slug)).slice(0, 10)
+  renderHorizontalSection('home-recommended-wrap', 'home-recommended', list)
+}
+
 function renderGrid() {
   const wrap = document.getElementById('home-grid')
   let list = allRestaurants.filter(r => r.business_type === activeType)
@@ -261,12 +355,15 @@ function initAuthListener() {
     if ((event === 'SIGNED_IN' || event === 'INITIAL_SESSION') && session) {
       await loadCustomer()
       renderAccountTab(); renderWalletTab(); renderOrdersTab()
+      if (allRestaurants.length) { loadBoughtBefore().then(renderRecommended) }
       if (sessionStorage.getItem('mnio_oauth_pending') === '1') {
         sessionStorage.removeItem('mnio_oauth_pending')
         switchTab('account')
       }
     } else if (event === 'SIGNED_OUT') {
       customer = null
+      document.getElementById('home-bought-before-wrap').classList.add('hidden')
+      document.getElementById('home-recommended-wrap').classList.add('hidden')
     }
   })
 }

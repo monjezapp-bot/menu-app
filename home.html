@@ -94,14 +94,44 @@
     </div>
   </header>
 
-  <!-- Type Tabs -->
+  <!-- 1) Type Tabs (تصنيفات) -->
   <div id="home-type-tabs" class="flex gap-4 overflow-x-auto px-4 pt-5 pb-1"></div>
 
-  <!-- Sub Filters -->
-  <div id="home-filters" class="flex gap-2 overflow-x-auto px-4 pt-4 pb-1"></div>
+  <!-- 2) Banners (إعلانات وعروض) -->
+  <div id="home-banners-wrap" class="hidden px-4 pt-4">
+    <div id="home-banners" class="flex gap-3 overflow-x-auto snap-x snap-mandatory"></div>
+  </div>
 
-  <!-- Restaurant Grid -->
-  <div id="home-grid" class="grid grid-cols-1 gap-4 px-4 pt-3"></div>
+  <!-- 3) متاجر اشتريت منها -->
+  <div id="home-bought-before-wrap" class="hidden pt-5">
+    <h2 class="px-4 text-sm font-extrabold text-on-surface mb-2">🛍️ متاجر اشتريت منها</h2>
+    <div id="home-bought-before" class="flex gap-3 overflow-x-auto px-4"></div>
+  </div>
+
+  <!-- 4) الأكثر مبيعًا -->
+  <div id="home-best-sellers-wrap" class="hidden pt-5">
+    <h2 class="px-4 text-sm font-extrabold text-on-surface mb-2">🔥 الأكثر مبيعًا</h2>
+    <div id="home-best-sellers" class="flex gap-3 overflow-x-auto px-4"></div>
+  </div>
+
+  <!-- 5) عروض -->
+  <div id="home-offers-wrap" class="hidden pt-5">
+    <h2 class="px-4 text-sm font-extrabold text-on-surface mb-2">🏷️ عروض</h2>
+    <div id="home-offers" class="flex gap-3 overflow-x-auto px-4"></div>
+  </div>
+
+  <!-- 6) المتاجر الأقرب إليك (فلاتر + شبكة) -->
+  <div class="pt-5">
+    <h2 class="px-4 text-sm font-extrabold text-on-surface mb-2">📍 الأقرب إليك</h2>
+    <div id="home-filters" class="flex gap-2 overflow-x-auto px-4 pt-1 pb-1"></div>
+    <div id="home-grid" class="grid grid-cols-1 gap-4 px-4 pt-3"></div>
+  </div>
+
+  <!-- 7) نقترح لك -->
+  <div id="home-recommended-wrap" class="hidden pt-5 pb-4">
+    <h2 class="px-4 text-sm font-extrabold text-on-surface mb-2">✨ نقترح لك</h2>
+    <div id="home-recommended" class="flex gap-3 overflow-x-auto px-4"></div>
+  </div>
 </div>
 
 <!-- ══════════════════════════════════════════
@@ -133,21 +163,21 @@
 ══════════════════════════════════════════ -->
 <nav id="bottom-nav" class="fixed bottom-0 left-1/2 -translate-x-1/2 w-full max-w-[480px] bg-surface-container-lowest border-t border-outline-variant z-50" style="padding-bottom:max(8px, env(safe-area-inset-bottom))">
   <div class="flex justify-around items-center">
-    <button data-tab="account" onclick="switchTab('account')" class="bnav-btn flex flex-col items-center gap-1 py-2 px-4 min-w-[64px]">
-      <span class="material-symbols-outlined bnav-icon" style="font-size:22px">person</span>
-      <span class="bnav-label text-[10px] font-bold">حسابك</span>
-    </button>
-    <button data-tab="wallet" onclick="switchTab('wallet')" class="bnav-btn flex flex-col items-center gap-1 py-2 px-4 min-w-[64px]">
-      <span class="material-symbols-outlined bnav-icon" style="font-size:22px">account_balance_wallet</span>
-      <span class="bnav-label text-[10px] font-bold">المحفظة</span>
+    <button data-tab="home" onclick="switchTab('home')" class="bnav-btn flex flex-col items-center gap-1 py-2 px-4 min-w-[64px]">
+      <span class="material-symbols-outlined bnav-icon" style="font-size:22px">storefront</span>
+      <span class="bnav-label text-[10px] font-bold">الرئيسية</span>
     </button>
     <button data-tab="orders" onclick="switchTab('orders')" class="bnav-btn flex flex-col items-center gap-1 py-2 px-4 min-w-[64px] relative">
       <span class="material-symbols-outlined bnav-icon" style="font-size:22px">receipt_long</span>
       <span class="bnav-label text-[10px] font-bold">طلباتك</span>
     </button>
-    <button data-tab="home" onclick="switchTab('home')" class="bnav-btn flex flex-col items-center gap-1 py-2 px-4 min-w-[64px]">
-      <span class="material-symbols-outlined bnav-icon" style="font-size:22px">storefront</span>
-      <span class="bnav-label text-[10px] font-bold">الرئيسية</span>
+    <button data-tab="wallet" onclick="switchTab('wallet')" class="bnav-btn flex flex-col items-center gap-1 py-2 px-4 min-w-[64px]">
+      <span class="material-symbols-outlined bnav-icon" style="font-size:22px">account_balance_wallet</span>
+      <span class="bnav-label text-[10px] font-bold">المحفظة</span>
+    </button>
+    <button data-tab="account" onclick="switchTab('account')" class="bnav-btn flex flex-col items-center gap-1 py-2 px-4 min-w-[64px]">
+      <span class="material-symbols-outlined bnav-icon" style="font-size:22px">person</span>
+      <span class="bnav-label text-[10px] font-bold">حسابك</span>
     </button>
   </div>
 </nav>
