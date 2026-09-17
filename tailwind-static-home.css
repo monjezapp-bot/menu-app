@@ -1,0 +1,249 @@
+/* ══════════════════════════════════════════════════════════════
+   tailwind-static-home.css
+   بديل ثابت (مكتوب يدويًا) لسكريبت Tailwind CDN اللي بيترجم الكلاسات
+   وقت التشغيل في المتصفح (بطيء وبيسبب تأخير ملحوظ في كل تحميل صفحة).
+   الملف ده بيغطي فقط الكلاسات المستخدمة فعليًا في home.html وhome.js —
+   لو ضفت كلاس Tailwind جديد مش موجود هنا، لازم تضيف تعريفه هنا يدويًا
+   (مش هيشتغل تلقائي زي الـ CDN القديم).
+   ══════════════════════════════════════════════════════════════ */
+
+* { margin: 0; padding: 0; box-sizing: border-box; }
+html, body { -webkit-tap-highlight-color: transparent; }
+
+/* ── نظام الألوان (نفس tailwind.config اللي كان معرّف جوه home.html) ── */
+:root {
+  --primary: #0d631b;
+  --on-primary: #ffffff;
+  --primary-container: #2e7d32;
+  --on-primary-container: #cbffc2;
+  --secondary: #9f4200;
+  --on-secondary: #ffffff;
+  --secondary-container: #fd6c00;
+  --on-secondary-container: #562000;
+  --background: #f9f9fc;
+  --on-background: #1a1c1e;
+  --surface: #f9f9fc;
+  --surface-container-lowest: #ffffff;
+  --surface-container-low: #f3f3f6;
+  --surface-container: #eeeef0;
+  --surface-container-high: #e8e8ea;
+  --on-surface: #1a1c1e;
+  --on-surface-variant: #40493d;
+  --outline: #707a6c;
+  --outline-variant: #bfcaba;
+}
+
+body { font-family: 'Cairo', sans-serif; }
+.antialiased { -webkit-font-smoothing: antialiased; -moz-osx-font-smoothing: grayscale; }
+
+/* ── Position ── */
+.absolute { position: absolute; }
+.relative { position: relative; }
+.fixed { position: fixed; }
+.sticky { position: sticky; }
+.inset-0 { top: 0; right: 0; bottom: 0; left: 0; }
+.top-0 { top: 0; }
+.bottom-0 { bottom: 0; }
+.left-1\/2 { left: 50%; }
+.-top-1 { top: -0.25rem; }
+.-left-1 { left: -0.25rem; }
+.top-1\.5 { top: 0.375rem; }
+.left-1\.5 { left: 0.375rem; }
+.top-2\.5 { top: 0.625rem; }
+.left-2\.5 { left: 0.625rem; }
+.right-2\.5 { right: 0.625rem; }
+.-translate-x-1\/2 { transform: translateX(-50%); }
+.z-30 { z-index: 30; }
+.z-50 { z-index: 50; }
+.z-\[60\] { z-index: 60; }
+
+/* ── Display ── */
+.hidden { display: none !important; }
+.block { display: block; }
+.flex { display: flex; }
+.grid { display: grid; }
+.grid-cols-1 { grid-template-columns: repeat(1, minmax(0, 1fr)); }
+.flex-1 { flex: 1 1 0%; }
+.flex-col { flex-direction: column; }
+.flex-shrink-0 { flex-shrink: 0; }
+.items-center { align-items: center; }
+.items-start { align-items: flex-start; }
+.justify-center { justify-content: center; }
+.justify-between { justify-content: space-between; }
+.justify-around { justify-content: space-around; }
+
+/* ── Gap ── */
+.gap-0\.5 { gap: 0.125rem; }
+.gap-1   { gap: 0.25rem; }
+.gap-1\.5 { gap: 0.375rem; }
+.gap-2   { gap: 0.5rem; }
+.gap-2\.5 { gap: 0.625rem; }
+.gap-3   { gap: 0.75rem; }
+.gap-4   { gap: 1rem; }
+.space-y-3 > * + * { margin-top: 0.75rem; }
+
+/* ── Sizing ── */
+.w-2  { width: 0.5rem; }
+.w-6  { width: 1.5rem; }
+.w-8  { width: 2rem; }
+.w-9  { width: 2.25rem; }
+.w-11 { width: 2.75rem; }
+.w-14 { width: 3.5rem; }
+.w-16 { width: 4rem; }
+.w-20 { width: 5rem; }
+.w-24 { width: 6rem; }
+.w-36 { width: 9rem; }
+.w-full { width: 100%; }
+.w-\[85\%\] { width: 85%; }
+.max-w-\[480px\] { max-width: 480px; }
+.min-w-0 { min-width: 0; }
+.min-w-\[16px\] { min-width: 16px; }
+.min-w-\[64px\] { min-width: 64px; }
+.h-2  { height: 0.5rem; }
+.h-4  { height: 1rem; }
+.h-6  { height: 1.5rem; }
+.h-8  { height: 2rem; }
+.h-9  { height: 2.25rem; }
+.h-11 { height: 2.75rem; }
+.h-14 { height: 3.5rem; }
+.h-16 { height: 4rem; }
+.h-20 { height: 5rem; }
+.h-24 { height: 6rem; }
+.h-28 { height: 7rem; }
+.h-32 { height: 8rem; }
+.h-48 { height: 12rem; }
+.h-full { height: 100%; }
+.min-h-screen { min-height: 100vh; }
+
+/* ── Spacing (margin/padding) ── */
+.mx-auto { margin-left: auto; margin-right: auto; }
+.mt-0\.5 { margin-top: 0.125rem; }
+.mt-1 { margin-top: 0.25rem; }
+.-mt-4 { margin-top: -1rem; }
+.mb-1 { margin-bottom: 0.25rem; }
+.mb-2 { margin-bottom: 0.5rem; }
+.mb-3 { margin-bottom: 0.75rem; }
+.mb-4 { margin-bottom: 1rem; }
+.mb-5 { margin-bottom: 1.25rem; }
+.p-2   { padding: 0.5rem; }
+.p-2\.5 { padding: 0.625rem; }
+.p-3   { padding: 0.75rem; }
+.p-3\.5 { padding: 0.875rem; }
+.p-4   { padding: 1rem; }
+.p-5   { padding: 1.25rem; }
+.px-1   { padding-left: 0.25rem; padding-right: 0.25rem; }
+.px-2\.5 { padding-left: 0.625rem; padding-right: 0.625rem; }
+.px-4   { padding-left: 1rem; padding-right: 1rem; }
+.px-6   { padding-left: 1.5rem; padding-right: 1.5rem; }
+.px-7   { padding-left: 1.75rem; padding-right: 1.75rem; }
+.px-8   { padding-left: 2rem; padding-right: 2rem; }
+.py-1  { padding-top: 0.25rem; padding-bottom: 0.25rem; }
+.py-2  { padding-top: 0.5rem; padding-bottom: 0.5rem; }
+.py-3  { padding-top: 0.75rem; padding-bottom: 0.75rem; }
+.py-6  { padding-top: 1.5rem; padding-bottom: 1.5rem; }
+.py-16 { padding-top: 4rem; padding-bottom: 4rem; }
+.pt-3 { padding-top: 0.75rem; }
+.pt-4 { padding-top: 1rem; }
+.pt-5 { padding-top: 1.25rem; }
+.pt-8 { padding-top: 2rem; }
+.pb-1  { padding-bottom: 0.25rem; }
+.pb-4  { padding-bottom: 1rem; }
+.pb-5  { padding-bottom: 1.25rem; }
+.pb-6  { padding-bottom: 1.5rem; }
+.pb-9  { padding-bottom: 2.25rem; }
+.pb-24 { padding-bottom: 6rem; }
+
+/* ── Borders / Radius ── */
+.border   { border-width: 1px; border-style: solid; border-color: currentColor; }
+.border-b { border-bottom-width: 1px; border-style: solid; }
+.border-t { border-top-width: 1px; border-style: solid; }
+.border-none { border-style: none; }
+.border-outline-variant { border-color: var(--outline-variant); }
+.rounded-lg   { border-radius: 0.5rem; }
+.rounded-xl   { border-radius: 0.75rem; }
+.rounded-2xl  { border-radius: 1rem; }
+.rounded-full { border-radius: 9999px; }
+.rounded-b-3xl { border-bottom-left-radius: 1.5rem; border-bottom-right-radius: 1.5rem; }
+
+/* ── Backgrounds ── */
+.bg-transparent { background-color: transparent; }
+.bg-white { background-color: #ffffff; }
+.bg-white\/15 { background-color: rgba(255,255,255,0.15); }
+.bg-white\/90 { background-color: rgba(255,255,255,0.90); }
+.bg-black\/50 { background-color: rgba(0,0,0,0.50); }
+.bg-on-background\/75 { background-color: rgba(26,28,30,0.75); }
+.bg-background { background-color: var(--background); }
+.bg-primary { background-color: var(--primary); }
+.bg-secondary-container { background-color: var(--secondary-container); }
+.bg-surface-container { background-color: var(--surface-container); }
+.bg-surface-container-lowest { background-color: var(--surface-container-lowest); }
+
+/* ── Text ── */
+.text-\[9px\]    { font-size: 9px; }
+.text-\[10px\]   { font-size: 10px; }
+.text-\[10\.5px\] { font-size: 10.5px; }
+.text-\[11px\]   { font-size: 11px; }
+.text-\[11\.5px\] { font-size: 11.5px; }
+.text-xs  { font-size: 0.75rem; line-height: 1rem; }
+.text-sm  { font-size: 0.875rem; line-height: 1.25rem; }
+.text-base { font-size: 1rem; line-height: 1.5rem; }
+.text-lg  { font-size: 1.125rem; line-height: 1.75rem; }
+.text-xl  { font-size: 1.25rem; line-height: 1.75rem; }
+.text-3xl { font-size: 1.875rem; line-height: 2.25rem; }
+.text-center { text-align: center; }
+.text-right  { text-align: right; }
+.font-semibold { font-weight: 600; }
+.font-bold     { font-weight: 700; }
+.font-extrabold { font-weight: 800; }
+.tracking-widest { letter-spacing: 0.1em; }
+.truncate { overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
+.whitespace-nowrap { white-space: nowrap; }
+.text-white { color: #ffffff; }
+.text-white\/80 { color: rgba(255,255,255,0.8); }
+.text-red-600 { color: #dc2626; }
+.text-on-primary { color: var(--on-primary); }
+.text-on-background { color: var(--on-background); }
+.text-on-surface { color: var(--on-surface); }
+.text-on-surface-variant { color: var(--on-surface-variant); }
+.text-outline { color: var(--outline); }
+.text-secondary { color: var(--secondary); }
+.placeholder\:text-outline::placeholder { color: var(--outline); }
+
+/* ── Effects ── */
+.shadow-sm  { box-shadow: 0 1px 2px 0 rgba(0,0,0,0.05); }
+.shadow-2xl { box-shadow: 0 25px 50px -12px rgba(0,0,0,0.25); }
+.shadow-\[0_4px_16px_0_rgba\(0\,0\,0\,0\.06\)\] { box-shadow: 0 4px 16px 0 rgba(0,0,0,0.06); }
+.shadow-\[0_2px_10px_0_rgba\(0\,0\,0\,0\.05\)\] { box-shadow: 0 2px 10px 0 rgba(0,0,0,0.05); }
+.overflow-hidden { overflow: hidden; }
+.overflow-x-auto { overflow-x: auto; }
+.overflow-y-auto { overflow-y: auto; }
+.object-cover    { object-fit: cover; }
+.object-contain  { object-fit: contain; }
+.cursor-pointer  { cursor: pointer; }
+.outline-none    { outline: 2px solid transparent; outline-offset: 2px; }
+.focus\:ring-0:focus { box-shadow: none; }
+.transition-transform { transition-property: transform; transition-duration: 150ms; transition-timing-function: cubic-bezier(0.4,0,0.2,1); }
+.active\:scale-95:active { transform: scale(0.95); }
+.active\:scale-\[0\.98\]:active { transform: scale(0.98); }
+
+/* ── Scroll snap ── */
+.snap-x { scroll-snap-type: x proximity; }
+.snap-mandatory { scroll-snap-type: x mandatory; }
+.snap-start { scroll-snap-align: start; }
+
+/* ── Skeleton loading (نفس التعريف القديم) ── */
+.skeleton {
+  background: linear-gradient(90deg, #ececec 25%, #f6f6f6 37%, #ececec 63%);
+  background-size: 400% 100%;
+  animation: skeleton-loading 1.4s ease infinite;
+}
+@keyframes skeleton-loading { 0% { background-position: 100% 50%; } 100% { background-position: 0 50%; } }
+
+/* ── أيقونات Material Symbols (نفس الإعداد القديم) ── */
+.material-symbols-outlined {
+  font-family: 'Material Symbols Outlined';
+  font-variation-settings: 'FILL' 0, 'wght' 400, 'GRAD' 0, 'opsz' 24;
+  font-size: 22px;
+}
+
+::-webkit-scrollbar { display: none; }

@@ -17,52 +17,15 @@
 
 <!-- ── Libraries ── -->
 <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
-<script src="https://cdn.tailwindcss.com?plugins=forms,container-queries"></script>
 <link href="https://fonts.googleapis.com/css2?family=Cairo:wght@400;500;600;700;800&display=swap" rel="stylesheet" />
 <link href="https://fonts.googleapis.com/css2?family=Material+Symbols+Outlined:wght,FILL@100..700,0..1&display=swap" rel="stylesheet" />
 <link rel="prefetch" href="index.html" />
 <link rel="prefetch" href="core.js" />
 
-<!-- ── نفس نظام الألوان والتوكينز المعتمد لهوية منيوز (مستخرج من تصميم Stitch) ── -->
-<script id="tailwind-config">
-  tailwind.config = {
-    theme: {
-      extend: {
-        colors: {
-          "primary":                  "#0d631b",
-          "on-primary":                "#ffffff",
-          "primary-container":         "#2e7d32",
-          "on-primary-container":      "#cbffc2",
-          "secondary":                 "#9f4200",
-          "on-secondary":              "#ffffff",
-          "secondary-container":       "#fd6c00",
-          "on-secondary-container":    "#562000",
-          "background":                "#f9f9fc",
-          "on-background":             "#1a1c1e",
-          "surface":                   "#f9f9fc",
-          "surface-container-lowest":  "#ffffff",
-          "surface-container-low":     "#f3f3f6",
-          "surface-container":         "#eeeef0",
-          "surface-container-high":    "#e8e8ea",
-          "on-surface":                "#1a1c1e",
-          "on-surface-variant":        "#40493d",
-          "outline":                   "#707a6c",
-          "outline-variant":           "#bfcaba",
-        },
-        borderRadius: { DEFAULT: "0.25rem", lg: "0.5rem", xl: "0.75rem", full: "9999px" },
-        fontFamily: { sans: ["Cairo", "sans-serif"] },
-      },
-    },
-  }
-</script>
-<style>
-  body { font-family: 'Cairo', sans-serif; }
-  .material-symbols-outlined { font-variation-settings: 'FILL' 0, 'wght' 400, 'GRAD' 0, 'opsz' 24; font-size: 22px; }
-  .hidden { display: none !important; }
-  .skeleton { background: linear-gradient(90deg, #ececec 25%, #f6f6f6 37%, #ececec 63%); background-size: 400% 100%; animation: skeleton-loading 1.4s ease infinite; }
-  @keyframes skeleton-loading { 0% { background-position: 100% 50%; } 100% { background-position: 0 50%; } }
-  ::-webkit-scrollbar { display: none; }
-</style>
+<!-- بديل ثابت لـ Tailwind CDN (مكتوب يدويًا، بدون ترجمة وقت التشغيل — أسرع
+     تحميل بكتير). لو ضفت كلاس Tailwind جديد في home.html/home.js لازم
+     تضيف تعريفه في tailwind-static-home.css يدويًا. -->
+<link rel="stylesheet" href="tailwind-static-home.css" />
 </head>
 <body class="bg-background text-on-surface antialiased">
 
