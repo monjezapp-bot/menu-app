@@ -1,4 +1,4 @@
-const CACHE_NAME = 'menus-customer-v3';
+const CACHE_NAME = 'menus-customer-v4';
 const CORE_ASSETS = ['./manifest.json', './icon-192.png', './icon-512.png'];
 
 self.addEventListener('install', (event) => {
@@ -17,9 +17,11 @@ self.addEventListener('activate', (event) => {
   self.clients.claim();
 });
 
-// Network-first لكل ملفات التطبيق (HTML + JS + CSS) — عشان أي تحديث يوصل فوراً
-// من غير ما المستخدم يفضل شغال بنسخة قديمة كاش من الجهاز، خصوصاً إن المشروع
-// لسه بيتطور بسرعة. Cache-first بس للأيقونات/manifest اللي نادراً ما تتغير.
+// Stale-While-Revalidate لكل ملفات التطبيق (HTML + JS + CSS) — التنقل بين
+// الصفحات (home.html ↔ index.html) بيتقدم فورًا من الكاش من غير ما المستخدم
+// يستنى تحميل جديد كامل، وفي نفس الوقت بنجيب نسخة محدّثة في الخلفية وتتخزن
+// لأول مرة يفتح فيها الصفحة تاني — يعني التحديثات لسه بتوصل، بس مش على
+// حساب سرعة التنقل. الاستثناء الوحيد: طلبات Supabase (بيانات حية، ميتخزنش خالص).
 self.addEventListener('fetch', (event) => {
   const url = event.request.url;
   if (url.includes('supabase.co')) return; // never cache live data
@@ -28,7 +30,14 @@ self.addEventListener('fetch', (event) => {
                       url.endsWith('.html') || url.endsWith('.js') || url.endsWith('.css');
   if (isAppShell) {
     event.respondWith(
-      fetch(event.request).catch(() => caches.match(event.request))
+      caches.open(CACHE_NAME).then(async (cache) => {
+        const cached = await cache.match(event.request);
+        const networkFetch = fetch(event.request).then((res) => {
+          if (res && res.ok) cache.put(event.request, res.clone());
+          return res;
+        }).catch(() => cached);
+        return cached || networkFetch;
+      })
     );
     return;
   }
