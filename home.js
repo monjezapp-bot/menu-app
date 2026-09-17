@@ -25,8 +25,9 @@ const db = createClient(SUPABASE_URL, SUPABASE_ANON, {
 
 // ── STATE ─────────────────────────────────────────────────────────────
 let allRestaurants = []
-let activeType      = 'مطاعم'
-let activeFilter    = null
+let categoryType   = null // النوع المفتوح حاليًا في صفحة التصنيف (null يعني الرئيسية العامة)
+let categoryFilter = null // فلتر فرعي (وسم) داخل صفحة التصنيف
+let categorySearchTerm = ''
 let searchTerm      = ''
 let activeTab       = 'home'
 let customer        = null // صف platform_customers لو العميل مسجّل دخول، وإلا null
@@ -47,6 +48,142 @@ function showHomeState(name) {
 }
 
 // ── BOOT ──────────────────────────────────────────────────────────────
+// ══════════════════════════════════════════════════════════════
+// NOTIFICATIONS (منقول من core.js — نفس السلوك بالظبط، بس عميل موحّد
+// عبر المنصة كلها مش تاجر واحد) — دلوقتي الجرس شغال في كل الأبلكيشن،
+// مش بس جوه صفحة مطعم.
+// ══════════════════════════════════════════════════════════════
+let _notifPanelOpen = false
+let _notifications  = []
+
+function showToast(msg) {
+  const el = document.createElement('div')
+  el.textContent = msg
+  el.style.cssText = 'position:fixed;bottom:90px;left:50%;transform:translateX(-50%);background:#1a1c1e;color:#fff;font-size:13px;font-weight:700;padding:10px 20px;border-radius:20px;z-index:70;box-shadow:0 4px 16px rgba(0,0,0,0.2)'
+  document.body.appendChild(el)
+  setTimeout(() => el.remove(), 2800)
+}
+
+function positionNotifPanel() {
+  const panel = document.getElementById('notif-panel')
+  const btn   = document.getElementById('notif-btn')
+  if (!panel || !btn) return
+  const margin = 14
+  const rect   = btn.getBoundingClientRect()
+  const width  = Math.min(320, window.innerWidth - margin * 2)
+  panel.style.width = width + 'px'
+  let right = window.innerWidth - rect.right
+  right = Math.max(margin, Math.min(right, window.innerWidth - width - margin))
+  panel.style.right     = right + 'px'
+  panel.style.left      = 'auto'
+  panel.style.top       = (rect.bottom + 8) + 'px'
+  panel.style.maxHeight = Math.max(160, Math.min(320, window.innerHeight - rect.bottom - 24)) + 'px'
+}
+
+function toggleNotifPanel() {
+  _notifPanelOpen = !_notifPanelOpen
+  const panel = document.getElementById('notif-panel')
+  if (_notifPanelOpen) positionNotifPanel()
+  panel.style.display = _notifPanelOpen ? 'block' : 'none'
+  if (_notifPanelOpen && customer) loadNotifications()
+}
+
+document.addEventListener('click', e => {
+  if (_notifPanelOpen && !document.getElementById('notif-btn')?.contains(e.target) && !document.getElementById('notif-panel')?.contains(e.target)) {
+    _notifPanelOpen = false
+    const panel = document.getElementById('notif-panel')
+    if (panel) panel.style.display = 'none'
+  }
+})
+window.addEventListener('scroll', () => {
+  if (_notifPanelOpen) {
+    _notifPanelOpen = false
+    const panel = document.getElementById('notif-panel')
+    if (panel) panel.style.display = 'none'
+  }
+}, { passive: true })
+window.addEventListener('resize', () => { if (_notifPanelOpen) positionNotifPanel() })
+
+async function loadNotifications() {
+  if (!customer) return
+  try {
+    const { data } = await db.from('notifications').select('*')
+      .eq('customer_id', customer.id).order('created_at', { ascending: false }).limit(20)
+    _notifications = data || []
+    renderNotifList()
+    await refreshUnreadNotifCount()
+  } catch (e) {}
+}
+
+function renderNotifList() {
+  const el = document.getElementById('notif-list')
+  if (!_notifications.length) { el.innerHTML = `<p class="text-center text-xs text-outline py-6">لا توجد إشعارات</p>`; return }
+  const iconMap = { order_confirmed:'✅', order_ready:'📦', order_delivering:'🛵', order_delivered:'🎉', order_cancelled:'❌', coins:'🪙', promo:'🎁', birthday:'🎂', return_approved:'✅', return_rejected:'❌' }
+  el.innerHTML = _notifications.map(n => `
+    <div onclick="handleNotifClick('${n.id}', ${n.order_id ? `'${n.order_id}'` : 'null'})"
+         class="flex items-start gap-2.5 px-4 py-3 border-b border-outline-variant cursor-pointer ${n.is_read ? '' : 'bg-orange-50'}">
+      <span class="flex-shrink-0" style="font-size:18px">${iconMap[n.type] || '🔔'}</span>
+      <div class="flex-1 min-w-0">
+        <p class="text-xs ${n.is_read ? 'font-semibold' : 'font-extrabold'} text-on-surface">${escapeHTML(n.title)}</p>
+        <p class="text-[11px] text-outline mt-0.5">${escapeHTML(n.body)}</p>
+      </div>
+      ${!n.is_read ? '<span class="w-2 h-2 rounded-full bg-primary flex-shrink-0 mt-1"></span>' : ''}
+    </div>`).join('')
+}
+
+async function handleNotifClick(notifId, orderId) {
+  const n = _notifications.find(x => x.id === notifId)
+  if (n && !n.is_read) {
+    n.is_read = true
+    renderNotifList()
+    try { await db.from('notifications').update({ is_read: true }).eq('id', notifId) } catch (e) {}
+    refreshUnreadNotifCount()
+  }
+  if (orderId) {
+    toggleNotifPanel()
+    // الطلب تابع لمطعم معيّن — نودّي العميل لصفحة المطعم ده مباشرة مفتوح على تفاصيل الطلب
+    const { data: o } = await db.from('orders').select('restaurant_id, restaurants(slug)').eq('id', orderId).maybeSingle()
+    if (o?.restaurants?.slug) location.href = 'index.html?r=' + o.restaurants.slug + '&order=' + orderId
+  }
+}
+
+async function refreshUnreadNotifCount() {
+  const badge = document.getElementById('notif-badge')
+  if (!customer || !badge) return
+  try {
+    const { count } = await db.from('notifications').select('id', { count: 'exact', head: true })
+      .eq('customer_id', customer.id).eq('is_read', false)
+    const unread = count || 0
+    badge.textContent = unread > 9 ? '9+' : String(unread)
+    badge.classList.toggle('hidden', unread === 0)
+  } catch (e) {}
+}
+
+async function markAllNotifsRead() {
+  if (!customer || !_notifications.length) return
+  _notifications.forEach(n => n.is_read = true)
+  renderNotifList()
+  try { await db.from('notifications').update({ is_read: true }).eq('customer_id', customer.id).eq('is_read', false) } catch (e) {}
+  refreshUnreadNotifCount()
+}
+
+let _customerNotifChannel = null
+function startCustomerNotifRealtime() {
+  if (!customer || _customerNotifChannel) return
+  _customerNotifChannel = db.channel('customer-notifs-' + customer.id)
+    .on('postgres_changes', { event: 'INSERT', schema: 'public', table: 'notifications', filter: `customer_id=eq.${customer.id}` }, p => {
+      _notifications.unshift(p.new)
+      if (_notifications.length > 20) _notifications = _notifications.slice(0, 20)
+      renderNotifList()
+      refreshUnreadNotifCount()
+      if (!_notifPanelOpen) showToast(p.new.title || '🔔 إشعار جديد')
+    }).subscribe()
+}
+function stopCustomerNotifRealtime() {
+  if (_customerNotifChannel) { db.removeChannel(_customerNotifChannel); _customerNotifChannel = null }
+}
+
+
 async function bootHome() {
   document.title = 'منيوز — اطلب من مطعمك المفضل'
   const { lat, lng } = await getLocation()
@@ -54,7 +191,6 @@ async function bootHome() {
   if (error) { showHomeState('error'); return }
   allRestaurants = data || []
   renderTypeTabs()
-  renderFilters()
   renderGrid()
   showHomeState('app')
 
@@ -85,50 +221,15 @@ function getLocation() {
 function renderTypeTabs() {
   const wrap = document.getElementById('home-type-tabs')
   wrap.innerHTML = HOME_TYPES.map(t => {
-    const active = activeType === t.key
     const iconHTML = t.iconImg
-      ? `<img src="${t.iconImg}" alt="" class="w-16 h-16 object-contain transition-transform ${active ? 'scale-110' : ''}" />`
-      : `<span class="material-symbols-outlined" style="font-size:40px; font-variation-settings:'FILL' ${active ? 1 : 0}">${t.icon}</span>`
-    return `<button data-type="${t.key}" onclick="setActiveType(this.dataset.type)"
-      class="flex-shrink-0 flex flex-col items-center justify-center gap-1 w-20 bg-transparent">
+      ? `<img src="${t.iconImg}" alt="" class="w-16 h-16 object-contain" />`
+      : `<span class="material-symbols-outlined" style="font-size:40px">${t.icon}</span>`
+    return `<button data-type="${t.key}" onclick="openCategory(this.dataset.type)"
+      class="flex-shrink-0 flex flex-col items-center justify-center gap-1 w-20 bg-transparent active:scale-95 transition-transform">
       ${iconHTML}
-      <span class="text-[11px] font-bold ${active ? 'text-secondary' : 'text-on-surface-variant'}">${t.label}</span>
-      <span class="w-1 h-1 rounded-full ${active ? 'bg-secondary' : 'bg-transparent'}"></span>
+      <span class="text-[11px] font-bold text-on-surface-variant">${t.label}</span>
     </button>`
   }).join('')
-}
-
-function setActiveType(type) {
-  activeType   = type
-  activeFilter = null // تصفير الفلتر الفرعي لما نبدّل النوع الأساسي
-  renderTypeTabs()
-  renderFilters()
-  renderGrid()
-}
-
-// ── RENDER: SUB FILTERS ───────────────────────────────────────────────
-function renderFilters() {
-  const wrap = document.getElementById('home-filters')
-  const inType = allRestaurants.filter(r => r.business_type === activeType)
-  const allCats = [...new Set(inType.flatMap(r => r.categories || []))]
-  if (!allCats.length) { wrap.innerHTML = ''; return }
-
-  const chip = (active, label, onclick) =>
-    `<button onclick="${onclick}" class="flex-shrink-0 text-xs font-bold rounded-full px-4 py-2 border transition-all whitespace-nowrap
-      ${active ? 'bg-secondary-container text-white border-secondary-container' : 'bg-surface-container-lowest text-on-surface-variant border-outline-variant'}">${label}</button>`
-
-  wrap.innerHTML = chip(!activeFilter, 'الكل', 'setActiveFilter(null)') +
-    allCats.map(c => {
-      const safe = escapeHTML(c)
-      return `<button data-cat="${safe}" onclick="setActiveFilter(this.dataset.cat)" class="flex-shrink-0 text-xs font-bold rounded-full px-4 py-2 border transition-all whitespace-nowrap
-        ${activeFilter === c ? 'bg-secondary-container text-white border-secondary-container' : 'bg-surface-container-lowest text-on-surface-variant border-outline-variant'}">${safe}</button>`
-    }).join('')
-}
-
-function setActiveFilter(cat) {
-  activeFilter = cat || null
-  renderFilters()
-  renderGrid()
 }
 
 function onSearchInput(val) {
@@ -136,7 +237,147 @@ function onSearchInput(val) {
   renderGrid()
 }
 
-// ── RENDER: GRID ──────────────────────────────────────────────────────
+function restaurantCardTalabatHTML(r) {
+  const closed = r.is_open === false
+  const metaParts = []
+  if (r.rating) metaParts.push(`⭐ ${Number(r.rating).toFixed(1)}`)
+  const timeCost = [r.avg_prep_minutes ? `${r.avg_prep_minutes} دقيقة` : null, r.distance_km != null ? `${r.distance_km} كم` : null].filter(Boolean).join(' · ')
+
+  return `<div onclick="goToRestaurant('${r.slug}')" class="flex items-center gap-3 bg-surface-container-lowest rounded-xl p-2.5 shadow-[0_2px_10px_0_rgba(0,0,0,0.05)] cursor-pointer active:scale-[0.98] transition-transform">
+    <div class="relative w-24 h-24 flex-shrink-0 rounded-lg overflow-hidden bg-surface-container">
+      ${r.cover_url || r.logo_url ? `<img src="${r.cover_url || r.logo_url}" alt="${escapeHTML(r.name)}" loading="lazy" class="w-full h-full object-cover" />`
+                    : `<div class="w-full h-full flex items-center justify-center text-outline"><span class="material-symbols-outlined" style="font-size:26px">storefront</span></div>`}
+      <button onclick="event.stopPropagation()" class="absolute top-1.5 left-1.5 w-6 h-6 rounded-full bg-white/90 flex items-center justify-center">
+        <span class="material-symbols-outlined" style="font-size:14px;color:#c0392b">favorite_border</span>
+      </button>
+      ${closed ? `<div class="absolute inset-0 bg-black/50 flex items-center justify-center"><span class="text-white text-[10px] font-extrabold">مغلق الآن</span></div>` : ''}
+    </div>
+    <div class="flex-1 min-w-0 text-right">
+      <h4 class="text-sm font-extrabold text-on-surface truncate">${escapeHTML(r.name)}</h4>
+      ${metaParts.length ? `<div class="text-[11.5px] font-bold text-on-surface-variant mt-0.5">${metaParts.join(' · ')}</div>` : ''}
+      ${timeCost ? `<div class="text-[11px] text-outline mt-0.5">${timeCost}</div>` : ''}
+      ${(r.categories && r.categories.length) ? `<div class="text-[10.5px] font-semibold text-secondary mt-1 truncate">${r.categories.slice(0,2).map(c=>escapeHTML(c)).join(' · ')}</div>` : ''}
+    </div>
+  </div>`
+}
+
+// ══════════════════════════════════════════════════════════════
+// CATEGORY VIEW (صفحة تصنيف مخصصة بستايل طلبات)
+// ══════════════════════════════════════════════════════════════
+function openCategory(type) {
+  categoryType   = type
+  categoryFilter = null
+  categorySearchTerm = ''
+  const label = (HOME_TYPES.find(t => t.key === type) || {}).label || type
+  document.getElementById('category-title').textContent   = label
+  document.getElementById('category-title-2').textContent = label
+  document.getElementById('category-search').value = ''
+
+  document.getElementById('home-app').classList.add('hidden')
+  document.getElementById('category-view').classList.remove('hidden')
+  window.scrollTo(0, 0)
+
+  renderCategoryTop()
+  renderCategoryTags()
+  renderCategoryFilters()
+  renderCategoryGrid()
+  history.pushState({ menuzCategory: type }, '', '#' + encodeURIComponent(type))
+}
+
+function closeCategory() {
+  document.getElementById('category-view').classList.add('hidden')
+  document.getElementById('home-app').classList.remove('hidden')
+  categoryType = null
+}
+
+window.addEventListener('popstate', () => {
+  if (categoryType) closeCategory()
+})
+
+function categoryRestaurants() {
+  return allRestaurants.filter(r => r.business_type === categoryType)
+}
+
+function renderCategoryTop() {
+  const list = categoryRestaurants().filter(r => r.rating).sort((a, b) => b.rating - a.rating).slice(0, 8)
+  renderHorizontalSection('category-top-wrap', 'category-top', list)
+}
+
+function renderCategoryTags() {
+  const wrap = document.getElementById('category-tags-wrap')
+  const tags = [...new Set(categoryRestaurants().flatMap(r => r.categories || []))].slice(0, 10)
+  if (!tags.length) { wrap.classList.add('hidden'); return }
+  wrap.classList.remove('hidden')
+  const palette = ['#0d631b', '#9f4200', '#1a73e8', '#8e24aa', '#c0392b', '#00897b']
+  document.getElementById('category-tags').innerHTML = tags.map((t, i) => `
+    <button onclick="setCategoryTag('${escapeHTML(t).replace(/'/g,"\\'")}')" class="flex-shrink-0 flex flex-col items-center gap-1.5 w-16">
+      <div class="w-14 h-14 rounded-full flex items-center justify-center text-white font-extrabold text-lg" style="background:${palette[i % palette.length]}">${escapeHTML(t).charAt(0)}</div>
+      <span class="text-[10.5px] font-bold text-on-surface-variant truncate w-full text-center">${escapeHTML(t)}</span>
+    </button>`).join('')
+}
+
+function setCategoryTag(tag) {
+  categoryFilter = (categoryFilter === tag) ? null : tag
+  renderCategoryFilters()
+  renderCategoryGrid()
+}
+
+let categoryMinRating = false
+let categoryOffersOnly = false
+let categorySortByRating = false
+function toggleCategoryRatingFilter() { categoryMinRating = !categoryMinRating; renderCategoryFilters(); renderCategoryGrid() }
+function toggleCategoryOffersFilter() { categoryOffersOnly = !categoryOffersOnly; renderCategoryFilters(); renderCategoryGrid() }
+function toggleCategorySortMode()     { categorySortByRating = !categorySortByRating; renderCategoryFilters(); renderCategoryGrid() }
+
+function renderCategoryFilters() {
+  const chip = (active, label, onclick, icon) =>
+    `<button onclick="${onclick}" class="flex-shrink-0 flex items-center gap-1 text-xs font-bold rounded-full px-4 py-2 border whitespace-nowrap
+      ${active ? 'bg-secondary-container text-white border-secondary-container' : 'bg-surface-container-lowest text-on-surface-variant border-outline-variant'}">${icon || ''}${label}</button>`
+
+  document.getElementById('category-filters').innerHTML =
+    chip(categoryMinRating, 'تقييم +4.0', 'toggleCategoryRatingFilter()') +
+    chip(categoryOffersOnly, 'عروض', 'toggleCategoryOffersFilter()') +
+    chip(categorySortByRating, 'الأعلى تقييمًا', 'toggleCategorySortMode()',
+      `<span class="material-symbols-outlined" style="font-size:14px">swap_vert</span>`) +
+    (categoryFilter ? chip(true, '✕ ' + escapeHTML(categoryFilter), `setCategoryTag('${escapeHTML(categoryFilter).replace(/'/g,"\\'")}')`) : '')
+}
+
+function onCategorySearchInput(val) {
+  categorySearchTerm = (val || '').trim()
+  renderCategoryGrid()
+}
+
+async function categoryOfferSlugs() {
+  try {
+    const { data } = await db.from('bundles').select('restaurant_id').eq('is_active', true)
+    return new Set((data || []).map(b => b.restaurant_id))
+  } catch (e) { return new Set() }
+}
+
+async function renderCategoryGrid() {
+  const wrap = document.getElementById('category-grid')
+  let list = categoryRestaurants()
+
+  if (categoryFilter) list = list.filter(r => (r.categories || []).includes(categoryFilter))
+  if (categoryMinRating) list = list.filter(r => (r.rating || 0) >= 4)
+  if (categorySearchTerm) {
+    const q = categorySearchTerm.toLowerCase()
+    list = list.filter(r => r.name.toLowerCase().includes(q) || (r.categories || []).some(c => c.toLowerCase().includes(q)))
+  }
+  if (categoryOffersOnly) {
+    const offerIds = await categoryOfferSlugs()
+    list = list.filter(r => offerIds.has(r.id))
+  }
+  if (categorySortByRating) list = [...list].sort((a, b) => (b.rating || 0) - (a.rating || 0))
+
+  if (!list.length) {
+    wrap.innerHTML = `<div class="text-center py-16 text-outline text-xs">مفيش نتائج تطابق الفلاتر دي</div>`
+    return
+  }
+  wrap.innerHTML = list.map(restaurantCardTalabatHTML).join('')
+}
+
+
 function restaurantCardHTML(r) {
   const closedBadge = r.is_open === false
     ? `<div class="absolute top-2.5 right-2.5 bg-on-background/75 text-white text-[10px] font-extrabold px-2.5 py-1 rounded-lg">مغلق الآن</div>` : ''
@@ -260,8 +501,7 @@ function renderRecommended() {
 
 function renderGrid() {
   const wrap = document.getElementById('home-grid')
-  let list = allRestaurants.filter(r => r.business_type === activeType)
-  if (activeFilter) list = list.filter(r => (r.categories || []).includes(activeFilter))
+  let list = allRestaurants
   if (searchTerm) {
     const q = searchTerm.toLowerCase()
     list = list.filter(r => r.name.toLowerCase().includes(q) || (r.categories || []).some(c => c.toLowerCase().includes(q)))
@@ -270,7 +510,7 @@ function renderGrid() {
   if (!list.length) {
     wrap.innerHTML = `<div class="text-center py-16 px-4 text-outline text-xs">
       <span class="material-symbols-outlined block mx-auto mb-2" style="font-size:32px">search_off</span>
-      ${searchTerm ? 'مفيش نتائج تطابق بحثك' : (activeFilter ? 'مفيش متاجر في التصنيف ده دلوقتي' : 'مفيش متاجر في القسم ده دلوقتي')}
+      ${searchTerm ? 'مفيش نتائج تطابق بحثك' : 'مفيش متاجر متاحة دلوقتي'}
     </div>`
     return
   }
@@ -355,6 +595,8 @@ function initAuthListener() {
     if ((event === 'SIGNED_IN' || event === 'INITIAL_SESSION') && session) {
       await loadCustomer()
       renderAccountTab(); renderWalletTab(); renderOrdersTab()
+      refreshUnreadNotifCount()
+      startCustomerNotifRealtime()
       if (allRestaurants.length) { loadBoughtBefore().then(renderRecommended) }
       if (sessionStorage.getItem('mnio_oauth_pending') === '1') {
         sessionStorage.removeItem('mnio_oauth_pending')
@@ -362,6 +604,8 @@ function initAuthListener() {
       }
     } else if (event === 'SIGNED_OUT') {
       customer = null
+      stopCustomerNotifRealtime()
+      document.getElementById('notif-badge').classList.add('hidden')
       document.getElementById('home-bought-before-wrap').classList.add('hidden')
       document.getElementById('home-recommended-wrap').classList.add('hidden')
     }
@@ -373,6 +617,8 @@ function initAuthListener() {
 // ══════════════════════════════════════════════════════════════
 function switchTab(tab) {
   activeTab = tab
+  if (categoryType) document.getElementById('category-view').classList.add('hidden')
+  categoryType = null
   ;['home', 'orders', 'wallet', 'account'].forEach(t => {
     const el = document.getElementById(t === 'home' ? 'home-app' : 'home-tab-' + t)
     if (el) el.classList.toggle('hidden', t !== tab)
