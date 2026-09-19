@@ -5,17 +5,17 @@
   <meta name="viewport" content="width=device-width, initial-scale=1.0" />
   <title>لوحة التحكم — منيو</title>
   <link rel="manifest" href="./dashboard-manifest.json" />
-  <meta name="theme-color" content="#1A1A1A" />
+  <meta name="theme-color" content="#0B2559" />
   <link rel="apple-touch-icon" href="./dash-icon-192.png" />
   <meta name="apple-mobile-web-app-capable" content="yes" />
   <meta name="apple-mobile-web-app-status-bar-style" content="black-translucent" />
-  <script src="https://cdn.jsdelivr.net/npm/@tailwindcss/browser@4" crossorigin="anonymous"></script>
   <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2" crossorigin="anonymous"></script>
   <link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/@simonwep/pickr/dist/themes/nano.min.css" />
   <script src="https://cdn.jsdelivr.net/npm/@simonwep/pickr/dist/pickr.min.js" crossorigin="anonymous"></script>
   <link rel="stylesheet" href="https://unpkg.com/leaflet@1.9.4/dist/leaflet.css" />
   <script src="https://unpkg.com/leaflet@1.9.4/dist/leaflet.js" crossorigin="anonymous"></script>
   <link href="https://fonts.googleapis.com/css2?family=Rubik:wght@400;500;600;700;800;900&display=swap" rel="stylesheet" />
+  <link rel="stylesheet" href="tailwind-static-dashboard.css" />
   <link rel="stylesheet" href="dashboard-style.css" />
 </head>
 <body class="bg-gray-50 min-h-screen">
@@ -223,6 +223,25 @@
       <div id="orders-list" class="space-y-4"></div>
     </div>
 
+    <!-- Customers Tab -->
+    <div id="tab-content-customers" class="hidden fade-up">
+      <h2 class="font-extrabold text-gray-800 mb-4">👥 العملاء</h2>
+      <!-- إحصائيات سريعة -->
+      <div class="grid grid-cols-3 gap-3 mb-4">
+        <div class="bg-orange-50 rounded-2xl p-3 text-center"><p class="text-2xl font-extrabold text-orange-500" id="cust-stat-total">—</p><p class="text-xs text-gray-500 mt-1">عدد العملاء</p></div>
+        <div class="bg-green-50 rounded-2xl p-3 text-center"><p class="text-2xl font-extrabold text-green-500" id="cust-stat-coins">—</p><p class="text-xs text-gray-500 mt-1">إجمالي الكوينز</p></div>
+        <div class="bg-blue-50 rounded-2xl p-3 text-center"><p class="text-2xl font-extrabold text-blue-500" id="cust-stat-orders">—</p><p class="text-xs text-gray-500 mt-1">طلبات بحسابات</p></div>
+      </div>
+      <!-- فلتر بحث -->
+      <div class="flex gap-2 mb-4">
+        <input id="cust-search" type="search" placeholder="ابحث بالاسم أو الإيميل..." oninput="filterCustomers()"
+               class="flex-1 border border-gray-200 rounded-xl px-4 py-2.5 text-sm focus:outline-none focus:ring-2 focus:ring-orange-400" />
+        <button onclick="loadCustomers()" class="bg-gray-100 text-gray-600 font-bold px-4 py-2.5 rounded-xl text-sm">تحديث</button>
+      </div>
+      <!-- قائمة العملاء -->
+      <div id="customers-list" class="space-y-3"></div>
+    </div>
+
     <!-- Analytics Tab -->
     <div id="tab-content-analytics" class="hidden fade-up">
       <h2 class="font-extrabold text-gray-800 mb-4">📊 إحصائيات</h2>
@@ -239,21 +258,40 @@
     </div>
 
 
-    <!-- Offers & Compensation Tab (كانت هدايا الولاء — دلوقتي بس العروض اللي فعلاً بيد التاجر) -->
+    <!-- Loyalty Gifts Tab (هدايا الولاء) -->
     <div id="tab-content-loyalty" class="hidden fade-up">
-      <h2 class="font-extrabold text-gray-800 mb-4">🏷️ عروض وتعويضات</h2>
-      <p class="text-[11px] text-gray-400 mb-4">بونص الترحيب وبونص الإحالة والحد الأدنى للاسترداد بقوا إعداد موحّد على مستوى منيوز كله، مش من هنا.</p>
+      <h2 class="font-extrabold text-gray-800 mb-4">🎁 هدايا الولاء</h2>
 
-      <!-- إعدادات هدية الميلاد وهدية/قسيمة الشراء -->
+      <!-- إعدادات الولاء والكوينز -->
       <div id="loyalty-section" class="hidden bg-white rounded-2xl p-5 shadow-sm space-y-4">
         <div class="flex items-center justify-between">
-          <h3 class="font-bold text-gray-700">🪙 عروض الشراء</h3>
+          <h3 class="font-bold text-gray-700">🪙 نظام الكوينز</h3>
           <div class="flex items-center gap-2">
             <input id="set-loyalty-enabled" type="checkbox" class="w-5 h-5 accent-orange-500" onchange="toggleLoyaltySection()" />
           </div>
         </div>
         <div id="loyalty-fields" class="hidden space-y-4">
           <p class="text-xs text-gray-400">1,000 كوين = 1 ج.م — كل القيم بالكوين إلا كود الخصم المخصص (بالجنيه)</p>
+
+          <!-- بونص الترحيب -->
+          <div class="border border-gray-100 rounded-xl p-3 space-y-2">
+            <div class="flex items-center justify-between">
+              <label class="text-xs font-bold text-gray-600">🎁 بونص الترحيب عند أول تسجيل</label>
+              <input id="set-welcome-enabled" type="checkbox" class="w-5 h-5 accent-orange-500" onchange="toggleLoyaltySubfield('welcome')" />
+            </div>
+            <input id="set-welcome-coins" type="number" min="0" placeholder="10000" class="hidden w-full border border-gray-200 rounded-xl px-4 py-3 text-sm focus:outline-none focus:ring-2 focus:ring-orange-400" />
+            <p class="text-[11px] text-gray-400">يتحول تلقائياً لرصيد نقدي بالمحفظة فوراً، ليستخدمه العميل في أول أوردر</p>
+          </div>
+
+          <!-- بونص الإحالة -->
+          <div class="border border-gray-100 rounded-xl p-3 space-y-2">
+            <div class="flex items-center justify-between">
+              <label class="text-xs font-bold text-gray-600">🔗 بونص الإحالة للمُحيل</label>
+              <input id="set-referral-enabled" type="checkbox" class="w-5 h-5 accent-orange-500" onchange="toggleLoyaltySubfield('referral')" />
+            </div>
+            <input id="set-referral-coins" type="number" min="0" placeholder="5000" class="hidden w-full border border-gray-200 rounded-xl px-4 py-3 text-sm focus:outline-none focus:ring-2 focus:ring-orange-400" />
+            <p class="text-[11px] text-gray-400">يتحول تلقائياً لرصيد نقدي بالمحفظة فوراً عند نجاح الإحالة</p>
+          </div>
 
           <!-- هدية عيد الميلاد -->
           <div class="border border-gray-100 rounded-xl p-3 space-y-2">
@@ -298,7 +336,10 @@
             </div>
           </div>
 
-          <button onclick="saveLoyaltySettings()" class="w-full bg-orange-500 text-white font-bold rounded-xl py-3">حفظ إعدادات العروض</button>
+          <div><label class="text-xs font-bold text-gray-500 mb-1 block">⬇️ الحد الأدنى للاسترداد (كوين) — مثال: 100,000 = 100 ج.م</label>
+            <input id="set-min-redeem" type="number" min="0" placeholder="100000" class="w-full border border-gray-200 rounded-xl px-4 py-3 text-sm focus:outline-none focus:ring-2 focus:ring-orange-400" /></div>
+
+          <button onclick="saveLoyaltySettings()" class="w-full bg-orange-500 text-white font-bold rounded-xl py-3">حفظ إعدادات الكوينز</button>
         </div>
       </div>
 
@@ -1246,14 +1287,14 @@ let activeProductFilter = 'all'
 const SECTION_TABS = {
   orders:     ['orders'],
   products:   ['products', 'categories', 'quickprices'],
-  marketing:  ['bundles', 'banners', 'analytics', 'loyalty'],
+  marketing:  ['bundles', 'banners', 'analytics', 'customers', 'loyalty'],
   store:      ['profile', 'appearance', 'branches', 'delivery', 'account']
 }
 const TAB_TO_SECTION = {}
 Object.entries(SECTION_TABS).forEach(([sec, tabs]) => tabs.forEach(t => TAB_TO_SECTION[t] = sec))
 const TAB_SUBLABEL = {
   products: 'المنتجات', categories: 'التصنيفات', quickprices: '⚡ تحديث سريع',
-  bundles: '🎁 العروض', banners: '📢 البنرات', analytics: '📊 الإحصائيات', loyalty: '🏷️ عروض وتعويضات',
+  bundles: '🎁 العروض', banners: '📢 البنرات', analytics: '📊 الإحصائيات', customers: '👥 العملاء', loyalty: '🎁 هدايا الولاء',
   profile: 'ملف المتجر', appearance: 'المظهر', branches: 'الفروع', delivery: 'التوصيل', account: 'الحساب'
 }
 // أيقونات SVG لقائمة قسم "المتجر" الجانبية (بديل الايموجيز القديمة، Heroicons-style)
@@ -1636,7 +1677,7 @@ function applyRoleUI() {
       const el = document.getElementById('tab-content-' + t)
       return el && !el.classList.contains('hidden')
     })
-    if (['profile', 'appearance', 'delivery', 'analytics', 'branches', 'loyalty'].includes(currentTab)) showSection('orders')
+    if (['profile', 'appearance', 'delivery', 'analytics', 'branches', 'customers', 'loyalty'].includes(currentTab)) showSection('orders')
   }
   // تحديث شريط التبويبات الفرعية الحالي (لإخفاء تبويبات الأدمن فيه لو لزم)
   const activeSection = Object.keys(SECTION_TABS).find(sec => {
@@ -1715,10 +1756,17 @@ async function loadDashboard(r, branches) {
     document.getElementById('set-restaurant-lng').value = r.lng
     document.getElementById('set-location-label').textContent = `✅ تم تحديد الموقع (${_restPickedLat.toFixed(4)}, ${_restPickedLng.toFixed(4)})`
   }
-  // إعدادات العروض (الترحيب/الإحالة/الحد الأدنى بقوا مركزيين في menuz_loyalty_settings، مش هنا)
+  // إعدادات الولاء
   const loyEl = document.getElementById('set-loyalty-enabled')
   if (loyEl) {
     loyEl.checked = r.loyalty_enabled || false
+    document.getElementById('set-min-redeem').value = r.min_redeem_coins ?? 100000
+
+    document.getElementById('set-welcome-enabled').checked = r.welcome_bonus_enabled ?? true
+    document.getElementById('set-welcome-coins').value     = r.welcome_coins ?? 10000
+
+    document.getElementById('set-referral-enabled').checked = r.referral_enabled ?? true
+    document.getElementById('set-referral-coins').value     = r.referral_coins ?? 5000
 
     document.getElementById('set-birthday-enabled').checked = r.birthday_gift_enabled || false
     document.getElementById('set-birthday-coins').value     = r.birthday_coins ?? 3000
@@ -1783,6 +1831,8 @@ function toggleLoyaltySection() {
 // keepCurrentCheckbox=true تُستخدم وقت التحميل الأولي (الـ checkbox خلاص مظبوط من قبل، مجرد إظهار/إخفاء)
 function toggleLoyaltySubfield(key, keepCurrentCheckbox) {
   const map = {
+    welcome:         { checkbox: 'set-welcome-enabled',         field: 'set-welcome-coins' },
+    referral:        { checkbox: 'set-referral-enabled',        field: 'set-referral-coins' },
     birthday:        { checkbox: 'set-birthday-enabled',        field: 'set-birthday-coins' },
     purchaseReward:  { checkbox: 'set-purchase-reward-enabled', field: 'purchase-reward-fields' },
     purchaseVoucher: { checkbox: 'set-purchase-voucher-enabled', field: 'purchase-voucher-fields' },
@@ -1803,6 +1853,13 @@ function togglePurchaseRewardMode() {
 
 async function saveLoyaltySettings() {
   const enabled    = document.getElementById('set-loyalty-enabled').checked
+  const minRedeem  = parseInt(document.getElementById('set-min-redeem').value) || 100000
+
+  const welcomeEnabled  = document.getElementById('set-welcome-enabled').checked
+  const welcome         = parseInt(document.getElementById('set-welcome-coins').value) || 10000
+
+  const referralEnabled = document.getElementById('set-referral-enabled').checked
+  const referral         = parseInt(document.getElementById('set-referral-coins').value) || 5000
 
   const birthdayEnabled = document.getElementById('set-birthday-enabled').checked
   const birthdayCoins    = parseInt(document.getElementById('set-birthday-coins').value) || 3000
@@ -1818,6 +1875,13 @@ async function saveLoyaltySettings() {
 
   const payload = {
     loyalty_enabled:  enabled,
+    min_redeem_coins: minRedeem,
+
+    welcome_bonus_enabled: welcomeEnabled,
+    welcome_coins:         welcome,
+
+    referral_enabled: referralEnabled,
+    referral_coins:   referral,
 
     birthday_gift_enabled: birthdayEnabled,
     birthday_coins:        birthdayCoins,
@@ -3083,23 +3147,72 @@ async function deleteBundle(id) { const ok = await showConfirm('هل تريد ح
 
 // ── CUSTOMERS TAB ─────────────────────────────────────────────────────
 let _allCustomers = []
-// بيجيب عملاء منيوز (platform_customers) اللي فعلاً طلبوا من المتجر ده قبل
-// كده — الاستخدام الوحيد المتبقي: قائمة اختيار عملاء محددين لاستهداف كود
-// خصم. عرض/تعديل رصيد العميل مش شغل التاجر خالص دلوقتي (بقى تابع لمنيوز).
 async function loadCustomers() {
-  const { data: rows } = await db.from('orders')
-    .select('customer_id, platform_customers(id,name,phone)')
+  const { data: custs } = await db.from('menu_customers')
+    .select('id,name,email,phone,coins_balance,referral_code,created_at,welcome_coins_claimed')
     .eq('restaurant_id', state.restaurant.id)
-    .not('customer_id', 'is', null)
     .order('created_at', { ascending: false })
-    .limit(500)
+    .limit(200)
+  _allCustomers = custs || []
 
-  const seen = new Set()
-  _allCustomers = []
-  for (const row of (rows || [])) {
-    const c = row.platform_customers
-    if (c && !seen.has(c.id)) { seen.add(c.id); _allCustomers.push(c) }
-  }
+  // إحصائيات
+  document.getElementById('cust-stat-total').textContent  = _allCustomers.length
+  const totalCoins = _allCustomers.reduce((s, c) => s + (c.coins_balance || 0), 0)
+  document.getElementById('cust-stat-coins').textContent  = (totalCoins / 1000).toFixed(0) + ' ج'
+  const { count } = await db.from('orders').select('id', { count: 'exact', head: true })
+    .eq('restaurant_id', state.restaurant.id).not('customer_id', 'is', null)
+  document.getElementById('cust-stat-orders').textContent = count || 0
+
+  renderCustomers(_allCustomers)
+}
+
+function filterCustomers() {
+  const q = document.getElementById('cust-search').value.trim().toLowerCase()
+  if (!q) { renderCustomers(_allCustomers); return }
+  renderCustomers(_allCustomers.filter(c =>
+    (c.name || '').toLowerCase().includes(q) || (c.email || '').toLowerCase().includes(q) || (c.phone || '').includes(q)
+  ))
+}
+
+function renderCustomers(custs) {
+  const el = document.getElementById('customers-list')
+  if (!custs.length) { el.innerHTML = `<p class="text-center text-gray-400 text-sm py-8">لا يوجد عملاء بعد</p>`; return }
+  el.innerHTML = custs.map(c => `
+    <div class="bg-white rounded-2xl p-4 shadow-sm">
+      <div class="flex items-center justify-between">
+        <div>
+          <p class="font-extrabold text-gray-800 text-sm">${escapeHtml(c.name) || '(بدون اسم)'}</p>
+          <p class="text-xs text-gray-400">${escapeHtml(c.email) || ''} ${c.phone ? '· ' + escapeHtml(c.phone) : ''}</p>
+          <p class="text-xs text-gray-400">${new Date(c.created_at).toLocaleDateString('ar-EG')}</p>
+        </div>
+        <div class="text-left">
+          <p class="text-sm font-extrabold text-orange-500">${(c.coins_balance || 0).toLocaleString('ar-EG')} 🪙</p>
+          <p class="text-xs text-gray-400">= ${((c.coins_balance || 0) / 1000).toFixed(2)} ج.م</p>
+        </div>
+      </div>
+      <div class="flex gap-2 mt-3">
+        <button onclick="giftCoins('${escapeHtml(c.id)}','${escapeHtml(c.name||'العميل').replace(/'/g,'')}')"
+                class="flex-1 text-xs bg-orange-50 text-orange-600 font-bold px-3 py-2 rounded-xl">🎀 إهداء كوينز</button>
+        <span class="text-xs text-gray-300 px-2 py-2">كود: ${escapeHtml(c.referral_code) || '—'}</span>
+      </div>
+    </div>`).join('')
+}
+
+async function giftCoins(customerId, customerName) {
+  const amount = prompt(`كم كوين تريد إهداء لـ ${customerName}؟\n(مثال: 5000 = 5 ج.م)`)
+  if (!amount || isNaN(parseInt(amount))) return
+  const coins = Math.abs(parseInt(amount))
+  const { data: cust } = await db.from('menu_customers').select('coins_balance').eq('id', customerId).single()
+  if (!cust) return
+  const newBalance = (cust.coins_balance || 0) + coins
+  await db.from('menu_customers').update({ coins_balance: newBalance }).eq('id', customerId)
+  await db.from('coin_transactions').insert({
+    customer_id: customerId, restaurant_id: state.restaurant.id,
+    type: 'gift', amount: coins, note: `هدية من المتجر`
+  })
+  await insertCustomerNotification(customerId, 'coins', '🎀 هدية من المتجر!', `${state.restaurant.name} أهداك ${coins.toLocaleString('ar-EG')} كوين — شوفها في محفظتك`)
+  showToast(`تم إهداء ${coins.toLocaleString('ar-EG')} كوين ✅`)
+  loadCustomers()
 }
 async function loadOrders() {
   let q = db.from('orders').select('*').eq('restaurant_id', state.restaurant.id).order('created_at', { ascending: false }).limit(50)
@@ -3941,13 +4054,13 @@ function renderSubTabsBar(section) {
   // إخفاء التبويبات المخصصة للأدمن فقط لو الدخول بصلاحية فرع
   if (_role && _role !== 'admin') {
     bar.querySelectorAll('button[data-admin-tab]').forEach(btn => {
-      if (['analytics', 'branches', 'profile', 'appearance', 'delivery', 'loyalty', 'account'].includes(btn.getAttribute('data-admin-tab'))) btn.style.display = 'none'
+      if (['analytics', 'customers', 'branches', 'profile', 'appearance', 'delivery', 'loyalty', 'account'].includes(btn.getAttribute('data-admin-tab'))) btn.style.display = 'none'
     })
   }
 }
 
 function showTab(name) {
-  const tabs = ['products','categories','quickprices','bundles','banners','orders','analytics','branches','profile','appearance','delivery','loyalty','account']
+  const tabs = ['products','categories','quickprices','bundles','banners','orders','customers','analytics','branches','profile','appearance','delivery','loyalty','account']
   tabs.forEach(t => document.getElementById('tab-content-' + t).classList.add('hidden'))
   document.getElementById('tab-content-' + name).classList.remove('hidden')
 
@@ -3970,6 +4083,7 @@ function showTab(name) {
   if (name === 'quickprices')  loadQuickPrices()
   if (name === 'bundles')   loadBundles()
   if (name === 'analytics') loadAnalytics()
+  if (name === 'customers') loadCustomers()
   if (name === 'banners')   loadBanners()
   if (name === 'branches')  loadBranches()
 }
