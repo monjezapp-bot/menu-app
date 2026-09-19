@@ -35,11 +35,11 @@ let customer        = null // صف platform_customers لو العميل مسجّ
 // أيقونات 3D الحقيقية (PNG شفافة موحدة المقاس) بدل Material Symbols المسطحة.
 // الملفات جوه مجلد icons/ في جذر المشروع (icons/مطاعم.png وهكذا).
 const HOME_TYPES = [
-  { key: 'مطاعم',       label: 'مطاعم',       iconImg: 'icons/مطاعم.png' },
-  { key: 'كافيهات',     label: 'كافيهات',     iconImg: 'icons/كافيهات.png' },
-  { key: 'سوبر ماركت',  label: 'سوبر ماركت',  iconImg: 'icons/سوبر ماركت.png' },
-  { key: 'أسماك ولحوم', label: 'أسماك ولحوم', iconImg: 'icons/أسماك ولحوم.png' },
-  { key: 'صيدليات',     label: 'صيدليات',     iconImg: 'icons/صيدليات.png' },
+  { key: 'مطاعم',       label: 'مطاعم',       iconImg: 'icons/restaurants.png' },
+  { key: 'كافيهات',     label: 'كافيهات',     iconImg: 'icons/cafes.png' },
+  { key: 'سوبر ماركت',  label: 'سوبر ماركت',  iconImg: 'icons/supermarket.png' },
+  { key: 'أسماك ولحوم', label: 'أسماك ولحوم', iconImg: 'icons/seafood-meat.png' },
+  { key: 'صيدليات',     label: 'صيدليات',     iconImg: 'icons/pharmacies.png' },
 ]
 
 function showHomeState(name) {
@@ -59,7 +59,7 @@ let _notifications  = []
 function showToast(msg) {
   const el = document.createElement('div')
   el.textContent = msg
-  el.style.cssText = 'position:fixed;bottom:90px;left:50%;transform:translateX(-50%);background:#1a1c1e;color:#fff;font-size:13px;font-weight:700;padding:10px 20px;border-radius:20px;z-index:70;box-shadow:0 4px 16px rgba(0,0,0,0.2)'
+  el.style.cssText = 'position:fixed;bottom:90px;left:50%;transform:translateX(-50%);background:#0B2559;color:#FBF1E2;font-size:13px;font-weight:700;padding:10px 20px;border-radius:20px;z-index:70;box-shadow:0 4px 16px rgba(11,37,89,0.3)'
   document.body.appendChild(el)
   setTimeout(() => el.remove(), 2800)
 }
@@ -308,7 +308,7 @@ function renderCategoryTags() {
   const tags = [...new Set(categoryRestaurants().flatMap(r => r.categories || []))].slice(0, 10)
   if (!tags.length) { wrap.classList.add('hidden'); return }
   wrap.classList.remove('hidden')
-  const palette = ['#0d631b', '#9f4200', '#1a73e8', '#8e24aa', '#c0392b', '#00897b']
+  const palette = ['#0B2559', '#22B458', '#178A46', '#163569', '#8e6b3a', '#5B6472']
   document.getElementById('category-tags').innerHTML = tags.map((t, i) => `
     <button onclick="setCategoryTag('${escapeHTML(t).replace(/'/g,"\\'")}')" class="flex-shrink-0 flex flex-col items-center gap-1.5 w-16">
       <div class="w-14 h-14 rounded-full flex items-center justify-center text-white font-extrabold text-lg" style="background:${palette[i % palette.length]}">${escapeHTML(t).charAt(0)}</div>

@@ -1,5 +1,5 @@
 /* ══════════════════════════════════════════════════════════════
-   tailwind-static-home.css
+   tailwind-static-home.css — الهوية البصرية الجديدة (كحلي / كريمي / أخضر)
    بديل ثابت (مكتوب يدويًا) لسكريبت Tailwind CDN اللي بيترجم الكلاسات
    وقت التشغيل في المتصفح (بطيء وبيسبب تأخير ملحوظ في كل تحميل صفحة).
    الملف ده بيغطي فقط الكلاسات المستخدمة فعليًا في home.html وhome.js —
@@ -10,46 +10,30 @@
 * { margin: 0; padding: 0; box-sizing: border-box; }
 html, body { -webkit-tap-highlight-color: transparent; }
 
-/* ── تصفير شكل الأزرار/المدخلات الافتراضي من المتصفح (كان بيعمله Tailwind
-     تلقائيًا كجزء من الـ Preflight — من غيره الزرار بيطلع بحدود وخلفية
-     رمادية افتراضية زي ما ظهر في المشكلة) ── */
-button, input, select, textarea {
-  font-family: inherit;
-  font-size: 100%;
-  color: inherit;
-  background-color: transparent;
-  border: 0;
-  appearance: none;
-  -webkit-appearance: none;
-  -moz-appearance: none;
-}
-button { cursor: pointer; }
-a { color: inherit; text-decoration: none; }
-img, svg { display: block; max-width: 100%; }
-h1, h2, h3, h4, h5, h6, p { font-size: inherit; font-weight: inherit; }
-ul, ol { list-style: none; }
-
-/* ── نظام الألوان (نفس tailwind.config اللي كان معرّف جوه home.html) ── */
+/* ── نظام الألوان — الهوية الجديدة ──
+   كحلي  #0B2559  →  العنصر الأساسي (الهيدر، الأزرار الرئيسية)
+   كريمي #FBF1E2  →  النص/الشعار فوق الكحلي
+   أخضر  #22B458  →  التفاعل والتنبيه (شارات، فلاتر نشطة، أزرار CTA) */
 :root {
-  --primary: #0d631b;
-  --on-primary: #ffffff;
-  --primary-container: #2e7d32;
-  --on-primary-container: #cbffc2;
-  --secondary: #9f4200;
+  --primary: #0B2559;
+  --on-primary: #FBF1E2;
+  --primary-container: #163569;
+  --on-primary-container: #FBF1E2;
+  --secondary: #178A46;
   --on-secondary: #ffffff;
-  --secondary-container: #fd6c00;
-  --on-secondary-container: #562000;
-  --background: #f9f9fc;
-  --on-background: #1a1c1e;
-  --surface: #f9f9fc;
+  --secondary-container: #22B458;
+  --on-secondary-container: #ffffff;
+  --background: #F7F5F0;
+  --on-background: #16213E;
+  --surface: #F7F5F0;
   --surface-container-lowest: #ffffff;
-  --surface-container-low: #f3f3f6;
-  --surface-container: #eeeef0;
-  --surface-container-high: #e8e8ea;
-  --on-surface: #1a1c1e;
-  --on-surface-variant: #40493d;
-  --outline: #707a6c;
-  --outline-variant: #bfcaba;
+  --surface-container-low: #F1EEE6;
+  --surface-container: #ECE7DC;
+  --surface-container-high: #E3DDCE;
+  --on-surface: #16213E;
+  --on-surface-variant: #5B6472;
+  --outline: #8A8F98;
+  --outline-variant: #E4E0D4;
 }
 
 body { font-family: 'Cairo', sans-serif; }
@@ -190,7 +174,7 @@ body { font-family: 'Cairo', sans-serif; }
 .bg-white\/15 { background-color: rgba(255,255,255,0.15); }
 .bg-white\/90 { background-color: rgba(255,255,255,0.90); }
 .bg-black\/50 { background-color: rgba(0,0,0,0.50); }
-.bg-on-background\/75 { background-color: rgba(26,28,30,0.75); }
+.bg-on-background\/75 { background-color: rgba(22,33,62,0.75); }
 .bg-background { background-color: var(--background); }
 .bg-primary { background-color: var(--primary); }
 .bg-secondary-container { background-color: var(--secondary-container); }
@@ -229,10 +213,10 @@ body { font-family: 'Cairo', sans-serif; }
 .placeholder\:text-outline::placeholder { color: var(--outline); }
 
 /* ── Effects ── */
-.shadow-sm  { box-shadow: 0 1px 2px 0 rgba(0,0,0,0.05); }
-.shadow-2xl { box-shadow: 0 25px 50px -12px rgba(0,0,0,0.25); }
-.shadow-\[0_4px_16px_0_rgba\(0\,0\,0\,0\.06\)\] { box-shadow: 0 4px 16px 0 rgba(0,0,0,0.06); }
-.shadow-\[0_2px_10px_0_rgba\(0\,0\,0\,0\.05\)\] { box-shadow: 0 2px 10px 0 rgba(0,0,0,0.05); }
+.shadow-sm  { box-shadow: 0 1px 2px 0 rgba(11,37,89,0.05); }
+.shadow-2xl { box-shadow: 0 25px 50px -12px rgba(11,37,89,0.30); }
+.shadow-\[0_4px_16px_0_rgba\(0\,0\,0\,0\.06\)\] { box-shadow: 0 4px 16px 0 rgba(11,37,89,0.08); }
+.shadow-\[0_2px_10px_0_rgba\(0\,0\,0\,0\.05\)\] { box-shadow: 0 2px 10px 0 rgba(11,37,89,0.07); }
 .overflow-hidden { overflow: hidden; }
 .overflow-x-auto { overflow-x: auto; }
 .overflow-y-auto { overflow-y: auto; }
@@ -250,9 +234,9 @@ body { font-family: 'Cairo', sans-serif; }
 .snap-mandatory { scroll-snap-type: x mandatory; }
 .snap-start { scroll-snap-align: start; }
 
-/* ── Skeleton loading (نفس التعريف القديم) ── */
+/* ── Skeleton loading (متوافقة مع الهوية الجديدة) ── */
 .skeleton {
-  background: linear-gradient(90deg, #ececec 25%, #f6f6f6 37%, #ececec 63%);
+  background: linear-gradient(90deg, #ECE7DC 25%, #F5F2EA 37%, #ECE7DC 63%);
   background-size: 400% 100%;
   animation: skeleton-loading 1.4s ease infinite;
 }
@@ -266,3 +250,89 @@ body { font-family: 'Cairo', sans-serif; }
 }
 
 ::-webkit-scrollbar { display: none; }
+
+/* ══════════════════════════════════════════════════════════════
+   إضافات التصميم الجديد — هيدر/هيرو، شعار، تصنيفات، شرائط أقسام
+   ══════════════════════════════════════════════════════════════ */
+
+/* الهيدر: تدرّج كحلي مع لمعة خفيفة، وشكلين زخرفيين هادئين خلف المحتوى */
+.hero-header {
+  position: relative;
+  background: linear-gradient(160deg, #0B2559 0%, #0F3070 55%, #0B2559 100%);
+  overflow: hidden;
+  isolation: isolate;
+}
+.hero-header::before,
+.hero-header::after {
+  content: '';
+  position: absolute;
+  border-radius: 999px;
+  z-index: -1;
+  background: radial-gradient(circle, rgba(34,180,88,0.25) 0%, rgba(34,180,88,0) 70%);
+}
+.hero-header::before { width: 220px; height: 220px; top: -110px; left: -60px; }
+.hero-header::after  { width: 160px; height: 160px; bottom: -90px; right: -40px;
+  background: radial-gradient(circle, rgba(251,241,226,0.10) 0%, rgba(251,241,226,0) 70%); }
+
+.brand-logo { height: 26px; width: auto; display: block; }
+
+.icon-chip {
+  width: 38px; height: 38px; border-radius: 999px;
+  background: rgba(251,241,226,0.12);
+  border: 1px solid rgba(251,241,226,0.16);
+  display: flex; align-items: center; justify-content: center;
+  transition: transform 0.15s;
+}
+.icon-chip:active { transform: scale(0.92); }
+
+.hero-search {
+  background: #ffffff;
+  border-radius: 999px;
+  height: 46px;
+  box-shadow: 0 8px 24px rgba(11,37,89,0.18);
+}
+.hero-search .material-symbols-outlined { color: var(--secondary); }
+
+/* Type tabs (تصنيفات) — دائرة كريمية هادئة خلف كل أيقونة */
+.type-tab-icon-wrap {
+  width: 64px; height: 64px; border-radius: 20px;
+  background: var(--surface-container-lowest);
+  display: flex; align-items: center; justify-content: center;
+  box-shadow: 0 3px 10px rgba(11,37,89,0.07);
+  transition: transform 0.15s;
+}
+.type-tab-icon-wrap img { width: 40px; height: 40px; object-fit: contain; }
+
+/* عناوين الأقسام — أيقونة ملوّنة داخل مربع صغير + نص */
+.section-title-row { display: flex; align-items: center; gap: 8px; }
+.section-title-badge {
+  width: 26px; height: 26px; border-radius: 8px;
+  display: flex; align-items: center; justify-content: center;
+  background: rgba(34,180,88,0.12); color: var(--secondary);
+  flex-shrink: 0;
+}
+.section-title-badge .material-symbols-outlined { font-size: 16px; }
+
+/* شريط بحث صفحة التصنيف (فوق الهيدر الفرعي) */
+.subheader-search {
+  background: #ffffff; border-radius: 999px; height: 44px;
+  box-shadow: 0 6px 18px rgba(11,37,89,0.14);
+}
+.subheader-search .material-symbols-outlined { color: var(--secondary); }
+
+/* ── Bottom Nav — شريط عائم بحواف مدورة وخلفية زجاجية خفيفة ── */
+.bottom-nav-wrap { padding: 0 12px 10px; }
+.bottom-nav-inner {
+  background: #ffffff;
+  border-radius: 22px;
+  box-shadow: 0 -6px 0 rgba(0,0,0,0), 0 10px 30px rgba(11,37,89,0.14);
+  border: 1px solid var(--outline-variant);
+}
+.bnav-btn { position: relative; }
+.bnav-btn .bnav-icon, .bnav-btn .bnav-label { color: var(--outline); transition: color .15s; }
+.bnav-btn.active .bnav-icon, .bnav-btn.active .bnav-label { color: var(--secondary); }
+.bnav-btn.active .bnav-icon { font-variation-settings: 'FILL' 1; }
+.bnav-btn.active .bnav-pill {
+  position: absolute; inset: -6px -14px auto -14px; top: -4px; height: 34px;
+  background: rgba(34,180,88,0.10); border-radius: 14px; z-index: -1;
+}
