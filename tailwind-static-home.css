@@ -10,6 +10,23 @@
 * { margin: 0; padding: 0; box-sizing: border-box; }
 html, body { -webkit-tap-highlight-color: transparent; }
 
+/* تصفير افتراضي لعناصر الفورم — كان ناقص في النسخة اليدوية من Tailwind، وده
+   السبب إن أي <button> كان بيظهر بإطاره الافتراضي القبيح من المتصفح (زي أزرار
+   التصنيفات فوق). Tailwind CDN الأصلي كان بيعمل preflight reset زي ده تلقائي. */
+button, input, select, textarea {
+  font: inherit;
+  color: inherit;
+  background: none;
+  border: none;
+  -webkit-appearance: none;
+  appearance: none;
+  padding: 0;
+  text-align: inherit;
+}
+button { cursor: pointer; }
+a { color: inherit; text-decoration: none; }
+img { display: block; }
+
 /* ── نظام الألوان — الهوية الجديدة ──
    كحلي  #0B2559  →  العنصر الأساسي (الهيدر، الأزرار الرئيسية)
    كريمي #FBF1E2  →  النص/الشعار فوق الكحلي

@@ -222,11 +222,11 @@ function renderTypeTabs() {
   const wrap = document.getElementById('home-type-tabs')
   wrap.innerHTML = HOME_TYPES.map(t => {
     const iconHTML = t.iconImg
-      ? `<img src="${t.iconImg}" alt="" class="w-16 h-16 object-contain" />`
-      : `<span class="material-symbols-outlined" style="font-size:40px">${t.icon}</span>`
+      ? `<img src="${t.iconImg}" alt="" />`
+      : `<span class="material-symbols-outlined" style="font-size:30px">${t.icon}</span>`
     return `<button data-type="${t.key}" onclick="openCategory(this.dataset.type)"
-      class="flex-shrink-0 flex flex-col items-center justify-center gap-1 w-20 bg-transparent active:scale-95 transition-transform">
-      ${iconHTML}
+      class="flex-shrink-0 flex flex-col items-center justify-center gap-1.5 w-20 bg-transparent active:scale-95 transition-transform">
+      <span class="type-tab-icon-wrap">${iconHTML}</span>
       <span class="text-[11px] font-bold text-on-surface-variant">${t.label}</span>
     </button>`
   }).join('')
