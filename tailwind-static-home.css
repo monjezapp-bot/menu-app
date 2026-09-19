@@ -40,17 +40,20 @@ img { display: block; }
   --on-secondary: #ffffff;
   --secondary-container: #22B458;
   --on-secondary-container: #ffffff;
-  --background: #F7F5F0;
+  /* الخلفية بيضاء نضيفة زي طلبات — الكريمي بقى لون مساحات محدودة (بانرات/كروت
+     مميزة) مش خلفية الصفحة كلها، عشان الألوان تفضل ليها معنى، مش تتكرر لحد ما تفقد قيمتها */
+  --background: #FFFFFF;
   --on-background: #16213E;
-  --surface: #F7F5F0;
+  --surface: #FFFFFF;
+  --surface-cream: #FBF1E2;
   --surface-container-lowest: #ffffff;
-  --surface-container-low: #F1EEE6;
-  --surface-container: #ECE7DC;
-  --surface-container-high: #E3DDCE;
+  --surface-container-low: #F7F6F3;
+  --surface-container: #F1F0EC;
+  --surface-container-high: #E9E7E1;
   --on-surface: #16213E;
   --on-surface-variant: #5B6472;
   --outline: #8A8F98;
-  --outline-variant: #E4E0D4;
+  --outline-variant: #EBEAE5;
 }
 
 body { font-family: 'Cairo', sans-serif; }
@@ -197,6 +200,7 @@ body { font-family: 'Cairo', sans-serif; }
 .bg-secondary-container { background-color: var(--secondary-container); }
 .bg-surface-container { background-color: var(--surface-container); }
 .bg-surface-container-lowest { background-color: var(--surface-container-lowest); }
+.bg-surface-cream { background-color: var(--surface-cream); }
 
 /* ── Text ── */
 .text-\[9px\]    { font-size: 9px; }
@@ -229,11 +233,13 @@ body { font-family: 'Cairo', sans-serif; }
 .text-secondary { color: var(--secondary); }
 .placeholder\:text-outline::placeholder { color: var(--outline); }
 
-/* ── Effects ── */
+/* ── Effects ──
+   ظلال خفيفة جدًا مع حد رفيع بدل ما تكون هي مصدر الفصل الوحيد بين الكروت —
+   ده أقرب لستايل طلبات (اعتماد على تباعد وخط رفيع، مش ظل تقيل تحت كل حاجة) */
 .shadow-sm  { box-shadow: 0 1px 2px 0 rgba(11,37,89,0.05); }
 .shadow-2xl { box-shadow: 0 25px 50px -12px rgba(11,37,89,0.30); }
-.shadow-\[0_4px_16px_0_rgba\(0\,0\,0\,0\.06\)\] { box-shadow: 0 4px 16px 0 rgba(11,37,89,0.08); }
-.shadow-\[0_2px_10px_0_rgba\(0\,0\,0\,0\.05\)\] { box-shadow: 0 2px 10px 0 rgba(11,37,89,0.07); }
+.shadow-\[0_4px_16px_0_rgba\(0\,0\,0\,0\.06\)\] { box-shadow: 0 1px 3px 0 rgba(11,37,89,0.06); border: 1px solid var(--outline-variant); }
+.shadow-\[0_2px_10px_0_rgba\(0\,0\,0\,0\.05\)\] { box-shadow: none; border: 1px solid var(--outline-variant); }
 .overflow-hidden { overflow: hidden; }
 .overflow-x-auto { overflow-x: auto; }
 .overflow-y-auto { overflow-y: auto; }
@@ -272,31 +278,18 @@ body { font-family: 'Cairo', sans-serif; }
    إضافات التصميم الجديد — هيدر/هيرو، شعار، تصنيفات، شرائط أقسام
    ══════════════════════════════════════════════════════════════ */
 
-/* الهيدر: تدرّج كحلي مع لمعة خفيفة، وشكلين زخرفيين هادئين خلف المحتوى */
+/* الهيدر: كحلي مصمت هادئ — من غير أي أشكال زخرفية خلف المحتوى.
+   اللون بيتكلم لوحده، مش محتاج "تأثيرات" حواليه. */
 .hero-header {
   position: relative;
-  background: linear-gradient(160deg, #0B2559 0%, #0F3070 55%, #0B2559 100%);
-  overflow: hidden;
-  isolation: isolate;
+  background: var(--primary);
 }
-.hero-header::before,
-.hero-header::after {
-  content: '';
-  position: absolute;
-  border-radius: 999px;
-  z-index: -1;
-  background: radial-gradient(circle, rgba(34,180,88,0.25) 0%, rgba(34,180,88,0) 70%);
-}
-.hero-header::before { width: 220px; height: 220px; top: -110px; left: -60px; }
-.hero-header::after  { width: 160px; height: 160px; bottom: -90px; right: -40px;
-  background: radial-gradient(circle, rgba(251,241,226,0.10) 0%, rgba(251,241,226,0) 70%); }
 
-.brand-logo { height: 26px; width: auto; display: block; }
+.brand-logo { height: 24px; width: auto; display: block; }
 
 .icon-chip {
-  width: 38px; height: 38px; border-radius: 999px;
-  background: rgba(251,241,226,0.12);
-  border: 1px solid rgba(251,241,226,0.16);
+  width: 36px; height: 36px; border-radius: 999px;
+  background: rgba(251,241,226,0.10);
   display: flex; align-items: center; justify-content: center;
   transition: transform 0.15s;
 }
@@ -306,50 +299,36 @@ body { font-family: 'Cairo', sans-serif; }
   background: #ffffff;
   border-radius: 999px;
   height: 46px;
-  box-shadow: 0 8px 24px rgba(11,37,89,0.18);
+  border: 1px solid rgba(11,37,89,0.06);
 }
-.hero-search .material-symbols-outlined { color: var(--secondary); }
+.hero-search .material-symbols-outlined { color: var(--on-surface-variant); }
 
-/* Type tabs (تصنيفات) — دائرة كريمية هادئة خلف كل أيقونة */
+/* Type tabs (تصنيفات) — صورة + اسم مباشرة، من غير كارت أو ظل حواليها،
+   زي شريط التصنيفات في طلبات بالظبط */
 .type-tab-icon-wrap {
-  width: 64px; height: 64px; border-radius: 20px;
-  background: var(--surface-container-lowest);
+  width: 52px; height: 52px;
   display: flex; align-items: center; justify-content: center;
-  box-shadow: 0 3px 10px rgba(11,37,89,0.07);
-  transition: transform 0.15s;
 }
-.type-tab-icon-wrap img { width: 40px; height: 40px; object-fit: contain; }
+.type-tab-icon-wrap img { width: 52px; height: 52px; object-fit: contain; }
 
-/* عناوين الأقسام — أيقونة ملوّنة داخل مربع صغير + نص */
-.section-title-row { display: flex; align-items: center; gap: 8px; }
-.section-title-badge {
-  width: 26px; height: 26px; border-radius: 8px;
-  display: flex; align-items: center; justify-content: center;
-  background: rgba(34,180,88,0.12); color: var(--secondary);
-  flex-shrink: 0;
-}
-.section-title-badge .material-symbols-outlined { font-size: 16px; }
+/* عناوين الأقسام — نص واضح بالخط بس، من غير أيقونات أو شارات إضافية */
+.section-title-row { display: flex; align-items: center; }
 
 /* شريط بحث صفحة التصنيف (فوق الهيدر الفرعي) */
 .subheader-search {
   background: #ffffff; border-radius: 999px; height: 44px;
-  box-shadow: 0 6px 18px rgba(11,37,89,0.14);
+  border: 1px solid rgba(11,37,89,0.06);
 }
-.subheader-search .material-symbols-outlined { color: var(--secondary); }
+.subheader-search .material-symbols-outlined { color: var(--on-surface-variant); }
 
-/* ── Bottom Nav — شريط عائم بحواف مدورة وخلفية زجاجية خفيفة ── */
-.bottom-nav-wrap { padding: 0 12px 10px; }
+/* ── Bottom Nav — شريط مسطح ثابت بحد علوي رفيع، زي طلبات بالظبط ── */
+.bottom-nav-wrap { padding: 0; }
 .bottom-nav-inner {
   background: #ffffff;
-  border-radius: 22px;
-  box-shadow: 0 -6px 0 rgba(0,0,0,0), 0 10px 30px rgba(11,37,89,0.14);
-  border: 1px solid var(--outline-variant);
+  border-top: 1px solid var(--outline-variant);
 }
 .bnav-btn { position: relative; }
 .bnav-btn .bnav-icon, .bnav-btn .bnav-label { color: var(--outline); transition: color .15s; }
 .bnav-btn.active .bnav-icon, .bnav-btn.active .bnav-label { color: var(--secondary); }
 .bnav-btn.active .bnav-icon { font-variation-settings: 'FILL' 1; }
-.bnav-btn.active .bnav-pill {
-  position: absolute; inset: -6px -14px auto -14px; top: -4px; height: 34px;
-  background: rgba(34,180,88,0.10); border-radius: 14px; z-index: -1;
-}
+.bnav-pill { display: none; }

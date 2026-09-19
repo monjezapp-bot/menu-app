@@ -63,7 +63,7 @@
         <span id="notif-badge" class="hidden absolute -top-1 -left-1 bg-secondary-container text-white text-[9px] font-extrabold rounded-full min-w-[16px] h-4 px-1 flex items-center justify-center">0</span>
       </button>
     </div>
-    <p class="text-white/80 text-xs font-semibold mb-4">اطلب من مطعمك المفضل في دقايق 🍽️</p>
+    <p class="text-white/80 text-xs font-semibold mb-4">اطلب من مطعمك المفضل في دقايق</p>
     <div class="flex items-center gap-2 hero-search px-4">
       <span class="material-symbols-outlined" style="font-size:20px">search</span>
       <input id="home-search" oninput="onSearchInput(this.value)" class="bg-transparent border-none outline-none focus:ring-0 text-sm w-full text-right placeholder:text-outline" placeholder="دوّر على مطعم أو أكلة..." type="text" />
@@ -80,54 +80,49 @@
   </div>
 
   <!-- 1) Type Tabs (تصنيفات) -->
-  <div id="home-type-tabs" class="flex gap-4 overflow-x-auto px-4 pt-5 pb-1"></div>
+  <div id="home-type-tabs" class="flex gap-5 overflow-x-auto px-4 pt-6 pb-1"></div>
 
   <!-- 2) Banners (إعلانات وعروض) -->
-  <div id="home-banners-wrap" class="hidden px-4 pt-4">
+  <div id="home-banners-wrap" class="hidden px-4 pt-6">
     <div id="home-banners" class="flex gap-3 overflow-x-auto snap-x snap-mandatory"></div>
   </div>
 
   <!-- 3) متاجر اشتريت منها -->
-  <div id="home-bought-before-wrap" class="hidden pt-5">
-    <div class="px-4 mb-2 section-title-row">
-      <span class="section-title-badge"><span class="material-symbols-outlined">favorite</span></span>
-      <h2 class="text-sm font-extrabold text-on-surface">متاجر اشتريت منها</h2>
+  <div id="home-bought-before-wrap" class="hidden pt-7">
+    <div class="px-4 mb-3 section-title-row">
+      <h2 class="text-base font-extrabold text-on-surface">متاجر اشتريت منها</h2>
     </div>
     <div id="home-bought-before" class="flex gap-3 overflow-x-auto px-4"></div>
   </div>
 
   <!-- 4) الأكثر مبيعًا -->
-  <div id="home-best-sellers-wrap" class="hidden pt-5">
-    <div class="px-4 mb-2 section-title-row">
-      <span class="section-title-badge"><span class="material-symbols-outlined">local_fire_department</span></span>
-      <h2 class="text-sm font-extrabold text-on-surface">الأكثر مبيعًا</h2>
+  <div id="home-best-sellers-wrap" class="hidden pt-7">
+    <div class="px-4 mb-3 section-title-row">
+      <h2 class="text-base font-extrabold text-on-surface">الأكثر مبيعًا</h2>
     </div>
     <div id="home-best-sellers" class="flex gap-3 overflow-x-auto px-4"></div>
   </div>
 
   <!-- 5) عروض -->
-  <div id="home-offers-wrap" class="hidden pt-5">
-    <div class="px-4 mb-2 section-title-row">
-      <span class="section-title-badge"><span class="material-symbols-outlined">sell</span></span>
-      <h2 class="text-sm font-extrabold text-on-surface">عروض</h2>
+  <div id="home-offers-wrap" class="hidden pt-7">
+    <div class="px-4 mb-3 section-title-row">
+      <h2 class="text-base font-extrabold text-on-surface">عروض</h2>
     </div>
     <div id="home-offers" class="flex gap-3 overflow-x-auto px-4"></div>
   </div>
 
   <!-- 6) المتاجر الأقرب إليك -->
-  <div class="pt-5">
-    <div class="px-4 mb-2 section-title-row">
-      <span class="section-title-badge"><span class="material-symbols-outlined">near_me</span></span>
-      <h2 class="text-sm font-extrabold text-on-surface">الأقرب إليك</h2>
+  <div class="pt-7">
+    <div class="px-4 mb-3 section-title-row">
+      <h2 class="text-base font-extrabold text-on-surface">الأقرب إليك</h2>
     </div>
     <div id="home-grid" class="grid grid-cols-1 gap-4 px-4 pt-3"></div>
   </div>
 
   <!-- 7) نقترح لك -->
-  <div id="home-recommended-wrap" class="hidden pt-5 pb-4">
-    <div class="px-4 mb-2 section-title-row">
-      <span class="section-title-badge"><span class="material-symbols-outlined">auto_awesome</span></span>
-      <h2 class="text-sm font-extrabold text-on-surface">نقترح لك</h2>
+  <div id="home-recommended-wrap" class="hidden pt-7 pb-6">
+    <div class="px-4 mb-3 section-title-row">
+      <h2 class="text-base font-extrabold text-on-surface">نقترح لك</h2>
     </div>
     <div id="home-recommended" class="flex gap-3 overflow-x-auto px-4"></div>
   </div>
@@ -154,10 +149,9 @@
   <!-- أفضل تصنيفًا (Top Rated) -->
   <div id="category-top-wrap" class="hidden pt-5">
     <div class="px-4 mb-1 section-title-row">
-      <span class="section-title-badge"><span class="material-symbols-outlined">star</span></span>
-      <h2 class="text-sm font-extrabold text-on-surface">الأفضل تصنيفًا</h2>
+      <h2 class="text-base font-extrabold text-on-surface">الأفضل تصنيفًا</h2>
     </div>
-    <p class="px-4 text-[11px] text-outline mb-2">إليك ما يحبه الجميع بالقرب منك</p>
+    <p class="px-4 text-[11px] text-outline mb-3">إليك ما يحبه الجميع بالقرب منك</p>
     <div id="category-top" class="flex gap-3 overflow-x-auto px-4"></div>
   </div>
 
@@ -201,9 +195,9 @@
 </div>
 
 <!-- ══════════════════════════════════════════
-     BOTTOM NAV (ثابت — شريط عائم مدور)
+     BOTTOM NAV (ثابت — شريط مسطح بحد علوي رفيع)
 ══════════════════════════════════════════ -->
-<nav id="bottom-nav" class="fixed bottom-0 left-1/2 -translate-x-1/2 w-full max-w-[480px] bottom-nav-wrap z-50" style="padding-bottom:max(10px, env(safe-area-inset-bottom))">
+<nav id="bottom-nav" class="fixed bottom-0 left-1/2 -translate-x-1/2 w-full max-w-[480px] bottom-nav-wrap z-50" style="padding-bottom:env(safe-area-inset-bottom)">
   <div class="bottom-nav-inner flex justify-around items-center">
     <button data-tab="home" onclick="switchTab('home')" class="bnav-btn flex flex-col items-center gap-1 py-2.5 px-4 min-w-[64px]">
       <span class="bnav-pill"></span>
